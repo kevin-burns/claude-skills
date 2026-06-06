@@ -1,0 +1,77 @@
+{
+  "skill_name": "hook-and-human",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Assume WRITING_CONTEXT.md says: Approved facts I can cite: we cut deploy time from 40 minutes to 6 minutes. Phrases I never use: leverage, synergy. Write a LinkedIn post announcing our new CI pipeline.",
+      "expected_output": "A LinkedIn post that opens with a grounded hook, uses only the approved metric, ends with a single CTA, and avoids the banned words.",
+      "expectations": [
+        "The post opens with a hook in the first line rather than a generic statement",
+        "The post cites the 40-to-6-minute figure and introduces no other quantitative or soft-numeric claim (e.g. 'half an afternoon', 'hours back', a percentage) beyond the approved figure",
+        "The post does not use the words 'leverage' or 'synergy'",
+        "The post ends with exactly one call to action, not multiple asks"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Punch up this flat copy without changing the facts: \"Our app helps you track expenses. It syncs with your bank and categorizes spending. It costs $9 a month.\"",
+      "expected_output": "Adds a hook and persuasive structure while preserving all three claims (tracks expenses, bank sync + categorization, $9/month) and adding no new claim.",
+      "expectations": [
+        "The output still states it tracks expenses",
+        "The output still states it syncs with the bank and categorizes spending",
+        "The output still states the $9 per month price",
+        "The output introduces no new feature or claim absent from the input",
+        "The output leads with a hook rather than 'Our app helps you'"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write a testimonial-style ad for our onboarding tool.",
+      "expected_output": "Does not fabricate a customer name, quote, or result. Uses a placeholder and asks for real proof.",
+      "expectations": [
+        "The output does not invent a named customer, a fake quotation, or a specific result not provided",
+        "The output uses a placeholder such as [ADD PROOF] or explicitly asks the user for a real testimonial/metric"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Review and fix the CTA in this post: \"Great tips here. Follow me for more, share if you found this useful, drop your thoughts below, and DM me to chat!\"",
+      "expected_output": "Flags the stacked asks and reduces to one specific CTA.",
+      "expectations": [
+        "The output identifies that there are multiple competing calls to action",
+        "The rewrite contains exactly one call to action"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Write a cold email to a VP of Engineering offering a 15-minute demo of our incident-response tool.",
+      "expected_output": "Specific subject, hook in the first line (not a pleasantry), short PAS/BAB body, one ask, single sign-off, no fabricated specifics.",
+      "expectations": [
+        "The email includes a specific subject line, not a generic one like 'Touching base'",
+        "The first line is a hook or relevant opener rather than 'I hope this finds you well'",
+        "The email contains exactly one ask and a single sign-off",
+        "The email invents no specific customer results or metrics that were not provided"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Give me three hook options for a post about why most CI pipelines are slow.",
+      "expected_output": "Produces grounded, specific hooks and avoids empty-hook templates like 'What if I told you', ALL-CAPS, or 'Read that again.'",
+      "expectations": [
+        "None of the three hook options use 'What if I told you' or 'Here's what nobody tells you' as the hook line itself (referencing such phrases as anti-examples in commentary is fine)",
+        "The hooks do not rely on ALL-CAPS words or 'Read that again.' style filler",
+        "At least one hook is concrete (a specific scenario, number, or counter-intuitive claim)"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Review this for stopping power and conversion: \"Unlock your potential with our cutting-edge, robust platform. It's a game-changer. Seamless. Powerful. Transformative. Try it today!\"",
+      "expected_output": "Scores it: may grab attention but is hollow generic AI filler with weak authenticity. Flags the banned filler words.",
+      "expectations": [
+        "The output includes a scores table with a Scroll-stop and an Authenticity dimension",
+        "The output gives a low Authenticity score (<=4) and explains it reads as generic AI filler",
+        "The output flags filler words such as unlock, cutting-edge, robust, seamless, transformative, game-changer"
+      ]
+    }
+  ]
+}

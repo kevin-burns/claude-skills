@@ -1,0 +1,115 @@
+{
+  "skill_name": "clear-and-human",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this README intro and tell me if it sounds like AI:\n\n\"Our cutting-edge platform leverages a robust, seamless architecture to deliver transformative results. It serves as a comprehensive solution that empowers teams to streamline their workflows and unlock their full potential.\"",
+      "expected_output": "Detects content as docs/technical, flags the AI-vocabulary and copula avoidance, produces a scored report, and does not invent product details.",
+      "expectations": [
+        "The output classifies the content as docs or technical",
+        "The output flags at least six of: cutting-edge, leverages, robust, seamless, transformative, comprehensive, empowers, streamline, unlock",
+        "The output flags 'serves as' as copula avoidance or suggests replacing it with 'is'",
+        "The output includes a scores table containing an AI-Likeness dimension",
+        "The output does not invent any specific product name, version number, metric, or customer not present in the input"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Humanize this blog opener: \"In today's fast-paced world, businesses must adapt. Our approach has helped countless companies achieve remarkable growth and lasting success.\" Make it sound like a real person wrote it.",
+      "expected_output": "Removes filler openers and vague claims, and does NOT fabricate statistics, company names, or growth figures to add concreteness; flags the missing specifics instead.",
+      "expectations": [
+        "The output removes or rewrites the 'In today's fast-paced world' filler opener",
+        "The output does not invent any specific number, percentage, company name, or case study absent from the input",
+        "The output either leaves a placeholder such as [ADD SPECIFIC EXAMPLE] or explicitly flags that concrete specifics are missing"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Does this LinkedIn post sound like AI? Rewrite it if so:\n\n\"Most people get this wrong. Read that again.\n\nSuccess isn't about talent → it's about consistency → it's about showing up.\n\nAgree? Drop a comment below 👇\"",
+      "expected_output": "Detects LinkedIn, flags the permission phrase, arrow chain, and engagement-bait closer, and removes all three in the rewrite.",
+      "expectations": [
+        "The output classifies the content as linkedin",
+        "The output flags 'Read that again.' as a permission/gravity phrase",
+        "The output flags the arrow chain (→) and converts it to prose in the rewrite",
+        "The output flags the engagement-bait closer 'Agree? Drop a comment'",
+        "The rewrite contains no arrow characters (→) and no 'drop a comment' style closer"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Clean up the mechanics in this text: \"The system is fast \u2014 really fast \u2014 and it\u2019s \u201creliable\u201d too. ## Key Features And Benefits\"",
+      "expected_output": "Converts em-dashes to commas/periods, curly quotes to straight quotes, and Title Case heading to sentence case.",
+      "expectations": [
+        "The rewrite contains no em-dash characters",
+        "The rewrite uses straight quotation marks rather than curly ones",
+        "The heading is converted from title case to sentence case (e.g. 'Key features and benefits')"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Review this for AI texture: \"The quarterly report was completed. The team worked on several initiatives. Progress was made in multiple areas. The results were positive. The outlook is good.\"",
+      "expected_output": "Recognizes the text is free of obvious AI vocabulary but is hollow: uniform rhythm, no specifics, no voice. Flags clean-but-hollow and scores value/credibility low.",
+      "expectations": [
+        "The output explicitly identifies the text as clean but hollow, or notes that it lacks specifics and voice despite having few AI buzzwords",
+        "The output flags the uniform sentence length or rhythm",
+        "The scores table gives a low score (<=4) to a value or credibility style dimension"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Tighten this email:\n\n\"Subject: Touching base\n\nHi Sam,\n\nI hope this email finds you well! I wanted to reach out and touch base regarding the possibility of potentially setting up a time to discuss our proposal at some point.\n\nThanks so much,\nBest regards,\nAlex\"",
+      "expected_output": "Detects email, leads with the ask, removes 'I hope this finds you well', collapses the stacked sign-off to one, and proposes a specific CTA.",
+      "expectations": [
+        "The output classifies the content as email",
+        "The rewrite removes 'I hope this email finds you well'",
+        "The rewrite uses a single sign-off rather than both 'Thanks so much' and 'Best regards'",
+        "The rewrite leads with or clearly states the ask and proposes a specific next step rather than 'at some point'"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Assume this WRITING_CONTEXT.md is in my project root:\n\nPhrases I never use: leverage, synergy\nApproved facts I can cite: we cut deploy time from 40 minutes to 6 minutes\n\nNow write a two-sentence LinkedIn post announcing our new CI pipeline.",
+      "expected_output": "Honors the context file: avoids the banned words, may cite the approved 40->6 minute fact, and invents no other metrics.",
+      "expectations": [
+        "The output does not use the words 'leverage' or 'synergy'",
+        "The output invents no specific metric other than the approved 40-to-6-minute figure",
+        "The output is a short LinkedIn-style post, not a long article"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Humanize this and show your work: \"It's not just a tool, it's a revolution. Furthermore, it delivers unparalleled value. In conclusion, the future is bright.\"",
+      "expected_output": "Runs the self-audit pass: presents a rewrite, then an honest assessment of remaining AI tells, then a revised final version.",
+      "expectations": [
+        "The output flags the negative parallelism 'It's not just X, it's Y'",
+        "The output includes a self-audit step that names what still reads as AI-generated before giving a final version",
+        "The rewrite removes 'Furthermore', 'In conclusion', and the generic positive conclusion 'the future is bright'"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Rewrite this to sound human but keep every point:\n\n\"Our service reduces costs, improves reliability, and shortens onboarding. It integrates with existing tools and requires no code changes.\"",
+      "expected_output": "Preserves all five claims (cost, reliability, onboarding, integration, no code changes) while varying delivery; adds and drops nothing.",
+      "expectations": [
+        "The rewrite still mentions reducing costs",
+        "The rewrite still mentions improved reliability",
+        "The rewrite still mentions shorter onboarding",
+        "The rewrite still mentions integration with existing tools",
+        "The rewrite still mentions no code changes",
+        "The rewrite introduces no new product claim not present in the input",
+        "The rewrite varies sentence structure and rhythm rather than reproducing the input's flat parallel list of clauses"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Write a 4-step runbook for rotating an expired TLS certificate on an nginx server.",
+      "expected_output": "Generate mode in technical voice: imperative steps, conservative voice, no invented commands/paths/versions presented as fact, flags anything environment-specific rather than fabricating it.",
+      "expectations": [
+        "The output is structured as ordered steps using imperative instructions",
+        "The output does not present any invented file path, certificate name, or version number as if it were the user's actual environment",
+        "Environment-specific values (paths, domain names, certificate filenames) are explicitly marked as placeholders to replace (e.g. angle-bracketed or with a 'replace with your…' note), not stated as concrete fact",
+        "The voice is plain and instructional rather than promotional or personality-driven"
+      ]
+    }
+  ]
+}

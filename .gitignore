@@ -1,0 +1,27 @@
+# Local Claude config
+.claude
+
+# OS / editor cruft
+.DS_Store
+*.swp
+
+# Eval + benchmark build artifacts (skill-creator workspaces)
+*-workspace/
+clear-and-human-workspace
+hook-and-human-workspace
+*-review*.html
+
+# Packaged skill archives
+*.zip
+*.skill
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local secrets / context (never publish)
+WRITING_CONTEXT.local.md
+.env
+.env.*
