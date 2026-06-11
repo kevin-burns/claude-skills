@@ -40,9 +40,14 @@ comes from code-reviewer, and landing (merge/push/PR) is the caller's job — ne
   stale-cache and environment foot-guns.
 - Run the full relevant test + lint/type pass before committing. Don't claim green
   without showing the command output.
+- **Don't commit build artifacts or generated cruft** — `__pycache__/`, `*.pyc`,
+  `.pytest_cache/`, `.venv/`, coverage files, `*.egg-info/`, editor/OS files. If the
+  repo has no `.gitignore` covering them, add one *before* you stage. Running tests
+  generates these, so check `git status` and stage intentionally — don't let a blind
+  `git add -A` sweep bytecode into the commit.
 - **Commits:** follow the project's commit conventions (e.g. a `commit-style` playbook).
-  Never add Co-Authored-By or any AI/tool attribution. `git add -A` before committing.
-  Commit on your branch; do not push.
+  Never add Co-Authored-By or any AI/tool attribution. Stage your real changes (after
+  the .gitignore check above), then commit on your branch; do not push.
 
 ## Return format (final message) — JSON only
 ```json
