@@ -42,10 +42,16 @@ prints the key source and connectivity.
 ## Workflow: resolve, then fetch
 
 Prefer this two-step recipe. It uses the v2 endpoints exclusively and has
-predictable resolution. (`c7search ask "..."` does both in one shot but
-uses free-form v1 search and can drift to a different library on ambiguous
-phrasing — e.g. "register a tool in fastmcp" can resolve to a Go DI
-library because "register tool" matches it strongly there.)
+predictable resolution.
+
+> **Avoid `c7search ask "..."` except for a known-unambiguous lookup.** `ask`
+> does resolve+fetch in one shot over free-form v1 search, ranking the *entire
+> query string* — so incidental feature keywords drag it to the wrong library.
+> Real misses: a query mentioning **"mock"** resolved to a mock-testing lib,
+> **"plugins"** to a plugins SDK, **"register a tool in fastmcp"** to a Go DI
+> library. The more keywords you stuff in, the worse it gets. Instead resolve by
+> library **name** (Step 1) — that anchors resolution to the actual library, then
+> use `--topic` on `docs` to focus. Treat `ask` as a last resort.
 
 **Step 1 — resolve the library ID.** Use `--library-name` when you know
 the name; the positional argument becomes the relevance topic:

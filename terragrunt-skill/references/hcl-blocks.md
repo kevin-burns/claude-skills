@@ -83,8 +83,12 @@ dependency "<label>" { ... }
 - `enabled` (boolean): Whether this dependency is enabled. Useful for conditional dependencies.
 - `skip_outputs` (boolean): Skip fetching outputs from this dependency (useful for destroy operations).
 - `mock_outputs` (map): Mock output values to use when the dependency hasn't been applied yet.
-- `mock_outputs_allowed_terraform_commands` (list): Terraform commands where mock outputs are allowed.
-- `mock_outputs_merge_strategy_with_state` (string): How to merge mock outputs with actual state outputs.
+- `mock_outputs_allowed_terraform_commands` (list): Terraform commands for which `mock_outputs` are allowed. If the command being run is NOT in this list and the dependency has no real outputs yet, Terragrunt errors instead of using mocks. A common set is `["init", "validate", "plan", "destroy"]` — include `destroy` so teardown still works once a dependency has already been removed.
+- `mock_outputs_merge_strategy_with_state` (string): how mock values combine with real state outputs. One of:
+  - `"no_merge"` (default) — if the dependency has any real outputs, mocks are ignored entirely; mocks are used only when there are no outputs at all.
+  - `"shallow"` — real state wins per top-level key, and mocks backfill keys the applied state doesn't have yet (e.g. a new output added to the module since its last apply, so `plan` doesn't fail on a missing key).
+  - `"deep_map_only"` — like shallow but recurses into nested maps; lists are NOT merged.
+  Replaces the deprecated boolean `mock_outputs_merge_with_state`.
 
 *Simple dependency on VPC module*
 ```hcl
@@ -107,6 +111,25 @@ dependency "vpc" {
     private_subnet_ids = ["subnet-mock1", "subnet-mock2"]
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+```
+
+*Mocks across more commands, backfilling newly-added outputs from state*
+```hcl
+dependency "vpc" {
+  config_path = "../vpc"
+
+  mock_outputs = {
+    vpc_id             = "vpc-mock12345"
+    private_subnet_ids = ["subnet-mock1", "subnet-mock2"]
+  }
+  # Allow mocks for these commands; if the running command isn't listed AND there
+  # are no real outputs yet, Terragrunt errors instead of mocking. `destroy` is
+  # included so teardown still works once the dependency is already gone.
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan", "destroy"]
+  # "shallow": prefer real state per key, let mocks backfill any key the applied
+  # state lacks (e.g. an output added to the module since the last apply).
+  mock_outputs_merge_strategy_with_state = "shallow"
 }
 ```
 

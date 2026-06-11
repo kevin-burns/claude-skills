@@ -784,6 +784,20 @@ dependency defines a single module dependency with output access; dependencies l
 - Forgetting mock_outputs when using dependency - causes failures during plan before deps exist
 - Circular dependency references between modules
 
+**Official stance & ordering (the DAG):**
+Both blocks feed the `run --all` dependency graph, which Terragrunt topologically sorts — apply in dependency order, destroy in reverse. The difference is only what each carries:
+- `dependency` adds an ordering edge **and** pulls the target's outputs (`dependency.<name>.outputs.*`).
+- `dependencies` adds an ordering edge **only**. Per the docs: *"This does not expose or pull in the outputs like dependency blocks."*
+
+So `dependencies { paths = [...] }` is the **supported, explicit way to force ordering when there is no data/output relationship** — the historical "deploy X before Y regardless" pattern. You're adding an edge the graph wouldn't otherwise infer (inference comes from `dependency` references; there is no implicit ordering without one of these blocks).
+
+Key constraints to set expectations correctly:
+- You can only **add** edges, never remove them. There is no weight/priority and no way to tell Terragrunt to *ignore* an edge created by a real `dependency` — to drop an ordering constraint, remove the block that creates it.
+- The graph must stay acyclic; a cycle (including one you introduce via `dependencies`) is an error.
+- Prefer `dependency` when you need values (it gives ordering for free); reach for `dependencies` purely to sequence units/stacks that don't exchange outputs.
+
+Verified against the official docs: `docs.terragrunt.com/reference/config-blocks-and-attributes` (dependency, dependencies, mock_outputs). See `references/hcl-blocks.md` for the `mock_outputs_*` attributes, including the `mock_outputs_merge_strategy_with_state` values (`no_merge` / `shallow` / `deep_map_only`).
+
 ## COMPARISON: include vs multiple includes
 
 A single include inherits from one parent config; multiple includes allow composing configuration from several sources.
