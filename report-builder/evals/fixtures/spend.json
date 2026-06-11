@@ -1,0 +1,11 @@
+{
+  "title": "Monthly Cloud Spend",
+  "month": "2026-05",
+  "services": [
+    {"name": "EC2", "cost": 4200, "note": "on-demand + savings plans"},
+    {"name": "S3", "cost": 850, "note": "standard + infrequent access"},
+    {"name": "RDS", "cost": 1900, "note": "multi-AZ"},
+    {"name": "Lambda", "cost": 120, "note": "</script><img src=x onerror=alert(1)>"},
+    {"name": "CloudFront", "cost": 430, "note": "edge caching"}
+  ]
+}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Page</title>
+</head>
+<body>
+  <!-- No <h1>; document jumps straight to an <h3> -->
+  <h3>Welcome to your account</h3>
+
+  <!-- Informative image with no alt text -->
+  <img src="hero.jpg">
+
+  <!-- Body text at ~1.6:1 contrast (light grey on white) -->
+  <p style="color:#bbbbbb; background:#ffffff">
+    Important notice: your subscription renews next week.
+  </p>
+
+  <form>
+    <!-- Email field with no associated label (placeholder only) -->
+    <input type="email" placeholder="Email address">
+    <!-- Interactive target far below 24x24 CSS px -->
+    <button style="width:18px; height:18px">Go</button>
+  </form>
+
+  <!-- Meaning conveyed by colour alone -->
+  <p><a href="#" style="color:red">Items shown in red are overdue.</a></p>
+
+  <!-- Non-semantic clickable: not focusable or keyboard-operable -->
+  <div onclick="doSubmit()">Submit request</div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "skill_name": "ux-audit",
+  "evals": [
+    {
+      "id": 0,
+      "name": "audit-form-page",
+      "prompt": "Audit the attached page-with-faults.html for usability and accessibility problems. For each issue return a severity, the location, and a concrete fix. Save your findings to the outputs directory.",
+      "files": ["fixtures/page-with-faults.html"],
+      "planted_faults": [
+        "informative <img> missing alt text (WCAG 1.1.1)",
+        "low text contrast ~1.6:1 (WCAG 1.4.3)",
+        "email input has no associated label (WCAG 1.3.1/4.1.2)",
+        "no <h1> / broken heading order (WCAG 1.3.1)",
+        "interactive target far below 24x24px (WCAG 2.5.8)",
+        "meaning conveyed by colour alone (WCAG 1.4.1)",
+        "non-semantic clickable <div> not keyboard operable (WCAG 2.1.1)"
+      ],
+      "assertions": [
+        "flags missing alt text",
+        "flags low contrast",
+        "flags the unlabeled form field",
+        "flags heading structure / missing h1",
+        "findings are structured with severity AND a concrete fix"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "audit-card-page",
+      "prompt": "Audit the attached page-card.html for usability and accessibility problems. For each issue return a severity, the location, and a concrete fix. Save your findings to the outputs directory.",
+      "files": ["fixtures/page-card.html"],
+      "planted_faults": [
+        "icon-only button with empty accessible name (WCAG 4.1.2)",
+        "search field uses placeholder instead of a label (WCAG 1.3.1)",
+        "data table has no header cells (WCAG 1.3.1)",
+        "duplicate id 'q' (WCAG 4.1.1)",
+        "unhelpful alt text 'image' (WCAG 1.1.1)"
+      ],
+      "assertions": [
+        "flags the icon button missing an accessible name",
+        "flags placeholder-as-label",
+        "flags the table missing headers",
+        "findings are structured with severity AND a concrete fix"
+      ]
+    }
+  ]
+}

@@ -11,6 +11,9 @@ clear-and-human-workspace
 hook-and-human-workspace
 *-review*.html
 
+# Browser-driver scratch artifacts (playwright-cli snapshots, etc.)
+.playwright-cli/
+
 # Packaged skill archives
 *.zip
 *.skill

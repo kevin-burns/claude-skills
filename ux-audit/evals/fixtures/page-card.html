@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard</title>
+</head>
+<body>
+  <header><h1>Dashboard</h1></header>
+  <main>
+    <!-- Icon-only button with an empty accessible name -->
+    <button aria-label=""><svg width="16" height="16"><circle cx="8" cy="8" r="7"/></svg></button>
+
+    <!-- Search field relying on placeholder instead of a label -->
+    <input id="q" type="text" placeholder="Search">
+
+    <!-- Data table with no header cells -->
+    <table>
+      <tr><td>Orders</td><td>128</td></tr>
+      <tr><td>Refunds</td><td>4</td></tr>
+    </table>
+
+    <!-- Duplicate id (q is reused) -->
+    <div id="q">Status panel</div>
+
+    <!-- Unhelpful alt text -->
+    <img src="logo.png" alt="image">
+  </main>
+</body>
+</html>

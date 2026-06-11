@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+
+  {# --- Libraries: CDN by default. To make a portable/offline report, replace these
+        with vendored/inline copies and note it in the provenance footer. Verify the
+        current version (c7search / official CDN) rather than trusting these numbers. --- #}
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <style>
+    .chart-box { position: relative; height: 360px; }
+    @media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+
+    {# Required: `title`. Left unguarded on purpose — StrictUndefined makes a missing/typo'd
+       title fail loudly. Optional sections below use `is defined` so they can be omitted. #}
+    <header class="mb-4">
+      <h1 class="h3 mb-1">{{ title }}</h1>
+      {% if subtitle is defined and subtitle %}<p class="text-muted mb-0">{{ subtitle }}</p>{% endif %}
+    </header>
+
+    {# --- KPI cards: context provides `kpis: [{label, value, delta?}]` --- #}
+    {% if kpis is defined and kpis %}
+    <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+      {% for kpi in kpis %}
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small text-uppercase">{{ kpi.label }}</div>
+            <div class="fs-3 fw-semibold">{{ kpi.value }}</div>
+            {% if kpi.delta is defined %}
+            <div class="small {{ 'text-success' if kpi.delta_positive else 'text-danger' }}">
+              {{ kpi.delta }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# --- Chart: context provides `chart: {type, labels, datasets}` (Chart.js shape).
+          Passed to JS via | tojson — safe and correct. --- #}
+    {% if chart is defined and chart %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="h5 card-title">{{ chart.title | default("Chart") }}</h2>
+        <div class="chart-box"><canvas id="mainChart"></canvas></div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# --- Data table: context provides `columns: [..]` and `rows: [[..], ..]` --- #}
+    {% if rows is defined and rows %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="h5 card-title">{{ table_title | default("Detail") }}</h2>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped align-middle">
+            {% if columns is defined and columns %}
+            <thead><tr>{% for c in columns %}<th scope="col">{{ c }}</th>{% endfor %}</tr></thead>
+            {% endif %}
+            <tbody>
+              {% for row in rows %}
+              <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# --- Provenance footer: make the report traceable --- #}
+    <footer class="text-muted small border-top pt-3">
+      {% if generated_at is defined and generated_at %}<div>Generated: {{ generated_at }}</div>{% endif %}
+      {% if provenance is defined and provenance %}
+        {% if provenance.source is defined %}<div>Source: {{ provenance.source }}</div>{% endif %}
+        {% if provenance.command is defined %}<div>Render: <code>{{ provenance.command }}</code></div>{% endif %}
+        {% if provenance.libs is defined %}<div>Libraries: {{ provenance.libs }}</div>{% endif %}
+      {% endif %}
+    </footer>
+
+  </div>
+
+  {% if chart is defined and chart %}
+  <script>
+    // Data handed from Python → JS safely. tojson escapes quotes, </script>, and unicode.
+    const chartSpec = {{ chart | tojson }};
+    new Chart(document.getElementById("mainChart"), {
+      type: chartSpec.type || "bar",
+      data: { labels: chartSpec.labels, datasets: chartSpec.datasets },
+      options: { responsive: true, maintainAspectRatio: false },
+    });
+  </script>
+  {% endif %}
+</body>
+</html>

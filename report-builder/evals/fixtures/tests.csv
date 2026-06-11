@@ -1,0 +1,5 @@
+suite,passed,failed,skipped
+unit,142,3,5
+integration,38,2,0
+e2e,12,1,4
+contract,21,0,1

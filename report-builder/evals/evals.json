@@ -1,0 +1,30 @@
+{
+  "skill_name": "report-builder",
+  "evals": [
+    {
+      "id": 0,
+      "name": "cloud-spend-report",
+      "prompt": "Using the data in the attached spend.json, build a single self-contained HTML report of monthly cloud spend. Include a bar chart of cost by service and a table listing each service, its cost, and its note. Save the finished report as an .html file in the outputs directory.",
+      "files": ["fixtures/spend.json"],
+      "assertions": [
+        "produces at least one .html file",
+        "report embeds a chart (Chart.js/Plotly canvas or div)",
+        "report includes a data table",
+        "service names from the data appear (EC2, RDS, CloudFront)",
+        "the note containing an HTML/JS injection payload is escaped, not rendered as a live tag"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "test-results-dashboard",
+      "prompt": "From the attached tests.csv, build a single-page HTML dashboard summarizing test results per suite. Include a chart and a short summary of totals. Save it as an .html file in the outputs directory.",
+      "files": ["fixtures/tests.csv"],
+      "assertions": [
+        "produces at least one .html file",
+        "dashboard embeds a chart",
+        "suite names from the data appear (integration, contract)",
+        "totals/summary present"
+      ]
+    }
+  ]
+}
