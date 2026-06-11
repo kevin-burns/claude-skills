@@ -1,0 +1,19 @@
+{
+  "skill_name": "azadvertizer",
+  "note": "Offline behavioral eval. Run: uv run evals/grade.py (exits non-zero on any failure). Fixtures are small real slices of the AzAdvertizer CSVs plus one synthetic formula-injection row; meta.json carries a fixed ancient fetch date so the staleness assertion is deterministic.",
+  "evals": [
+    {"id": 0, "name": "status-provenance", "asserts": "status returns 3 datasets with provenance (rows/sha/fetched_at)"},
+    {"id": 1, "name": "staleness-loud", "asserts": "--max-age-days flags an old snapshot as stale with a warning"},
+    {"id": 2, "name": "get-by-id-and-name", "asserts": "exact lookup works by policyId and by policyName"},
+    {"id": 3, "name": "search-substring", "asserts": "case-insensitive --where filters; all returned rows match"},
+    {"id": 4, "name": "rel-policy-roles", "asserts": "policyRolesUsed parses to [{name,id}] (semicolon delim, nameid)"},
+    {"id": 5, "name": "role-split", "asserts": "role list columns split on comma; literal 'empty' -> []"},
+    {"id": 6, "name": "rel-role-policies", "asserts": "role UsedInPolicy parses >=2 [{name,id}] anchored on ')'"},
+    {"id": 7, "name": "initiative-grouped", "asserts": "denormalized fact table grouped to initiative meta + member policies"},
+    {"id": 8, "name": "output-sanitization", "asserts": "formula-injection cells (= + - @) prefixed with ' on output"},
+    {"id": 9, "name": "exit-codes", "asserts": "not-found -> 1; cache-missing -> 3"},
+    {"id": 10, "name": "ingest-failsafe", "asserts": "schema drift and row-floor refuse and keep existing cache; happy path writes atomically with sha"},
+    {"id": 11, "name": "auto-refresh-stale", "asserts": "a snapshot older than --max-age-days (default 7) auto-refreshes on read when not --offline"},
+    {"id": 12, "name": "no-refresh-fresh", "asserts": "within the freshness window no network is touched; --offline serves stale without refreshing"}
+  ]
+}

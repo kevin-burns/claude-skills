@@ -1,0 +1,9 @@
+{
+  "dataset": "azpolicyadvertizer-comma",
+  "source_url": "https://www.azadvertizer.net/azpolicyadvertizer-comma.csv",
+  "fetched_at": "2020-01-01T00:00:00+00:00",
+  "sha256": "fixture",
+  "rows": 12,
+  "cols": 18,
+  "attribution": "fixture slice of AzAdvertizer data"
+}

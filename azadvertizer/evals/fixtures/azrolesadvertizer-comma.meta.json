@@ -1,0 +1,9 @@
+{
+  "dataset": "azrolesadvertizer-comma",
+  "source_url": "https://www.azadvertizer.net/azrolesadvertizer-comma.csv",
+  "fetched_at": "2020-01-01T00:00:00+00:00",
+  "sha256": "fixture",
+  "rows": 4,
+  "cols": 9,
+  "attribution": "fixture slice of AzAdvertizer data"
+}
