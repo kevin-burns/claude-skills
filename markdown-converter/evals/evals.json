@@ -1,0 +1,44 @@
+{
+  "skill_name": "markdown-converter",
+  "evals": [
+    {
+      "id": 0,
+      "name": "docx-to-markdown",
+      "prompt": "I've got a Word doc at q3_report.docx in this folder — can you convert it to Markdown and save it as q3_report.md? It has a table in it I need to keep.",
+      "expected_output": "q3_report.md containing the heading 'Q3 Engineering Report' and a Markdown table with the SEV1/SEV2/SEV3 rows.",
+      "files": ["q3_report.docx"],
+      "assertions": [
+        {"text": "Output file q3_report.md exists and is non-empty"},
+        {"text": "Markdown contains the heading text 'Q3 Engineering Report'"},
+        {"text": "Markdown contains a table with the rows SEV1, SEV2, SEV3 and the MTTR values 43, 19, 7"},
+        {"text": "Conversion succeeded on the first real attempt without dependency/install errors"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "xlsx-to-markdown",
+      "prompt": "convert sales.xlsx to markdown for me, output to sales.md please",
+      "expected_output": "sales.md containing the Region/Revenue/Cost data as a Markdown table with EMEA, AMER, APAC rows.",
+      "files": ["sales.xlsx"],
+      "assertions": [
+        {"text": "Output file sales.md exists and is non-empty"},
+        {"text": "Markdown contains the regions EMEA, AMER, and APAC"},
+        {"text": "Markdown contains the revenue/cost figures (e.g. 120000, 200000, 90000)"},
+        {"text": "Conversion succeeded on the first real attempt without dependency/install errors"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "pptx-to-markdown",
+      "prompt": "Need the text out of roadmap.pptx as markdown so I can drop it into a doc. Save it to roadmap.md.",
+      "expected_output": "roadmap.md containing the slide titles and bullet text from the presentation.",
+      "files": ["roadmap.pptx"],
+      "assertions": [
+        {"text": "Output file roadmap.md exists and is non-empty"},
+        {"text": "Markdown contains 'Platform Roadmap 2026' and 'Key Initiatives'"},
+        {"text": "Markdown contains the bullet text (zero-trust, failover, anomaly detection)"},
+        {"text": "Conversion succeeded on the first real attempt without dependency/install errors"}
+      ]
+    }
+  ]
+}
