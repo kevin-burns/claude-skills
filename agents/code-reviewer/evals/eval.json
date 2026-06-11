@@ -1,0 +1,19 @@
+{
+  "agent": "code-reviewer",
+  "description": "Behavioral eval: the reviewer must catch a planted correctness/edge-case bug in median() (even-length branch) and recommend not shipping, WITHOUT inventing a blocking issue in the deliberately-correct clamp() control (precision).",
+  "fixture": "fixtures/stats.py",
+  "bug": {
+    "function": "median",
+    "line": 15,
+    "near_lines": [14, 15, 16],
+    "nature": "even-length branch uses s[mid + 1] (index error / wrong value); should be s[mid - 1]"
+  },
+  "control": { "function": "clamp", "lines": [19, 20, 21], "note": "correct — must not be flagged blocking" },
+  "assertions": [
+    { "id": "catches-bug", "check": "a finding is located within near_lines of the median bug" },
+    { "id": "severity-adequate", "check": "that finding's severity is major or blocking" },
+    { "id": "category-sane", "check": "that finding's category is correctness or edge-case" },
+    { "id": "verdict-not-ship", "check": "overall verdict is not 'ship'" },
+    { "id": "no-false-blocking-on-control", "check": "no blocking finding is located in the clamp control lines" }
+  ]
+}
