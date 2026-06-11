@@ -26,6 +26,7 @@ Subagents for software-development work, coordinated by the `dev-fleet` skill. E
 
 | Agent | Role | Model |
 |---|---|---|
+| [azure-landing-zone-architect](./agents/azure-landing-zone-architect.md) | Enterprise-scale Azure / Cloud Adoption Framework design — governance, subscriptions, networking, IaC review | opus |
 | [fact-verifier](./agents/fact-verifier.md) | Verify claims/code against authoritative sources — cite, refute, or return the lookup; never assert from memory | sonnet |
 | [code-builder](./agents/code-builder.md) | Implement scoped changes TDD-style in an isolated worktree; commit on a branch, never push/merge/apply | sonnet |
 | [code-reviewer](./agents/code-reviewer.md) | Advisory review for correctness, edge cases, contracts, security, tests — findings, not a gate | sonnet |
