@@ -1,0 +1,14 @@
+# Controlled fact source for the fact-verifier behavioral eval.
+# This file IS the project "source of record" (tier 1) for the eval. The claims in
+# eval.json are checked against these values. Do not change values without updating
+# eval.json's expected verdicts.
+service_catalog:
+  default_region: uksouth
+  max_retries: 3
+  retention_days: 30
+  tls_min_version: "1.2"
+  features:
+    blob_versioning: true
+    soft_delete: false
+# Note: deliberately contains NO subscription IDs, GUIDs, or tenant IDs — those are
+# live-state facts the verifier must mark UNVERIFIABLE and return a lookup command for.
