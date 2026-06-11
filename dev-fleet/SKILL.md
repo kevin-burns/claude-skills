@@ -64,7 +64,7 @@ before pushing, per the global git rules. Never auto-push from the pipeline.
 | "Is this change correct / safe to land?" | `code-reviewer` |
 | Commit or PR/MR message | `commit-pr` |
 | Security-focused pass | `/security-review` |
-| Design/architecture trade-offs | architecture agent (e.g. `azure-landing-zone-architect`) |
+| Design/architecture trade-offs | architecture agent (e.g. `azure-architect`) |
 
 ## Passing context between agents
 Agents run in isolated context windows — they see only the prompt you pass. So:

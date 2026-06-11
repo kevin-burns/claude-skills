@@ -68,7 +68,7 @@ Lanes mirror an engineering org. **Bold = exists today.**
 - security review — covered by built-in `/security-review`.
 
 ### Design lane
-- **`azure-landing-zone-architect`** — enterprise Azure / CAF design (exists).
+- **`azure-architect`** — enterprise Azure / CAF design (exists).
 - `architect` — general system design & trade-offs.
 - `product-strategist` / `delivery-pm` — the product-development roles.
 - `red-team` — constructive adversary (see §6).
