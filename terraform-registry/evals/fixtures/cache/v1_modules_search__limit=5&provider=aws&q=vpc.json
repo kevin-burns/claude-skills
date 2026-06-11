@@ -1,0 +1,31 @@
+{
+  "source_url": "https://registry.terraform.io/v1/modules/search?q=vpc&limit=5&provider=aws",
+  "retrieved_at": "2026-06-11T00:00:00Z",
+  "body": {
+    "meta": { "limit": 5, "current_offset": 0 },
+    "modules": [
+      {
+        "id": "terraform-aws-modules/vpc/aws/5.8.1",
+        "namespace": "terraform-aws-modules",
+        "name": "vpc",
+        "version": "5.8.1",
+        "provider": "aws",
+        "description": "Terraform module to create AWS VPC resources",
+        "source": "https://github.com/terraform-aws-modules/terraform-aws-vpc",
+        "downloads": 123456789,
+        "verified": true
+      },
+      {
+        "id": "terraform-aws-modules/vpc-peering/aws/1.0.0",
+        "namespace": "terraform-aws-modules",
+        "name": "vpc-peering",
+        "version": "1.0.0",
+        "provider": "aws",
+        "description": "VPC peering across accounts",
+        "source": "https://github.com/example/vpc-peering",
+        "downloads": 42000,
+        "verified": false
+      }
+    ]
+  }
+}

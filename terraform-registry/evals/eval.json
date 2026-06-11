@@ -1,0 +1,32 @@
+{
+  "tool": "terraform-registry/registry_helper.py",
+  "description": "Offline/deterministic behavioral eval. Runs the CLI with --offline against frozen registry payloads in fixtures/cache to prove: provider-agnostic parsing (aws/google/azurerm via the same code), field projection + name filter, a provenance-stamped JSON envelope, and structured errors with correct exit codes. No network.",
+  "cache_dir": "fixtures/cache",
+  "cases": [
+    {
+      "id": "search-aws",
+      "argv": ["--offline", "--format", "json", "search", "vpc", "--provider", "aws", "--limit", "5"],
+      "expect": { "exit": 0, "ok": true, "command": "search", "min_count": 1,
+                  "all_modules_provider": "aws", "source_kind": "registry_module_api", "cached": true }
+    },
+    {
+      "id": "inspect-google",
+      "argv": ["--offline", "--format", "json", "inspect-module", "terraform-google-modules/network/google"],
+      "expect": { "exit": 0, "ok": true, "command": "inspect-module", "provider": "google",
+                  "min_inputs": 2, "min_outputs": 2, "source_kind": "registry_module_api" }
+    },
+    {
+      "id": "inspect-azurerm-filter-fields",
+      "argv": ["--offline", "--format", "json", "inspect-module", "Azure/avm-res-keyvault-vault/azurerm",
+               "--filter", "name~location", "--fields", "inputs"],
+      "expect": { "exit": 0, "ok": true, "provider": "azurerm",
+                  "inputs_all_contain": "location", "inputs_count": 1,
+                  "absent_keys": ["outputs", "versions"] }
+    },
+    {
+      "id": "offline-miss-error",
+      "argv": ["--offline", "--format", "json", "search", "no-such-cached-query"],
+      "expect": { "exit": 1, "ok": false, "error_code": 1 }
+    }
+  ]
+}
