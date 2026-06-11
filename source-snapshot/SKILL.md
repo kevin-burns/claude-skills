@@ -25,9 +25,11 @@ snapshot it.
 ## Choose the extractor by content type
 
 - **Article / blog / prose** → main-content extractor (Defuddle, or Mozilla Readability)
-  → Markdown. Strips nav/ads/chrome; the cleaned result is small and stable.
-  Confirm the exact CLI/package and invocation with `c7search` before wiring it — don't
-  assume a command name.
+  → Markdown. Strips nav/ads/chrome; the cleaned result is small and stable. Defuddle
+  is often *not* a PATH binary — the CLI package is `defuddle-cli` (run via `npx`), so
+  the producer routes it through an env-overridable command (see below) rather than
+  assuming one. If no prose extractor is installed, the producer falls back to
+  markitdown.
 - **Reference docs, API pages, tables, specs** → the `markdown-converter` skill
   (`markitdown`). Structure — headings, tables, links — is the part you'll cite, so
   preserve it rather than flattening to prose.
@@ -71,6 +73,38 @@ what makes a snapshot auditable and a citation trustworthy.
   that re-snapshots and commits. The diff is the changelog.
 - Never silently fall back to a live fetch when a snapshot is stale; surface staleness so
   the caller decides.
+
+## Producer: `scripts/snapshot.py`
+
+A stdlib-only helper that makes the routing above resilient — it detects which
+extractors are actually installed, picks one by content type, **falls back when the
+preferred is missing, and fails cleanly (exit 1, structured error) when none can handle
+the type** — it never crashes or fabricates.
+
+```bash
+# Decide what would be used, without fetching (deterministic):
+snapshot.py --format json plan --content-type prose
+# Force availability for tests/CI (or to preview a leaner box):
+snapshot.py --have markitdown plan --content-type prose      # -> markitdown (fell back)
+snapshot.py --have none      plan --content-type prose      # -> exit 1, clean error
+
+# Extract + write a provenance-stamped artifact:
+snapshot.py run https://example.com/post --content-type prose --out snapshots/post.md
+snapshot.py run report.pdf --content-type doc --out snapshots/report.md
+```
+
+Preference: `prose` → defuddle > readability > markitdown; `doc` → markitdown.
+markitdown is the most reliable fallback (works via `uvx 'markitdown[all]'` even with no
+local install) and is the **verified** runner. The defuddle/readability run-commands are
+best-effort defaults — point them at your real install with env vars:
+
+```bash
+export SNAPSHOT_DEFUDDLE_CMD="npx defuddle-cli {src} --md"   # {src} = source slot
+export SNAPSHOT_READABILITY_CMD="readable {src}"
+```
+
+Resilience is covered by `evals/` (the no-markitdown / no-defuddle matrix) — run
+`cd evals && uv run python grade.py`.
 
 ## How this feeds the fleet
 

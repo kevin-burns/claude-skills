@@ -27,6 +27,12 @@
       "id": "offline-miss-error",
       "argv": ["--offline", "--format", "json", "search", "no-such-cached-query"],
       "expect": { "exit": 1, "ok": false, "error_code": 1 }
+    },
+    {
+      "id": "inspect-resource-missing-schema",
+      "argv": ["--offline", "--format", "json", "inspect-resource", "google_storage_bucket", "--provider", "google"],
+      "expect": { "exit": 1, "ok": false, "error_code": 1 },
+      "note": "No cached terraform schema in fixtures -> must fail cleanly pointing to refresh-schema, NOT crash. Module ops (search/inspect-module) need no terraform at all; only resource-schema ops do, and they degrade gracefully."
     }
   ]
 }

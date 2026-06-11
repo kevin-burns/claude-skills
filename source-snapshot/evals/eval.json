@@ -1,0 +1,18 @@
+{
+  "tool": "source-snapshot/scripts/snapshot.py",
+  "description": "Resilience eval for extractor availability. Uses `plan --have <csv>` to force exactly which extractors are 'installed', then asserts the producer picks the right one, falls back gracefully when the preferred is missing, and fails cleanly (exit 1, structured error — never crash, never fabricate) when none can handle the content type. This is the 'what if markitdown/defuddle aren't available' matrix.",
+  "cases": [
+    { "id": "prose-all-present", "argv": ["--format", "json", "--have", "defuddle,readability,markitdown", "plan", "--content-type", "prose"],
+      "expect": { "exit": 0, "ok": true, "chosen": "defuddle", "fell_back_from": [] } },
+    { "id": "prose-no-defuddle", "argv": ["--format", "json", "--have", "readability,markitdown", "plan", "--content-type", "prose"],
+      "expect": { "exit": 0, "ok": true, "chosen": "readability", "fell_back_from": ["defuddle"] } },
+    { "id": "prose-only-markitdown", "argv": ["--format", "json", "--have", "markitdown", "plan", "--content-type", "prose"],
+      "expect": { "exit": 0, "ok": true, "chosen": "markitdown", "fell_back_from": ["defuddle", "readability"] } },
+    { "id": "prose-none-available", "argv": ["--format", "json", "--have", "none", "plan", "--content-type", "prose"],
+      "expect": { "exit": 1, "ok": false, "error_code": 1 } },
+    { "id": "doc-markitdown", "argv": ["--format", "json", "--have", "markitdown", "plan", "--content-type", "doc"],
+      "expect": { "exit": 0, "ok": true, "chosen": "markitdown" } },
+    { "id": "doc-without-markitdown", "argv": ["--format", "json", "--have", "defuddle,readability", "plan", "--content-type", "doc"],
+      "expect": { "exit": 1, "ok": false, "error_code": 1 } }
+  ]
+}
