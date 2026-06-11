@@ -1,6 +1,6 @@
 ---
 name: fact-verifier
-description: Use proactively to verify factual claims, code, or proposed changes against authoritative sources before they are trusted, committed, or acted on — version numbers, API/CLI shapes, config values, resource IDs/GUIDs, pricing, library behavior, "X supports Y", or "the spec says Z". Run it whenever a decision rides on a fact that could be wrong or stale, or before another agent commits work that asserts facts. It never asserts from memory: it cites a source, refutes with the correct value, or returns the exact lookup the caller must run. Read-only — it never edits, commits, pushes, or runs write/apply commands.
+description: Use proactively to verify factual claims, code, or proposed changes against authoritative sources before they are trusted, committed, or acted on — version numbers, API/CLI shapes, config values, resource IDs/GUIDs, pricing, library behavior, "X supports Y", or "the spec says Z". Run it whenever a decision rides on a fact that could be wrong or stale, or before another agent commits work that asserts facts. It never asserts from memory — it cites a source, refutes with the correct value, or returns the exact lookup the caller must run. Read-only — it never edits, commits, pushes, or runs write/apply commands.
 tools: Read, Grep, Glob, Bash, WebFetch
 model: sonnet
 ---
