@@ -15,6 +15,7 @@ All skills here are MIT licensed (see [`LICENSE`](./LICENSE)). Skills that wrap 
 | [nano-banana-pro-json](./nano-banana-pro-json) | Generate and edit images with structured JSON control | Google Gemini image API |
 | [convert-to-webp](./convert-to-webp) | Convert images to WebP for web projects | [libwebp](https://developers.google.com/speed/webp) `cwebp` / macOS `sips` |
 | [social-image-prep](./social-image-prep) | Resize and format images for social platforms | `sips` / [ImageMagick](https://imagemagick.org) / [Pillow](https://python-pillow.org) |
+| [terragrunt-skill](./terragrunt-skill) | Generate, validate, review, and debug Terragrunt 1.x configs across AWS/Azure/GCP | — |
 
 ## Install
 
@@ -33,3 +34,4 @@ Symlinking (rather than copying) keeps this repo the single source of truth — 
 - **nano-banana-pro-json** — `uv` and a `GEMINI_API_KEY` environment variable. No key is bundled.
 - **convert-to-webp** — `cwebp` (`brew install webp`) or macOS `sips`. No install needed on macOS.
 - **social-image-prep** — `sips` (macOS), ImageMagick, or `uv` (for the Pillow fallback). Uses whichever is present.
+- **terragrunt-skill** — works as static review with no tooling; the bundled `scripts/validate.sh` uses `terragrunt` (1.0.x), plus optional `tflint` and `trivy` if present. `scripts/detect_custom_resources.py` runs on Python 3.

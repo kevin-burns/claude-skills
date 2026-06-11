@@ -1,0 +1,245 @@
+# Terragrunt Architecture Patterns (1.0.x)
+
+> Scope: Terragrunt 1.0.x. Terminology follows Gruntwork's canonical docs: a **unit** is a
+> directory with a `terragrunt.hcl` deploying one OpenTofu/Terraform module; a **stack** is a
+> group of units, either **implicit** (a directory tree of units) or **explicit**
+> (defined in a `terragrunt.stack.hcl`).
+> Docs: https://docs.terragrunt.com/getting-started/terminology/ ·
+> https://docs.terragrunt.com/features/units/ · https://docs.terragrunt.com/features/stacks/
+
+Every generated layout MUST be referenceable against a documented Gruntwork pattern. If a user
+asks for something not covered here, look it up (C7 search / docs.terragrunt.com) before
+inventing structure.
+
+## The one inviolable rule: include hierarchy is physical
+
+`find_in_parent_folders("X")` and `read_terragrunt_config()` resolve against the real directory
+tree at parse time. Before writing any file, verify every referenced path exists *from that
+file's location*. The most common generation bug is a root config reading an environment file
+that only exists below it.
+
+- Root config (`root.hcl`) in a multi-environment tree is **environment-agnostic**:
+  - MUST NOT call `read_terragrunt_config(find_in_parent_folders("env.hcl"))` — no `env.hcl`
+    exists at or above root level.
+  - MUST NOT reference locals sourced from `env.hcl`.
+  - MAY use static values, `get_env()`, and `path_relative_to_include()` (resolved per-unit,
+    so it is safe in root — this is the standard mechanism for unique state keys).
+- Units read environment config themselves:
+  `read_terragrunt_config(find_in_parent_folders("env.hcl"))`.
+- Root file is named `root.hcl`, included with `find_in_parent_folders("root.hcl")`.
+  A bare, argument-less `find_in_parent_folders()` call targeting a root `terragrunt.hcl` is a pre-1.0 idiom —
+  do not generate it.
+  Docs: https://docs.terragrunt.com/migrate/migrating-from-root-terragrunt-hcl/
+
+
+## Path anchoring: marker files over git
+
+Absolute-path building should anchor to the **config hierarchy**, not git:
+
+- **Prefer** `dirname(find_in_parent_folders("root.hcl"))` — resolves relative to the
+  root marker file, which always ships with the configs.
+- In unit configs that `include "root"`, `get_parent_terragrunt_dir("root")` is an
+  equivalent, cleaner form (directory containing the named included config).
+- **`get_repo_root()` is git-anchored** (walks up to `.git`). It mis-resolves or fails when:
+  the working tree is an exported artifact with no `.git`; CI checks out only the
+  infrastructure subtree; or the git root sits above the infrastructure root (monorepos).
+  Only generate it when the user confirms the git root IS the infrastructure root and
+  configs always run from a real clone.
+Docs: https://docs.terragrunt.com/reference/hcl/functions/
+
+## PATTERN: multi-environment, environment-agnostic root (default)
+
+Use when managing dev/staging/prod (or similar) with shared root configuration. This is the
+default choice — when in doubt, generate this.
+
+```
+infrastructure/
+├── root.hcl              # environment-AGNOSTIC (remote_state, provider generate, common)
+├── dev/
+│   ├── env.hcl           # locals: environment, region, cidrs, sizing
+│   ├── vpc/terragrunt.hcl
+│   └── rds/terragrunt.hcl
+└── prod/
+    ├── env.hcl
+    ├── vpc/terragrunt.hcl
+    └── rds/terragrunt.hcl
+```
+
+Unit config shape:
+
+```hcl
+# dev/vpc/terragrunt.hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+}
+
+terraform {
+  source = "tfr:///terraform-aws-modules/vpc/aws?version=5.8.1"
+}
+
+inputs = {
+  name = "${local.env.locals.environment}-vpc"
+  cidr = local.env.locals.vpc_cidr
+}
+```
+
+Docs: https://docs.terragrunt.com/features/units/includes/
+
+## PATTERN: environment-aware root (single environment or path-derived env)
+
+Use for a single environment, or when the root derives the environment from context rather
+than per-env files.
+
+```
+infrastructure/
+├── root.hcl              # MAY be environment-aware here
+├── account.hcl           # optional account-level locals
+├── region.hcl            # optional region-level locals
+└── vpc/terragrunt.hcl
+```
+
+```hcl
+# root.hcl — environment detection
+locals {
+  # From the unit's path relative to root, e.g. "prod/vpc" -> "prod"
+  path_parts  = split("/", path_relative_to_include())
+  environment = local.path_parts[0]
+  # OR from the runtime environment:
+  # environment = get_env("TG_ENVIRONMENT", "dev")
+}
+```
+
+## PATTERN: centralized environment definitions (_env directory)
+
+Use when environment variable sets are shared/centralized and per-env `env.hcl` files
+re-export them.
+
+```
+infrastructure/
+├── root.hcl              # environment-AGNOSTIC
+├── _env/
+│   ├── dev.hcl
+│   └── prod.hcl
+├── dev/
+│   ├── env.hcl           # reads <infra root>/_env/dev.hcl, re-exports locals
+│   └── vpc/terragrunt.hcl
+└── prod/
+    ├── env.hcl
+    └── vpc/terragrunt.hcl
+```
+
+```hcl
+# prod/env.hcl
+locals {
+  # Anchor to the config hierarchy (root.hcl marker), not git — survives CI checkouts
+  infra_root  = dirname(find_in_parent_folders("root.hcl"))
+  env_vars    = read_terragrunt_config("${local.infra_root}/_env/prod.hcl")
+  environment = local.env_vars.locals.environment
+  aws_region  = local.env_vars.locals.aws_region
+}
+```
+
+## PATTERN: explicit stacks (terragrunt.stack.hcl)
+
+Use when the same group of units is instantiated repeatedly (per env, per region, per tenant).
+An explicit stack defines `unit` blocks (and optionally nested `stack` blocks); `terragrunt
+stack generate` materializes them under `.terragrunt-stack/`, and `terragrunt stack run`
+executes across them.
+
+```hcl
+# terragrunt.stack.hcl
+locals {
+  infra_root = dirname(find_in_parent_folders("root.hcl"))
+}
+
+unit "vpc" {
+  source = "${local.infra_root}/catalog/units/vpc"
+  path   = "vpc"
+}
+
+unit "rds" {
+  source = "${local.infra_root}/catalog/units/rds"
+  path   = "rds"
+}
+```
+
+- Prefer implicit stacks (plain directory trees) until duplication across envs/regions makes
+  explicit stacks pay for themselves — this matches Gruntwork's guidance progression.
+- Reusable unit definitions conventionally live under `catalog/units/<name>` (see
+  templates/catalog and templates/stack).
+- `.terragrunt-stack/` is generated output: gitignore it; `terragrunt stack clean` removes it.
+
+Docs: https://docs.terragrunt.com/features/stacks/explicit/ ·
+https://docs.terragrunt.com/reference/cli/commands/stack/generate/
+
+## Dependencies between units
+
+Use `dependency` blocks (with `mock_outputs` for plan-before-apply ergonomics):
+
+```hcl
+dependency "vpc" {
+  config_path = "../vpc"
+
+  mock_outputs = {
+    vpc_id = "vpc-mock"
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  vpc_id = dependency.vpc.outputs.vpc_id
+}
+```
+
+Use `dependencies` (paths only, no outputs) solely for ordering. See
+references/best-practices.md `## COMPARISON: dependency vs dependencies`.
+Docs: https://docs.terragrunt.com/reference/hcl/blocks/ (dependency)
+
+## Runtime control (1.0 idioms)
+
+- `feature` blocks for runtime flags: `terragrunt run apply --feature my_flag=true`
+- `exclude` blocks for fine-grained skipping (the pre-1.0 `skip` attribute is gone — never
+  generate it)
+- `errors` blocks for retry/ignore policies (replaces pre-1.0 `retryable_errors` — never
+  generate it)
+Docs: https://docs.terragrunt.com/features/units/runtime-control/
+
+## Pattern selection checklist (output before generating)
+
+Complete and show this before writing files:
+
+```
+## Architecture Pattern Selection
+[x] Pattern: <multi-env agnostic root | env-aware root | _env centralized | explicit stack>
+[x] root.hcl scope: environment-agnostic | environment-aware
+[x] env.hcl location(s): ____
+[x] Units access env via: ____
+[x] Backend: <s3 | gcs | azurerm (pass-through, see templates/backends note)>
+[x] Verified: every referenced path exists from the referencing file's location
+```
+
+## Starter variable files
+
+```hcl
+# env.hcl
+locals {
+  environment = "dev"
+  aws_region  = "us-east-1"
+  project     = "platform"
+}
+
+# account.hcl
+locals {
+  account_id   = "123456789012"
+  account_name = "shared-services"
+}
+
+# region.hcl
+locals {
+  aws_region = "us-east-1"
+}
+```
