@@ -7,15 +7,25 @@ license: MIT
 # Dev Fleet Orchestrator
 
 This skill tells the **main session** (the orchestrator — you) how to drive the
-development agents as a deterministic pipeline. The agents live in `agents/` and are
-dispatched via the Task tool by name. Don't rely on auto-delegation for a pipeline you
-care about: **invoke each stage explicitly, in order, and gate on its result.** See
-`docs/agent-fleet-architecture.md` for the why.
+development agents as a pipeline. The agents live in `agents/`; the main session dispatches
+each by name via the Agent tool, reads its JSON, and gates on the result.
+
+**Two ways to run the pipeline — pick by how much determinism you need:**
+- **This skill (in-the-loop).** You follow these steps and invoke each agent explicitly. A
+  skill is *instructions you follow*, not a mechanical orchestrator — so it's only as
+  reliable as your adherence. Don't lean on auto-delegation for a stage you care about;
+  name the agent. (A human driving Claude Code can force a stage with an `@agent-…` mention.)
+- **The `dev-story` Workflow (hands-off, deterministic).** For a guaranteed run of
+  plan→build→verify→review→full-suite, dispatch `dev-fleet/dev-story.workflow.js` — it moves
+  the orchestration into code and hands a ready-to-merge branch back to you. Use it when you
+  want the steps to run in order without depending on the model *choosing* to.
+
+See `docs/agent-fleet-architecture.md` for the why.
 
 ## The pipeline
 
 ```
-plan ─▶ code-builder ─▶ fact-verifier (gate) ─▶ code-reviewer ─▶ [you decide] ─▶ commit-pr
+plan ─▶ code-builder ─▶ fact-verifier (gate) ─▶ code-reviewer ─▶ full-suite gate ─▶ [you decide] ─▶ commit-pr
 ```
 
 Each agent returns JSON (see its definition). You read that JSON and decide whether to
@@ -51,6 +61,13 @@ Dispatch on the builder's branch/diff. Read the findings:
 - It is **advisory**. You weigh it and decide (disagree-and-commit); don't treat the
   verdict as a veto, but don't ignore a well-evidenced `blocking` finding either.
 
+### 3b. Full-suite gate — the orchestrator's job
+code-builder **bounds** its own test runs (targeted + the relevant module once) to avoid
+minutes-long full-suite runs that risk a dropped session, and reports
+`tests.full_suite_command`. Running the whole suite once is **your** job, not the builder's —
+run it before landing and require green. (The `dev-story` workflow does this as an explicit
+phase.) Never merge on an unrun or red suite.
+
 ### 4. Commit & land
 When green and reviewed, hand to **commit-pr** for the commit/PR message (it reads the
 `commit-style` playbook). Landing (push/merge/PR open) is a human decision — confirm
@@ -82,6 +99,8 @@ Agents run in isolated context windows — they see only the prompt you pass. So
   human pushes/merges.
 
 ## Running for scale
-For a batch of independent changes (many files, a migration), this interactive pipeline
-is the wrong tool — use a Workflow to fan out builder→verify→review per item with
-worktree isolation. This skill is for the in-the-loop, one-change-at-a-time path.
+For a batch of changes (a backlog, a migration), this interactive pipeline is the wrong
+tool — use a Workflow. The `dev-story` workflow is the **per-item building block**: run it
+solo for one story, or call it from a fan-out that respects task dependencies and gates
+risky items for human review. Mind that dependent tasks touching shared files can't run in
+parallel worktrees — sequence them. This skill is for the in-the-loop, one-change path.
