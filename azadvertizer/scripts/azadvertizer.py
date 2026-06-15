@@ -28,7 +28,7 @@ Usage:
   azadvertizer status [--cache-dir DIR]
   azadvertizer get <policy|role|initiative> <id> [--split] [--cache-dir DIR]
   azadvertizer search <policy|role|initiative> [--where COL=SUBSTR]... [--name S]
-                      [--limit N] [--fields a,b,c] [--split] [--cache-dir DIR]
+                      [--limit N] [--offset N] [--fields a,b,c] [--split] [--cache-dir DIR]
   azadvertizer rel <policy-roles|policy-initiatives|role-policies|initiative-policies> <id>
                    [--cache-dir DIR]
 
@@ -474,13 +474,27 @@ def cmd_search(args) -> int:
     else:
         out = [project(name, r, fields, args.split) for r in rows if hit(r)]
     total = len(out)
-    if args.limit and total > args.limit:
-        out = out[: args.limit]
+    # Pagination: results come from a local cache, so paging is a cheap slice. We return at
+    # most --limit rows starting at --offset, and surface enough in provenance for the caller
+    # to fetch the next page deterministically (matched/returned/offset/limit/has_more/next_offset).
+    offset = max(0, args.offset or 0)
+    limit = args.limit if args.limit and args.limit > 0 else None
+    page = out[offset: offset + limit] if limit is not None else out[offset:]
+    end = offset + len(page)
     prov2 = dict(prov)
-    prov2["matched"] = total
-    prov2["returned"] = len(out)
+    prov2["matched"] = total          # total hits across the whole snapshot
+    prov2["returned"] = len(page)     # rows in this page
+    prov2["offset"] = offset
+    prov2["limit"] = limit
+    prov2["has_more"] = end < total
+    prov2["next_offset"] = end if end < total else None
+    page_warns = list(warns)
+    if prov2["has_more"]:
+        page_warns.append(
+            f"showing {len(page)} of {total} matches (offset {offset}); "
+            f"pass --offset {end} for the next page, or raise --limit")
     code = 0 if total else 1
-    return emit(envelope(args.cmd, data=out, provenance=prov2, warnings=warns), code)
+    return emit(envelope(args.cmd, data=page, provenance=prov2, warnings=page_warns), code)
 
 
 def cmd_rel(args) -> int:
@@ -546,7 +560,9 @@ def build_parser() -> argparse.ArgumentParser:
     se.add_argument("dataset", choices=list(DATASETS))
     se.add_argument("--where", action="append", help="COL=SUBSTR (repeatable)")
     se.add_argument("--name", help="shorthand: match the dataset's name column")
-    se.add_argument("--limit", type=int, default=50)
+    se.add_argument("--limit", type=int, default=50, help="max rows per page (default 50)")
+    se.add_argument("--offset", type=int, default=0,
+                    help="skip the first N matches (pagination; pair with --limit)")
     se.add_argument("--fields", help="comma list of columns to return")
     se.add_argument("--split", action="store_true", help="split list-valued cells")
     se.set_defaults(func=cmd_search)

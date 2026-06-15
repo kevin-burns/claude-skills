@@ -118,6 +118,11 @@ azadv search policy --where policyCategory=Storage --where policyEffect=Deny \
 azadv search role --name "Reader"
 azadv search initiative --name "NIST"
 
+# pagination: searches can match a lot (e.g. "Defender" -> 100+ policies). search returns at
+# most --limit rows (default 50) starting at --offset (default 0); page with --offset:
+azadv search policy --name "Defender" --fields policyName,policyId --limit 50            # page 1
+azadv search policy --name "Defender" --fields policyName,policyId --limit 50 --offset 50  # next page
+
 # resolve cross-references (the unique value)
 azadv rel policy-roles <policyId>        # roles a policy assigns: [{name, id}]
 azadv rel policy-initiatives <policyId>  # policy sets a policy belongs to: [{name, id, source}]
@@ -154,6 +159,13 @@ Exit codes: `0` ok · `1` not-found/empty · `2` usage · `3` cache-missing (run
 `4` fetch/schema/row-floor error. Cell values are **sanitized on output** — a leading
 `= + - @` (spreadsheet-formula-injection) is prefixed with `'` so results are safe to
 re-export or render (e.g. via `report-builder`).
+
+**`search` pagination.** `data` is the current page (a list); `provenance` carries the paging
+state so you can fetch the next page deterministically without re-scanning blindly:
+`matched` (total hits across the snapshot), `returned` (rows in this page), `offset`, `limit`,
+`has_more` (bool), and `next_offset` (the `--offset` for the next page, or `null` at the end).
+When `has_more` is true a warning also spells out the next call. Loop until `next_offset` is
+`null`; an `--offset` past the end returns an empty page with `has_more: false` (not an error).
 
 ## The field map (why parsing is non-obvious)
 

@@ -82,6 +82,26 @@ rows = env["data"]
 check("search storage matched>=1", env["ok"] and env["provenance"]["matched"] >= 1)
 check("search storage all-Storage", all(r["policyCategory"] == "Storage" for r in rows), str(rows[:1]))
 
+# --- E2. pagination: page through ALL policies (policyId= matches every row) ---
+code, env = run(C + ["search", "policy", "--where", "policyId=", "--fields", "policyId", "--limit", "5", "--offset", "0"])
+p = env["provenance"]
+total_pol = p["matched"]
+check("pagination page1 metadata",
+      env["ok"] and p["returned"] == 5 and p["offset"] == 0 and p["limit"] == 5
+      and p["has_more"] is True and p["next_offset"] == 5, str(p))
+seen, off = [r["policyId"] for r in env["data"]], p["next_offset"]
+while off is not None:
+    code, env = run(C + ["search", "policy", "--where", "policyId=", "--fields", "policyId",
+                         "--limit", "5", "--offset", str(off)])
+    seen += [r["policyId"] for r in env["data"]]
+    off = env["provenance"]["next_offset"]
+check("pagination covers all rows, no overlap",
+      len(seen) == total_pol and len(set(seen)) == total_pol, f"{len(seen)} seen vs {total_pol} matched")
+code, env = run(C + ["search", "policy", "--where", "policyId=", "--limit", "5", "--offset", "9999"])
+p = env["provenance"]
+check("pagination offset past end -> empty page, no next",
+      p["returned"] == 0 and p["has_more"] is False and p["next_offset"] is None, str(p))
+
 # --- F. rel policy-roles: nameid parse (name + guid) ---
 code, env = run(C + ["rel", "policy-roles", "7ca8c8ac-3a6e-493d-99ba-c5fa35347ff2"])
 items = env["data"]["items"]
