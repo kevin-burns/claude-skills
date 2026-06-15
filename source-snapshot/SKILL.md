@@ -81,16 +81,30 @@ extractors are actually installed, picks one by content type, **falls back when 
 preferred is missing, and fails cleanly (exit 1, structured error) when none can handle
 the type** — it never crashes or fabricates.
 
+Run it by its **absolute path** — it lives in this skill's base directory (announced when the
+skill loads, usually `~/.claude/skills/source-snapshot`); a bare `snapshot.py` won't resolve
+from the repo you're working in. It's stdlib-only, so uv or python3 both work. Define a
+`srcsnap` function at the start of each command block (a function passes arguments correctly
+under bash and zsh — a plain `$VAR` doesn't word-split in zsh — and shell state doesn't persist
+between tool calls, so re-declare it per block):
+
 ```bash
+# uv is the preferred runner; resolve it even when it's not on a bare PATH (non-interactive
+# shells often drop ~/.local/bin or the Homebrew bin -> `uv: command not found`):
+UV="$(command -v uv || ls "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv 2>/dev/null | head -1)"
+srcsnap() { "$UV" run python "$HOME/.claude/skills/source-snapshot/scripts/snapshot.py" "$@"; }
+# uv not installed? It's stdlib-only, so plain python3 works too:
+#   srcsnap() { python3 "$HOME/.claude/skills/source-snapshot/scripts/snapshot.py" "$@"; }
+
 # Decide what would be used, without fetching (deterministic):
-snapshot.py --format json plan --content-type prose
+srcsnap --format json plan --content-type prose
 # Force availability for tests/CI (or to preview a leaner box):
-snapshot.py --have markitdown plan --content-type prose      # -> markitdown (fell back)
-snapshot.py --have none      plan --content-type prose      # -> exit 1, clean error
+srcsnap --have markitdown plan --content-type prose      # -> markitdown (fell back)
+srcsnap --have none      plan --content-type prose      # -> exit 1, clean error
 
 # Extract + write a provenance-stamped artifact:
-snapshot.py run https://example.com/post --content-type prose --out snapshots/post.md
-snapshot.py run report.pdf --content-type doc --out snapshots/report.md
+srcsnap run https://example.com/post --content-type prose --out snapshots/post.md
+srcsnap run report.pdf --content-type doc --out snapshots/report.md
 ```
 
 Preference: `prose` → defuddle > readability > markitdown; `doc` → markitdown.

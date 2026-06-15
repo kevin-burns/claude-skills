@@ -18,6 +18,13 @@ uv run ~/.claude/skills/nano-banana-pro-json/scripts/generate_image.py --prompt 
 
 **Important:** Always run from the user's current working directory so images save where the user is working.
 
+**If `uv` isn't found** (`uv: command not found` — non-interactive shells often drop `~/.local/bin` or the Homebrew bin from PATH), resolve it and call it explicitly rather than giving up. This script needs uv (third-party deps: `google-genai`, `pillow`), so plain `python3` is not a fallback here:
+
+```bash
+UV="$(command -v uv || ls "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv 2>/dev/null | head -1)"
+"$UV" run ~/.claude/skills/nano-banana-pro-json/scripts/generate_image.py --prompt "..." --filename "..."
+```
+
 ## Simple Mode
 
 Works identically to the original nano-banana-pro skill:

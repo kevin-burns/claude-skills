@@ -16,9 +16,11 @@ each by name via the Agent tool, reads its JSON, and gates on the result.
   reliable as your adherence. Don't lean on auto-delegation for a stage you care about;
   name the agent. (A human driving Claude Code can force a stage with an `@agent-…` mention.)
 - **The `dev-story` Workflow (hands-off, deterministic).** For a guaranteed run of
-  plan→build→verify→review→full-suite, dispatch `dev-fleet/dev-story.workflow.js` — it moves
-  the orchestration into code and hands a ready-to-merge branch back to you. Use it when you
-  want the steps to run in order without depending on the model *choosing* to.
+  plan→build→verify→review→full-suite, dispatch it via the Workflow tool with the **absolute**
+  `scriptPath` `~/.claude/skills/dev-fleet/dev-story.workflow.js` (this skill's base directory,
+  announced on load) — a relative `dev-fleet/…` won't resolve from the repo you're working in.
+  It moves the orchestration into code and hands a ready-to-merge branch back to you. Use it when
+  you want the steps to run in order without depending on the model *choosing* to.
 
 See `docs/agent-fleet-architecture.md` for the why.
 

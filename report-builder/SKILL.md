@@ -25,14 +25,23 @@ Separate **prep** (project-specific, may use pandas) from **render** (generic, r
 `scripts/render.py` is the generic half — point it at a template and a JSON context file
 and it emits HTML. Don't rewrite it per project.
 
+Run `render.py` by its **absolute path** — it lives in this skill's base directory (announced
+when the skill loads, usually `~/.claude/skills/report-builder`); a relative
+`report-builder/scripts/render.py` won't resolve from another repo. It has PEP 723 inline deps
+(jinja2), so it **must** run under `uv` — never bare `python`. Define an `rbuild` function per
+block (a function passes arguments correctly under bash and zsh, where a plain `$VAR` doesn't
+word-split; re-declare it per block since shell state doesn't persist between tool calls):
+
 ```bash
-uv run report-builder/scripts/render.py \
-  --template my_report.html.j2 \
+# uv is required here (jinja2); resolve it even when it's not on a bare PATH (non-interactive
+# shells often drop ~/.local/bin or the Homebrew bin -> `uv: command not found`):
+UV="$(command -v uv || ls "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv 2>/dev/null | head -1)"
+rbuild() { "$UV" run "$HOME/.claude/skills/report-builder/scripts/render.py" "$@"; }
+
+rbuild --template my_report.html.j2 \
   --data context.json \
   --out report.html --title "Q2 Cost Report"
 ```
-
-Use `uv run` (PEP 723 inline deps live in `render.py`) — never bare `python`.
 
 ## Two rules that prevent the common bugs
 
@@ -122,5 +131,5 @@ version gates the build.)
 1. Copy `assets/report-template.html.j2` into the project; adapt the markup.
 2. Write a small prep step that produces a JSON context (`{"title": ..., "kpis": [...],
    "chart": {...}, "rows": [...], "generated_at": "...", "provenance": {...}}`).
-3. `uv run report-builder/scripts/render.py --template <tpl> --data <ctx.json> --out report.html`.
+3. `rbuild --template <tpl> --data <ctx.json> --out report.html` (define `rbuild` as shown above).
 4. Open `report.html`. Verify chart renders, table populates, no `Undefined` errors.

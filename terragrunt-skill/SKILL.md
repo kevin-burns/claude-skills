@@ -36,7 +36,7 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 | Task | Mode | Read first |
 |---|---|---|
 | "Create/scaffold/set up" configs, envs, stacks | GENERATE | references/architecture-patterns.md + relevant templates/ |
-| "Validate/lint/check/CI" existing configs | VALIDATE | scripts/validate.sh header; references/cli-reference.md as needed |
+| "Validate/lint/check/CI" existing configs | VALIDATE | validate.sh header (abs path in VALIDATE workflow); references/cli-reference.md as needed |
 | "Review/audit/best practice" a repo or file | REVIEW | references/best-practices.md |
 | Error message pasted / "why is this failing" | DIAGNOSE | grep references/error-patterns.md |
 | "What does X do" (block/function/command) | LOOKUP | grep the matching reference below |
@@ -86,12 +86,19 @@ secrets/account IDs — ask or use obvious dummies labelled as such.
 
 ## VALIDATE workflow
 
-`bash scripts/validate.sh [DIR]` runs the layered suite: `hcl fmt --check`, `hcl validate`,
-tflint, Trivy, dag check, optional plan. Control via env vars: `SKIP_PLAN`, `SKIP_SECURITY`,
-`SKIP_LINT`, `SKIP_INIT`, `SKIP_BACKEND_INIT=true` (CI/offline: init with `-backend=false`),
-`SOFT_FAIL_SECURITY`. No terragrunt binary available? Fall back to static review: check
-1.0-only policy violations, include-graph integrity, then REVIEW mode checklist.
-`scripts/detect_custom_resources.py` finds non-registry providers/modules needing research.
+> **Bundled scripts run by absolute path.** They live in this skill's base directory (announced
+> when the skill loads, usually `~/.claude/skills/terragrunt-skill`). You'll be working inside an
+> IaC repo, so a relative `scripts/…` won't resolve — always use the base-dir path. The Python
+> helper is stdlib-only: prefer `uv run python <path>`, falling back to `python3 <path>` if uv
+> isn't on PATH (`UV="$(command -v uv || ls "$HOME/.local/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv 2>/dev/null | head -1)"`).
+
+`bash ~/.claude/skills/terragrunt-skill/scripts/validate.sh [DIR]` runs the layered suite:
+`hcl fmt --check`, `hcl validate`, tflint, Trivy, dag check, optional plan. Control via env
+vars: `SKIP_PLAN`, `SKIP_SECURITY`, `SKIP_LINT`, `SKIP_INIT`, `SKIP_BACKEND_INIT=true`
+(CI/offline: init with `-backend=false`), `SOFT_FAIL_SECURITY`. No terragrunt binary available?
+Fall back to static review: check 1.0-only policy violations, include-graph integrity, then
+REVIEW mode checklist. `uv run python ~/.claude/skills/terragrunt-skill/scripts/detect_custom_resources.py [DIR]`
+finds non-registry providers/modules needing research.
 
 ## DIAGNOSE workflow
 
