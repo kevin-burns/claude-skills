@@ -40,6 +40,12 @@ Subagents for software-development work, coordinated by the `dev-fleet` skill. E
 
 Several agents ship a deterministic behavioral eval under `agents/<name>/evals/` (run with `uv run python grade.py`).
 
+## Contributing
+
+Authoring or editing a skill? See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — in particular the
+**absolute-path + uv convention** for invoking a skill's bundled scripts, so they work from any
+working directory rather than only this repo's root.
+
 ## Install
 
 Symlink any skill into your personal skills directory:
