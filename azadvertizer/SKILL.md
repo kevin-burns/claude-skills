@@ -58,12 +58,42 @@ source).
 
 ## Setup: fetch once
 
+**Run the helper by its absolute path — never a relative one.** The script sits next to this
+SKILL.md, inside the base directory announced when the skill loads (usually
+`~/.claude/skills/azadvertizer`, or a plugin path if installed that way). You'll normally be
+working inside some *other* repo — an Azure IaC / landing-zone project — so a bare relative
+path like `azadvertizer/scripts/azadvertizer.py` will **not** resolve and the script never
+runs.
+
+Define an `azadv` shell function at the **start of each command block**, then call it. Two
+deliberate choices here: (1) a function rather than a `VAR="…"; $VAR` string, because a plain
+`$VAR` does **not** word-split in zsh — `$VAR status` becomes one bogus command name and emits
+no JSON; a function passes arguments correctly under both bash and zsh. (2) the name `azadv`,
+**not** `az` — `az` is the Azure CLI, which you almost certainly have installed in this context,
+and a function named `az` would shadow it. Shell state does not persist between separate tool
+calls, so re-declare `azadv` in every block (or just write the full `uv run <path> …`).
+
 ```bash
-AZ="uv run azadvertizer/scripts/azadvertizer.py"
-$AZ fetch                 # downloads policy, role, initiative CSVs into the cache
-$AZ fetch --only policy   # or just one
-$AZ status                # provenance: rows, sha256, fetch time, staleness
+# uv is the preferred runner (it pins the right Python via the script's inline metadata).
+# Resolve uv even when it's not on a bare PATH — non-interactive shells sometimes drop
+# ~/.local/bin or the Homebrew bin, which is the usual cause of `uv: command not found`:
+UV="$(command -v uv || ls "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv 2>/dev/null | head -1)"
+azadv() { "$UV" run "$HOME/.claude/skills/azadvertizer/scripts/azadvertizer.py" "$@"; }   # use the announced base dir
+
+azadv status                # offline; confirms the runner + path resolve and shows cache state
+azadv fetch                 # downloads policy, role, initiative CSVs into the cache
+azadv fetch --only policy   # or just one
 ```
+
+The script is stdlib-only and needs Python ≥3.12, so if (and only if) uv is genuinely not
+installed you can swap the runner for plain python3 — same arguments:
+`azadv() { python3 "$HOME/.claude/skills/azadvertizer/scripts/azadvertizer.py" "$@"; }` (python3 ≥3.12).
+
+If a call fails with `command not found` (uv unresolved) or `No such file or directory` (wrong
+path), fix the runner/path — re-resolve uv as above, or use the announced base directory.
+**Do not** fall back to fetching azadvertizer.net's pages directly: the site serves **no
+JSON**, and scraping its HTML defeats the entire point of this skill. Every fact you surface
+must come from the helper's JSON envelope, full stop.
 
 Cache lives in `$XDG_CACHE_HOME/azadvertizer` (override with `--cache-dir`). Fetch is
 gzip-on-the-wire, decompressed-at-rest, **atomic** (temp→rename), and **validated**
@@ -72,23 +102,27 @@ gzip-on-the-wire, decompressed-at-rest, **atomic** (temp→rename), and **valida
 
 ## Query (all offline, JSON envelope)
 
+`azadv` is the function defined in Setup above (named to avoid clashing with the Azure CLI's
+`az`) — re-declare it at the top of the block if this is a fresh command (shell state doesn't
+carry over between tool calls).
+
 ```bash
 # exact lookup by id OR name
-$AZ get policy 7ca8c8ac-3a6e-493d-99ba-c5fa35347ff2
-$AZ get role "Contributor" --split          # --split expands list-valued cells
-$AZ get initiative <initiativeId>            # grouped: initiative meta + member policies
+azadv get policy 7ca8c8ac-3a6e-493d-99ba-c5fa35347ff2
+azadv get role "Contributor" --split          # --split expands list-valued cells
+azadv get initiative <initiativeId>            # grouped: initiative meta + member policies
 
 # substring search (case-insensitive, repeatable --where COL=SUBSTR)
-$AZ search policy --where policyCategory=Storage --where policyEffect=Deny \
+azadv search policy --where policyCategory=Storage --where policyEffect=Deny \
    --fields policyName,policyEffect,policyId --limit 20
-$AZ search role --name "Reader"
-$AZ search initiative --name "NIST"
+azadv search role --name "Reader"
+azadv search initiative --name "NIST"
 
 # resolve cross-references (the unique value)
-$AZ rel policy-roles <policyId>        # roles a policy assigns: [{name, id}]
-$AZ rel policy-initiatives <policyId>  # policy sets a policy belongs to: [{name, id, source}]
-$AZ rel role-policies <roleId>         # policies that use a role: [{name, id}]
-$AZ rel initiative-policies <id>       # member policies of an initiative
+azadv rel policy-roles <policyId>        # roles a policy assigns: [{name, id}]
+azadv rel policy-initiatives <policyId>  # policy sets a policy belongs to: [{name, id, source}]
+azadv rel role-policies <roleId>         # policies that use a role: [{name, id}]
+azadv rel initiative-policies <id>       # member policies of an initiative
 ```
 
 **Freshness is automatic.** A snapshot older than `--max-age-days` (**default 7**) is
