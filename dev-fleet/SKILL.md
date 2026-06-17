@@ -100,6 +100,52 @@ Agents run in isolated context windows — they see only the prompt you pass. So
 - **Least privilege.** Verifier/reviewer are read-only; only the builder writes; only a
   human pushes/merges.
 
+## Refinements learned in practice
+
+These sharpen the pipeline for specific task shapes. They came out of building gates
+and registry-backed validators where the naive plan looked clean but the real data
+disagreed.
+
+### Calibrate a detector/gate against real data BEFORE freezing the builder brief
+A gate's predicate ("X is a violation") is a domain claim, and the domain usually has
+exceptions the plan doesn't know yet. If you hand the builder the naive rule, it ships
+it, and the exceptions surface as false positives *after* review/merge — expensive to
+unwind. Instead, **run the naive detector against production data first** (a throwaway
+script or one inline pass), triage the hits into real-vs-benign, and hand the builder a
+predicate that already encodes the exclusions. Symptom you skipped this: you're editing
+the just-merged rule to special-case cases the gate itself surfaced. Real example: a
+"catalog var absent from the pinned module = apply error" gate threw 6 hits, 5 benign —
+the rule didn't know about hand-authored wrappers or a template's `parent_id` transform.
+A 5-minute calibration pass would have moved that discovery to the front.
+
+### Fact-gate the load-bearing facts UP FRONT, not just before commit
+The standard order is build→verify, but when a change's correctness *rests on* external
+facts (an API/module input surface, a version's behaviour, a resource shape), gather and
+verify those facts **before** the builder starts — the builder should write against
+verified facts, not assumptions it can't check offline. Moving fact-verification (or the
+fact-gathering step that produces the builder's oracle) ahead of the build also tends to
+surface real findings early (e.g. "this pinned version dropped that input") instead of in
+reconcile.
+
+### Network-dependent artifact: split builder (offline) from orchestrator (online)
+When the change needs an artifact the offline builder can't produce (a fetched snapshot,
+a registry baseline, anything requiring network/credentials), split the work cleanly:
+- **builder** writes the code + a small committed **fixture** of the artifact + the
+  integration test **guarded** by `skipif(not REAL_ARTIFACT.exists())`, and verifies
+  against the fixture;
+- **orchestrator** generates the real artifact in primary (online), which **activates**
+  the guarded test, then runs the gate + full suite.
+This keeps the builder hermetic and green in its worktree while the real-data gate lands
+intact. Make the artifact generator fail loudly (non-zero exit) on partial output so a
+half-built oracle can't be committed silently.
+
+### Reconcile in the worktree; merge once
+If the reviewer's findings (or a calibration pass) mean more work, do it **on the
+builder's branch** — re-dispatch via `SendMessage` to the same builder, or edit in the
+worktree — and merge only when clean. Merging first and then layering fixes + generated
+artifacts in primary works, but it splits the change across two workspaces and leaves the
+worktree behind. One branch, one merge, one history.
+
 ## Running for scale
 For a batch of changes (a backlog, a migration), this interactive pipeline is the wrong
 tool — use a Workflow. The `dev-story` workflow is the **per-item building block**: run it
