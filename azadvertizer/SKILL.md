@@ -219,6 +219,6 @@ it uniquely provides.
 ## Tooling
 
 - `scripts/azadvertizer.py` — the stdlib CLI (fetch/status/get/search/rel) + field map.
-- `evals/` — offline behavioral eval (`uv run evals/grade.py`): lookups, relationship
+- `evals/` — offline behavioral eval (`cd evals && uv run python grade.py`): lookups, relationship
   parsing, grouping, staleness, sanitization, and the ingest fail-safe (schema-drift and
   row-floor refusal, atomic write) against committed fixtures.
