@@ -16,28 +16,40 @@ each by name via the Agent tool, reads its JSON, and gates on the result.
   reliable as your adherence. Don't lean on auto-delegation for a stage you care about;
   name the agent. (A human driving Claude Code can force a stage with an `@agent-…` mention.)
 - **The `dev-story` Workflow (hands-off, deterministic).** For a guaranteed run of
-  plan→build→verify→review→full-suite, dispatch it via the Workflow tool with the **absolute**
-  `scriptPath` `~/.claude/skills/dev-fleet/dev-story.workflow.js` (this skill's base directory,
-  announced on load) — a relative `dev-fleet/…` won't resolve from the repo you're working in.
-  It moves the orchestration into code and hands a ready-to-merge branch back to you. Use it when
-  you want the steps to run in order without depending on the model *choosing* to.
+  plan→build→verify→cohere→review→full-suite, dispatch it via the Workflow tool with the
+  **absolute** `scriptPath` `~/.claude/skills/dev-fleet/dev-story.workflow.js` (this skill's base
+  directory, announced on load) — a relative `dev-fleet/…` won't resolve from the repo you're
+  working in. It moves the orchestration into code and hands a ready-to-merge branch back to you.
+  Use it when you want the steps to run in order without depending on the model *choosing* to.
+  It mirrors the two-point fact discipline: it verifies the plan's load-bearing facts **up front**
+  (before the build) and feeds the builder the verified values as its oracle, then resolves
+  anything the builder flags afterwards — and gates coherence on change size automatically
+  (`coherence: auto|always|never`).
 
 See `docs/agent-fleet-architecture.md` for the why.
 
 ## The pipeline
 
 ```
-plan ─▶ code-builder ─▶ fact-verifier (gate) ─▶ coherence-check (gate, if complex) ─▶ code-reviewer ─▶ full-suite gate ─▶ [you decide] ─▶ commit-pr
+plan & scope ─▶ verify load-bearing facts ─▶ code-builder ─▶ fact-verifier (gate) ─▶ coherence-check (gate, if complex) ─▶ code-reviewer ─▶ full-suite gate ─▶ [you decide] ─▶ commit-pr
+ (explore · calibrate)        (up front)                       (did it hold up?)
 ```
 
 Each agent returns JSON (see its definition). You read that JSON and decide whether to
 proceed, loop, or stop. You stay in the loop between stages — this is a skill, not an
 unattended workflow.
 
+**Facts get verified at two points, on purpose.** *Up front* (stage 1) you verify the facts the
+change will **rest on**, so the builder writes against evidence — MS Learn / official docs,
+`source-snapshot`, `c7search`, schema dumps — not guesses it can't check offline. *After the
+build* (stage 3) you verify the claims the finished change actually **makes**, to catch where the
+builder drifted, assumed, or hallucinated. Same `fact-verifier` agent, two jobs.
+
 ### Loop-back semantics (what a failing gate does)
 Every gate loops back to a **fresh-context** `code-builder` dispatch carrying the *specific*
 problem — never a vague "try again". Re-run the gate after the fix (bound the loop to ~2 rounds,
-then hand the residue to a human).
+then hand the residue to a human). Do the fix work **on the builder's branch** and merge once —
+see *Patterns: reconcile in the worktree*.
 
 | Gate result | Loop back to builder with |
 |---|---|
@@ -46,30 +58,54 @@ then hand the residue to a human).
 | `code-reviewer` blocking | the specific bug + suggested fix |
 | full-suite RED | the failing test name(s) |
 
-### 0. Plan first
-For anything beyond a trivial edit, agree the approach before dispatching a builder.
-Brainstorm/plan in the main session (or with the `Plan` agent). A builder with a fuzzy
-brief produces fuzzy code. Capture an explicit **out-of-scope / deferred** list as part of the
-plan (what you're intentionally leaving to a companion change) and forward it to the coherence
-and review stages — otherwise they'll treat a deliberate deferral as a bug and blocking-flag it.
+### 0. Plan & scope — explore, calibrate, surface the facts
+For anything beyond a trivial edit, agree the approach before dispatching a builder — but scoping
+is more than writing a brief. It's where you **explore** the real code/data, **calibrate** any
+rule the change depends on, and **surface the facts** it will rest on. A builder with a fuzzy
+brief produces fuzzy code.
+- **Calibrate a detector/gate against real data before you freeze the builder brief.** A gate's
+  predicate ("X is a violation") is a domain claim, and the domain usually has exceptions the plan
+  doesn't know yet. Hand the builder a naive rule and the exceptions surface as false positives
+  *after* merge — expensive to unwind. Run the naive rule against real data first (a throwaway
+  script or one inline pass), triage hits into real-vs-benign, and hand the builder a predicate
+  that already encodes the exclusions. (Real example: a "catalog var absent from the pinned module
+  = apply error" gate threw 6 hits, 5 benign — it didn't know about hand-authored wrappers or a
+  template's `parent_id` transform. A 5-minute calibration pass moves that discovery to the front.)
+- **Surface the load-bearing facts** the change will depend on — an API/module input surface, a
+  version's behaviour, a resource/schema shape. These feed stage 1.
+- **Capture out-of-scope / deferred** work (what you're leaving to a companion change) and forward
+  it to the coherence and review stages — otherwise they'll treat a deliberate deferral as a bug.
 
-### 1. code-builder — implement
-Dispatch with: the agreed plan, the target files/area, and **every fact it needs**
-(IDs, versions, endpoints). Tell it to work in a worktree/branch.
-- If it returns `missing_facts`, do **not** push it to guess. Go to step 2 to resolve
-  them, then re-dispatch with the facts filled in.
+### 1. Verify load-bearing facts — up front, before building
+When the change's correctness *rests on* external facts you don't already hold, gather and verify
+them **before** the builder starts; it should write against verified facts, not offline guesses it
+can't check. Dispatch `fact-verifier` on the load-bearing facts from stage 0, using its sources —
+MS Learn / official docs, `source-snapshot`, `c7search`/Context7, schema dumps.
+- Front-loading surfaces real findings early — "this pinned version dropped that input" shows up
+  now, not in reconcile after the build.
+- The verified facts (and any corrected values) become the builder's **oracle** — pass them as
+  data into stage 2.
+- Skip only when the change rests on nothing external (e.g. a pure refactor with green tests).
+
+### 2. code-builder — implement
+Dispatch with: the agreed plan, the target files/area, the **verified facts** from stage 1, and a
+**calibrated predicate** if a gate is involved. Tell it to work in a worktree/branch.
+- If it returns `missing_facts`, do **not** push it to guess. Resolve them with the stage-1 tools,
+  then re-dispatch with the facts filled in.
 - If it returns `open_questions` that change scope, decide before continuing.
+- If the change needs a network-dependent artifact the offline builder can't produce, split the
+  work — see *Patterns: network-dependent artifact*.
 
-### 2. fact-verifier — gate (run when facts are in play)
-Run the verifier on any factual claims the change asserts or depends on — config values,
-"library X supports Y", resource IDs, version constraints, "the spec says Z". Also use it
-to resolve a builder's `missing_facts`.
-- **Gate rule:** if any verdict is `REFUTED`, fix the code/claim (loop back to builder)
-  before proceeding. If `UNVERIFIABLE`, run the returned `lookup_command` (or have the
-  caller run it) and re-verify — never commit on an unresolved fact.
-- Skip only when the change asserts no external facts (pure refactor with green tests).
+### 3. fact-verifier — gate (did the build hold up?)
+Now verify the claims the *finished* change asserts or depends on — the drift check: did the
+builder assume, invent, or hallucinate a value/API/behaviour along the way? Run it on config
+values, "library X supports Y", resource IDs, version constraints, "the spec says Z".
+- **Gate rule:** if any verdict is `REFUTED`, fix the code/claim (loop back to builder) before
+  proceeding. If `UNVERIFIABLE`, run the returned `lookup_command` (or have the caller run it) and
+  re-verify — never commit on an unresolved fact.
+- Skip only when the finished change asserts no external facts (pure refactor with green tests).
 
-### 2c. coherence-checker — structural gate (non-trivial changes)
+### 4. coherence-checker — structural gate (non-trivial changes)
 Runs **after** fact-verifier (so refuted assumptions are known) and **before** code-reviewer (a
 cheaper structural pass than line-level review). It checks whether the implementation that exists
 structurally matches the **plan, the spec it cites, and the verified facts** — a different lens
@@ -94,7 +130,7 @@ code used corrected values, not refuted ones), and the **branch/diff**.
 - **Boundary:** keep it on structure/traceability/parity. If its only finding is a line-level bug,
   that's the reviewer's lane — don't double-report.
 
-### 3. code-reviewer — review
+### 5. code-reviewer — review
 Dispatch on the builder's branch/diff. Read the findings:
 - `blocking` / `needs-rework` → loop back to code-builder with the specific findings.
 - `ship-with-fixes` → apply the minor fixes (small enough to do inline, or another
@@ -102,14 +138,14 @@ Dispatch on the builder's branch/diff. Read the findings:
 - It is **advisory**. You weigh it and decide (disagree-and-commit); don't treat the
   verdict as a veto, but don't ignore a well-evidenced `blocking` finding either.
 
-### 3b. Full-suite gate — the orchestrator's job
+### 6. Full-suite gate — the orchestrator's job
 code-builder **bounds** its own test runs (targeted + the relevant module once) to avoid
 minutes-long full-suite runs that risk a dropped session, and reports
 `tests.full_suite_command`. Running the whole suite once is **your** job, not the builder's —
 run it before landing and require green. (The `dev-story` workflow does this as an explicit
 phase.) Never merge on an unrun or red suite.
 
-### 4. Commit & land
+### 7. Commit & land
 When green and reviewed, hand to **commit-pr** for the commit/PR message (it reads the
 `commit-style` playbook). Landing (push/merge/PR open) is a human decision — confirm
 before pushing, per the global git rules. Never auto-push from the pipeline.
@@ -134,38 +170,18 @@ Agents run in isolated context windows — they see only the prompt you pass. So
 
 ## Principles
 - **Explicit over auto.** Dispatch by name; gate on results. Determinism beats luck.
-- **Fact-gate before commit.** Nothing lands on an unresolved or refuted fact.
+- **Fact-gate at both ends.** Verify load-bearing facts *before* the build (so the builder writes
+  against evidence) and the finished change's claims *before* commit. Nothing lands on an
+  unresolved or refuted fact.
 - **Advisory, not adversarial.** The reviewer and any red-team inform your decision;
   they don't make it.
 - **Least privilege.** Verifier/coherence-checker/reviewer are read-only; only the builder
   writes; only a human pushes/merges.
 
-## Refinements learned in practice
-
-These sharpen the pipeline for specific task shapes. They came out of building gates
-and registry-backed validators where the naive plan looked clean but the real data
-disagreed.
-
-### Calibrate a detector/gate against real data BEFORE freezing the builder brief
-A gate's predicate ("X is a violation") is a domain claim, and the domain usually has
-exceptions the plan doesn't know yet. If you hand the builder the naive rule, it ships
-it, and the exceptions surface as false positives *after* review/merge — expensive to
-unwind. Instead, **run the naive detector against production data first** (a throwaway
-script or one inline pass), triage the hits into real-vs-benign, and hand the builder a
-predicate that already encodes the exclusions. Symptom you skipped this: you're editing
-the just-merged rule to special-case cases the gate itself surfaced. Real example: a
-"catalog var absent from the pinned module = apply error" gate threw 6 hits, 5 benign —
-the rule didn't know about hand-authored wrappers or a template's `parent_id` transform.
-A 5-minute calibration pass would have moved that discovery to the front.
-
-### Fact-gate the load-bearing facts UP FRONT, not just before commit
-The standard order is build→verify, but when a change's correctness *rests on* external
-facts (an API/module input surface, a version's behaviour, a resource shape), gather and
-verify those facts **before** the builder starts — the builder should write against
-verified facts, not assumptions it can't check offline. Moving fact-verification (or the
-fact-gathering step that produces the builder's oracle) ahead of the build also tends to
-surface real findings early (e.g. "this pinned version dropped that input") instead of in
-reconcile.
+## Patterns for specific task shapes
+Depth beyond the core stages, from real runs. (Two earlier lessons are now baked into the
+pipeline itself: *calibrate a gate against real data* became stage 0, and *verify load-bearing
+facts up front* became stage 1.)
 
 ### Network-dependent artifact: split builder (offline) from orchestrator (online)
 When the change needs an artifact the offline builder can't produce (a fetched snapshot,

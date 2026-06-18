@@ -2,12 +2,14 @@ export const meta = {
   name: 'dev-story',
   description:
     'Implement a user story through the dev fleet: plan -> build (TDD, isolated branch) -> ' +
-    'verify facts -> review (bounded fix loop) -> full-suite gate, then hand a ready-to-merge ' +
-    'branch back to the main agent. The fleet never merges/pushes — that stays with you.',
+    'verify facts -> coherence (structural gate, complex changes) -> review (bounded fix loop) -> ' +
+    'full-suite gate, then hand a ready-to-merge branch back to the main agent. The fleet never ' +
+    'merges/pushes — that stays with you.',
   phases: [
     { title: 'Plan' },
+    { title: 'Verify facts (up front)' },
     { title: 'Build' },
-    { title: 'Verify facts' },
+    { title: 'Verify facts (post-build)' },
     { title: 'Coherence' },
     { title: 'Review' },
     { title: 'Full-suite gate' },
@@ -134,6 +136,29 @@ const plan = await agent(
   { label: 'plan', phase: 'Plan', schema: PLAN },
 )
 
+// 1b) VERIFY LOAD-BEARING FACTS — up front, before the builder writes against them. The plan
+// surfaces the facts the change rests on; verify them now so the builder gets an oracle (verified
+// values), not guesses it can't check offline. An unresolvable load-bearing fact is a hard stop.
+let upfrontFacts = null
+if (plan?.facts_needed?.length) {
+  phase('Verify facts (up front)')
+  upfrontFacts = await agent(
+    `Verify these load-bearing facts a change is about to be built on. For each: cite a source you ` +
+      `read (SUPPORTED, with the value), refute with the correct value (REFUTED), or return the exact ` +
+      `read-only lookup (UNVERIFIABLE). Prefer MS Learn / official docs, source-snapshot, ` +
+      `c7search/Context7, schema dumps. Never assert from memory.\n` +
+      `${JSON.stringify(plan.facts_needed, null, 2)}`,
+    { agentType: 'fact-verifier', label: 'facts:up-front', phase: 'Verify facts (up front)', schema: VERDICTS },
+  )
+  // Can't build on an unresolved load-bearing fact — hand back for the main agent to resolve.
+  const unresolvedUp = (upfrontFacts?.verdicts ?? []).filter((v) => v.verdict === 'UNVERIFIABLE')
+  if (unresolvedUp.length) {
+    return { ok: false, stage: 'facts-up-front',
+      note: 'unresolved load-bearing facts — main agent must run the lookups before the build can proceed',
+      plan, upfront_facts: upfrontFacts, unresolved: unresolvedUp }
+  }
+}
+
 // 2) BUILD — code-builder implements test-first on its own isolated branch.
 phase('Build')
 const build = await agent(
@@ -141,8 +166,9 @@ const build = await agent(
     `— never merge/push. ${BUILD_MODE} Bound your test runs (targeted during iteration; the ` +
     `relevant module once before committing) and report full_suite_command for the orchestrator.\n\n` +
     `STORY:\n${story}\n\nPLAN:\n${JSON.stringify(plan, null, 2)}\n\n` +
-    `Use ONLY these facts; if anything else is unknown, return it in missing_facts (do not invent):\n` +
-    `${JSON.stringify(plan?.facts_needed ?? [], null, 2)}\n\nBase ref: ${base}`,
+    `Use ONLY these VERIFIED facts as your oracle — write against these, not assumptions; if ` +
+    `anything else is unknown, return it in missing_facts (do not invent):\n` +
+    `${JSON.stringify(upfrontFacts?.verdicts ?? plan?.facts_needed ?? [], null, 2)}\n\nBase ref: ${base}`,
   { agentType: 'code-builder', label: 'build', phase: 'Build', schema: BUILD },
 )
 if (!build?.branch) {
@@ -152,15 +178,16 @@ const where = build.worktree_path
   ? `worktree ${build.worktree_path} (branch ${build.branch})`
   : `branch ${build.branch}`
 
-// 2b) VERIFY FACTS — only if the builder flagged anything unknown.
+// 2b) VERIFY FACTS (post-build) — drift check: resolve anything the builder flagged it was
+// unsure about as it wrote (facts the up-front pass didn't already cover).
 let facts = null
 if (build.missing_facts?.length) {
-  phase('Verify facts')
+  phase('Verify facts (post-build)')
   facts = await agent(
     `Resolve these facts a code change depends on. For each: cite a source you read, refute with ` +
       `the correct value, or return the exact read-only lookup. Never assert from memory.\n` +
       `${JSON.stringify(build.missing_facts, null, 2)}`,
-    { agentType: 'fact-verifier', label: 'facts', phase: 'Verify facts', schema: VERDICTS },
+    { agentType: 'fact-verifier', label: 'facts:post-build', phase: 'Verify facts (post-build)', schema: VERDICTS },
   )
   // Unresolved facts are a hard stop — hand back rather than ship guesses.
   const unresolved = (facts?.verdicts ?? []).filter((v) => v.verdict === 'UNVERIFIABLE')
@@ -194,7 +221,7 @@ if (runCoherence) {
         `verdict (pass|fail), findings, and loop_back_target.\n\n` +
         `PLAN:\n${JSON.stringify(plan, null, 2)}\n\n` +
         `VERIFIED FACTS (confirm the code uses corrected values, not refuted assumptions):\n` +
-        `${JSON.stringify(facts?.verdicts ?? [], null, 2)}\n\n` +
+        `${JSON.stringify([...(upfrontFacts?.verdicts ?? []), ...(facts?.verdicts ?? [])], null, 2)}\n\n` +
         `OUT OF SCOPE (deliberate deferrals — do NOT fail on these):\n` +
         `${JSON.stringify(plan?.out_of_scope ?? [], null, 2)}`,
       { agentType: 'coherence-checker', label: `coherence:r${crounds + 1}`, phase: 'Coherence', schema: COHERENCE },
@@ -257,6 +284,7 @@ return {
   commits: build.commits ?? [],
   files_changed: build.files_changed ?? [],
   plan,
+  upfront_facts: upfrontFacts,
   facts,
   coherence: runCoherence
     ? { verdict: coherence?.verdict ?? null, findings: coherence?.findings ?? [] }
