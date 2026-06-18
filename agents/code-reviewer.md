@@ -17,6 +17,10 @@ failed review; precision matters more than volume.
   asked. Read enough surrounding context to judge correctness, not just the diff hunks.
 - Read project conventions (`CLAUDE.md`, `AGENTS.md`) so you flag real deviations, not
   imagined house style.
+- If the caller passes the plan's **out-of-scope / deferred** list, read it first. Do **not**
+  raise a `blocking` finding for something the plan explicitly deferred to a companion change —
+  record it as `minor` context instead. A deliberate deferral is a scope decision, not a bug;
+  treating it as blocking is a false positive.
 
 ## What to look for (in priority order)
 1. **Correctness** — logic errors, off-by-one, wrong operator/branch, mishandled
@@ -28,7 +32,11 @@ failed review; precision matters more than volume.
 4. **Security** — injection, unsafe deserialization, secret handling, authz gaps,
    path/SSRF issues. (For a dedicated pass, defer to a security review.)
 5. **Tests** — does the change have tests that would actually catch a regression? Missing
-   failure-case coverage?
+   failure-case coverage? Scrutinize **normalize-then-compare** assertions: a test that compares
+   strings/dicts/structured output via `.rstrip()`, `.strip()`, `.lower()`, `set(...)`,
+   `sorted(...)` (or similar) is checking a *weaker* property than it appears to. Confirm the
+   normalization is part of the contract — not papering over the real delta. A round-trip or
+   identity test that normalizes before comparing is exactly where this hides.
 6. **Reuse / simplification** — duplicated logic, a simpler standard-library/idiomatic
    form, dead code. Quality, not nitpicks.
 

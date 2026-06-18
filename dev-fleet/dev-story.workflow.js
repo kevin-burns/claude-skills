@@ -8,6 +8,7 @@ export const meta = {
     { title: 'Plan' },
     { title: 'Build' },
     { title: 'Verify facts' },
+    { title: 'Coherence' },
     { title: 'Review' },
     { title: 'Full-suite gate' },
   ],
@@ -22,9 +23,15 @@ export const meta = {
 const story = typeof args === 'string' ? args : args?.story
 const base = (typeof args === 'object' && args?.base) || 'HEAD'
 const mode = (typeof args === 'object' && args?.mode) || 'feature' // 'feature' | 'refactor'
+// Coherence gate: 'auto' runs the structural check only on non-trivial changes (see below),
+// 'always'/'never' override the heuristic.
+const coherenceMode = (typeof args === 'object' && args?.coherence) || 'auto'
 if (!story) throw new Error('dev-story: pass the task as args (string, or {story, mode, base}).')
 if (!['feature', 'refactor'].includes(mode)) {
   throw new Error(`dev-story: mode must be "feature" or "refactor", got "${mode}"`)
+}
+if (!['auto', 'always', 'never'].includes(coherenceMode)) {
+  throw new Error(`dev-story: coherence must be "auto", "always", or "never", got "${coherenceMode}"`)
 }
 
 // Mode drives what "done" means. Feature = new behavior (test-first). Refactor =
@@ -52,6 +59,9 @@ const PLAN = {
     tests_to_write: { type: 'array', items: { type: 'string' } },
     files_likely_touched: { type: 'array', items: { type: 'string' } },
     facts_needed: { type: 'array', items: { type: 'string' } },
+    // Deliberate deferrals — travel with the reviewer/coherence so they don't blocking-flag
+    // a scope decision (e.g. "Go CLI deferred to a companion change").
+    out_of_scope: { type: 'array', items: { type: 'string' } },
   },
 }
 const BUILD = {
@@ -76,6 +86,22 @@ const BUILD = {
   },
 }
 const VERDICTS = { type: 'object', properties: { verdicts: { type: 'array' } } }
+const COHERENCE = {
+  type: 'object',
+  required: ['verdict'],
+  properties: {
+    verdict: { type: 'string' }, // pass | fail
+    findings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { check: { type: 'string' }, location: { type: 'string' },
+          issue: { type: 'string' }, suggested_fix: { type: 'string' } },
+      },
+    },
+    loop_back_target: { type: ['string', 'null'] }, // "code-builder" | null
+  },
+}
 const REVIEW = {
   type: 'object',
   required: ['verdict', 'findings'],
@@ -101,8 +127,10 @@ const SUITE = {
 phase('Plan')
 const plan = await agent(
   `Scope this task for implementation (mode: ${mode}). Do NOT write code.\n\nSTORY:\n${story}\n\n` +
-    `${PLAN_MODE}\n\nAlso return: acceptance criteria as a checklist, files likely touched, and any ` +
-    `FACTS that must be verified before coding (versions, APIs, IDs, config values).`,
+    `${PLAN_MODE}\n\nAlso return: acceptance criteria as a checklist, files likely touched, any ` +
+    `FACTS that must be verified before coding (versions, APIs, IDs, config values), and ` +
+    `out_of_scope — anything deliberately deferred to a companion change, so review doesn't ` +
+    `treat a scope decision as a bug.`,
   { label: 'plan', phase: 'Plan', schema: PLAN },
 )
 
@@ -142,6 +170,48 @@ if (build.missing_facts?.length) {
   }
 }
 
+// 2c) COHERENCE — structural fit of the impl vs plan/spec/verified facts. Runs AFTER fact
+// verification (so refuted assumptions are known) and BEFORE review (cheaper structural pass
+// than line-level review). Gated on complexity: a one-file, one-commit change doesn't earn the
+// extra stage. Bounded fix loop, same shape as review.
+const filesN = build.files_changed?.length ?? 0
+const commitsN = build.commits?.length ?? 0
+const criteriaN = plan?.acceptance_criteria?.length ?? 0
+const runCoherence =
+  coherenceMode === 'always' ||
+  (coherenceMode !== 'never' && (filesN > 5 || commitsN > 3 || criteriaN > 3))
+let coherence = null
+if (runCoherence) {
+  phase('Coherence')
+  let crounds = 0
+  while (crounds < 2) {
+    coherence = await agent(
+      `Check the STRUCTURAL fit of the implementation on ${where} against the plan, the spec it ` +
+        `cites, and the verified facts — NOT line-level correctness (that's the reviewer's job). ` +
+        `Read the diff: git diff ${build.base_ref || base}...${build.branch}. Apply your five checks ` +
+        `(spec-to-code + plan-to-commit traceability, inverse-pair round-trip fidelity WITHOUT ` +
+        `normalization tricks, cross-implementation parity, contract/docstring fidelity). Return ` +
+        `verdict (pass|fail), findings, and loop_back_target.\n\n` +
+        `PLAN:\n${JSON.stringify(plan, null, 2)}\n\n` +
+        `VERIFIED FACTS (confirm the code uses corrected values, not refuted assumptions):\n` +
+        `${JSON.stringify(facts?.verdicts ?? [], null, 2)}\n\n` +
+        `OUT OF SCOPE (deliberate deferrals — do NOT fail on these):\n` +
+        `${JSON.stringify(plan?.out_of_scope ?? [], null, 2)}`,
+      { agentType: 'coherence-checker', label: `coherence:r${crounds + 1}`, phase: 'Coherence', schema: COHERENCE },
+    )
+    if (coherence?.verdict !== 'fail') break
+    const cfix = await agent(
+      `On ${where}, fix ONLY these structural coherence mismatches, test-first, commit on the branch ` +
+        `(no merge/push). For an inverse-pair failure the round-trip test must assert EXACT identity ` +
+        `— no .rstrip()/.lower()/sorted()/set() normalization that hides the delta:\n` +
+        `${JSON.stringify(coherence.findings ?? [], null, 2)}`,
+      { agentType: 'code-builder', label: `coherence-fix:r${crounds + 1}`, phase: 'Coherence', schema: BUILD },
+    )
+    if (cfix?.commits?.length) build.commits = [...(build.commits ?? []), ...cfix.commits]
+    crounds++
+  }
+}
+
 // 3) REVIEW + bounded fix loop (max 2 rounds) — review, fix blockers, re-review.
 phase('Review')
 let review = null
@@ -149,7 +219,9 @@ let rounds = 0
 while (rounds < 2) {
   review = await agent(
     `Review the change on ${where}. Read the diff: git diff ${build.base_ref || base}...${build.branch}. ` +
-      `Return findings (severity + location + suggested_fix) and a verdict. Advisory, not a gate.`,
+      `Return findings (severity + location + suggested_fix) and a verdict. Advisory, not a gate.\n` +
+      `Out of scope (deliberately deferred — do NOT blocking-flag these):\n` +
+      `${JSON.stringify(plan?.out_of_scope ?? [], null, 2)}`,
     { agentType: 'code-reviewer', label: `review:r${rounds + 1}`, phase: 'Review', schema: REVIEW },
   )
   const blockers = (review?.findings ?? []).filter((f) => f.severity === 'blocking')
@@ -186,6 +258,9 @@ return {
   files_changed: build.files_changed ?? [],
   plan,
   facts,
+  coherence: runCoherence
+    ? { verdict: coherence?.verdict ?? null, findings: coherence?.findings ?? [] }
+    : { state: 'skipped (below complexity threshold)' },
   review: { verdict: review?.verdict ?? null, rounds: rounds + 1, findings: review?.findings ?? [] },
   full_suite: { state: suiteState, command: suiteCmd ?? null, detail: suite ?? null },
   next_actions: [
@@ -195,6 +270,9 @@ return {
       : suiteState === 'not-run'
         ? `Full suite not run — run it before merge${suiteCmd ? `: ${suiteCmd}` : ''}`
         : 'Full suite green',
+    runCoherence && coherence?.verdict === 'fail'
+      ? 'Coherence still FAILING — structural mismatch unresolved after fix loop; weigh before merge'
+      : 'Coherence OK',
     review?.verdict === 'needs-rework' ? 'Review still wants rework — weigh findings' : 'Review OK',
     'You (main agent) decide: merge / push / open PR — the fleet never does this.',
   ],

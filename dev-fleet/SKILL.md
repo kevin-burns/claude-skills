@@ -1,6 +1,6 @@
 ---
 name: dev-fleet
-description: Orchestration playbook for driving the development agent fleet (code-builder, fact-verifier, code-reviewer) through a build → verify → review → commit pipeline with explicit, deterministic hand-offs. Use when implementing a non-trivial change where correctness and fact-accuracy matter and you want the steps to actually run in order rather than hoping the orchestrator delegates. Also use when deciding which fleet agent to dispatch for a task, or when wiring a new agent into the pipeline. Covers how to pass context between agents, the fact-gate before commit, and handing off to commit-pr.
+description: Orchestration playbook for driving the development agent fleet (code-builder, fact-verifier, coherence-checker, code-reviewer) through a build → verify → cohere → review → commit pipeline with explicit, deterministic hand-offs. Use when implementing a non-trivial change where correctness and fact-accuracy matter and you want the steps to actually run in order rather than hoping the orchestrator delegates. Also use when deciding which fleet agent to dispatch for a task, or when wiring a new agent into the pipeline. Covers how to pass context between agents, the fact-gate and coherence-gate before commit, the loop-back semantics on each gate, and handing off to commit-pr.
 license: MIT
 ---
 
@@ -27,17 +27,31 @@ See `docs/agent-fleet-architecture.md` for the why.
 ## The pipeline
 
 ```
-plan ─▶ code-builder ─▶ fact-verifier (gate) ─▶ code-reviewer ─▶ full-suite gate ─▶ [you decide] ─▶ commit-pr
+plan ─▶ code-builder ─▶ fact-verifier (gate) ─▶ coherence-check (gate, if complex) ─▶ code-reviewer ─▶ full-suite gate ─▶ [you decide] ─▶ commit-pr
 ```
 
 Each agent returns JSON (see its definition). You read that JSON and decide whether to
 proceed, loop, or stop. You stay in the loop between stages — this is a skill, not an
 unattended workflow.
 
+### Loop-back semantics (what a failing gate does)
+Every gate loops back to a **fresh-context** `code-builder` dispatch carrying the *specific*
+problem — never a vague "try again". Re-run the gate after the fix (bound the loop to ~2 rounds,
+then hand the residue to a human).
+
+| Gate result | Loop back to builder with |
+|---|---|
+| `fact-verifier` REFUTED | the correct value to use |
+| `coherence` fail | the specific structural mismatch (+ its `loop_back_target`) |
+| `code-reviewer` blocking | the specific bug + suggested fix |
+| full-suite RED | the failing test name(s) |
+
 ### 0. Plan first
 For anything beyond a trivial edit, agree the approach before dispatching a builder.
 Brainstorm/plan in the main session (or with the `Plan` agent). A builder with a fuzzy
-brief produces fuzzy code.
+brief produces fuzzy code. Capture an explicit **out-of-scope / deferred** list as part of the
+plan (what you're intentionally leaving to a companion change) and forward it to the coherence
+and review stages — otherwise they'll treat a deliberate deferral as a bug and blocking-flag it.
 
 ### 1. code-builder — implement
 Dispatch with: the agreed plan, the target files/area, and **every fact it needs**
@@ -54,6 +68,31 @@ to resolve a builder's `missing_facts`.
   before proceeding. If `UNVERIFIABLE`, run the returned `lookup_command` (or have the
   caller run it) and re-verify — never commit on an unresolved fact.
 - Skip only when the change asserts no external facts (pure refactor with green tests).
+
+### 2c. coherence-checker — structural gate (non-trivial changes)
+Runs **after** fact-verifier (so refuted assumptions are known) and **before** code-reviewer (a
+cheaper structural pass than line-level review). It checks whether the implementation that exists
+structurally matches the **plan, the spec it cites, and the verified facts** — a different lens
+from the reviewer's line-level correctness. Its five checks:
+1. **Spec-to-code traceability** — every cited spec section / MUST has code + a test.
+2. **Inverse-pair fidelity** — every `(encode,decode)`/`(write,read)`/`(export,import)` pair has a
+   `decode(encode(x)) == x` test with **no normalization tricks** (`.rstrip()`/`.lower()`/`set()`/
+   `sorted()` that paper over the real delta).
+3. **Plan-to-commit traceability** — every plan task has a change; skips are explicit, not silent.
+4. **Cross-implementation parity** — when >1 impl of an interface changed, a test drives the same
+   input through each and asserts equivalent observable behaviour (not just "all have the method").
+5. **Contract-docstring fidelity** — docstrings/schemas match what the code actually does.
+
+Dispatch with the **plan** (incl. `out_of_scope`), the **fact verdicts** (so it can confirm the
+code used corrected values, not refuted ones), and the **branch/diff**.
+- **When to run:** non-trivial changes only — `files_changed > 5`, `commits > 3`, or a multi-part
+  plan. A one-file, one-commit change doesn't earn the stage; skip it. (The `dev-story` workflow
+  gates this automatically with a `coherence: auto|always|never` arg.)
+- **Gate rule:** `verdict: fail` → loop back to code-builder with the structural mismatch, then
+  re-run. Advisory like the reviewer — you weigh it; a deliberate `out_of_scope` deferral is never
+  a coherence failure.
+- **Boundary:** keep it on structure/traceability/parity. If its only finding is a line-level bug,
+  that's the reviewer's lane — don't double-report.
 
 ### 3. code-reviewer — review
 Dispatch on the builder's branch/diff. Read the findings:
@@ -80,6 +119,7 @@ before pushing, per the global git rules. Never auto-push from the pipeline.
 |---|---|
 | Write/modify code or tests | `code-builder` |
 | "Is this fact/version/ID/claim true?" | `fact-verifier` |
+| "Does the impl structurally match the plan/spec/verified facts?" | `coherence-checker` |
 | "Is this change correct / safe to land?" | `code-reviewer` |
 | Commit or PR/MR message | `commit-pr` |
 | Security-focused pass | `/security-review` |
@@ -97,8 +137,8 @@ Agents run in isolated context windows — they see only the prompt you pass. So
 - **Fact-gate before commit.** Nothing lands on an unresolved or refuted fact.
 - **Advisory, not adversarial.** The reviewer and any red-team inform your decision;
   they don't make it.
-- **Least privilege.** Verifier/reviewer are read-only; only the builder writes; only a
-  human pushes/merges.
+- **Least privilege.** Verifier/coherence-checker/reviewer are read-only; only the builder
+  writes; only a human pushes/merges.
 
 ## Refinements learned in practice
 

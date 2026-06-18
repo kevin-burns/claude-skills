@@ -1,0 +1,23 @@
+{
+  "agent": "coherence-checker",
+  "description": "Behavioral eval: the coherence-checker must catch an inverse-pair fidelity failure — a round-trip test (test_codec.py) that .rstrip()s both sides, masking that decode() drops a trailing empty field, violating the SPEC.md exact-round-trip MUST. It must return verdict=fail and loop back to the builder, WITHOUT flagging the deliberately case-insensitive case_fold control (whose lowercasing IS its contract).",
+  "fixture_dir": "fixtures",
+  "spec": "fixtures/SPEC.md",
+  "planted": {
+    "where": "fixtures/test_codec.py round-trip test + fixtures/codec.py decode",
+    "near_lines": [13, 14, 16],
+    "nature": "round-trip asserted via .rstrip() on both sides; decode() drops the trailing empty field, so decode(encode(['a','b',''])) == ['a','b'] != ['a','b',''] — normalization hides the delta against an exact-round-trip MUST"
+  },
+  "control": {
+    "where": "fixtures/test_codec.py case_fold test",
+    "lines": [18],
+    "note": "case_fold lowercasing IS the documented contract — must NOT be flagged as a coherence failure"
+  },
+  "assertions": [
+    { "id": "catches-inverse-pair", "check": "a finding is check=inverse-pair OR located within near_lines of the planted round-trip failure" },
+    { "id": "check-labelled-inverse-pair", "check": "that catch carries check='inverse-pair'" },
+    { "id": "verdict-fail", "check": "overall verdict is 'fail'" },
+    { "id": "loop-back-builder", "check": "loop_back_target is 'code-builder'" },
+    { "id": "no-false-flag-on-control", "check": "no finding is located on the case_fold control line(s)" }
+  ]
+}

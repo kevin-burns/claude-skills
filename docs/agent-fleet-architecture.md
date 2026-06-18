@@ -64,6 +64,11 @@ Lanes mirror an engineering org. **Bold = exists today.**
 - `fact-verifier` — checks code/claims against an authoritative source
   (`c7search`/Context7, official docs, repo specs, Ogham). Mandate: **cite or
   refute**; never assert from memory.
+- **`coherence-checker`** — structural fit of the implementation against the plan, the spec it
+  cites, and the verified facts: spec/plan traceability, inverse-pair round-trip fidelity (no
+  normalization tricks), cross-implementation parity, contract-docstring fidelity. Read-only and
+  advisory; sits between `fact-verifier` and `code-reviewer`, gated on change complexity. (Added
+  from a battle-test retro: a `.rstrip()` round-trip test masked a real serialization delta.)
 - `code-reviewer` — correctness/bugs on the diff (pairs with `/code-review`).
 - security review — covered by built-in `/security-review`.
 
