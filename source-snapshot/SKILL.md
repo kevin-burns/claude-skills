@@ -26,12 +26,18 @@ snapshot it.
 
 - **Article / blog / prose** → main-content extractor (Defuddle, or Mozilla Readability)
   → Markdown. Strips nav/ads/chrome; the cleaned result is small and stable. Defuddle
-  is often *not* a PATH binary — the CLI package is `defuddle-cli`. The producer resolves
-  a runner automatically (installed `defuddle` binary → `pnpm dlx` → `bunx` → `npx
-  defuddle-cli`) and calls the correct `parse … --md` form; it never pins `@latest`, so a
-  cached package is reused instead of re-downloaded. If no prose extractor is available,
-  it falls back to markitdown. **Don't hand-write an `npx …@latest` call** — that forces a
-  reinstall and is blocked outright in pnpm-enforced environments.
+  is often *not* a PATH binary — the npm package is **`defuddle`** (the old `defuddle-cli`
+  is deprecated, "merged into defuddle"; same `parse … --md` interface). The producer
+  resolves a runner automatically (installed `defuddle` binary → `pnpm dlx defuddle` →
+  `bunx` → `npx defuddle`) and never pins `@latest`, so a cached package is reused instead
+  of re-downloaded. If no prose extractor is available, it falls back to markitdown.
+  **Don't hand-write an `npx …@latest` call** — that forces a reinstall and is blocked
+  outright in pnpm-enforced environments.
+- **Why not just markitdown for an article?** markitdown *can* fetch a URL — but it does a
+  **faithful full-page** HTML→Markdown conversion (it only drops `<script>`/`<style>`; nav,
+  sidebar, and footer chrome come through). For a prose article you want the boilerplate
+  *gone*, which is exactly what a main-content extractor does. That's the only reason
+  defuddle is preferred here — not any inability of markitdown to read web pages.
 - **Reference docs, API pages, tables, specs** → the `markdown-converter` skill
   (`markitdown`). Structure — headings, tables, links — is the part you'll cite, so
   preserve it rather than flattening to prose.
@@ -122,8 +128,9 @@ export SNAPSHOT_READABILITY_CMD="readable {src}"
 ```
 
 **Tip — kill the startup friction for good:** install defuddle once so it's a PATH binary
-and never re-resolves: `pnpm add -g defuddle-cli` (gives the `defuddle` command). The
-producer then uses it directly; no `dlx`/`npx`, no per-run download.
+and never re-resolves: `pnpm add -g defuddle` (gives the `defuddle` command; use the
+`defuddle` package, not the deprecated `defuddle-cli`). The producer then uses it directly;
+no `dlx`/`npx`, no per-run download.
 
 Resilience is covered by `evals/` (the no-markitdown / no-defuddle matrix) — run
 `cd evals && uv run python grade.py`.

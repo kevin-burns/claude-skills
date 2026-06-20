@@ -57,17 +57,17 @@ def _defuddle_runner() -> list | None:
     """argv prefix to invoke the defuddle CLI, preferring an already-installed binary,
     then a package runner that reuses its cache (never pinning @latest, which forces a
     re-download). npx is last because pnpm-enforced environments often block it.
-    Returns None when defuddle can't be run at all."""
+    Uses the `defuddle` package (its bin is `defuddle`) — NOT the deprecated `defuddle-cli`,
+    which npm reports as "merged into defuddle". Both expose the same `parse <src> --md`
+    interface. Returns None when defuddle can't be run at all."""
     if shutil.which("defuddle"):
         return ["defuddle"]
-    if shutil.which("defuddle-cli"):
-        return ["defuddle-cli"]
     if shutil.which("pnpm"):
-        return ["pnpm", "dlx", "defuddle-cli"]
+        return ["pnpm", "dlx", "defuddle"]
     if shutil.which("bunx"):
-        return ["bunx", "defuddle-cli"]
+        return ["bunx", "defuddle"]
     if shutil.which("npx"):
-        return ["npx", "defuddle-cli"]
+        return ["npx", "defuddle"]
     return None
 
 
@@ -164,8 +164,8 @@ def _run_extractor(extractor: str, source: str) -> str:
 
     markitdown is verified on this machine. defuddle is invoked as
     `<runner> parse <source> --md` where <runner> is an installed `defuddle` binary, else
-    `pnpm dlx` / `bunx` / `npx defuddle-cli` (verified CLI shape: defuddle-cli exposes a
-    `parse` subcommand with `--md`/`-m`). Override with SNAPSHOT_DEFUDDLE_CMD /
+    `pnpm dlx` / `bunx` / `npx defuddle` (verified CLI shape: the `defuddle` package exposes
+    a `parse` subcommand with `--md`/`-m`). Override with SNAPSHOT_DEFUDDLE_CMD /
     SNAPSHOT_READABILITY_CMD (use {src} for the source) to match a custom install, e.g.
       SNAPSHOT_DEFUDDLE_CMD="defuddle parse {src} --md"
     """
@@ -180,7 +180,7 @@ def _run_extractor(extractor: str, source: str) -> str:
             if runner is None:
                 raise RuntimeError(
                     "defuddle unavailable: no `defuddle` binary and no pnpm/bunx/npx to run "
-                    "defuddle-cli. Install it (`pnpm add -g defuddle-cli`) or set "
+                    "the defuddle package. Install it (`pnpm add -g defuddle`) or set "
                     "SNAPSHOT_DEFUDDLE_CMD.")
             cmd = runner + ["parse", source, "--md"]
     elif extractor == "readability":
