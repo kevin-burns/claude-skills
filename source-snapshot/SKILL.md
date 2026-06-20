@@ -26,10 +26,12 @@ snapshot it.
 
 - **Article / blog / prose** → main-content extractor (Defuddle, or Mozilla Readability)
   → Markdown. Strips nav/ads/chrome; the cleaned result is small and stable. Defuddle
-  is often *not* a PATH binary — the CLI package is `defuddle-cli` (run via `npx`), so
-  the producer routes it through an env-overridable command (see below) rather than
-  assuming one. If no prose extractor is installed, the producer falls back to
-  markitdown.
+  is often *not* a PATH binary — the CLI package is `defuddle-cli`. The producer resolves
+  a runner automatically (installed `defuddle` binary → `pnpm dlx` → `bunx` → `npx
+  defuddle-cli`) and calls the correct `parse … --md` form; it never pins `@latest`, so a
+  cached package is reused instead of re-downloaded. If no prose extractor is available,
+  it falls back to markitdown. **Don't hand-write an `npx …@latest` call** — that forces a
+  reinstall and is blocked outright in pnpm-enforced environments.
 - **Reference docs, API pages, tables, specs** → the `markdown-converter` skill
   (`markitdown`). Structure — headings, tables, links — is the part you'll cite, so
   preserve it rather than flattening to prose.
@@ -109,13 +111,19 @@ srcsnap run report.pdf --content-type doc --out snapshots/report.md
 
 Preference: `prose` → defuddle > readability > markitdown; `doc` → markitdown.
 markitdown is the most reliable fallback (works via `uvx 'markitdown[all]'` even with no
-local install) and is the **verified** runner. The defuddle/readability run-commands are
-best-effort defaults — point them at your real install with env vars:
+local install). For defuddle the producer auto-resolves the runner and the verified CLI
+shape (`defuddle parse {src} --md`); you only need an env override for a custom install or
+a different prose tool (`{src}` = source slot):
 
 ```bash
-export SNAPSHOT_DEFUDDLE_CMD="npx defuddle-cli {src} --md"   # {src} = source slot
+# Usually unnecessary — the producer already finds defuddle. Override only for a custom path:
+export SNAPSHOT_DEFUDDLE_CMD="defuddle parse {src} --md"
 export SNAPSHOT_READABILITY_CMD="readable {src}"
 ```
+
+**Tip — kill the startup friction for good:** install defuddle once so it's a PATH binary
+and never re-resolves: `pnpm add -g defuddle-cli` (gives the `defuddle` command). The
+producer then uses it directly; no `dlx`/`npx`, no per-run download.
 
 Resilience is covered by `evals/` (the no-markitdown / no-defuddle matrix) — run
 `cd evals && uv run python grade.py`.

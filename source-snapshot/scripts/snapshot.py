@@ -39,9 +39,9 @@ PREFERENCE = {
     "doc": ["markitdown"],
 }
 
-# How each extractor handles a source, and how to detect it. Detection is conservative:
-# only tools runnable *without* a network download count as available (markitdown also
-# counts via uvx, which may fetch on first use — flagged as fetchable).
+# How each extractor handles a source, and how to detect it. Tools runnable directly
+# count as available; package-runner forms (defuddle via pnpm/bunx/npx, markitdown via
+# uvx) also count but are flagged 'fetchable' since the first run may populate a cache.
 EXTRACTORS = {
     "defuddle": {"kinds": {"prose"}},
     "readability": {"kinds": {"prose"}},
@@ -53,12 +53,41 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def detect_available() -> dict:
-    """Return {extractor: how} for extractors runnable on this machine."""
-    avail = {}
+def _defuddle_runner() -> list | None:
+    """argv prefix to invoke the defuddle CLI, preferring an already-installed binary,
+    then a package runner that reuses its cache (never pinning @latest, which forces a
+    re-download). npx is last because pnpm-enforced environments often block it.
+    Returns None when defuddle can't be run at all."""
     if shutil.which("defuddle"):
-        avail["defuddle"] = "defuddle (PATH)"
-    if shutil.which("readable") or shutil.which("readability"):
+        return ["defuddle"]
+    if shutil.which("defuddle-cli"):
+        return ["defuddle-cli"]
+    if shutil.which("pnpm"):
+        return ["pnpm", "dlx", "defuddle-cli"]
+    if shutil.which("bunx"):
+        return ["bunx", "defuddle-cli"]
+    if shutil.which("npx"):
+        return ["npx", "defuddle-cli"]
+    return None
+
+
+def detect_available() -> dict:
+    """Return {extractor: how} for extractors runnable on this machine.
+
+    Detection prefers tools that run without a network download; package-runner forms
+    (defuddle via pnpm/bunx/npx, markitdown via uvx) count but are flagged 'fetchable'
+    since the first run may populate a cache. An explicit SNAPSHOT_*_CMD override always
+    wins — if you set one, that extractor is considered available as configured."""
+    avail = {}
+    if os.environ.get("SNAPSHOT_DEFUDDLE_CMD"):
+        avail["defuddle"] = "defuddle (SNAPSHOT_DEFUDDLE_CMD)"
+    elif (runner := _defuddle_runner()):
+        avail["defuddle"] = (f"defuddle ({runner[0]} on PATH)"
+                             if runner[0] in ("defuddle", "defuddle-cli")
+                             else f"defuddle ({' '.join(runner[:2])}, fetchable)")
+    if os.environ.get("SNAPSHOT_READABILITY_CMD"):
+        avail["readability"] = "readability (SNAPSHOT_READABILITY_CMD)"
+    elif shutil.which("readable") or shutil.which("readability"):
         avail["readability"] = "readability (PATH)"
     if shutil.which("markitdown"):
         avail["markitdown"] = "markitdown (PATH)"
@@ -133,17 +162,27 @@ def _cmd_template(env_var: str, default: str, source: str) -> list:
 def _run_extractor(extractor: str, source: str) -> str:
     """Return extracted Markdown. Raises RuntimeError on failure.
 
-    markitdown is verified on this machine. The defuddle/readability defaults are
-    best-effort and UNVERIFIED here (neither tool was installed to test against) —
-    override them with SNAPSHOT_DEFUDDLE_CMD / SNAPSHOT_READABILITY_CMD (use {src}
-    for the source) to match your actual install, e.g.
-      SNAPSHOT_DEFUDDLE_CMD="npx defuddle-cli {src} --md"
+    markitdown is verified on this machine. defuddle is invoked as
+    `<runner> parse <source> --md` where <runner> is an installed `defuddle` binary, else
+    `pnpm dlx` / `bunx` / `npx defuddle-cli` (verified CLI shape: defuddle-cli exposes a
+    `parse` subcommand with `--md`/`-m`). Override with SNAPSHOT_DEFUDDLE_CMD /
+    SNAPSHOT_READABILITY_CMD (use {src} for the source) to match a custom install, e.g.
+      SNAPSHOT_DEFUDDLE_CMD="defuddle parse {src} --md"
     """
     if extractor == "markitdown":
         cmd = (["markitdown", source] if shutil.which("markitdown")
                else ["uvx", "markitdown[all]", source])
     elif extractor == "defuddle":
-        cmd = _cmd_template("SNAPSHOT_DEFUDDLE_CMD", "defuddle {src} --md", source)
+        if os.environ.get("SNAPSHOT_DEFUDDLE_CMD"):
+            cmd = _cmd_template("SNAPSHOT_DEFUDDLE_CMD", "", source)
+        else:
+            runner = _defuddle_runner()
+            if runner is None:
+                raise RuntimeError(
+                    "defuddle unavailable: no `defuddle` binary and no pnpm/bunx/npx to run "
+                    "defuddle-cli. Install it (`pnpm add -g defuddle-cli`) or set "
+                    "SNAPSHOT_DEFUDDLE_CMD.")
+            cmd = runner + ["parse", source, "--md"]
     elif extractor == "readability":
         cmd = _cmd_template("SNAPSHOT_READABILITY_CMD", "readable {src}", source)
     else:
