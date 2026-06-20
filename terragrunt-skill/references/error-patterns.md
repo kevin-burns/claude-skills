@@ -7,7 +7,8 @@ Workflow: take the error text, grep this file for distinctive keywords (`grep -i
 
 ## Categories
 - **authentication** (3): AWS credentials not found, Azure authentication required, GCP credentials not found
-- **backend** (4): S3 bucket does not exist, Access denied to backend, GCS bucket not found, Azure storage account not found
+- **backend** (5): S3 bucket does not exist, Access denied to backend, GCS bucket not found, Azure storage account not found, Azure backend 403 (shared key disabled / missing RBAC)
+- **provider** (1): azurerm provider requires subscription_id (v4+)
 - **configuration** (38): No Terraform configuration files found, Syntax error in configuration, Missing required input variable, Invalid configuration block, Duplicate configuration block, Invalid attribute value, Required attribute missing, Invalid terraform source…
 - **dependency** (13): Circular dependency detected, Module not found, Could not download source, Git authentication failed, Git ref not found, Module subdirectory not found, Module registry unavailable, Module checksum mismatch…
 - **network** (2): Network timeout, Connection refused
@@ -87,12 +88,14 @@ Insufficient permissions to access the backend storage
 - AWS/Azure/GCP credentials are invalid
 - IAM policy does not grant required permissions
 - Bucket policy restricts access
+- (Azure) data-plane RBAC role missing for Entra ID auth — see the dedicated 403 entry below
 
 **Solutions:**
-
-- 
-- 
-- 
+- Re-authenticate / verify the active principal (`aws sts get-caller-identity`,
+  `az account show`, `gcloud auth list`).
+- Grant the minimum backend permissions (S3+lock table / GCS bucket / Storage Blob Data
+  Contributor on the account).
+- For Azure specifics, see "Azure backend 403" below and references/azure-backend.md.
 
 ## ERROR: Azure storage account not found
 
@@ -104,15 +107,58 @@ The Azure storage account for remote state does not exist
 - Storage account name is incorrect
 - Storage account does not exist
 - Wrong Azure subscription
+- **Expecting Terragrunt to create it** — it won't. Unlike S3/GCS, Terragrunt does NOT
+  bootstrap Azure storage (the `azure-backend` experiment is a no-op); the account and
+  container must be created out-of-band.
 
 **Solutions:**
 
-- 
-- 
+- Verify the account exists in the right subscription:
   ```bash
-  az storage account show --name <account-name>
+  az storage account show --name <account-name> --subscription <subscription-id>
   ```
-- 
+- Create the account + container out-of-band (see references/azure-backend.md):
+  ```bash
+  az storage account create -n <account-name> -g <rg> -l <region> --kind StorageV2
+  az storage container create -n <container> --account-name <account-name> --auth-mode login
+  ```
+
+## ERROR: Azure backend 403 (AuthorizationFailure / shared key access disabled)
+
+**Category:** backend  |  **Match:** `{}`
+
+`init` against the azurerm backend fails with 403 (Forbidden) / AuthorizationFailure
+
+**Likely causes:**
+- The storage account has `allowSharedKeyAccess = false` (common enterprise policy), so the
+  backend's default shared-key auth is rejected.
+- Using Entra ID auth but the identity lacks a **data-plane** RBAC role. ARM
+  Owner/Contributor do NOT grant blob data access.
+
+**Solutions:**
+- Switch to Entra ID auth in the backend config: `use_azuread_auth = true` (or `use_oidc` in
+  CI).
+- Assign a data-plane role to the deploying identity:
+  ```bash
+  az role assignment create --assignee <objectId> \
+    --role "Storage Blob Data Contributor" \
+    --scope <storage-account-resource-id>
+  ```
+- Allow up to ~10 min (30 at MG scope) for the role assignment to propagate.
+
+## ERROR: azurerm provider requires subscription_id (v4+)
+
+**Category:** provider  |  **Match:** `{}`
+
+`azurerm` provider v4+ errors that the subscription ID is required
+
+**Likely causes:**
+- Provider upgraded to v4.0.0+ (2024-08-22), which **requires** `subscription_id`.
+
+**Solutions:**
+- Set it in the provider block (`subscription_id = "..."`) or export `ARM_SUBSCRIPTION_ID`.
+- Only omittable when `use_cli = true` on provider ≥ v4.35.0. See references/azure-backend.md.
+- Pin the provider in `required_providers` so the behavior is predictable.
 
 ## ERROR: GCS bucket not found
 

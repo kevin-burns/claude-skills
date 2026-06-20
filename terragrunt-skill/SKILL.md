@@ -20,8 +20,12 @@ read ONLY the listed reference(s), then act. References are grep-friendly — pr
 2. **Fact-based generation.** Every generated pattern must trace to a documented Gruntwork
    pattern (references here carry doc links to docs.terragrunt.com). Don't invent layouts.
 3. **Knowledge freshness.** Embedded references were verified against Terragrunt 1.0.x
-   (June 2026). For anything newer, niche, or not found in the references, use the C7
-   search skill (Context7) or fetch docs.terragrunt.com directly — do not guess.
+   (June 2026; latest stable v1.0.8). The **1.1.0 line is in release candidates** — some
+   stack features (`autoinclude`, `update_source_with_cas`, `mutable`, `include`/`dependency`
+   inside `terragrunt.stack.hcl`) are v1.1.0 and are flagged as such; do not generate them
+   into configs that must run on stable 1.0.x. For anything newer, niche, or not found in
+   the references, use the C7 search skill (Context7) or fetch docs.terragrunt.com directly
+   — do not guess.
 4. Terragrunt orchestrates **OpenTofu or Terraform**; don't assume one unless the user's
    repo indicates it (`.terraform-version`, `engine` block, provider constraints).
 
@@ -41,6 +45,8 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 | Error message pasted / "why is this failing" | DIAGNOSE | grep references/error-patterns.md |
 | "What does X do" (block/function/command) | LOOKUP | grep the matching reference below |
 | Complex/edge-case examples (multi-account, CI, mocks) | EXAMPLES | references/advanced-examples.md |
+| Anything Azure backend/provider (state, auth, gotchas) | (any mode) | **also** references/azure-backend.md |
+| "Only run changed units", slow `run --all`, CI fan-out, performance at scale | SCALE | references/scale-and-performance.md |
 
 ## Reference index (grep, don't read whole files)
 
@@ -51,11 +57,19 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 - `references/functions.md` — built-in functions by category. `grep '^## FUNCTION: get_env'`
 - `references/cli-reference.md` — full 1.0 command tree + `--filter` system.
   `grep '^## COMMAND: stack run'`
-- `references/error-patterns.md` — 66 diagnosed errors with causes/solutions. Grep error
+- `references/error-patterns.md` — 68 diagnosed errors with causes/solutions. Grep error
   keywords first: `grep -in 'state lock' references/error-patterns.md`
 - `references/best-practices.md` — practices with priority/rationale/antipatterns, plus
   `## COMPARISON:` (e.g. dependency vs dependencies) and `## DECISION:` guides
 - `references/advanced-examples.md` — 21 worked examples. `grep '^## EXAMPLE:'`
+- `references/azure-backend.md` — Azure (`azurerm`) remote state + provider setup and
+  gotchas: Terragrunt does NOT bootstrap Azure, backend key list, auth methods,
+  `use_azuread_auth`/Entra ID, provider v4 `subscription_id`, RBAC + shared-key gotchas,
+  OIDC for CI. Read this for ANY Azure backend/provider task.
+- `references/scale-and-performance.md` — running only changed units/stacks at scale:
+  `--filter` git+graph targeting (`--filter-affected`), `find --json` CI matrices, provider
+  cache server, CAS, dependency-output-from-state, parallelism, per-unit overhead, OSS vs
+  paid Scale. Read for "only plan/apply what changed", slow `run --all`, or CI fan-out.
 
 ## Templates
 
@@ -65,9 +79,12 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 - `templates/stack/terragrunt.stack.hcl`, `templates/catalog/` — explicit stacks & catalog units
 - `templates/module/terragrunt.hcl` — standalone unit
 - `templates/backends/` — remote_state for S3/GCS/Azure, essential + advanced tiers.
-  **Azure caveat:** `azurerm` passes through to the native backend; Terragrunt-native
-  bootstrap for Azure is experimental — do not claim `backend bootstrap` provisions Azure.
-- `templates/providers/` — provider `generate` blocks
+  **Azure caveat:** `azurerm` passes through to the native backend; Terragrunt does NOT
+  bootstrap/migrate/delete Azure storage — the account/container must pre-exist. Full
+  detail + gotchas in `references/azure-backend.md`.
+- `templates/providers/` — provider `generate` blocks (`aws-generate-provider.hcl`,
+  `azure-generate-provider.hcl`). For Azure, `subscription_id` is **required** by
+  `azurerm` provider v4+ — see `references/azure-backend.md`.
 
 Replace ALL placeholder variables before presenting (`{{mustache}}` in templates/backends and
 templates/providers; `[BRACKET]` style everywhere else); never leave placeholders or invent

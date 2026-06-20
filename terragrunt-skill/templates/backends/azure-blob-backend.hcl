@@ -8,9 +8,12 @@
 #   {{key}} (required): Path to state file within container
 
 # NOTE (Terragrunt 1.0.x): remote_state backend "azurerm" passes through to the
-# native OpenTofu/Terraform azurerm backend. Terragrunt-native bootstrap/migrate/
-# delete for Azure storage is an active experiment (azure-backend) — unlike S3/GCS,
-# do not assume `terragrunt backend bootstrap` provisions Azure storage yet.
+# native OpenTofu/Terraform azurerm backend. Terragrunt does NOT bootstrap/migrate/
+# delete Azure storage (azure-backend is a no-op experiment) — unlike S3/GCS, the
+# storage account + container must already exist before init. use_azuread_auth=true is
+# Microsoft-recommended (avoids storage shared keys, often disabled by policy); the
+# deploying identity then needs the "Storage Blob Data Contributor" data-plane role.
+# Full detail + gotchas: references/azure-backend.md
 # Ref: https://docs.terragrunt.com/reference/experiments/active
 
 remote_state {
@@ -21,5 +24,6 @@ remote_state {
     storage_account_name = "{{storage_account_name}}"
     container_name       = "{{container_name}}"
     key                  = "{{key}}"
+    use_azuread_auth     = true
   }
 }

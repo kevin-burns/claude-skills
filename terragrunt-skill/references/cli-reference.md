@@ -11,27 +11,63 @@ Lookup: `grep -n '^## COMMAND:' cli-reference.md` | `grep -A 20 '^## COMMAND: st
 
 ## FILTERS (--filter) — unit/stack targeting
 The `--filter` flag is the single 1.0 mechanism for targeting units and stacks, replacing all pre-1.0 queue flags (`--queue-include-dir`, `--queue-exclude-dir`, etc., which remain only as aliases that translate into filter expressions).
-Expression types: **name** (`name=web`), **path** (`./prod/**`), **attribute** (`reading=config/vars.tfvars`, `type=unit`), **graph** (dependency traversal), **git** (changed units). Combine expressions with a pipe: `--filter './prod/** | name=web'`. Reusable filter sets go in a filters file.
+
+**Expression types:**
+- **name** — `app*` (glob) or `app1` (exact). Matches units/stacks by name.
+- **path** — `./networking`, `./prod/**`, `/abs/path/**`.
+- **attribute** — `type=unit`, `type=stack`, `external=true|false`, `reading=shared.hcl`.
+- **negated (`!`)** — `'!./legacy'`, `'!name=legacy'`.
+- **graph** — dependency traversal (see operators below).
+- **git** — changed-since expressions, e.g. `'[main...HEAD]'`, `'[HEAD~1...HEAD]'`.
+
+**Combining:** intersect/refine with a pipe `|` (`'./prod/** | type=unit'`); **union** by repeating the flag (`--filter app1 --filter app2` = OR).
+
+**Exclude-by-default:** using *any* positive filter (one not starting with `!`) switches Terragrunt out of "include everything" mode — it then includes only what the positive filters match. Negative-only filters keep the include-all default and just subtract.
+
+**Graph traversal operators** (trailing `...` walks toward **dependencies**, leading `...` toward **dependents**):
+- `target...` — the target **and all its dependencies**.
+- `...target` — the target **and everything that depends on it**.
+- `...target...` — both directions.
+- `^` — exclude the target itself, keep its related components (`...^vpc` = dependents of `vpc`, not `vpc`).
+- depth limits: `service...1` (deps, 1 level), `1...vpc` (direct dependents), `1...db...2`. Depth applies per target.
+
+**Git-affected helpers:**
+- `--filter-affected` — shorthand that auto-detects the repo's default branch and diffs it against HEAD (≈ `--filter '[main...HEAD]'`).
+- `--filter-allow-destroy` — required safeguard: git filters will not destroy units removed between two refs unless this flag is set. Git filters strongly assume remote state.
+
+**Filters file:** name a filters file `.terragrunt-filters` and Terragrunt auto-loads it from the working directory; otherwise pass one with `--filters-file <path>` (one query per line, `#` comments).
+
 ```bash
-terragrunt find --filter './prod/** | name=web'
+terragrunt find --filter './prod/** | type=unit'
 terragrunt run --all apply --filter 'name=vpc'
+terragrunt run --all plan --filter-affected            # only git-changed units vs default branch
+terragrunt run --all plan --filter '...vpc'            # vpc and everything downstream of it
 ```
-Docs: https://docs.terragrunt.com/features/filter/ (sub-pages: name, path, attributes, graph, git, combining, filters-file). For full expression syntax, fetch those pages or use C7 search.
+Docs: https://docs.terragrunt.com/features/filter/ · graph: https://docs.terragrunt.com/features/filter/graph/ · git: https://docs.terragrunt.com/features/filter/git/. For full syntax, fetch those pages or use C7 search.
 
 ## COMMAND: backend bootstrap
 
 **Category:** backend
 
-Create and configure the remote state backend (S3 bucket, DynamoDB table, etc.).
+Create and configure the remote state backend.
 
 **Usage:** `terragrunt backend bootstrap [flags]`
 
-Automatically creates the backend resources needed for remote state storage. 
-For AWS, this includes the S3 bucket and DynamoDB table for state locking.
-For GCP, this creates the GCS bucket. For Azure, it creates the storage account and container.
+Automatically provisions the backend resources needed for remote state storage —
+**but only for the backends Terragrunt natively manages: S3 (bucket + optional
+DynamoDB lock table + access-logging bucket) and GCS (bucket).**
+
+> **Azure (azurerm) is NOT bootstrapped.** Azure support is gated behind the
+> `azure-backend` experiment, which currently does not change behavior — Terragrunt
+> does **not** create, migrate, or delete Azure storage accounts/containers. The
+> `azurerm` backend is passed through to OpenTofu/Terraform as-is, so the storage
+> account and blob container must already exist (create them with `az`, Bicep, or a
+> separate bootstrap unit). Do not tell users `backend bootstrap` provisions Azure
+> state. Ref: references/azure-backend.md ·
+> https://docs.terragrunt.com/reference/experiments/active
 
 **Options:**
-- `--terragrunt-config`: Path to the Terragrunt configuration file
+- `--config`: Path to the Terragrunt configuration file
 
 *Bootstrap the backend defined in terragrunt.hcl*
 ```bash
@@ -44,15 +80,20 @@ Docs: https://docs.terragrunt.com/reference/cli/commands/backend/bootstrap/
 
 **Category:** backend
 
-Delete the remote state backend resources.
+Delete the backend state for a unit.
 
 **Usage:** `terragrunt backend delete [flags]`
 
-Removes the backend resources created by Terragrunt. Use with caution as this 
-will delete the state storage. Make sure to back up any important state files first.
+Deletes the backend state object (e.g. the state file) for the current unit. Use with
+caution; `--force` is dangerous — deleting unversioned state is irreversible, so back up
+first. Documented for S3 (and applies to the natively-managed backends); **for `azurerm`
+Terragrunt does not delete Azure resources** (the `azure-backend` experiment is a no-op).
 
 **Options:**
-- `--force`: Skip confirmation prompt
+- `--all`: Delete state for all units in the stack
+- `--config`: Path to the Terragrunt configuration file
+- `--download-dir`: Custom download directory
+- `--force`: Skip confirmation prompt (dangerous — irreversible for unversioned state)
 
 *Delete backend resources with confirmation*
 ```bash
@@ -70,21 +111,25 @@ Docs: https://docs.terragrunt.com/reference/cli/commands/backend/delete/
 
 **Category:** backend
 
-Migrate state from one backend to another.
+Migrate state between two units.
 
-**Usage:** `terragrunt backend migrate [flags]`
+**Usage:** `terragrunt backend migrate [flags] <src-unit> <dest-unit>`
 
-Migrates Terraform state from the current backend to a new backend configuration.
-This is useful when moving state between different storage backends or reconfiguring
-backend settings.
+Moves state from one unit to another — commonly needed when a unit is renamed/moved and
+its state key (e.g. a `path_relative_to_include()` key) changes. When **both** source and
+destination use the same natively-supported backend (both S3, or both GCS), Terragrunt
+moves state with the cloud SDK transparently. Otherwise — including any **`azurerm`**
+unit, since Terragrunt does not natively migrate Azure state — it falls back to the
+OpenTofu/Terraform CLI to perform the migration.
 
 **Options:**
-- `--from`: Source backend configuration
-- `--to`: Destination backend configuration
+- `--config`: Path to the Terragrunt configuration file
+- `--download-dir`: Custom download directory
+- `--force`: Skip confirmation prompt
 
-*Migrate state to new backend*
+*Migrate state after renaming a unit*
 ```bash
-terragrunt backend migrate
+terragrunt backend migrate ./old-name ./new-name
 ```
 
 Docs: https://docs.terragrunt.com/reference/cli/commands/backend/migrate/
@@ -598,111 +643,115 @@ terragrunt plan -out=tfplan
 
 Docs: https://docs.terragrunt.com/reference/cli/commands/opentofu-shortcuts/
 
-## COMMAND: stack clean
-
-**Category:** stack
-
-Clean Terragrunt cache and generated files from the stack.
-
-**Usage:** `terragrunt stack clean [flags]`
-
-Removes Terragrunt cache directories (.terragrunt-cache) and optionally
-other generated files from all modules in the stack.
-
-**Options:**
-- `--all`: Clean all generated files, not just cache
-
-*Clean cache from all modules*
-```bash
-terragrunt stack clean
-```
-
-*Clean all generated files*
-```bash
-terragrunt stack clean --all
-```
-
-Docs: https://docs.terragrunt.com/reference/cli/commands/stack/clean/
-
 ## COMMAND: stack generate
 
 **Category:** stack
 
-Generate a stack configuration from existing Terragrunt modules.
+Materialize a stack from a `terragrunt.stack.hcl` file.
 
 **Usage:** `terragrunt stack generate [flags]`
 
-Scans the directory tree for Terragrunt modules and generates a stack 
-configuration file (terragrunt.stack.hcl) that defines the relationships
-between modules.
+Reads the `unit`/`stack` blocks in `terragrunt.stack.hcl` and **generates the
+`.terragrunt-stack/` directory** — one subdirectory per block at its `path`, each holding
+the unit's `terragrunt.hcl` (and a `terragrunt.values.hcl` when the block sets `values`).
+It discovers all `terragrunt.stack.hcl` files in the tree and processes them in parallel.
+This is *not* a reverse-engineer-from-modules command — it expands the stack definition you
+authored.
+
+> **Regeneration is not a clean replace by default** — stale files (including stale
+> `terragrunt.values.hcl`) are left in place. Use `--source-update` to refresh sources and
+> regenerate clean, or run `terragrunt stack clean` first.
 
 **Options:**
-- `--output`: Output file path
+- `--source-update`: Refresh unit/stack sources and regenerate cleanly
+- `--no-stack-validate`: Skip directory/config validation of the generated stack
+- `--parallelism`: Maximum parallel operations
+- `--filter`: Target a subset (needs `type=stack` to select stacks)
+- `--no-cas` / `--cas-clone-depth`: CAS controls (experimental; `--no-cas` errors if any block sets `update_source_with_cas = true`)
 
-*Generate stack configuration*
+*Materialize the stack into `.terragrunt-stack/`*
 ```bash
 terragrunt stack generate
 ```
 
-*Generate to custom file*
+Docs: https://docs.terragrunt.com/reference/cli/commands/stack/generate/
+
+## COMMAND: stack run
+
+**Category:** stack
+
+Run an OpenTofu/Terraform command across all units in a stack.
+
+**Usage:** `terragrunt stack run <command> [flags]`
+
+Runs a command against every unit in the stack, respecting dependency order (it
+auto-regenerates `.terragrunt-stack/` first unless told not to). Effectively `run --all`
+scoped to the generated stack, so it inherits the `run` flags (`--parallelism`, `--filter`,
+the queue flags, etc.).
+
+**Options:**
+- `--no-stack-generate`: Skip automatic stack regeneration before running (env `TG_NO_STACK_GENERATE`)
+- `--parallelism`: Maximum parallel operations
+- `--no-cas` / `--cas-clone-depth`: CAS controls (experimental)
+
+*Plan all units in the stack*
 ```bash
-terragrunt stack generate -o my-stack.hcl
+terragrunt stack run plan
 ```
 
-Docs: https://docs.terragrunt.com/reference/cli/commands/stack/generate/
+*Apply with limited parallelism*
+```bash
+terragrunt stack run apply --parallelism=3
+```
+
+Docs: https://docs.terragrunt.com/reference/cli/commands/stack/run/
 
 ## COMMAND: stack output
 
 **Category:** stack
 
-Show outputs from all modules in a stack.
+Show consolidated outputs from all units in a stack.
 
 **Usage:** `terragrunt stack output [flags]`
 
-Displays the Terraform outputs from all modules in the stack. Useful for 
-getting a summary of all resources and their outputs across the entire infrastructure.
+Retrieves and aggregates the outputs of every unit in the stack into a single view.
 
 **Options:**
-- `--json`: Output in JSON format
+- `--format`: Output format — `default` (HCL), `json`, or `raw` (env `TG_FORMAT`)
+- `--json`: Equivalent to `--format json` (env `TG_JSON`)
+- `--raw`: Equivalent to `--format raw` (env `TG_RAW`)
+- `--no-stack-generate`: Skip automatic stack regeneration first (env `TG_NO_STACK_GENERATE`)
 
-*Show all stack outputs*
+*Show all stack outputs (HCL)*
 ```bash
 terragrunt stack output
 ```
 
-*Show outputs in JSON format*
+*Show outputs as JSON*
 ```bash
 terragrunt stack output --json
 ```
 
 Docs: https://docs.terragrunt.com/reference/cli/commands/stack/output/
 
-## COMMAND: stack run
+## COMMAND: stack clean
 
 **Category:** stack
 
-Run a Terraform command across all modules in a stack.
+Remove the generated `.terragrunt-stack/` directory.
 
-**Usage:** `terragrunt stack run [flags] -- [terraform command]`
+**Usage:** `terragrunt stack clean`
 
-Execute Terraform commands across all modules defined in a stack configuration.
-The stack run command respects dependency ordering and can run modules in parallel.
+Deletes the `.terragrunt-stack/` directory produced by `stack generate` / `stack run`.
+Use it before regenerating to guarantee no stale generated files remain. (No flags
+documented.)
 
-**Options:**
-- `--parallelism`: Maximum parallel operations
-- `--ignore-dependency-errors`: Continue even if dependencies fail
-
-*Plan all modules in the stack*
+*Remove the generated stack*
 ```bash
-terragrunt stack run -- plan
+terragrunt stack clean
 ```
 
-*Apply all modules with limited parallelism*
-```bash
-terragrunt stack run --parallelism=3 -- apply -auto-approve
-```
-
-Docs: https://docs.terragrunt.com/reference/cli/commands/stack/run/
+Docs: https://docs.terragrunt.com/reference/cli/commands/stack/clean/
 
 ## COMMAND: info strict
 

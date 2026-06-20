@@ -164,14 +164,36 @@ unit "vpc" {
 unit "rds" {
   source = "${local.infra_root}/catalog/units/rds"
   path   = "rds"
+  values = {                       # passed to the generated unit
+    instance_class = "db.t3.medium"
+  }
 }
 ```
 
+**How it works.** `terragrunt stack generate` reads the `unit`/`stack` blocks and
+materializes `.terragrunt-stack/<path>/` for each — a `unit` produces a `terragrunt.hcl`;
+a nested `stack` block produces another `terragrunt.stack.hcl` (then itself expanded).
+`terragrunt stack run <cmd>` regenerates and runs across the stack in dependency order.
+
+- **`source`** uses the same forms as the `terraform` block: local paths, `git::…?ref=…`,
+  `tfr://` registry, and OCI image references.
+- **`values`** in a block is written to a `terragrunt.values.hcl` beside the generated
+  unit's `terragrunt.hcl`; the unit reads them as `values.<key>` (e.g.
+  `values.instance_class`). A `terragrunt.values.hcl` shipped in the source acts as
+  defaults and is replaced when the block sets `values`.
+- **`.terragrunt-stack/` is generated output:** gitignore it (along with
+  `.terragrunt-local-state`); `terragrunt stack clean` removes it. Regeneration does **not**
+  purge stale files by default — use `stack generate --source-update` or `stack clean`
+  first when sources change.
 - Prefer implicit stacks (plain directory trees) until duplication across envs/regions makes
   explicit stacks pay for themselves — this matches Gruntwork's guidance progression.
 - Reusable unit definitions conventionally live under `catalog/units/<name>` (see
   templates/catalog and templates/stack).
-- `.terragrunt-stack/` is generated output: gitignore it; `terragrunt stack clean` removes it.
+- **Version note:** the stable schema (Terragrunt 1.0.x) is `source`, `path`, `values`,
+  `no_dot_terragrunt_stack`, `no_validation`. `autoinclude`, `update_source_with_cas`,
+  `mutable`, `include` blocks in stack files, and `dependency` blocks targeting stack dirs
+  are **v1.1.0** (release-candidate as of June 2026) — don't generate them into configs that
+  must run on stable 1.0.x. See references/hcl-blocks.md `## BLOCK: unit`.
 
 Docs: https://docs.terragrunt.com/features/stacks/explicit/ ·
 https://docs.terragrunt.com/reference/cli/commands/stack/generate/
