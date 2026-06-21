@@ -105,6 +105,28 @@ reviewable diff. (See `references/architecture-patterns.md` `## PATTERN: explici
 **Tradeoffs:** Two repos (or a clear in-repo split) to manage; a version bump step to adopt
 catalog changes — which is the point.
 
+## PRACTICE: Audit machine-generated Terragrunt before trusting it
+
+**Category:** review  |  **Priority:** recommended  |  **Level:** intermediate
+
+**Why:** AI/codegen emits plausible-but-wrong Terragrunt fast. As the cost of *generating*
+falls, the cost of *verifying* must rise — generated HCL is not trustworthy until proven.
+
+- **Treat the generator's input model/spec as the contract:** confirm the generated config
+  reflects it — no dropped fields, no invented inputs (a conformance check, not a vibe).
+- **Run a no-op proof:** `terragrunt run --all plan` (or per-unit `plan`) and require **no
+  unintended changes** — no create/destroy/replace, no state-key churn — before applying. A
+  clean plan is the audit gate. (Same parity check used when migrating to stacks.)
+- **Validate structure cheaply first:** `terragrunt hcl validate` / `hcl fmt --check`, then
+  the REVIEW checklist (1.0-policy violations, include-graph integrity, dependency/mock
+  hygiene).
+- **Don't let "the tool generated it" lower the bar** — review the diff like any change.
+
+**Antipatterns:**
+- Applying generated Terragrunt without a reviewed plan
+- Trusting generated inputs match the source model without a conformance check
+- Treating a green `plan` exit as "no changes" without reading it (use `-detailed-exitcode`)
+
 ## PRACTICE: Always provide mock_outputs for dependencies to enable isolated planning
 
 **Category:** dependencies  |  **Priority:** critical  |  **Level:** intermediate

@@ -178,6 +178,29 @@ Agents run in isolated context windows — they see only the prompt you pass. So
 - **Least privilege.** Verifier/coherence-checker/reviewer are read-only; only the builder
   writes; only a human pushes/merges.
 
+## Generating infrastructure-as-code (extra governance)
+
+Infrastructure changes are high-blast-radius and often irreversible, so when the fleet
+*generates* IaC (Terraform/OpenTofu/Terragrunt) the bar is higher than for app code. The
+pattern the field has converged on — "**through IaC, not instead of it**" — is that the agent
+produces *reviewable IaC*, never direct cloud changes. (Hard-won dogfooding a graph→IaC
+generator: the model is the contract; the gates are the moat.)
+
+- **Generate code, never touch the cloud.** No agent runs `apply`/`destroy` or calls cloud
+  APIs directly against real environments. It emits IaC + a plan for a human/pipeline to apply.
+- **Plan → review → apply, always.** State-changing infra routes through a `plan` a human or
+  the pipeline reviews; the pipeline is the only path to prod. (The same rule terragrunt-skill
+  states for human authors binds *doubly* for agents.)
+- **Query state before acting.** Read existing state/graph first; never assume the cache is
+  current. Acting blind breaks idempotency and creates drift.
+- **The data model is the contract.** When generation is driven by a typed model/graph,
+  validate intent against the model *before any code exists*, and check generated output
+  *against the model* (conformance) — don't trust emitted HCL until a `plan` shows no
+  unintended changes (no create/destroy/replace, no state-key churn).
+- **Verification cost rises as generation gets cheap.** The faster agents emit IaC, the more
+  the gates (fact-verify, conformance tests, plan-no-change, policy-as-code) are the moat —
+  invest there, not in trusting the generator.
+
 ## Patterns for specific task shapes
 Depth beyond the core stages, from real runs. (Two earlier lessons are now baked into the
 pipeline itself: *calibrate a gate against real data* became stage 0, and *verify load-bearing
