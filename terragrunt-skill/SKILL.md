@@ -47,6 +47,7 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 | Complex/edge-case examples (multi-account, CI, mocks) | EXAMPLES | references/advanced-examples.md |
 | Anything Azure backend/provider (state, auth, gotchas) | (any mode) | **also** references/azure-backend.md |
 | "Only run changed units", slow `run --all`, CI fan-out, performance at scale | SCALE | references/scale-and-performance.md |
+| "Migrate to stacks", convert an `_envcommon`/tree layout to `terragrunt.stack.hcl` | MIGRATE | references/architecture-patterns.md `## PATTERN: migrate an existing tree to explicit stacks` |
 
 ## Reference index (grep, don't read whole files)
 

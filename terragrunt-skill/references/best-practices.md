@@ -5,7 +5,7 @@
 
 Sections: PRACTICE (by category), COMPARISON (block A vs B), DECISION (pattern guidance).
 
-## PRACTICE: Use run --all with --terragrunt-parallelism for efficient CI/CD pipelines
+## PRACTICE: Use run --all with --parallelism for efficient CI/CD pipelines
 
 **Category:** ci_cd  |  **Priority:** recommended  |  **Level:** intermediate
 
@@ -13,16 +13,16 @@ Sections: PRACTICE (by category), COMPARISON (block A vs B), DECISION (pattern g
 
 ```hcl
 # Apply all modules in dependency order with parallelism
-terragrunt run --all apply --terragrunt-parallelism 5
+terragrunt run --all apply --parallelism 5
 
 # Plan all and save output
-terragrunt run --all plan --terragrunt-parallelism 10 -out=tfplan
+terragrunt run --all plan --parallelism 10 -out=tfplan
 ```
 
 **Antipatterns:**
 - Applying modules one at a time in scripts
 - Unlimited parallelism (API rate limiting)
-- Not using --terragrunt-non-interactive in CI
+- Not using --non-interactive in CI
 
 **Tradeoffs:** Higher parallelism = faster but more API calls; run --all applies might be harder to debug
 
@@ -61,6 +61,49 @@ apply:
 - Applying without the saved plan file
 
 **Tradeoffs:** More complex pipeline configuration; Plan files can become stale if not applied promptly
+
+## PRACTICE: Make the pipeline the only path to production
+
+**Category:** ci_cd  |  **Priority:** critical  |  **Level:** intermediate
+
+**Why:** Manual `apply` to production from a laptop has no audit trail, depends on one person's
+memory, and bypasses review. The CI/CD pipeline should be the *exclusive* mechanism for
+deploying to prod; humans have read-only access outside it. The git history of the live repo
+then becomes the audit trail of who changed what and why. This also enforces the
+plan → review → apply gate.
+
+**When an LLM/agent drives Terragrunt** this rule is non-negotiable: generate/modify the HCL,
+run `plan`, surface it for review, and let the pipeline apply — **never** `apply` (or
+`apply -auto-approve` outside the controlled `run --all` stack flow) directly against prod.
+The agent-side discipline (generate IaC not direct cloud changes; query state before acting;
+plan→review→apply; never apply/push directly) lives in the **dev-fleet** skill — follow it.
+
+**Antipatterns:**
+- Humans with standing write/apply access to production
+- `apply` run from a workstation instead of the pipeline
+- An agent applying generated changes directly instead of opening a reviewable plan
+
+**Tradeoffs:** Requires a real pipeline + access controls; emergency break-glass needs a
+deliberate, audited exception path.
+
+## PRACTICE: Separate live config from a versioned module/unit catalog
+
+**Category:** structure  |  **Priority:** recommended  |  **Level:** intermediate
+
+**Why:** Keep environment-specific configuration (`infrastructure-live`) separate from the
+reusable, security-defaulted unit/module definitions it consumes (`infrastructure-catalog`).
+The live repo references catalog units by **pinned** `source = "git::…//units/x?ref=vX.Y.Z"`,
+so a catalog change is adopted deliberately (bump the `ref`), not implicitly. Promotion across
+environments is then "same stack, same unit sources, only `values` differ" — a small,
+reviewable diff. (See `references/architecture-patterns.md` `## PATTERN: explicit stacks`.)
+
+**Antipatterns:**
+- Editing shared module code and having it hit every environment at once
+- Catalog references pinned to `main`/`latest` (see the module-versioning practice)
+- Duplicating whole environment folders instead of varying `values`
+
+**Tradeoffs:** Two repos (or a clear in-repo split) to manage; a version bump step to adopt
+catalog changes — which is the point.
 
 ## PRACTICE: Always provide mock_outputs for dependencies to enable isolated planning
 
@@ -426,13 +469,13 @@ variable "enable_dns_hostnames" {
 
 ```hcl
 # AWS: Generally safe with 5-10 parallel operations
-terragrunt run --all apply --terragrunt-parallelism 5
+terragrunt run --all apply --parallelism 5
 
 # For many small modules, can go higher
-terragrunt run --all plan --terragrunt-parallelism 20
+terragrunt run --all plan --parallelism 20
 
 # For rate-limited APIs or large state files, go lower
-terragrunt run --all apply --terragrunt-parallelism 2
+terragrunt run --all apply --parallelism 2
 ```
 
 **Antipatterns:**

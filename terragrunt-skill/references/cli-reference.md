@@ -407,8 +407,8 @@ environment variables and context. This is useful for running custom scripts tha
 to Terragrunt's resolved configuration values.
 
 **Options:**
-- `--terragrunt-config`: Path to the Terragrunt configuration file
-- `--terragrunt-working-dir`: Directory to run the command in
+- `--config`: Path to the Terragrunt configuration file
+- `--working-dir`: Directory to run the command in
 
 *Run a custom script with Terragrunt context*
 ```bash
@@ -436,23 +436,23 @@ It can operate on a single module (unit) or across multiple modules (stack) usin
 When running against a stack, Terragrunt automatically determines the correct execution order based on 
 dependencies defined in terragrunt.hcl files.
 
-**Options:**
-- `--all`: Run the command against all modules in the stack (directory tree)
-- `--graph`: Generate a visual dependency graph instead of running the command
-- `--filter`: Filter which modules to include (comma-separated list of module names or paths)
-- `--exclude`: Exclude specific modules (comma-separated list)
-- `--parallelism`: Maximum number of modules to process in parallel
-- `--ignore-dependency-errors`: Continue processing even if a dependency fails
-- `--ignore-external-dependencies`: Ignore external dependencies (modules outside current tree)
-- `--include-external-dependencies`: Include external dependencies when running
-- `--terragrunt-config`: Path to the Terragrunt configuration file
-- `--terragrunt-working-dir`: Directory to run Terragrunt in
-- `--terragrunt-source`: Override the source URL for the module
-- `--terragrunt-source-update`: Delete the cached source and re-download
-- `--terragrunt-no-auto-init`: Disable automatic terraform init
-- `--terragrunt-no-auto-retry`: Disable automatic retry on retryable errors
-- `--terragrunt-non-interactive`: Run in non-interactive mode (no prompts)
-- `--terragrunt-log-level`: Set the log level (trace, debug, info, warn, error)
+**Options:** (1.0 flags — the pre-1.0 `--terragrunt-` prefix is gone)
+- `--all`: Run the command across all units in the stack (directory tree)
+- `--graph`: Run on the current unit plus the units that depend on it (graph traversal)
+- `--filter`: Target units/stacks with filter expressions — repeat for union; see the FILTERS section (not a comma-separated list)
+- `--parallelism`: Maximum number of units to process in parallel (default: unlimited)
+- `--queue-ignore-dag-order`: Run without respecting DAG order (safe only for read-only ops; dangerous for apply)
+- `--queue-ignore-errors`: Continue processing remaining units even if one fails
+- `--queue-include-external`: Include external dependencies (units outside the current tree)
+- `--dependency-fetch-output-from-state`: Read dependency outputs from the state file instead of `tofu output` (S3 only; not with state encryption)
+- `--config`: Path to the Terragrunt configuration file
+- `--working-dir`: Directory to run Terragrunt in
+- `--source`: Override the source URL for the module
+- `--source-update`: Delete the cached source and re-download
+- `--no-auto-init`: Disable automatic `init`
+- `--no-auto-retry`: Disable automatic retry on retryable errors
+- `--non-interactive`: Run in non-interactive mode (no prompts)
+- `--log-level`: Set the log level (trace, debug, info, warn, error)
 
 *Run terraform plan on current module*
 ```bash

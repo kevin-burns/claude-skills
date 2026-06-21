@@ -123,7 +123,7 @@ dependencies {
 **Use cases:** Microservices with shared infrastructure; Applications with multiple data stores; Complex multi-tier architectures
 
 **Pitfalls:**
-- Deep graphs slow down terragrunt plan-all
+- Deep graphs slow down terragrunt run --all plan
 - Circular dependencies are forbidden
 - Changes to shared dependencies affect many modules
 

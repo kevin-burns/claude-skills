@@ -198,6 +198,48 @@ a nested `stack` block produces another `terragrunt.stack.hcl` (then itself expa
 Docs: https://docs.terragrunt.com/features/stacks/explicit/ ·
 https://docs.terragrunt.com/reference/cli/commands/stack/generate/
 
+## PATTERN: migrate an existing tree to explicit stacks
+
+Use when an existing implicit layout (directory tree of `terragrunt.hcl` units, often with an
+`_envcommon`/`_env` pattern) should become explicit `terragrunt.stack.hcl` stacks. Migration
+is **optional and incremental** — if the current layout works, adopt stacks only for *new*
+infrastructure. The hazard is **state**: done wrong, every unit's state key changes and
+Terragrunt plans to destroy-and-recreate live infrastructure.
+
+**The state-key safety rule.** Your root `remote_state` `key` almost certainly uses
+`path_relative_to_include()`. Set **`no_dot_terragrunt_stack = true`** on each migrated
+`unit`/`stack` block so generation lands the unit in the *same directory* it lived in before,
+keeping `path_relative_to_include()` — and therefore the state key — identical. Omit it and
+the unit generates under `.terragrunt-stack/…`, the key changes, and state is orphaned.
+
+Runbook (reversible — originals stay until verified):
+1. **Pin a Terragrunt version** that supports `terragrunt.stack.hcl`, and add `.terragrunt-stack`
+   (plus `.terragrunt-local-state`) to `.gitignore`.
+2. **Author `terragrunt.stack.hcl`** describing the existing units, each with `source`
+   (pinned `?ref=`), `path`, and **`no_dot_terragrunt_stack = true`**; move per-env values
+   from `_envcommon` into each block's `values = { … }`.
+3. **Generate:** `terragrunt stack generate` — materializes the units in place.
+4. **PARITY GATE — prove state is preserved before deleting anything.** For a representative
+   migrated unit, run `terragrunt plan` (or `run --all plan`) and confirm it reports
+   **no changes** — no create/destroy/replace, no "moved"/state-key churn. A clean plan is the
+   authoritative proof that `path_relative_to_include()` resolved to the *same* key and the
+   existing state is intact. If plan wants to create everything, the key changed — **stop**,
+   recheck `no_dot_terragrunt_stack`, and do not delete the originals. (Optional extra check:
+   `terragrunt render --format json` prints the resolved config; inspect the backend section
+   if your render output includes it. The plan-no-change result is the gate that matters.)
+5. **Only then** remove the original unit configs (they regenerate on demand via
+   `stack generate`) and the `_envcommon` directory; commit `terragrunt.stack.hcl`.
+6. **CI/CD:** either commit the generated `.terragrunt-stack/` dirs (simplest), or run
+   `terragrunt stack generate` then `terragrunt run --all plan/apply --non-interactive` in the
+   pipeline.
+
+> The migrate docs describe the mechanics and the `no_dot_terragrunt_stack` rationale; the
+> render+plan parity gate above is the safe-practice check to run before deleting originals
+> (the docs say "verify the generated units match" but don't prescribe the command).
+
+Docs: https://docs.terragrunt.com/migrate/terragrunt-stacks/ ·
+https://docs.terragrunt.com/reference/cli/commands/stack/generate/
+
 ## Dependencies between units
 
 Use `dependency` blocks (with `mock_outputs` for plan-before-apply ergonomics):
