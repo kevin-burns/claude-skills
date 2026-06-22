@@ -60,20 +60,15 @@ comes from code-reviewer, and landing (merge/push/PR) is the caller's job — ne
   requirement, watch it fail, then make it pass. Cover a success case and at least one
   failure/edge case. Use the project's test framework and fixture conventions; never inline
   throwaway test data the project keeps in fixtures.
-  - **Combinatorial inputs → pairwise (PICT), then TDD those rows.** When behaviour turns on
-    **≥3 interacting parameters with finite value sets** (APIs, forms, config/feature-flag
-    matrices, auth flows), don't hand-pick a few cases: model the params/values (equivalence
-    classes + boundaries) + constraints, generate a **2-way covering set**, assign each row's
-    expected output **from the spec — you own the oracle; PICT picks inputs, not answers** —
-    then implement those rows test-first. Use **3-way** for high-risk/safety/security paths;
-    pairwise is a floor (input-combination coverage, *not* branch/behaviour sufficiency).
-    Depth + model syntax: the `pict-test-designer` skill (wraps Microsoft PICT, MIT) — it also
-    has the install detail. Offline-degradable: the model + covering set is the portable
-    artifact, and the tool is just an optimiser. **If `pict`/`pypict` isn't found**, run it
-    ephemerally (`uv run --with pypict …`, or `pip install pypict` in the project venv) or
-    hand-derive a small 2-way set yourself (pairwise is algorithmic — then verify every pair
-    appears); don't globally install a binary or paste the model into an external web tool
-    without the caller's OK, and never silently skip the matrix.
+  - **Combinatorial inputs (≥3 interacting params: APIs, forms, config/flag matrices) →
+    pairwise, then TDD those rows.** Don't hand-pick cases: model the params/values +
+    constraints, generate a **2-way covering set**, assign each row's expected output from the
+    spec (you own the oracle — PICT picks inputs, not answers), then implement test-first.
+    **3-way** for high-risk/safety/security; pairwise is a floor, not branch sufficiency.
+  - **PICT tooling is optional** — depth/syntax/install in the `pict-test-designer` skill
+    (Microsoft PICT, MIT). Run it ephemerally (`uv run --with pypict`) or hand-derive a small
+    set (pairwise is algorithmic; verify every pair appears); don't globally install or use
+    external web tools without the caller's OK, and never skip the matrix.
 - **Refactor mode (behavior-preserving changes** — rename/extract/split/test-consolidation,
   or the caller says "refactor"). Don't write new feature tests: the **existing suite is your
   safety net**. Keep it green, add **characterization tests first** only where coverage of
