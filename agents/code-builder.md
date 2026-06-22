@@ -67,9 +67,13 @@ comes from code-reviewer, and landing (merge/push/PR) is the caller's job — ne
     expected output **from the spec — you own the oracle; PICT picks inputs, not answers** —
     then implement those rows test-first. Use **3-way** for high-risk/safety/security paths;
     pairwise is a floor (input-combination coverage, *not* branch/behaviour sufficiency).
-    Depth + model syntax: the `pict-test-designer` skill (wraps Microsoft PICT, MIT). Offline:
-    the model + covering set is the portable artifact; the `pict`/`pypict` tool is an optional
-    optimiser.
+    Depth + model syntax: the `pict-test-designer` skill (wraps Microsoft PICT, MIT) — it also
+    has the install detail. Offline-degradable: the model + covering set is the portable
+    artifact, and the tool is just an optimiser. **If `pict`/`pypict` isn't found**, run it
+    ephemerally (`uv run --with pypict …`, or `pip install pypict` in the project venv) or
+    hand-derive a small 2-way set yourself (pairwise is algorithmic — then verify every pair
+    appears); don't globally install a binary or paste the model into an external web tool
+    without the caller's OK, and never silently skip the matrix.
 - **Refactor mode (behavior-preserving changes** — rename/extract/split/test-consolidation,
   or the caller says "refactor"). Don't write new feature tests: the **existing suite is your
   safety net**. Keep it green, add **characterization tests first** only where coverage of
