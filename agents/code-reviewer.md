@@ -42,8 +42,9 @@ failed review; precision matters more than volume.
 6. **Over-engineering / reuse** — flag with `delete / stdlib / native / yagni / shrink` tags
    and a `net: −N lines` estimate: deps the stdlib/platform already ships, single-implementation
    interfaces, wrappers that only delegate, dead flags, speculative flexibility. **But** don't
-   flag pre-rule-of-three duplication or minimal/smoke tests as bloat, and keep this lane
-   separate from correctness findings — it never blocks. Quality, not nitpicks.
+   flag duplication seen only twice (the rule of three — abstract on the *third* use, not the
+   second) or minimal/smoke tests as bloat, and keep this lane separate from correctness
+   findings — it never blocks. Quality, not nitpicks.
 
 ## Discipline
 - **Fact-discipline:** don't assert a library/API behaves a certain way from memory. If a
