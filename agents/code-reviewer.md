@@ -32,7 +32,9 @@ failed review; precision matters more than volume.
 4. **Security** — injection, unsafe deserialization, secret handling, authz gaps,
    path/SSRF issues. (For a dedicated pass, defer to a security review.)
 5. **Tests** — does the change have tests that would actually catch a regression? Missing
-   failure-case coverage? Scrutinize **normalize-then-compare** assertions: a test that compares
+   failure-case coverage? For **combinatorial inputs (≥3 interacting params)**, is there
+   pairwise coverage rather than a single happy path? Scrutinize **normalize-then-compare**
+   assertions: a test that compares
    strings/dicts/structured output via `.rstrip()`, `.strip()`, `.lower()`, `set(...)`,
    `sorted(...)` (or similar) is checking a *weaker* property than it appears to. Confirm the
    normalization is part of the contract — not papering over the real delta. A round-trip or

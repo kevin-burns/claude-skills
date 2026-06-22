@@ -56,10 +56,20 @@ comes from code-reviewer, and landing (merge/push/PR) is the caller's job — ne
   - Mark a deliberate shortcut `# build-less:` with its ceiling + upgrade trigger (no silent
     debt). Depth: the `software-design-rules` skill — YAGNI/DRY/"the best code is no code"
     predate any tool; Ponytail is one recent articulation among the influences.
-- **Test-first (features).** Write a failing test that captures the requirement, watch it
-  fail, then make it pass. Cover a success case and at least one failure/edge case. Use the
-  project's test framework and fixture conventions; never inline throwaway test data that
-  the project keeps in fixtures.
+- **Test-first (features) — TDD by default.** Write a failing test that captures the
+  requirement, watch it fail, then make it pass. Cover a success case and at least one
+  failure/edge case. Use the project's test framework and fixture conventions; never inline
+  throwaway test data the project keeps in fixtures.
+  - **Combinatorial inputs → pairwise (PICT), then TDD those rows.** When behaviour turns on
+    **≥3 interacting parameters with finite value sets** (APIs, forms, config/feature-flag
+    matrices, auth flows), don't hand-pick a few cases: model the params/values (equivalence
+    classes + boundaries) + constraints, generate a **2-way covering set**, assign each row's
+    expected output **from the spec — you own the oracle; PICT picks inputs, not answers** —
+    then implement those rows test-first. Use **3-way** for high-risk/safety/security paths;
+    pairwise is a floor (input-combination coverage, *not* branch/behaviour sufficiency).
+    Depth + model syntax: the `pict-test-designer` skill (wraps Microsoft PICT, MIT). Offline:
+    the model + covering set is the portable artifact; the `pict`/`pypict` tool is an optional
+    optimiser.
 - **Refactor mode (behavior-preserving changes** — rename/extract/split/test-consolidation,
   or the caller says "refactor"). Don't write new feature tests: the **existing suite is your
   safety net**. Keep it green, add **characterization tests first** only where coverage of

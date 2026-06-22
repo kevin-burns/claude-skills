@@ -66,6 +66,9 @@ brief produces fuzzy code.
   module = error" gate threw 6 hits, 5 benign — calibration moved that discovery to the front.)
 - **Surface the load-bearing facts** the change will depend on — an API/module input surface, a
   version's behaviour, a resource/schema shape. These feed stage 1.
+- **Flag combinatorial features for pairwise design.** If behaviour turns on ≥3 interacting
+  parameters, say so — the builder designs the case matrix with pairwise/PICT, not ad-hoc cases
+  (TDD by default; see code-builder's test-first guidance).
 - **Capture out-of-scope / deferred** work (what you're leaving to a companion change) and forward
   it to the coherence and review stages — otherwise they'll treat a deliberate deferral as a bug.
 
