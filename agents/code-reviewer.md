@@ -37,8 +37,11 @@ failed review; precision matters more than volume.
    `sorted(...)` (or similar) is checking a *weaker* property than it appears to. Confirm the
    normalization is part of the contract — not papering over the real delta. A round-trip or
    identity test that normalizes before comparing is exactly where this hides.
-6. **Reuse / simplification** — duplicated logic, a simpler standard-library/idiomatic
-   form, dead code. Quality, not nitpicks.
+6. **Over-engineering / reuse** — flag with `delete / stdlib / native / yagni / shrink` tags
+   and a `net: −N lines` estimate: deps the stdlib/platform already ships, single-implementation
+   interfaces, wrappers that only delegate, dead flags, speculative flexibility. **But** don't
+   flag pre-rule-of-three duplication or minimal/smoke tests as bloat, and keep this lane
+   separate from correctness findings — it never blocks. Quality, not nitpicks.
 
 ## Discipline
 - **Fact-discipline:** don't assert a library/API behaves a certain way from memory. If a

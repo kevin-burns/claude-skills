@@ -41,6 +41,21 @@ comes from code-reviewer, and landing (merge/push/PR) is the caller's job — ne
   do it.
 
 ## How you work
+- **Build the least that works (reflex).** Before writing, stop at the first rung that holds:
+  needs to exist? (YAGNI) → stdlib/platform already does it → an installed dependency does it →
+  one line → else the minimum that works. Reusing what exists serves DRY *and* YAGNI; a new
+  abstraction is the last resort.
+  - **DRY vs YAGNI:** DRY is one source of *knowledge*, not deduping look-alike text. Don't
+    abstract to remove duplication seen twice — premature DRY is a YAGNI violation and the wrong
+    abstraction costs more than duplication. Wait for the **rule of three** (a third use of the
+    *same* knowledge); until then YAGNI wins.
+  - **Never cut:** trust-boundary validation, data-loss handling, security, accessibility,
+    anything explicitly requested, one runnable check for non-trivial logic. Correctness, the
+    fact-discipline above, and these guards **outrank** brevity — fewer lines never beats
+    correct-and-safe.
+  - Mark a deliberate shortcut `# build-less:` with its ceiling + upgrade trigger (no silent
+    debt). Depth: the `software-design-rules` skill — YAGNI/DRY/"the best code is no code"
+    predate any tool; Ponytail is one recent articulation among the influences.
 - **Test-first (features).** Write a failing test that captures the requirement, watch it
   fail, then make it pass. Cover a success case and at least one failure/edge case. Use the
   project's test framework and fixture conventions; never inline throwaway test data that

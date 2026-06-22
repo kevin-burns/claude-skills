@@ -15,16 +15,12 @@ each by name via the Agent tool, reads its JSON, and gates on the result.
   skill is *instructions you follow*, not a mechanical orchestrator — so it's only as
   reliable as your adherence. Don't lean on auto-delegation for a stage you care about;
   name the agent. (A human driving Claude Code can force a stage with an `@agent-…` mention.)
-- **The `dev-story` Workflow (hands-off, deterministic).** For a guaranteed run of
-  plan→build→verify→cohere→review→full-suite, dispatch it via the Workflow tool with the
-  **absolute** `scriptPath` `~/.claude/skills/dev-fleet/dev-story.workflow.js` (this skill's base
-  directory, announced on load) — a relative `dev-fleet/…` won't resolve from the repo you're
-  working in. It moves the orchestration into code and hands a ready-to-merge branch back to you.
-  Use it when you want the steps to run in order without depending on the model *choosing* to.
-  It mirrors the two-point fact discipline: it verifies the plan's load-bearing facts **up front**
-  (before the build) and feeds the builder the verified values as its oracle, then resolves
-  anything the builder flags afterwards — and gates coherence on change size automatically
-  (`coherence: auto|always|never`).
+- **The `dev-story` Workflow (hands-off, deterministic).** For a guaranteed
+  plan→build→verify→cohere→review→full-suite run, dispatch it via the Workflow tool with the
+  **absolute** `scriptPath` `~/.claude/skills/dev-fleet/dev-story.workflow.js` (a relative path
+  won't resolve from your repo). It moves orchestration into code and hands back a ready-to-merge
+  branch; it mirrors the two-point fact discipline and gates coherence on change size
+  automatically (`coherence: auto|always|never`). See *Running for scale*.
 
 See `docs/agent-fleet-architecture.md` for the why.
 
@@ -39,11 +35,9 @@ Each agent returns JSON (see its definition). You read that JSON and decide whet
 proceed, loop, or stop. You stay in the loop between stages — this is a skill, not an
 unattended workflow.
 
-**Facts get verified at two points, on purpose.** *Up front* (stage 1) you verify the facts the
-change will **rest on**, so the builder writes against evidence — MS Learn / official docs,
-`source-snapshot`, `c7search`, schema dumps — not guesses it can't check offline. *After the
-build* (stage 3) you verify the claims the finished change actually **makes**, to catch where the
-builder drifted, assumed, or hallucinated. Same `fact-verifier` agent, two jobs.
+**Facts get verified at two points** — load-bearing facts *before* the build (stage 1, so the
+builder writes against evidence) and the finished change's claims *after* (stage 3, to catch
+drift/assumption/hallucination). Same `fact-verifier` agent, two jobs (detailed in those stages).
 
 ### Loop-back semantics (what a failing gate does)
 Every gate loops back to a **fresh-context** `code-builder` dispatch carrying the *specific*
@@ -68,9 +62,8 @@ brief produces fuzzy code.
   doesn't know yet. Hand the builder a naive rule and the exceptions surface as false positives
   *after* merge — expensive to unwind. Run the naive rule against real data first (a throwaway
   script or one inline pass), triage hits into real-vs-benign, and hand the builder a predicate
-  that already encodes the exclusions. (Real example: a "catalog var absent from the pinned module
-  = apply error" gate threw 6 hits, 5 benign — it didn't know about hand-authored wrappers or a
-  template's `parent_id` transform. A 5-minute calibration pass moves that discovery to the front.)
+  that already encodes the exclusions. (Real example: a naive "catalog var absent from pinned
+  module = error" gate threw 6 hits, 5 benign — calibration moved that discovery to the front.)
 - **Surface the load-bearing facts** the change will depend on — an API/module input surface, a
   version's behaviour, a resource/schema shape. These feed stage 1.
 - **Capture out-of-scope / deferred** work (what you're leaving to a companion change) and forward
@@ -170,9 +163,8 @@ Agents run in isolated context windows — they see only the prompt you pass. So
 
 ## Principles
 - **Explicit over auto.** Dispatch by name; gate on results. Determinism beats luck.
-- **Fact-gate at both ends.** Verify load-bearing facts *before* the build (so the builder writes
-  against evidence) and the finished change's claims *before* commit. Nothing lands on an
-  unresolved or refuted fact.
+- **Fact-gate at both ends.** Load-bearing facts before the build, the change's claims before
+  commit — nothing lands on an unresolved or refuted fact.
 - **Advisory, not adversarial.** The reviewer and any red-team inform your decision;
   they don't make it.
 - **Least privilege.** Verifier/coherence-checker/reviewer are read-only; only the builder
@@ -202,32 +194,23 @@ generator: the model is the contract; the gates are the moat.)
   invest there, not in trusting the generator.
 
 ## Patterns for specific task shapes
-Depth beyond the core stages, from real runs. (Two earlier lessons are now baked into the
-pipeline itself: *calibrate a gate against real data* became stage 0, and *verify load-bearing
-facts up front* became stage 1.)
+Depth beyond the core stages, from real runs.
 
 ### Network-dependent artifact: split builder (offline) from orchestrator (online)
-When the change needs an artifact the offline builder can't produce (a fetched snapshot,
-a registry baseline, anything requiring network/credentials), split the work cleanly:
-- **builder** writes the code + a small committed **fixture** of the artifact + the
-  integration test **guarded** by `skipif(not REAL_ARTIFACT.exists())`, and verifies
-  against the fixture;
-- **orchestrator** generates the real artifact in primary (online), which **activates**
-  the guarded test, then runs the gate + full suite.
-This keeps the builder hermetic and green in its worktree while the real-data gate lands
-intact. Make the artifact generator fail loudly (non-zero exit) on partial output so a
-half-built oracle can't be committed silently.
+When the change needs an artifact the offline builder can't produce (a fetched snapshot, a
+registry baseline, anything needing network/creds): the **builder** writes the code + a small
+committed **fixture** + an integration test guarded by `skipif(not REAL_ARTIFACT.exists())` and
+verifies against the fixture; the **orchestrator** generates the real artifact online (which
+activates the guarded test), then runs the gate + full suite. Make the generator **fail loudly**
+(non-zero exit) on partial output so a half-built oracle can't be committed silently.
 
 ### Reconcile in the worktree; merge once
-If the reviewer's findings (or a calibration pass) mean more work, do it **on the
-builder's branch** — re-dispatch via `SendMessage` to the same builder, or edit in the
-worktree — and merge only when clean. Merging first and then layering fixes + generated
-artifacts in primary works, but it splits the change across two workspaces and leaves the
-worktree behind. One branch, one merge, one history.
+If the reviewer's findings (or a calibration pass) mean more work, do it **on the builder's
+branch** (re-dispatch via `SendMessage`, or edit in the worktree) and merge only when clean —
+one branch, one merge, one history.
 
 ## Running for scale
-For a batch of changes (a backlog, a migration), this interactive pipeline is the wrong
-tool — use a Workflow. The `dev-story` workflow is the **per-item building block**: run it
-solo for one story, or call it from a fan-out that respects task dependencies and gates
-risky items for human review. Mind that dependent tasks touching shared files can't run in
-parallel worktrees — sequence them. This skill is for the in-the-loop, one-change path.
+For a batch (backlog, migration), don't use this interactive pipeline — use a Workflow. The
+`dev-story` workflow is the **per-item building block**: run it solo, or from a fan-out that
+respects task dependencies, gates risky items, and sequences shared-file tasks (they can't run
+in parallel worktrees). This skill is the in-the-loop, one-change path.
