@@ -10,19 +10,25 @@ for the affected fields.
 ## Auto-detection (run during Step 2, on the CV itself)
 
 ### German / DACH Lebenslauf
-Treat as a German-format CV if **two or more** of these hold (the title or German
-body alone is enough):
+**Language is the gate.** Trigger the German layer only if the CV body is actually
+German **or** the document is explicitly titled "Lebenslauf". A photo, a German
+address, or a DE/AT/CH employer are *not* enough on their own — plenty of
+English-language "international" CVs are written by people based in Germany, often
+with a photo. If the body, headings, and dates are English, treat it as the Anglo/
+international format even with a photo and a Berlin address (this is the common case
+for tech and international roles).
 
-- A heading or filename containing **"Lebenslauf"**.
-- **German body language** — umlauts (ä/ö/ü/ß) and German section headings:
-  *Berufserfahrung, Ausbildung, Kenntnisse, Sprachen, Persönliche Daten,
-  Weiterbildung, Interessen*.
-- A **personal-data block**: *Geburtsdatum / Geburtsort, Nationalität /
-  Staatsangehörigkeit, Familienstand*.
-- A **photo** placed top-right, and/or a **signature line** with *Ort, Datum* at the
-  bottom.
-- **Dates as MM.YYYY or DD.MM.YYYY**, and a **dates-left / details-right** tabular rhythm.
-- The target employer or posting is in **DE / AT / CH** or written in German.
+Once the language gate is met, these confirm it and tell you which conventions to
+apply: German section headings (*Berufserfahrung, Ausbildung, Kenntnisse, Sprachen,
+Persönliche Daten*); a personal-data block (*Geburtsdatum/Geburtsort,
+Nationalität/Staatsangehörigkeit, Familienstand*); a top-right photo and/or a
+signature line (*Ort, Datum*); MM.YYYY dates; a dates-left/details-right tabular
+rhythm; a DE/AT/CH employer.
+
+If the gate is **not** met but a photo is present (an English CV with a photo, as is
+common in Germany), keep the photo question as a candidate decision (see overrides)
+but otherwise apply the Anglo rules — do not import the German personal-data
+conventions.
 
 If detected, you already know you're inside the German regional layer — apply the
 overrides below and do **not** Anglicise it. The same conventions broadly cover

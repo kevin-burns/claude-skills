@@ -11,6 +11,15 @@ photo, date of birth, nationality, and signature. If a regional format is detect
 file for those personal-data fields — they are deliberately included there. Detect
 the format first (Step 2), then apply the right layer.
 
+## Diagnose from the extraction itself (do this first)
+
+When you read the CV you extract its text — and **that extraction is exactly what an
+ATS sees.** Don't just look at the visual layout; read the *order the text comes
+out*. If the contact block, skills, or a sidebar appear **before the name**, or
+sections interleave, that is a **confirmed live parse failure**, not a hypothetical
+one — flag it as a blocker. This single check catches most two-column and sidebar
+designs immediately, because they extract out of reading order.
+
 ## Layout
 
 - **Single column.** Multi-column layouts are the number-one parse-breaker:
@@ -19,6 +28,11 @@ the format first (Step 2), then apply the right layer.
 - **No text inside images or text boxes.** Anything rendered as an image (a skills
   graphic, a header logo with your name in it) is invisible to text extraction.
   Name, contact details, and all content must be live text.
+- **No graphical template furniture.** Modern designed templates hide parse-killers
+  in plain sight: **language/skill proficiency bars**, **boxed or pill-shaped tag
+  elements** (e.g. industry tags), **decorative section numbers** (01 / 02 / 03),
+  and icon glyphs. Convert each to plain text — a proficiency bar becomes
+  "German (B2)", a tag row becomes a comma-separated list.
 - **Avoid tables for layout.** Some parsers flatten table cells in the wrong order.
   If a table is unavoidable (e.g. a simple skills grid), keep it a single simple
   grid with one value per cell and no merged cells. When in doubt, use a plain
@@ -27,6 +41,13 @@ the format first (Step 2), then apply the right layer.
   regions. Keep name, email, and phone in the main body, near the top.
 - **No unusual glyphs as bullets or separators.** Use standard bullet characters;
   avoid decorative dingbats and icon fonts that may extract as garbage.
+
+**Keep both versions — don't make the candidate destroy a good design.** If they
+have a polished multi-column/designed PDF, the fix is *not* to discard it. Produce a
+**single-column parser-safe version for ATS and online forms**, and tell them to
+keep the **designed version for human-facing channels** (direct email, LinkedIn)
+where a person reads it and the layout helps. Lead with the parser-safe one for
+machines.
 
 ## Sections and headings
 
