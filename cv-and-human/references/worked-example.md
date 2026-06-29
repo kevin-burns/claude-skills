@@ -86,3 +86,69 @@ with a fabricated one.
   interview and there's no real figure, the claim collapses. Placeholder stays until
   the candidate supplies a measured number.
 ```
+
+---
+
+# German Lebenslauf variant (fake data)
+
+A second before/after, this time a German Lebenslauf (candidate "Lena Hoffmann",
+applying for a Cloud Engineer role). It demonstrates the regional overrides from
+`regional-formats.md` in action — note especially what is **kept** here that the
+Anglo example above would strip.
+
+## The raw input
+
+> **Persönliche Daten:** Lena Hoffmann · Musterstraße 1, 10115 Berlin ·
+> geb. 14.03.1990 in Hamburg · deutsch · [Bewerbungsfoto oben rechts]
+>
+> Profil: "Ergebnisorientierte, hochmotivierte Cloud-Engineerin mit nachweislicher
+> Erfolgsbilanz. Tauchen Sie ein in eine ganzheitliche, dynamische und
+> zukunftsweisende Arbeitsweise – ich liefere nicht nur skalierbare, sondern auch
+> innovative Lösungen und treibe nachhaltig Synergien voran."
+>
+> - "War maßgeblich an der Migration der CI/CD-Pipeline beteiligt, was die Effizienz
+>   erheblich steigerte und Skalierbarkeit sowie Zuverlässigkeit sicherstellte."
+>   *(am Rande erwähnt: Build-Zeit von ~40 auf ~6 Minuten)*
+> - "Unterstützung bei Kubernetes und Observability mit diversen Tools zur
+>   Performance-Optimierung." *(keine Zahl genannt)*
+> - "Spielte eine zentrale Rolle bei der Senkung der Cloud-Kosten." *(nie gemessen)*
+>
+> *Berlin, 14.03.2026 · [Unterschrift]*
+
+## The tailored, de-slopped output
+
+> **Persönliche Daten:** Lena Hoffmann · Musterstraße 1, 10115 Berlin ·
+> geb. 14.03.1990 in Hamburg · deutsch · [Bewerbungsfoto oben rechts] — **kept**
+>
+> **Profil** — Cloud-Engineerin mit 6 Jahren Erfahrung in AWS, Kubernetes und
+> CI/CD. Reduzierte die Build-Zeit einer Deployment-Pipeline von 40 auf 6 Minuten
+> und verantwortet den produktiven On-Call-Betrieb für 30 Services.
+>
+> | 10/2020 – heute | **Cloud Engineer**, Beispiel GmbH, Berlin |
+> | | • CI/CD-Pipeline auf GitHub Actions migriert; Build-Zeit von 40 auf 6 Minuten reduziert. |
+> | | • Kubernetes-Deployment-Automatisierung und Observability mit Prometheus/Grafana aufgebaut für [ERGÄNZEN: Anzahl Services/Cluster]. |
+> | | • Cloud-Kosten um [ECHTE ZAHL ERGÄNZEN] durch Rightsizing und Autoscaling gesenkt. |
+>
+> *Berlin, 14.03.2026 · [Unterschrift]* — **kept**
+
+## Why each change was made
+
+**Personal data, photo, and signature stay.** This is the regional override: the
+Anglo example strips DOB/photo/signature; a German Lebenslauf keeps them (here, a
+traditional-sector role — for a tech/international role the photo would be optional
+to omit). The parser ignores the image; the human reviewer expects it.
+
+**The Profil is pure German slop in the original** — *ergebnisorientiert,
+hochmotiviert, nachweisliche Erfolgsbilanz, Tauchen Sie ein, ganzheitlich, dynamisch,
+zukunftsweisend, Synergien,* and the *"nicht nur… sondern auch…"* construction are
+all empty boosters. The rewrite leads with a concrete specific (40→6) and states the
+stack plainly. Note the keyword guard in German: *skalierbar* was cut as an empty
+booster, but *Kubernetes, CI/CD, Prometheus/Grafana* stay — referential, and likely
+*Anforderungen* keywords from the posting.
+
+**Layout.** The dates-left / details-right *tabellarisch* rhythm is kept, built with
+tab stops so it extracts as a single stream — not a real two-column table.
+
+**Placeholders, not invention** — identical discipline to the English example:
+`[ERGÄNZEN: Anzahl Services/Cluster]` and `[ECHTE ZAHL ERGÄNZEN]` rather than a
+guessed figure. The 40→6 number was candidate-stated, so it stays.

@@ -124,6 +124,10 @@ Apply, in priority order:
    highest-consistency scoring area; make coverage complete.
 3. **Experience bullets** — reframe in JD language; lead with quantified outcomes
    (what changed, by how much); mirror the JD's themes. Keep them true.
+   **Align job titles** to the JD's title language where it's truthfully the same
+   role — both ATS and recruiters filter on title, so "Platform Engineer" beats a
+   creative title like "Cloud Ninja." Never inflate the level, only normalise the
+   wording.
 4. **Projects / open source** — surface relevant public work, link it, describe
    architecture and real-world deployment in concrete terms. This is heavily
    weighted in LLM screeners but also the noisiest — give it strong true material
@@ -186,6 +190,16 @@ Produce three things:
 See `references/worked-example.md` for a full before/after (fake data) showing the
 de-slop, the keyword guard, the metric-placeholder discipline, and filled gap-report
 and red-team fragments. Imitate its pattern.
+
+## Beyond the CV: flag what it can't fix
+
+The CV is not the only gate. Many enterprise ATS (e.g. Workday, Greenhouse) hard-
+filter on **application-form knockout questions** — work authorisation, years of
+experience, willingness to relocate, salary expectations, a required degree — that
+are scored separately from the CV and can auto-reject regardless of how good it is.
+This skill can't change those, but it should **flag** them so the candidate isn't
+blindsided perfecting a CV that a form answer already eliminated. Name the likely
+knockouts for the role and tell the candidate to answer them deliberately.
 
 ## Red-team pass (optional)
 

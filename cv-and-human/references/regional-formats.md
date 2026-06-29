@@ -26,7 +26,9 @@ body alone is enough):
 
 If detected, you already know you're inside the German regional layer — apply the
 overrides below and do **not** Anglicise it. The same conventions broadly cover
-Austria and German-speaking Switzerland (DACH).
+Austria and German-speaking Switzerland (DACH). For a concrete before/after that
+shows these overrides in action, see the German Lebenslauf variant in
+`references/worked-example.md`.
 
 ## German / DACH overrides
 

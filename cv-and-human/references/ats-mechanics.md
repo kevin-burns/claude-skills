@@ -14,6 +14,20 @@ keywords, titles, years, and filters. Deterministic. Here, **tailoring to the JD
 is the whole game: literal keyword coverage in the JD's surface forms, plus clean
 parsing. This is the JD-driven path in SKILL.md.
 
+Family A is not monolithic — *how* it scores varies by platform, which changes the
+tactic (this distinction is drawn from the open `sunnypatell/ats-screener`, whose
+per-platform behaviour is an approximation from public docs and community reports,
+not the vendors' real algorithms, so treat it as a map of modes, not exact rules):
+- **Literal-match** (e.g. Taleo): exact keyword/string matching dominates — use the
+  JD's exact surface forms, acronyms *and* spelled-out.
+- **Semantic-match** (e.g. iCIMS, ML-based): synonyms and variations count, so exact
+  wording matters less; cover the concept, not just the token.
+- **No-auto-score** (e.g. Greenhouse): the system doesn't rank — a recruiter
+  keyword-searches the pool, so keywords aid *findability*, and the human read is
+  what decides. Optimise for the recruiter, not a score.
+When the platform is unknown, satisfy literal-match (exact forms) — it also covers
+the others.
+
 **Family B — LLM-rubric scorer** (e.g. `hiring-agent`). Parses the CV, makes
 several LLM calls to extract structured sections, scrapes a linked GitHub and
 optionally a blog, then makes **one LLM call** to grade against a *fixed internal
