@@ -10,6 +10,7 @@ All skills here are MIT licensed (see [`LICENSE`](./LICENSE)). Skills that wrap 
 |---|---|---|
 | [clear-and-human](./clear-and-human) | Construct, review, score, and rewrite prose so it reads human, not AI | — |
 | [hook-and-human](./hook-and-human) | Write, punch up, and review persuasive marketing copy without fabricating | — |
+| [cv-and-human](./cv-and-human) | Tailor a CV to pass automated HR/ATS screening while staying truthful and human — keyword/JD matching, parseability, de-slop, optional red-team | — |
 | [c7search](./c7search) | Fetch up-to-date library docs via the `c7search` CLI | [Context7](https://context7.com) API |
 | [markdown-converter](./markdown-converter) | Convert PDF/Office/HTML/media files to Markdown | [markitdown](https://github.com/microsoft/markitdown) (MS, MIT) |
 | [nano-banana-pro-json](./nano-banana-pro-json) | Generate and edit images with structured JSON control | Google Gemini image API |
@@ -73,6 +74,7 @@ Symlinking (rather than copying) keeps this repo the single source of truth — 
 - **terragrunt-skill** — works as static review with no tooling; the bundled `scripts/validate.sh` uses `terragrunt` (1.0.x), plus optional `tflint` and `trivy` if present. `scripts/detect_custom_resources.py` runs on Python 3.
 - **terraform-registry** — Python 3 (stdlib only). `search`/`inspect-module` need only network access; `inspect-resource`/`refresh-schema` additionally need the `terraform` CLI.
 - **source-snapshot** — Python 3 (stdlib only). Uses whichever extractor is present: `markitdown` (via `uv`, the reliable fallback for docs/tables), and optionally Defuddle for prose articles (it strips page chrome). The producer auto-resolves the Defuddle runner — an installed `defuddle` binary, else `pnpm dlx` / `bunx` / `npx defuddle` (the `defuddle` package; `defuddle-cli` is deprecated/merged into it) — never pinning `@latest`, so caches are reused. Install once with `pnpm add -g defuddle` to avoid per-run fetches, or set `SNAPSHOT_DEFUDDLE_CMD` for a custom path. Degrades gracefully when one is missing.
+- **cv-and-human** — no tooling for the core workflow (review, tailoring, de-slop). The optional red-team's measured ATS lens uses `scripts/ats_adversarial_loop.py` — `uv`/Python 3 (its `selftest` runs without a model backend).
 - **dev-fleet** — no tooling; it's an orchestration playbook for the agents above.
 - **report-builder** — `uv` (the bundled `scripts/render.py` declares its deps via PEP 723 inline metadata; run with `uv run`). Bootstrap/Chart.js/Plotly load from CDN, or vendor them for offline reports.
 - **ux-audit / ux-auditor** — a browser driver to render pages: prefers `agent-browser`, falls back to `playwright-cli`; uses whichever is installed. Degrades to a static-HTML audit (clearly flagged) if neither is present.
