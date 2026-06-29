@@ -77,6 +77,17 @@ Read the CV file using the appropriate tool:
 - **.pdf** → use the `pdf` / `pdf-reading` skill to extract text.
 - **.txt / .md / pasted text** → read directly.
 
+**Boundary — extraction is the orchestrator's job, not the skill's.** Turning a
+PDF/DOCX into malleable text happens **here, upstream, with a deterministic tool**
+(the agent reading it, pymupdf, markitdown) **before** any reasoning step runs. The
+skill and its sub-agents (tailor, de-slop, red-team) assume text *in* — they must
+never run an LLM-based PDF/DOCX extractor internally. Keeping conversion upstream
+and deterministic makes it cheap, repeatable, and inspectable; burying a
+non-deterministic extractor inside the skill would make every downstream result vary
+on parsing noise. (The optional measured-ATS lens is the one place an *external*
+scorer like `hiring-agent` does its own internal parsing — but that engine is the
+thing under test, not this skill; see `references/red-team.md`.)
+
 While reading, run the **parseability check** in
 `references/parseability-checklist.md`. Parsing happens upstream of all scoring —
 a multi-column layout, text-in-images, or tables that scramble on extraction can
@@ -269,6 +280,10 @@ ALWAYS use this structure for the report:
 - `references/red-team.md` — Optional council-style red-team pass (ATS / Recruiter /
   Slop / Truth lenses) that pushes back without rejecting and finds weaknesses
   without rewriting. Read only for the red-team pass.
+- `references/measured-scorer.md` — Optional external-tool runbook for the *measured*
+  ATS lens: wiring `scripts/ats_adversarial_loop.py` to a real `hiring-agent`, the
+  model backends (Ollama / OpenAI-compatible: gpt-5-mini, Haiku), and the
+  markdown-first extraction path. Read only if you actually run the measured loop.
 - `references/worked-example.md` — A full before/after on fake data demonstrating
   the de-slop, keyword guard, metric-placeholder discipline, and filled report/
   red-team fragments. Read when you need a concrete pattern to imitate.

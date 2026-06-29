@@ -15,12 +15,21 @@ Design notes:
   built-in stub for testing the harness logic without a model backend.
 
 Usage:
-  # Real critic (local hiring-agent that prints JSON with a numeric total):
+  # Real critic. Point --scorer-cmd at a small adapter that prints {"total": N} to
+  # stdout (interviewstreet/hiring-agent's own score.py prints a human report, not
+  # JSON). PREFERRED adapter converts the PDF to markdown UPSTREAM (deterministic,
+  # via markitdown) and feeds the text straight to the scorer — 1 LLM call, not ~7;
+  # see references/red-team.md, "Wiring a real hiring-agent scorer":
   python ats_adversarial_loop.py score --cv cv.pdf \\
-      --scorer-cmd "python /path/hiring-agent/score.py --json {cv}" --runs 10
+      --scorer-cmd "python /path/hiring-agent/score_md.py {cv}" --runs 10
 
   # Harness self-test with the deterministic-ish stub:
   python ats_adversarial_loop.py selftest
+
+The scorer is non-deterministic: an occasional run yields malformed output and is
+skipped (reported as "N failed/skipped"), not fatal. Raise --runs if many fail.
+Below --min-successful (default 5) valid runs it refuses to report a median — a
+distribution over a handful of survivors is noise, not signal.
 """
 from __future__ import annotations
 import argparse
@@ -36,6 +45,7 @@ from typing import Callable, Optional
 @dataclass
 class Distribution:
     runs: list[float] = field(default_factory=list)
+    failures: int = 0  # runs that errored (malformed scorer output, flaky model call)
 
     @property
     def n(self) -> int:
@@ -55,16 +65,31 @@ class Distribution:
 
     def summary(self) -> str:
         if not self.runs:
-            return "no runs"
+            return f"no successful runs ({self.failures} failed)"
+        tail = f" ({self.failures} failed/skipped)" if self.failures else ""
         return (f"median {self.median:.1f}, range {self.minimum:.0f}-"
-                f"{self.maximum:.0f} over {self.n} runs")
+                f"{self.maximum:.0f} over {self.n} runs{tail}")
 
 
 def score_n(cv_path: str, scorer: Callable[[str], float], runs: int) -> Distribution:
-    """Score one CV `runs` times via the pluggable scorer."""
+    """Score one CV `runs` times via the pluggable scorer.
+
+    Resilient by design: we are sampling a *non-deterministic* critic, so an
+    occasional failed run (malformed model output, a flaky call) is expected and
+    must not abort the batch. A failed run is counted and skipped; we raise only if
+    *every* run failed (no distribution to report)."""
     dist = Distribution()
     for i in range(runs):
-        dist.runs.append(float(scorer(cv_path)))
+        try:
+            dist.runs.append(float(scorer(cv_path)))
+        except Exception as e:  # noqa: BLE001 — any scorer failure is a skippable sample
+            dist.failures += 1
+            print(f"  run {i + 1}/{runs} failed ({type(e).__name__}: "
+                  f"{str(e)[:120]}); skipping", file=sys.stderr)
+    if not dist.runs:
+        raise RuntimeError(
+            f"all {runs} scoring runs failed — no distribution to report. "
+            f"Check the scorer command and model backend.")
     return dist
 
 
@@ -185,6 +210,12 @@ def main() -> int:
                    help="shell command; '{cv}' is replaced with the CV path; "
                         "must print the critic's JSON/score to stdout")
     s.add_argument("--runs", type=int, default=10)
+    s.add_argument("--min-successful", type=int, default=5,
+                   help="floor on SUCCESSFUL runs; below this we refuse to report a "
+                        "median. A median over a handful of survivors (e.g. 2 of 10) "
+                        "is noise reported as signal — the skill's own first principle "
+                        "forbids it. Default 5 matches the N>=5 guidance; lower it "
+                        "explicitly (e.g. 1) only for a deliberate smoke test.")
     s.add_argument("--out", default=None, help="optional JSON history output path")
 
     sub.add_parser("selftest", help="run harness logic self-test (no model needed)")
@@ -196,11 +227,21 @@ def main() -> int:
     if args.cmd == "score":
         scorer = subprocess_scorer(args.scorer_cmd)
         dist = score_n(args.cv, scorer, args.runs)
-        print(dist.summary())
         if args.out:
             with open(args.out, "w") as f:
                 json.dump(asdict(dist), f, indent=2)
             print(f"wrote {args.out}")
+        # The min-successful guard: refuse to quote a median computed over too few
+        # survivors. Reporting one anyway is exactly "noise reported as signal".
+        if dist.n < args.min_successful:
+            print(f"INSUFFICIENT: only {dist.n} successful run(s) of {args.runs} "
+                  f"({dist.failures} failed) — below the --min-successful="
+                  f"{args.min_successful} floor. Refusing to report a median: a "
+                  f"distribution over so few survivors is noise, not signal. Raise "
+                  f"--runs, fix the scorer, or lower --min-successful only for a "
+                  f"deliberate smoke test.")
+            return 2
+        print(dist.summary())
         return 0
     return 1
 

@@ -89,15 +89,24 @@ Then synthesise (the tailor's job, not the red team's):
 
 ## Using a real scorer (measured ATS lens)
 
-If a real ATS engine is available (e.g. a local `hiring-agent`), the ATS lens can be
-quantitative. The critic is non-deterministic, so **never optimise a single run** —
-score the CV N≥5 times and read the median, the worst-case floor, and the range.
-`scripts/ats_adversarial_loop.py` drives this (`selftest` runs without a model
-backend; `score --scorer-cmd ...` drives a real engine). Treat a change as real only
-if the median rises beyond the noise band without dropping the floor; stop when the
-median plateaus. Report the distribution ("median 84, range 78–91 over 10 runs"),
-never a single number, and note the gain is measured against one noisy tool and may
-not transfer.
+The ATS lens can be made **quantitative** — score a CV through a real engine (e.g. a
+local `hiring-agent`) many times and read the *distribution*. Two disciplines bind any
+such measurement, in the script **and** in your hand-written reports:
+
+- **Report the distribution, never a single run** ("median 84, range 78–91 over 10
+  runs"). The critic is non-deterministic; one number is noise. A change is real only
+  if the median rises beyond the noise band without dropping the worst-case floor.
+- **Honour the minimum-successful floor.** Real scorers fail some runs; a median over
+  too few survivors is noise reported as signal — which principle 1 forbids. If fewer
+  than ~5 runs produced a valid score, do **not** quote a median; say "insufficient
+  successful runs" instead. (The harness enforces this via `--min-successful`.)
+
+The full setup — driving `scripts/ats_adversarial_loop.py`, wiring an adapter to a
+real `hiring-agent`, the model backends (Ollama / OpenAI-compatible: gpt-5-mini,
+Haiku), and the markdown-first extraction path — lives in
+[`measured-scorer.md`](./measured-scorer.md). It's a separate file on purpose: that
+wiring is an external-tool integration runbook, not red-team philosophy, and it loads
+only when you actually run the measured loop.
 
 ## Provenance
 
