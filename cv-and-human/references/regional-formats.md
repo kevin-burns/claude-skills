@@ -61,6 +61,16 @@ essential text, and keep name and contact details as live text near the top.
 extracts as a single stream. Real two-column tables, sidebars, text boxes, skill
 bars, and icons still break parsing — do not use them.
 
+**Watch the popular free templates.** Many widely-circulated `.docx` Lebenslauf
+templates — especially "modern" designs — build the whole layout from **text boxes
+and floating frames**, which a text extractor drops **silently**: you get an *empty*
+or scrambled extraction, not an obvious error, so the break is easy to miss.
+(Verified against two common free templates: a text-box-based "modern" one extracted
+to nothing.) So don't assume a clean-looking Lebenslauf parses — **run an extraction
+and confirm it yields ordered, selectable text** before trusting it. If a candidate
+hands you one of these, the content is fine; the container isn't — rebuild it as a
+single-stream, tab-stop layout (and export to PDF with a real text layer).
+
 **File & dates.** PDF is the German standard (selectable text, not a flattened
 image); name it `Lebenslauf_Vorname_Nachname.pdf`. Use one date format (MM.YYYY)
 throughout. Account for **every** timeline gap — German recruiters expect no
