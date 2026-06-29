@@ -42,6 +42,8 @@ Subagents for software-development work, coordinated by the `dev-fleet` skill. E
 
 Several agents ship a deterministic behavioral eval under `agents/<name>/evals/` (run with `uv run python grade.py`).
 
+`fact-verifier` and `cv-and-human`'s red-team Truth lens share one [portable verifier contract](./docs/verifier-contract.md) — never-assert-from-memory, cite/refute/return-the-lookup, read-only — with a per-domain *source profile*. Write a profile to get a verifier for a new domain without re-deriving the discipline.
+
 ## Contributing
 
 Authoring or editing a skill? See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — in particular the

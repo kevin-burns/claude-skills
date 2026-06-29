@@ -39,6 +39,20 @@ critiques from one angle and does not stray into another's.
    another lens wants that can only be met by fabricating is rejected here and
    becomes a candidate-decision gap instead.
 
+   This lens is a **verifier instance** — it runs the portable verifier contract
+   ([`docs/verifier-contract.md`](../../docs/verifier-contract.md), Profile B) on
+   each CV claim, so it inherits the same discipline as the code fact-verifier:
+   - **Source of record = the candidate's real history** (their confirmation, the
+     supplied CV, employment record, public commits/repos, certs). Model memory is
+     never a source — never invent a number, skill, employer, or title.
+   - **SUPPORTED** = defensible in an interview (candidate-confirmed or publicly
+     evidenced). **REFUTED** = overstated → carry the true, smaller value and correct
+     down to it. **UNVERIFIABLE** = unbacked → return the lookup ("ask the candidate
+     for the real figure / the repo URL") and leave it as a candidate-decision gap,
+     never a fabricated fill.
+   - **Read-only:** the lens *finds*; the tailor *fixes only the truthful ones* —
+     consistent with "critique, don't propose" below.
+
 ## Output: a triage header per lens, then a synthesis
 
 Each lens opens with the council triage header, then its findings:
