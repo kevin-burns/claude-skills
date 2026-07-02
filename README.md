@@ -23,6 +23,7 @@ All skills here are MIT licensed (see [`LICENSE`](./LICENSE)). Skills that wrap 
 | [report-builder](./report-builder) | Build self-contained single-page HTML reports/dashboards from data | [Jinja2](https://jinja.palletsprojects.com) / [Bootstrap 5](https://getbootstrap.com) / [Chart.js](https://www.chartjs.org) / [Plotly](https://plotly.com/javascript/) |
 | [ux-audit](./ux-audit) | Heuristic usability + accessibility audit of rendered web pages (Nielsen + WCAG 2.2) | — |
 | [azadvertizer](./azadvertizer) | Offline lookups over Azure Policy / Initiative / RBAC-Role metadata + cross-references | [AzAdvertizer](https://www.azadvertizer.net) CSV exports |
+| [use-linearis](./use-linearis) | Drive Linear.app from the CLI — issues, milestones, blocked-by relations, release filtering — plus the Linear↔Ogham dogfooding loop | [linearis](https://github.com/linearis-oss/linearis) CLI |
 
 ## Agents
 
@@ -34,7 +35,7 @@ Subagents for software-development work, coordinated by the `dev-fleet` skill. E
 | [fact-verifier](./agents/fact-verifier.md) | Verify claims/code against authoritative sources — cite, refute, or return the lookup; never assert from memory | sonnet |
 | [code-builder](./agents/code-builder.md) | Implement scoped changes TDD-style in an isolated worktree; commit on a branch, never push/merge/apply | sonnet |
 | [coherence-checker](./agents/coherence-checker.md) | Structural fit of the implementation vs the plan/spec/verified facts — spec/plan traceability, inverse-pair round-trip (no normalization tricks), cross-impl parity, contract-docstring fidelity; read-only, gated on change complexity | sonnet |
-| [code-reviewer](./agents/code-reviewer.md) | Advisory review for correctness, edge cases, contracts, security, tests — findings, not a gate | sonnet |
+| [code-reviewer](./agents/code-reviewer.md) | Advisory review for correctness, edge cases, contracts, security, tests — findings ranked by confidence (uncertain ones surfaced, not suppressed), not a gate | sonnet |
 | [docs-reviewer](./agents/docs-reviewer.md) | Review docs (READMEs, ADRs, runbooks) for completeness, clarity, correctness, and audience fit | sonnet |
 | [ux-auditor](./agents/ux-auditor.md) | Audit a rendered web page for usability/accessibility; renders via agent-browser/playwright-cli, fans out one per page (reads `ux-audit`) | sonnet |
 | [commit-pr](./agents/commit-pr.md) | Write commit and PR/MR messages (reads `commit-style`) | haiku |
@@ -80,4 +81,5 @@ Symlinking (rather than copying) keeps this repo the single source of truth — 
 - **dev-fleet** — no tooling; it's an orchestration playbook for the agents above.
 - **report-builder** — `uv` (the bundled `scripts/render.py` declares its deps via PEP 723 inline metadata; run with `uv run`). Bootstrap/Chart.js/Plotly load from CDN, or vendor them for offline reports.
 - **ux-audit / ux-auditor** — a browser driver to render pages: prefers `agent-browser`, falls back to `playwright-cli`; uses whichever is installed. Degrades to a static-HTML audit (clearly flagged) if neither is present.
+- **use-linearis** — the `linearis` CLI (`npm i -g linearis`, Node; ships `linear` and `linearis` binaries) and a Linear API token via `linear auth login`. The Ogham dogfooding loop additionally uses the [`ogham`](https://github.com/ogham-mcp/ogham-cli) CLI (a local Go binary; hybrid search via `ogham search`).
 - **azadvertizer** — `uv` (stdlib-only script via `uv run`); network only for the one-time `fetch`. Caches to `$XDG_CACHE_HOME/azadvertizer`; all queries run offline. Data © Julian Hayward / [AzAdvertizer](https://www.azadvertizer.net) — cache, don't hammer; not republished here.
