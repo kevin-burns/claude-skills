@@ -40,10 +40,18 @@ builder writes against evidence) and the finished change's claims *after* (stage
 drift/assumption/hallucination). Same `fact-verifier` agent, two jobs (detailed in those stages).
 
 ### Loop-back semantics (what a failing gate does)
-Every gate loops back to a **fresh-context** `code-builder` dispatch carrying the *specific*
-problem — never a vague "try again". Re-run the gate after the fix (bound the loop to ~2 rounds,
-then hand the residue to a human). Do the fix work **on the builder's branch** and merge once —
-see *Patterns: reconcile in the worktree*.
+Every gate loops back to `code-builder` carrying the *specific* problem — never a vague "try
+again". Re-run the gate after the fix (bound the loop to ~2 rounds, then hand the residue to a
+human). Do the fix work **on the builder's branch** and merge once — see *Patterns: reconcile in
+the worktree*.
+
+**Resume the same builder — don't spawn a fresh one blind.** To continue the original builder in
+its worktree, use **`SendMessage`** to that agent (it still knows its branch and `worktree_path`).
+A new `Agent` call starts a fresh agent with **no memory of the worktree path** — if you must start
+fresh (e.g. the original is gone), you MUST pass `worktree_path` and `branch` explicitly in the
+prompt, or the fix lands in the wrong tree. Reaching for a fresh `Agent` when you meant to resume
+is an easy slip; check which one you're calling. (The `dev-story` workflow sidesteps this — every
+fix stage re-passes the worktree path as data — but the in-the-loop path is on you.)
 
 | Gate result | Loop back to builder with |
 |---|---|
@@ -56,7 +64,27 @@ see *Patterns: reconcile in the worktree*.
 For anything beyond a trivial edit, agree the approach before dispatching a builder — but scoping
 is more than writing a brief. It's where you **explore** the real code/data, **calibrate** any
 rule the change depends on, and **surface the facts** it will rest on. A builder with a fuzzy
-brief produces fuzzy code.
+brief produces fuzzy code. **The plan is the pipeline's weakest link** — a gap written into the
+plan survives every gate that isn't looking for it. Four disciplines keep the plan honest:
+- **Audit before you write the tasks.** Before writing a single step, grep/read the last few
+  examples of the same kind of change (recent migrations, the tables/handlers/modules of the same
+  shape). Note in the plan header *that* you audited and *what* you found. A plan written from spec
+  + memory instead of an audit skips the established pattern the audit would have surfaced — that's
+  a shortcut that costs a full review turnaround. (Real example: reading the two most recent SQL
+  migrations would have shown the RLS-plus-GRANT pattern was universal for the tables in scope; the
+  plan was written without that read and shipped a security gap the reviewer then caught.)
+- **Mirror the pattern; cite it with file:line.** For any task touching schema, security, or an
+  established convention, the plan must say *"mirror the pattern at `<file:line>`"*, not just
+  describe the goal. The builder copies a real example, not a remembered one.
+- **Write positives, not just negatives.** For every prohibition ("do NOT add RLS to
+  `schema_postgres.sql`") write the matching positive for every parallel case ("DO add RLS + GRANT
+  to the other two schemas, mirroring `entities`/`memory_entities`"). A negative-only requirement
+  tells the builder what to skip and nothing about what to do — it implements only what's asked and
+  the gap ships. This is *the* recurring plan failure; treat a lone "do NOT" as unfinished.
+- **Resolve inconsistencies now, don't flag-and-defer.** If you notice a count that doesn't match
+  its list or a name used unevenly, fix it in the plan before dispatching. A "note: 15 vs 16, keep
+  honest" left in the plan is a noticed-but-unfixed bug — you already did the hard part (spotting
+  it); finish it.
 - **Calibrate a detector/gate against real data before you freeze the builder brief.** A gate's
   predicate ("X is a violation") is a domain claim, and the domain usually has exceptions the plan
   doesn't know yet. Hand the builder a naive rule and the exceptions surface as false positives
@@ -81,6 +109,14 @@ MS Learn / official docs, `source-snapshot`, `c7search`/Context7, schema dumps.
   now, not in reconcile after the build.
 - The verified facts (and any corrected values) become the builder's **oracle** — pass them as
   data into stage 2.
+- **External facts only — don't over-fire.** Verify things that need a source *outside this repo*:
+  versions, API/CLI shapes, resource IDs, pricing, "library X supports Y", "the spec says Z".
+  *Internal-consistency* questions ("does this new table follow our own RLS pattern") are **not**
+  fact-verifier's job — they're audit (stage 0) and coherence (stage 4) concerns, and firing the
+  verifier at them burns a turnaround for a verdict that can't change the recommendation. For a
+  schema/SQL change against an internally-consistent codebase with no external claim, the up-front
+  fact pass is often marginal; the builder's own `deviations`/`open_questions` will surface a gap
+  faster. Fire it when a real external claim is load-bearing, not reflexively.
 - Skip only when the change rests on nothing external (e.g. a pure refactor with green tests).
 
 ### 2. code-builder — implement
@@ -114,12 +150,19 @@ from the reviewer's line-level correctness. Its five checks:
 4. **Cross-implementation parity** — when >1 impl of an interface changed, a test drives the same
    input through each and asserts equivalent observable behaviour (not just "all have the method").
 5. **Contract-docstring fidelity** — docstrings/schemas match what the code actually does.
+6. **Pattern-mirror coverage** — every pattern the plan said to mirror is applied to *every* case
+   in its `applies_to`, not just the one the story named. A pattern present on the exception but
+   absent on a parallel case (RLS+GRANT on one new table but not its siblings) is a coherence fail.
+   This is the automated form of the "verify new tables match the last 3 tables added" self-review.
 
-Dispatch with the **plan** (incl. `out_of_scope`), the **fact verdicts** (so it can confirm the
-code used corrected values, not refuted ones), and the **branch/diff**.
+Dispatch with the **plan** (incl. `out_of_scope` and `patterns_to_mirror`), the **fact verdicts**
+(so it can confirm the code used corrected values, not refuted ones), and the **branch/diff**.
 - **When to run:** non-trivial changes only — `files_changed > 5`, `commits > 3`, or a multi-part
-  plan. A one-file, one-commit change doesn't earn the stage; skip it. (The `dev-story` workflow
-  gates this automatically with a `coherence: auto|always|never` arg.)
+  plan. A one-file, one-commit change doesn't earn the stage; skip it — **unless the plan has a
+  `patterns_to_mirror` entry**, which pulls coherence in regardless of size, because its failure
+  mode (pattern on the exception but not its siblings) is exactly a small, low-file-count change.
+  (The `dev-story` workflow gates this automatically — `coherence: auto|always|never`, plus an
+  auto-on when a pattern is present.)
 - **Gate rule:** `verdict: fail` → loop back to code-builder with the structural mismatch, then
   re-run. Advisory like the reviewer — you weigh it; a deliberate `out_of_scope` deferral is never
   a coherence failure.

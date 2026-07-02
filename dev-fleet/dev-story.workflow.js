@@ -1,10 +1,9 @@
+// NOTE: `meta` MUST be a pure literal — the Workflow parser AST-inspects it and rejects any
+// BinaryExpression (string concat with `+`), template interpolation, variable, or call. Keep
+// `description` a single-line string literal. (node --check won't catch this; the launcher does.)
 export const meta = {
   name: 'dev-story',
-  description:
-    'Implement a user story through the dev fleet: plan -> build (TDD, isolated branch) -> ' +
-    'verify facts -> coherence (structural gate, complex changes) -> review (bounded fix loop) -> ' +
-    'full-suite gate, then hand a ready-to-merge branch back to the main agent. The fleet never ' +
-    'merges/pushes — that stays with you.',
+  description: 'Implement a user story through the dev fleet: plan (audit + pattern-mirror) -> build (TDD, isolated branch) -> verify facts -> coherence (structural gate, complex changes) -> review (bounded fix loop) -> full-suite gate, then hand a ready-to-merge branch back to the main agent. The fleet never merges/pushes — that stays with you.',
   phases: [
     { title: 'Plan' },
     { title: 'Verify facts (up front)' },
@@ -55,12 +54,34 @@ const BUILD_MODE =
 // --- structured contracts (force each agent to return machine-usable data) ---
 const PLAN = {
   type: 'object',
-  required: ['acceptance_criteria', 'tests_to_write'],
+  required: ['acceptance_criteria', 'tests_to_write', 'audit_done'],
   properties: {
     acceptance_criteria: { type: 'array', items: { type: 'string' } },
     tests_to_write: { type: 'array', items: { type: 'string' } },
     files_likely_touched: { type: 'array', items: { type: 'string' } },
+    // EXTERNAL facts only — versions, APIs, IDs, pricing, upstream behavior needing a source
+    // OUTSIDE this repo. Internal-consistency questions ("does table X follow our own pattern")
+    // are audit/coherence concerns, NOT fact-verification — listing them here over-fires the
+    // verifier on claims it can't add value to.
     facts_needed: { type: 'array', items: { type: 'string' } },
+    // Proof the codebase was audited before tasks were written. Skipping this is how gaps ship:
+    // a task written from spec+memory misses the established pattern the audit would have surfaced.
+    audit_done: { type: 'boolean' },
+    audit_findings: { type: 'array', items: { type: 'string' } }, // what the grep/read pass surfaced
+    // Patterns the change MUST mirror (schema/security/convention work especially). Each carries a
+    // file:line anchor so the builder copies a real example, not a remembered one — and so coherence
+    // can verify every parallel case got the pattern (the RLS-on-new-tables self-review, automated).
+    patterns_to_mirror: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          pattern: { type: 'string' }, // what to replicate, e.g. "RLS enable + GRANT to authenticated"
+          source: { type: 'string' }, // file:line of a real example to copy
+          applies_to: { type: 'string' }, // every parallel case it must cover, not just the exception
+        },
+      },
+    },
     // Deliberate deferrals — travel with the reviewer/coherence so they don't blocking-flag
     // a scope decision (e.g. "Go CLI deferred to a companion change").
     out_of_scope: { type: 'array', items: { type: 'string' } },
@@ -129,8 +150,24 @@ const SUITE = {
 phase('Plan')
 const plan = await agent(
   `Scope this task for implementation (mode: ${mode}). Do NOT write code.\n\nSTORY:\n${story}\n\n` +
-    `${PLAN_MODE}\n\nAlso return: acceptance criteria as a checklist, files likely touched, any ` +
-    `FACTS that must be verified before coding (versions, APIs, IDs, config values), and ` +
+    `${PLAN_MODE}\n\n` +
+    `AUDIT FIRST — before writing any task step, grep/read the codebase for the pattern each task ` +
+    `touches: read the last few examples of the same kind of change (the most recent migrations, ` +
+    `the tables/handlers/modules of the same shape). Set audit_done=true and record what you found ` +
+    `in audit_findings. A plan written from spec + memory instead of an audit is how gaps ship.\n\n` +
+    `PATTERN-MIRROR — for anything touching schema, security, or an established convention, return ` +
+    `patterns_to_mirror: the pattern to replicate, a file:line anchor to a real example, and every ` +
+    `parallel case it applies_to. The builder copies a real example, not a remembered one.\n\n` +
+    `POSITIVES, NOT JUST NEGATIVES — for every prohibition ("do NOT add X to file A"), write the ` +
+    `matching positive ("DO add X to files B and C, mirroring <file:line>") for every parallel case. ` +
+    `A negative-only requirement tells the builder what to skip and nothing about what to do — the ` +
+    `builder implements only what's asked and the gap ships.\n\n` +
+    `SELF-CONSISTENCY — resolve every internal discrepancy before returning (counts that don't ` +
+    `match their list, a table named once but not everywhere). Do NOT flag-and-defer ("note: 15 vs ` +
+    `16, keep honest") — fix it now; a noticed-but-unfixed inconsistency is a shipped bug.\n\n` +
+    `Also return: acceptance criteria as a checklist, files likely touched, facts_needed — EXTERNAL ` +
+    `facts only that must be verified before coding (versions, APIs, IDs, config values, upstream ` +
+    `behavior needing a source outside this repo; NOT internal-consistency questions), and ` +
     `out_of_scope — anything deliberately deferred to a companion change, so review doesn't ` +
     `treat a scope decision as a bug.`,
   { label: 'plan', phase: 'Plan', schema: PLAN },
@@ -166,6 +203,9 @@ const build = await agent(
     `— never merge/push. ${BUILD_MODE} Bound your test runs (targeted during iteration; the ` +
     `relevant module once before committing) and report full_suite_command for the orchestrator.\n\n` +
     `STORY:\n${story}\n\nPLAN:\n${JSON.stringify(plan, null, 2)}\n\n` +
+    `PATTERNS TO MIRROR — for each, open the source file:line, copy the real pattern, and apply it ` +
+    `to EVERY case in applies_to (not just the one named in the story). Do not reconstruct the ` +
+    `pattern from memory:\n${JSON.stringify(plan?.patterns_to_mirror ?? [], null, 2)}\n\n` +
     `Use ONLY these VERIFIED facts as your oracle — write against these, not assumptions; if ` +
     `anything else is unknown, return it in missing_facts (do not invent):\n` +
     `${JSON.stringify(upfrontFacts?.verdicts ?? plan?.facts_needed ?? [], null, 2)}\n\nBase ref: ${base}`,
@@ -204,9 +244,13 @@ if (build.missing_facts?.length) {
 const filesN = build.files_changed?.length ?? 0
 const commitsN = build.commits?.length ?? 0
 const criteriaN = plan?.acceptance_criteria?.length ?? 0
+// A pattern to mirror pulls coherence in regardless of size: the failure mode it guards against
+// (pattern applied to the exception but not its parallel cases) is exactly a small, low-file-count
+// change — a 1-file, 1-commit "add RLS to two tables" would otherwise slip the gate.
+const hasPatterns = (plan?.patterns_to_mirror?.length ?? 0) > 0
 const runCoherence =
   coherenceMode === 'always' ||
-  (coherenceMode !== 'never' && (filesN > 5 || commitsN > 3 || criteriaN > 3))
+  (coherenceMode !== 'never' && (hasPatterns || filesN > 5 || commitsN > 3 || criteriaN > 3))
 let coherence = null
 if (runCoherence) {
   phase('Coherence')
@@ -219,6 +263,10 @@ if (runCoherence) {
         `(spec-to-code + plan-to-commit traceability, inverse-pair round-trip fidelity WITHOUT ` +
         `normalization tricks, cross-implementation parity, contract/docstring fidelity). Return ` +
         `verdict (pass|fail), findings, and loop_back_target.\n\n` +
+        `PATTERN-MIRROR CHECK — for each pattern below, confirm the code applied it to EVERY case in ` +
+        `applies_to, not just the one the story named. A pattern present on the exception but absent ` +
+        `on a parallel case (e.g. RLS+GRANT on one new table but not its siblings) is a coherence ` +
+        `fail — loop back to code-builder:\n${JSON.stringify(plan?.patterns_to_mirror ?? [], null, 2)}\n\n` +
         `PLAN:\n${JSON.stringify(plan, null, 2)}\n\n` +
         `VERIFIED FACTS (confirm the code uses corrected values, not refuted assumptions):\n` +
         `${JSON.stringify([...(upfrontFacts?.verdicts ?? []), ...(facts?.verdicts ?? [])], null, 2)}\n\n` +
