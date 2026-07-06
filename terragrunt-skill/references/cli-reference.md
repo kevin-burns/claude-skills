@@ -1,12 +1,15 @@
-# Terragrunt CLI Reference (1.0.x)
+# Terragrunt CLI Reference (1.x)
 
-> Scope: Terragrunt 1.0.x ONLY. Never generate pre-1.0 command forms (run-all, hclfmt, plan-all,
+> Scope: Terragrunt 1.x (post-1.0 CLI). Never generate pre-1.0 command forms (run-all, hclfmt, plan-all,
 > graph-dependencies, terragrunt- prefixed flags, etc.). Canonical docs: https://docs.terragrunt.com/reference/cli/
-> Verified against the Terragrunt 1.0 CLI command tree (docs.terragrunt.com, June 2026).
+> Verified against the Terragrunt CLI command tree (docs.terragrunt.com; current stable v1.1.0, 2026-07-01).
+> **v1.1.0 note:** CAS, the redesigned `catalog`, reading-detection for local modules, the
+> discovery-auth opt-out, and the dependency-tree run-queue display all graduated to GA and are
+> **on by default** — the matching `--experiment` flags are no longer needed (passing one warns).
 
 Lookup: `grep -n '^## COMMAND:' cli-reference.md` | `grep -A 20 '^## COMMAND: stack run'`
 
-## 1.0 command tree
+## 1.x command tree
 `run` `exec` | `backend bootstrap|migrate|delete` | `stack generate|run|output|clean` | `catalog` `scaffold` | `find` `list` | `hcl fmt|validate` | `dag graph` | `render` | `info print|strict` | OpenTofu shortcuts (`plan`, `apply`, `destroy`, `output`, `init`, ...)
 
 ## FILTERS (--filter) — unit/stack targeting
@@ -143,11 +146,20 @@ Browse and interact with a catalog of Terraform modules.
 **Usage:** `terragrunt catalog [flags]`
 
 Opens an interactive browser for exploring Terraform module catalogs.
-You can browse available modules, view their documentation, and scaffold
-new projects using modules from the catalog.
+You can browse available components, view their documentation, and scaffold
+new projects using them.
+
+**v1.1.0 redesign (GA, was the `catalog-redesign` experiment):** `catalog` now starts
+without any configuration, **discovers components across your catalog repos in the background**
+and streams them into the TUI as they're found. Discovery is no longer limited to a `modules/`
+directory — components can live anywhere; add a `.terragrunt-catalog-ignore` file (`.gitignore`-style
+globs) to filter paths out. Each component shows a **kind** label (`template`, `stack`, `unit`,
+`module`) plus optional tags from its `README.md` front-matter; press `s` on a component to
+open the interactive scaffold screen.
 
 **Options:**
 - `--url`: URL of the catalog to browse
+- `--no-cas`: opt out of CAS-accelerated catalog cloning (CAS is on by default since v1.1.0)
 
 *Browse the default catalog*
 ```bash
@@ -453,6 +465,16 @@ dependencies defined in terragrunt.hcl files.
 - `--no-auto-retry`: Disable automatic retry on retryable errors
 - `--non-interactive`: Run in non-interactive mode (no prompts)
 - `--log-level`: Set the log level (trace, debug, info, warn, error)
+- `--no-cas` (env `TG_NO_CAS`): opt out of the Content Addressable Store, which is **on by
+  default as of v1.1.0** (GA). `--cas-clone-depth` sets the git clone depth CAS uses (default
+  1; `-1` = full history). Errors if any block sets `update_source_with_cas = true`.
+- `--no-discovery-auth-provider-cmd` (env `TG_NO_DISCOVERY_AUTH_PROVIDER_CMD`, **v1.1.0+**,
+  was the `opt-out-auth` experiment): skip running `--auth-provider-cmd` during the discovery
+  phase — big speedup on large change-based runs, but only safe when parsing resolves without
+  credentials (a unit using e.g. `get_aws_account_id()` at parse time will fail).
+
+Since v1.1.0 the run-queue preview before `run --all` renders as a dependency **tree** by
+default (was the `dag-queue-display` experiment).
 
 *Run terraform plan on current module*
 ```bash
@@ -667,7 +689,7 @@ authored.
 - `--no-stack-validate`: Skip directory/config validation of the generated stack
 - `--parallelism`: Maximum parallel operations
 - `--filter`: Target a subset (needs `type=stack` to select stacks)
-- `--no-cas` / `--cas-clone-depth`: CAS controls (experimental; `--no-cas` errors if any block sets `update_source_with_cas = true`)
+- `--no-cas` / `--cas-clone-depth`: CAS controls. CAS is **GA and on by default since v1.1.0**; `--no-cas` (env `TG_NO_CAS`) opts out but errors if any block sets `update_source_with_cas = true`. `--cas-clone-depth` default 1 (`-1` = full history).
 
 *Materialize the stack into `.terragrunt-stack/`*
 ```bash
@@ -692,7 +714,7 @@ the queue flags, etc.).
 **Options:**
 - `--no-stack-generate`: Skip automatic stack regeneration before running (env `TG_NO_STACK_GENERATE`)
 - `--parallelism`: Maximum parallel operations
-- `--no-cas` / `--cas-clone-depth`: CAS controls (experimental)
+- `--no-cas` / `--cas-clone-depth`: CAS controls (GA, on by default since v1.1.0; `--no-cas` env `TG_NO_CAS`)
 
 *Plan all units in the stack*
 ```bash

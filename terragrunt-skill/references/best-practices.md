@@ -1,7 +1,7 @@
 # Terragrunt Best Practices & Decision Guidance
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Verified against: Terragrunt 1.0.x (spot-checked vs docs.terragrunt.com, June 2026); flag and avoid any pre-1.0 idioms.
+> Verified against: Terragrunt 1.x (spot-checked vs docs.terragrunt.com; current stable v1.1.0, 2026-07-01); flag and avoid any pre-1.0 idioms.
 
 Sections: PRACTICE (by category), COMPARISON (block A vs B), DECISION (pattern guidance).
 

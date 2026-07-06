@@ -4,7 +4,7 @@ license: MIT
 description: Comprehensive Terragrunt 1.x skill for generating, validating, reviewing, and debugging Terragrunt configurations (root.hcl, terragrunt.hcl, terragrunt.stack.hcl, units, stacks, catalogs) across AWS, Azure, and GCP. Use this skill whenever the user mentions Terragrunt, terragrunt.hcl, root.hcl, stack files, units, HCL orchestration of OpenTofu/Terraform, remote state DRY configuration, run --all, dependency blocks between modules, or asks to scaffold/lint/diagnose multi-environment IaC layouts — even if they don't say "Terragrunt" explicitly but show Terragrunt HCL.
 ---
 
-# Terragrunt (1.0.x)
+# Terragrunt (1.x)
 
 Single skill for all Terragrunt work, organized as a router: identify the task mode below,
 read ONLY the listed reference(s), then act. References are grep-friendly — prefer
@@ -12,20 +12,25 @@ read ONLY the listed reference(s), then act. References are grep-friendly — pr
 
 ## Hard policy
 
-1. **Terragrunt 1.0.x only.** Never generate or recommend pre-1.0 forms: `run-all`,
+1. **Post-1.0 CLI only.** Never generate or recommend pre-1.0 forms: `run-all`,
    `plan-all`, `hclfmt`, `hclvalidate`, `graph-dependencies`, `validate-inputs`,
    `terragrunt-` prefixed flags, the `skip` attribute, `retryable_errors`, or bare
    `find_in_parent_folders()` pointing at a root `terragrunt.hcl`. If user code contains
-   these, flag them and propose the 1.0 form.
+   these, flag them and propose the 1.x form.
 2. **Fact-based generation.** Every generated pattern must trace to a documented Gruntwork
    pattern (references here carry doc links to docs.terragrunt.com). Don't invent layouts.
-3. **Knowledge freshness.** Embedded references were verified against Terragrunt 1.0.x
-   (June 2026; latest stable v1.0.8). The **1.1.0 line is in release candidates** — some
-   stack features (`autoinclude`, `update_source_with_cas`, `mutable`, `include`/`dependency`
-   inside `terragrunt.stack.hcl`) are v1.1.0 and are flagged as such; do not generate them
-   into configs that must run on stable 1.0.x. For anything newer, niche, or not found in
-   the references, use the C7 search skill (Context7) or fetch docs.terragrunt.com directly
-   — do not guess.
+3. **Knowledge freshness.** Embedded references were verified against Terragrunt 1.x
+   (current stable **v1.1.0**, released 2026-07-01). **v1.1.0 graduated six experiments to
+   GA** — `stack-dependencies`, `cas`, `catalog-redesign`, `mark-many-as-read`,
+   `opt-out-auth`, `dag-queue-display` — so their features are now **enabled by default**;
+   passing the old `--experiment`/`TG_EXPERIMENT` value only prints a "completed experiment"
+   warning. The stack-dependency features (`autoinclude`, `unit.<name>.path` /
+   `stack.<name>.path`, `dependency` on stack dirs via `autoinclude`) and the CAS attributes
+   (`update_source_with_cas`, `mutable`) therefore require **v1.1.0+** — flag them and do NOT
+   emit them for repos pinned to ≤1.0.x. (`azure-backend` and
+   `dependency-fetch-output-from-state` remain experiments — not graduated.) For anything
+   newer, niche, or not found in the references, use the C7 search skill (Context7) or fetch
+   docs.terragrunt.com directly — do not guess.
 4. Terragrunt orchestrates **OpenTofu or Terraform**; don't assume one unless the user's
    repo indicates it (`.terraform-version`, `engine` block, provider constraints).
 

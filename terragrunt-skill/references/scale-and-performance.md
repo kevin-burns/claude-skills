@@ -1,4 +1,4 @@
-# Terragrunt at scale: plan/apply only what changed (1.0.x)
+# Terragrunt at scale: plan/apply only what changed (1.x)
 
 > The problem: a repo with hundreds of units. `run --all plan/apply` walks the whole tree
 > and is slow. This file is the OSS toolkit for **targeting only changed units + their
@@ -6,7 +6,7 @@
 > here is free CLI — the paid **Terragrunt Scale** platform only adds *hosted* orchestration
 > on top (see the last section).
 >
-> Verified June 2026 against docs.terragrunt.com (latest stable v1.0.8). Grep-friendly:
+> Verified against docs.terragrunt.com (current stable v1.1.0, 2026-07-01). Grep-friendly:
 > `grep -n '^## ' scale-and-performance.md`.
 
 ## TL;DR recipes
@@ -41,6 +41,12 @@ match the units whose files changed.
 - **Reads outside the unit count too:** if a unit `reading=` a shared file (or via
   `mark_glob_as_read()`) and that file changed, the unit is treated as affected — so a tweak
   to a shared `_env/region.hcl` correctly re-plans its consumers, not just the file's folder.
+- **Local module files now count (v1.1.0):** when a unit's `terraform` `source` is a local
+  directory, Terragrunt records that module's `*.tf`, `*.tf.json`, `*.hcl`, `*.tofu`,
+  `*.tofu.json` files as read, so changing a local module selects its units via `reading=` /
+  `--queue-include-units-reading`. GA (was `--experiment mark-many-as-read`); expect existing
+  pipelines to select *more* units than before. The new `mark_glob_as_read()` HCL function
+  marks additional files in one call (see references/functions.md).
 - **Destroy safeguard:** git filters will **not** destroy units removed between the two refs
   unless you add **`--filter-allow-destroy`**. This prevents an accidental teardown when a
   unit directory is deleted in a PR.
@@ -114,12 +120,19 @@ Docs: https://docs.terragrunt.com/features/provider-cache-server/ · https://doc
 
 ## Speed knob 2: CAS — content-addressable source store
 
-CAS avoids re-downloading remote module/catalog sources across many units/stacks (cheap
-`git ls-remote` probe for a cache key; identical files hard-linked once).
+CAS avoids re-downloading remote module/catalog sources across many units/stacks (a cheap
+per-getter probe — e.g. `git ls-remote` — yields a cache key without downloading; identical
+files are hard-linked once). It speeds up catalog cloning, OpenTofu/Terraform source fetching,
+and stack generation.
 
-- Enable: `--experiment cas` (it becomes the **default in v1.1**). Disable: `--no-cas`.
-  `--cas-clone-depth` (default 1; `-1` = full history).
+- **GA and on by default since v1.1.0** (was `--experiment cas`; the flag now just warns).
+  Disable per run with `--no-cas` (env `TG_NO_CAS`). `--cas-clone-depth` (default 1; `-1` =
+  full history). Available on `run`, `stack generate`, `stack run`, and `catalog`.
+- **No longer Git-only** (v1.1.0): also deduplicates HTTP/HTTPS, Amazon S3, Google Cloud
+  Storage, Mercurial, SMB, and OpenTofu/Terraform registry (`tfr://`) sources.
 - Caveat: hard-link falls back to copy across filesystems; only delete the CAS dir when idle.
+- See also `update_source_with_cas` / `mutable` in references/hcl-blocks.md for self-contained,
+  content-addressed stack generation.
 
 Docs: https://docs.terragrunt.com/features/caching/cas/
 
@@ -157,10 +170,12 @@ Docs: https://docs.terragrunt.com/features/run-queue/ · https://docs.terragrunt
 - **Keep dependency optimization on.** It's the default; `disable_dependency_optimization =
   true` is the *opt-out* and makes runs slower (it forces recursive dependency retrieval even
   when a unit doesn't read dependency outputs). Don't set it unless you have a reason.
-- **Expensive discovery auth:** `--experiment=opt-out-auth --no-discovery-auth-provider-cmd`
-  skips per-unit auth provider commands during discovery when they dominate wall-clock (the
-  flag requires the `opt-out-auth` experiment to be enabled). For a costly shared command,
-  wrap it in `run_cmd("--terragrunt-global-cache", ...)` so it runs once per invocation.
+- **Expensive discovery auth:** `--no-discovery-auth-provider-cmd`
+  (`TG_NO_DISCOVERY_AUTH_PROVIDER_CMD`) skips per-unit `--auth-provider-cmd` runs during
+  discovery when they dominate wall-clock. **GA since v1.1.0** — no longer needs
+  `--experiment opt-out-auth`. Only safe when parsing resolves without credentials (a unit
+  using e.g. `get_aws_account_id()` at parse time will fail with it set). For a costly shared
+  command, wrap it in `run_cmd("--terragrunt-global-cache", ...)` so it runs once per invocation.
 - **Validate-only CI without touching a backend:** pass `-backend=false` to OpenTofu via
   `extra_arguments` (note: `remote_state.disable_init` now passes `-backend-config` and
   requires the backend to exist — it is not the same as `-backend=false`). Backend
@@ -203,5 +218,6 @@ performance techniques here don't require it.
 - performance troubleshooting: https://docs.terragrunt.com/troubleshooting/performance/
 - provider cache server: https://docs.terragrunt.com/features/provider-cache-server/
 - CAS: https://docs.terragrunt.com/features/caching/cas/
-- experiments (cas, dependency-fetch-output-from-state): https://docs.terragrunt.com/reference/experiments/active
+- experiments (still active: dependency-fetch-output-from-state, azure-backend; cas / mark-many-as-read / opt-out-auth / dag-queue-display / stack-dependencies / catalog-redesign graduated to GA in v1.1.0): https://docs.terragrunt.com/reference/experiments/active
+- v1.1.0 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.0
 - run command flags & exit codes: https://docs.terragrunt.com/reference/cli/commands/run/

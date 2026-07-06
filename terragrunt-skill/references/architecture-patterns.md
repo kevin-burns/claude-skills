@@ -189,11 +189,16 @@ a nested `stack` block produces another `terragrunt.stack.hcl` (then itself expa
   explicit stacks pay for themselves — this matches Gruntwork's guidance progression.
 - Reusable unit definitions conventionally live under `catalog/units/<name>` (see
   templates/catalog and templates/stack).
-- **Version note:** the stable schema (Terragrunt 1.0.x) is `source`, `path`, `values`,
-  `no_dot_terragrunt_stack`, `no_validation`. `autoinclude`, `update_source_with_cas`,
-  `mutable`, `include` blocks in stack files, and `dependency` blocks targeting stack dirs
-  are **v1.1.0** (release-candidate as of June 2026) — don't generate them into configs that
-  must run on stable 1.0.x. See references/hcl-blocks.md `## BLOCK: unit`.
+- **Version note (v1.1.0 GA, 2026-07-01):** the schema common to all 1.x is `source`, `path`,
+  `values`, `no_dot_terragrunt_stack`, `no_validation`. The stack-dependency additions —
+  `autoinclude` (with `unit.<name>.path` / `stack.<name>.path` references), `update_source_with_cas`,
+  `mutable`, and a `dependency` targeting a stack directory (declared inside an `autoinclude`
+  block) — graduated from the `stack-dependencies` / `cas` experiments to **GA in v1.1.0** and
+  are enabled by default. They require **v1.1.0+**; don't emit them for repos pinned to ≤1.0.x.
+  `include` blocks in stack files: the v1.1.0 changelog states they now work, but the Stacks
+  "Limitations" doc page still lists them as unsupported — treat as a docs lag and verify
+  against the pinned version before relying on them. See references/hcl-blocks.md
+  `## BLOCK: unit` and `## BLOCK: autoinclude`.
 
 Docs: https://docs.terragrunt.com/features/stacks/explicit/ ·
 https://docs.terragrunt.com/reference/cli/commands/stack/generate/

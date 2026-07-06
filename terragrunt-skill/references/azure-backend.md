@@ -7,7 +7,8 @@
 >
 > Verified June 2026 against docs.terragrunt.com, the HashiCorp `azurerm` backend docs
 > (developer.hashicorp.com/terraform/language/backend/azurerm), the OpenTofu equivalent,
-> and Microsoft Learn. Grep-friendly: `grep -n '^## ' azure-backend.md`.
+> and Microsoft Learn; the `azure-backend` experiment is **unchanged as of Terragrunt v1.1.0**
+> (2026-07-01) — it did not graduate in that release. Grep-friendly: `grep -n '^## ' azure-backend.md`.
 
 ## THE ONE THING TO GET RIGHT: Terragrunt does NOT manage Azure state resources
 

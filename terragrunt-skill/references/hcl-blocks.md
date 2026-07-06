@@ -1,11 +1,12 @@
 # Terragrunt HCL Block Reference
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Verified against: Terragrunt 1.0.x (spot-checked vs docs.terragrunt.com, June 2026); flag and avoid any pre-1.0 idioms.
+> Verified against: Terragrunt 1.x (spot-checked vs docs.terragrunt.com; current stable v1.1.0, 2026-07-01); flag and avoid any pre-1.0 idioms.
 
 Lookup: `grep -n '^## BLOCK:' hcl-blocks.md`
 
 ## Contents
+- autoinclude (terragrunt.stack.hcl, v1.1.0+)
 - dependencies
 - dependency
 - download_dir
@@ -739,7 +740,7 @@ unit "<name>" { ... }
 - `values` (map, optional): values passed to the unit; written to a generated `terragrunt.values.hcl` next to the unit's `terragrunt.hcl` and read inside it as `values.<key>`.
 - `no_dot_terragrunt_stack` (boolean, optional): generate the unit in the same directory as `terragrunt.stack.hcl` instead of under `.terragrunt-stack/`. Intended for soft adoption / state migration (keeps `path_relative_to_include()` stable), not the recommended end state.
 - `no_validation` (boolean, optional): skip Terragrunt's validation of this unit's configuration.
-- **v1.1.0+ only** (RC as of June 2026 — do NOT emit for stable 1.0.x): `autoinclude` (block; generate partial config declaring dependency relationships), `update_source_with_cas` (boolean; rewrite relative sources to `cas::` so the generated stack is self-contained — requires the `cas` experiment), `mutable` (boolean, default `false`; whether CAS-fetched content is editable). `include` blocks and `dependency` blocks targeting stack dirs also arrive in v1.1.0.
+- **v1.1.0+ only** (GA in v1.1.0, 2026-07-01 — do NOT emit for repos pinned to ≤1.0.x): `autoinclude` (block; generates a `terragrunt.autoinclude.hcl` merged into the unit, e.g. to declare a `dependency` using `unit.<name>.path` — see `## BLOCK: autoinclude`), `update_source_with_cas` (boolean, default `false`; on `stack generate`, rewrites a **relative, literal** `source` within the same repo to a `cas::sha1:…` reference so the generated tree is self-contained — set by catalog authors, not consumers; errors if `--no-cas` is set), `mutable` (boolean, default `false`; `false` hard-links CAS content read-only, `true` copies it so the working tree is editable). These graduated from the `stack-dependencies` / `cas` experiments. `dependency` targeting a stack directory is supported **via an `autoinclude` block** (units may depend on stacks; stacks cannot depend on stacks or units). `include` blocks in stack files: the v1.1.0 changelog says they now work, but the Stacks "Limitations" doc still lists them unsupported — docs lag, verify against the pinned version first.
 
 *Unit pulling a catalog module, with values*
 ```hcl
@@ -772,7 +773,7 @@ stack "<name>" { ... }
 
 **Attributes:** same as `unit` — `<name>` (label, required), `source` (required), `path`
 (required), `values`, `no_dot_terragrunt_stack`, `no_validation`, and the same v1.1.0+
-additions (`autoinclude`, `update_source_with_cas`, `mutable`).
+additions (`autoinclude` with `stack.<name>.path` refs, `update_source_with_cas`, `mutable`).
 
 *Nested stack instantiated per region*
 ```hcl
@@ -784,3 +785,48 @@ stack "networking" {
 ```
 
 Related: unit, terraform
+
+## BLOCK: autoinclude
+
+**Autoinclude Block (terragrunt.stack.hcl)**  |  Category: stacks  |  **v1.1.0+ only**
+
+Nested inside a `unit` or `stack` block. On `terragrunt stack generate`, its body is
+written to a `terragrunt.autoinclude.hcl` file next to the generated `terragrunt.hcl` (or
+`terragrunt.stack.hcl`) and **merged into that unit/stack when it is parsed** — the catalog
+source itself is never modified. This is how a stack wires its own units together and patches
+catalog components with config they don't ship. GA in v1.1.0 (was the `stack-dependencies`
+experiment). Requires **v1.1.0+** — do NOT emit for repos pinned to ≤1.0.x.
+
+**Syntax:**
+```hcl
+unit "app" {
+  source = "../catalog/units/app"
+  path   = "app"
+
+  autoinclude {
+    dependency "vpc" {
+      config_path  = unit.vpc.path      # resolves to the generated dir of the "vpc" unit
+      mock_outputs = { vpc_id = "vpc-mock" }
+    }
+
+    inputs = {
+      vpc_id = dependency.vpc.outputs.vpc_id
+    }
+  }
+}
+```
+
+- **Body:** anything valid in a unit configuration — `dependency`, `inputs`, `errors`
+  (e.g. `retry`), etc. It is merged, so it adds to / overrides the catalog unit's config.
+- **`unit.<name>.path` / `stack.<name>.path`:** resolve to the generated path of a sibling
+  block, so dependency wiring never hardcodes `.terragrunt-stack/…` paths.
+- **Dependency on a stack:** a `dependency` declared in an `autoinclude` block *may* set
+  `config_path` to a stack directory and read its aggregated outputs — this is the supported
+  way to depend on a stack. A plain top-level `dependency` block cannot target a stack dir.
+  Relationship is one-way: units depend on stacks; stacks cannot depend on stacks or units.
+- The generated `terragrunt.autoinclude.hcl` is stack output — gitignore `.terragrunt-stack/`.
+
+Docs: https://docs.terragrunt.com/features/stacks/explicit/ (Declaring Dependencies Between
+Units) · https://docs.terragrunt.com/reference/hcl/blocks#autoinclude
+
+Related: unit, stack, dependency, include

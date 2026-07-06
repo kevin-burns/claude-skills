@@ -1,7 +1,7 @@
 # Terragrunt Built-in Functions
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Verified against: Terragrunt 1.0.x (spot-checked vs docs.terragrunt.com, June 2026); flag and avoid any pre-1.0 idioms.
+> Verified against: Terragrunt 1.x (spot-checked vs docs.terragrunt.com; current stable v1.1.0, 2026-07-01); flag and avoid any pre-1.0 idioms.
 
 Lookup: `grep -n '^## FUNCTION:' functions.md` to list; `grep -A 30 '^## FUNCTION: get_env' functions.md` to read one.
 
@@ -669,3 +669,40 @@ dependency "vpc" {
 ```
 
 Related: get_env
+
+## FUNCTION: mark_glob_as_read
+
+**Signature:** `mark_glob_as_read([boundary,] pattern)`  |  **Returns:** list(string)  |  **Category:** read-tracking  |  **v1.1.0+**
+
+Expands `pattern` (gobwas/glob syntax: `*` within a segment, `**` across segments, `?`,
+`[abc]`, `{a,b}`; `\` escapes) and marks every matching file as **read** by the unit, so a
+change to any of them selects the unit through reading-based filters (`--filter 'reading=…'`,
+`--queue-include-units-reading`). Returns the matched absolute paths, so it composes with
+other expressions. Relative patterns resolve against the current working directory. Added in
+**v1.1.0** (GA; was the `mark-many-as-read` experiment) — do NOT emit for repos pinned to ≤1.0.x.
+
+Use it when a unit consumes files indirectly (via `run_cmd`, `templatefile`, a shared helper
+module, etc.) and you want changes to any of them to trigger the unit in change-based CI.
+
+*Mark a directory of YAML configs as read*
+```hcl
+locals {
+  configs = mark_glob_as_read("${get_terragrunt_dir()}/config/{*.yaml,**/*.yaml}")
+}
+```
+
+**Boundary guard.** Expansion is confined to a boundary directory — by default the enclosing
+Git repo root (unset outside a repo); a walk that would start outside it errors instead of
+expanding. This stops a pattern interpolated from an empty value (`"${local.dir}/{*.yaml}"` →
+`/{*.yaml}`) from walking the filesystem. Note HCL evaluates *both* branches of a `? :`, so a
+conditional does not prevent this — wrap in `try(..., [])` to fall back. Pass a leading
+`--terragrunt-boundary=<path>` argument to set it explicitly:
+```hcl
+locals {
+  scoped     = mark_glob_as_read("--terragrunt-boundary=/etc/terragrunt", "/etc/terragrunt/{*.yaml}")
+  everything = mark_glob_as_read("--terragrunt-boundary=/", "/{*.yaml}")
+  safe       = sort(try(mark_glob_as_read("${local.dir}/{*.yaml,*.yml}"), []))
+}
+```
+
+Related: get_terragrunt_dir, read_terragrunt_config
