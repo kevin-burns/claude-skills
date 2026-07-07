@@ -28,3 +28,6 @@ venv/
 WRITING_CONTEXT.local.md
 .env
 .env.*
+
+# Local design specs / brainstorming output (kept out of the public repo)
+docs/superpowers/
