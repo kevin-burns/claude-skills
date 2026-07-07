@@ -1,0 +1,9 @@
+# Python virtualenv — regenerated with `uv sync`, never committed
+.venv/
+__pycache__/
+
+# Rendered diagram outputs
+*.png
+
+# NOTE: uv.lock IS committed (pins Playwright for reproducible renders).
+# NOTE: references/vendor/ IS committed — it's the offline render engine.

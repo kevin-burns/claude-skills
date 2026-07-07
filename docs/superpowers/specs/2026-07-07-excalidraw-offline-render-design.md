@@ -72,16 +72,24 @@ to the repo. End users never fetch or bundle anything. Their setup stays
 
 ### Component 2 — Template loads the local bundle
 
-`references/render_template.html` changes exactly one line:
+`references/render_template.html` imports the vendored bundle instead of the CDN:
 
 ```diff
 -  import { exportToSvg } from "https://esm.sh/@excalidraw/excalidraw?bundle";
 +  import { exportToSvg } from "./vendor/excalidraw.mjs";
 ```
 
-Loaded via `file://` (the template is already loaded via `page.goto(file_uri)`),
-so the relative import resolves against the local `vendor/` directory. No other
-template logic changes.
+and sets `window.EXCALIDRAW_ASSET_PATH` to the local `vendor/` URL so Excalidraw
+resolves its fonts (referenced by relative `./fonts/...` paths) locally.
+
+**Implementation note (deviation from the initial `file://` plan):** headless
+Chromium blocks `fetch()` of `file://` resources, and Excalidraw fetches font
+files at export time to embed them — under `file://` the fonts silently fail and
+text falls back to a system font. The renderer therefore serves `references/`
+over a **loopback HTTP server** (`127.0.0.1`, random port) and loads the template
+via `http://127.0.0.1:<port>/render_template.html`. This is still fully offline
+(no external network) but sidesteps the `file://` fetch restriction. Verified:
+a render issues only loopback requests, zero external.
 
 ### Component 3 — Self-diagnosing renderer (removes opaque hang)
 
@@ -116,6 +124,18 @@ Harden `references/render_excalidraw.py`:
   is a standalone, untracked copy; it is replaced by the symlink.)
 - **README** updated to describe offline rendering, the no-committed-venv setup,
   and the deliberate re-vendor procedure for version bumps.
+
+### Follow-up (out of scope here, worth doing next)
+
+A survey of the `github/awesome-copilot` `excalidraw-diagram-generator` skill
+(community-curated, not an official Excalidraw project) surfaced one feature
+worth adopting later: **icon-library ingestion** — scripts that split an official
+Excalidraw `.excalidrawlib` (AWS/GCP/Azure/K8s) into per-icon JSON + a
+lightweight `reference.md`, then place real cloud icons into a diagram
+deterministically without loading large icon JSON into the agent's context. That
+would materially improve architecture diagrams. Its templates and add-arrow
+scripts are lower value given this skill's methodology-driven approach. Deferred
+to keep this change scoped to the render-reliability fix.
 
 ## Data flow (render, after)
 

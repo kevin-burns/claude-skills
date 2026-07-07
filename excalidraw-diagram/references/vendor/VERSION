@@ -1,0 +1,24 @@
+excalidraw-vendor
+=================
+
+This directory is a self-contained, fully-offline build of Excalidraw's
+`exportToSvg`, plus its Latin font files. The renderer serves it over a loopback
+HTTP server, so a diagram render never touches the network and can never break
+from CDN dependency drift.
+
+Pinned versions (regenerate deliberately — never implicitly):
+  @excalidraw/excalidraw : 0.18.1
+  bundled with esbuild   : 0.28.1
+  node                   : v22.18.0
+  generated              : 2026-07-07
+
+Contents:
+  excalidraw.mjs   single-file ESM bundle exporting exportToSvg (~8 MB)
+  fonts/           Latin font families used by Excalidraw text
+
+Deliberately excluded: the Xiaolai CJK font family (~12 MB of woff2 subset
+chunks). Technical/English diagrams never use it. If you need CJK glyphs, edit
+scripts/build.mjs to stop dropping Xiaolai and re-run scripts/vendor.sh.
+
+To bump the pinned version, run:  ../scripts/vendor.sh <version>
+(see that script for the full, reproducible recipe).
