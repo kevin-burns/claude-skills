@@ -4,6 +4,8 @@ __pycache__/
 
 # Rendered diagram outputs
 *.png
+# ...except the committed worked-example renders (they show "what good looks like")
+!references/examples/*.png
 
 # NOTE: uv.lock IS committed (pins Playwright for reproducible renders).
 # NOTE: references/vendor/ IS committed — it's the offline render engine.

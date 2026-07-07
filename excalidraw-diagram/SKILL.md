@@ -200,6 +200,8 @@ Before JSON, mentally trace how the eye moves through the diagram. There should 
 ### Step 5: Generate JSON
 Only now create the Excalidraw elements. **See below for how to handle large diagrams.**
 
+Before you start, skim `references/examples/` — worked diagrams (JSON + rendered PNG) that show this methodology in practice. Read the one closest to what you're drawing; it's faster to imitate good moves than to derive them.
+
 ### Step 6: Render & Validate (MANDATORY)
 After generating the JSON, you MUST run the render-view-fix loop until the diagram looks right. This is not optional — see the **Render & Validate** section below for the full process.
 
@@ -441,6 +443,13 @@ Settings: `fontSize: 16`, `fontFamily: 3`, `textAlign: "center"`, `verticalAlign
 ## Element Templates
 
 See `references/element-templates.md` for copy-paste JSON templates for each element type (text, line, dot, rectangle, arrow). Pull colors from `references/color-palette.md` based on each element's semantic purpose.
+
+## Worked Examples
+
+`references/examples/` holds full diagrams that realize this methodology — each a real `.excalidraw` file paired with its rendered PNG, with `references/examples/README.md` explaining what each one demonstrates. These are exemplars, not fill-in templates: study the moves (shape-as-meaning, color-as-argument, evidence artifacts, multi-zoom), then design your own.
+
+- **`cicd-pipeline`** — simple/moderate: assembly-line flow, a decision diamond that branches pass/fail by color, evidence chips with real commands.
+- **`oauth-authcode-flow`** — comprehensive/technical: a sequence diagram whose front-/back-channel coloring carries the security argument, plus dark evidence panels showing the actual RFC 6749 token exchange.
 
 ---
 
