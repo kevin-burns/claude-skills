@@ -132,10 +132,16 @@ New section "Using icons in architecture diagrams":
 
 ## Testing / acceptance
 
-A small **synthetic** `.excalidrawlib` fixture (authored by us, not vendor art)
-with: (a) a vector icon = a few grouped shapes, (b) a second vector icon, (c) one
-**image-based** icon referencing a `files` entry. Used from scratch, not
-committed to the skill.
+Two tiers: a synthetic fixture for full-branch coverage (incl. image icons), and
+a real AWS + Azure pass for real-world quirks and scale. Neither fixture nor real
+libraries are committed to the skill (vendor art / license).
+
+### Tier 1 — synthetic fixture (automated, from scratch)
+
+A small **synthetic** `.excalidrawlib` (authored by us) with: (a) a vector icon =
+a few grouped shapes, (b) a second vector icon, (c) one **image-based** icon
+referencing a `files` entry — the image path isn't exercised by the real libs
+(both are vector), so the synthetic fixture is what covers it.
 
 1. **Split:** `split_library.py` produces one `icons/*.json` per item, a
    `reference.md` with correct `W×H`, and preserves `files` for the image icon.
@@ -147,6 +153,25 @@ committed to the skill.
 4. **Label:** `--label` adds exactly one caption element under the icon.
 5. **Render-validate end to end:** a diagram with two placed icons + a
    hand-authored connector renders to a correct PNG via the existing loop.
+
+### Tier 2 — real AWS + Azure libraries (manual, downloaded locally)
+
+Confirmed obtainable and both **vector-only** (no `files`), so they stress
+split/place/index at real scale and naming, not the image path:
+
+- AWS — `childishgirl/aws-architecture-icons.excalidrawlib` (**249 icons**, ~3.9 MB)
+- Azure — `7demonsrising/azure-compute.excalidrawlib` (17 icons)
+- Source: `https://raw.githubusercontent.com/excalidraw/excalidraw-libraries/main/libraries/<author>/<name>.excalidrawlib`
+
+6. **Real split at scale:** split each; assert per-icon file count matches the
+   `libraryItems` count (249 / 17), `reference.md` lists every icon with a size,
+   and real-world names (e.g. `S3`, `EC2`, `Container Apps`) sanitize to distinct
+   filenames with no collisions.
+7. **Real place + render:** build one small AWS diagram and one Azure diagram —
+   place ~3–5 real icons each, hand-author connectors + labels per the
+   methodology, render via the offline loop, and **eyeball the PNG** (icons
+   intact, grouped, correctly positioned, legible). These PNGs are for local
+   verification only; not committed (licensed vendor art).
 
 ## Risks / mitigations
 
