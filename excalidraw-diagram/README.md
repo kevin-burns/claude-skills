@@ -71,7 +71,20 @@ excalidraw-diagram/
     scripts/
       vendor.sh                     # Regenerate vendor/ on a version bump
       build.mjs                     # esbuild config used by vendor.sh
+      split_library.py              # Ingest a .excalidrawlib → per-icon JSON + index
+      place_icon.py                 # Deterministically place an icon into a diagram
+    libraries/                      # User-supplied icon sets (gitignored except README)
+      README.md                     #   how to add AWS/Azure/GCP/K8s icon libraries
 ```
+
+## Cloud/architecture icons
+
+For architecture diagrams you can place real service icons (AWS/Azure/GCP/K8s)
+instead of generic shapes. Icon sets aren't bundled (they carry their own
+licenses) — you add a `.excalidrawlib` and the skill ingests it. See
+`references/libraries/README.md` for setup, and SKILL.md → "Using icons in
+architecture diagrams" for the workflow. Icons are recognizable community
+hand-drawn style (not official-flat vendor icons).
 
 ## Updating the Excalidraw version
 

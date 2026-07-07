@@ -9,3 +9,8 @@ __pycache__/
 
 # NOTE: uv.lock IS committed (pins Playwright for reproducible renders).
 # NOTE: references/vendor/ IS committed — it's the offline render engine.
+
+# User-supplied icon libraries (licensed vendor art) + their split output.
+# Keep only the setup README tracked.
+references/libraries/*
+!references/libraries/README.md

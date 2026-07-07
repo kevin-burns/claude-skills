@@ -1,10 +1,47 @@
 # excalidraw-diagram: icon-library ingestion
 
 **Date:** 2026-07-07
-**Status:** Approved design, pending implementation
+**Status:** Implemented 2026-07-08 (design-council reviewed 2026-07-07)
+
+## Outcome (2026-07-08)
+
+Shipped. Tier 1 (synthetic) all-pass; Tier 2 real AWS (249 icons) + Azure split,
+placed, rendered offline, and eyeballed — user accepted the fidelity as "good
+enough" (recognizable, correctly colored, Excalidraw hand-drawn style; not
+official-flat, which no Excalidraw set delivers). Notes from implementation:
+
+- **Collision bug found & fixed:** 249 items → 248 files was *not* a suffix clash
+  but a **case-insensitive filesystem collision** (APFS: `S3.json`/`s3.json`, real
+  culprit `IoT Greengrass` ×2 with different casing). `split_library.py` now
+  dedupes filenames case-insensitively.
+- **Self-labeled icons:** most cloud icons embed their own name text, so `--label`
+  double-captions. Documented as a gotcha (omit `--label` for those) rather than
+  auto-detected.
+- `--scale` shipped best-effort as planned; image/`files` merge verified via the
+  synthetic image icon.
 **Depends on:** the offline render engine (shipped) — placed icons are validated
 with the existing `render_excalidraw.py` loop.
 **Scope:** Follow-up #1 from `2026-07-07-excalidraw-offline-render-design.md`.
+
+## Design-council decision (2026-07-07)
+
+A build-vs-build council (Strategist, Architect, Customer Voice, Pragmatist,
+Red Team) weighed "separate draw.io skill for cloud" vs "all-in Excalidraw
+ingestion." Verdict: **a draw.io skill whose render path is `drawio-desktop`
+(Electron) is the worst option** — it re-acquires the exact offline-render
+fragility the vendored engine just removed. The decision hinged on three
+user-answered unknowns:
+
+- **Frequency:** reference-grade cloud diagrams needed **~weekly** → a real,
+  recurring need; "defer / do-nothing" is off the table.
+- **Fidelity:** **high, matching AWS** → the real-AWS eyeball test (Tier 2)
+  becomes the load-bearing acceptance gate, not a nicety. If the chosen
+  community `.excalidrawlib` doesn't clear the bar, that's a finding to surface,
+  not paper over (try a higher-fidelity AWS set before concluding).
+- **d2 spike:** declined by the user.
+
+Consequence: finish this ingestion, validate real-AWS fidelity, and keep it only
+if fidelity clears the bar — otherwise report the gap plainly.
 
 ## Problem
 

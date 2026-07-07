@@ -9,7 +9,7 @@ Generate `.excalidraw` JSON files that **argue visually**, not just display info
 
 **Setup:** If the user asks you to set up this skill (renderer, dependencies, etc.), see `README.md` for instructions.
 
-**Provenance:** The design methodology began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill). The render pipeline was rebuilt to run fully offline: it vendors [Excalidraw](https://github.com/excalidraw/excalidraw) (`@excalidraw/excalidraw`, MIT) under `references/vendor/` and serves it locally — no CDN at render time. The MIT license on this skill covers the skill content; the vendored Excalidraw bundle and fonts remain under their own (MIT / respective) licenses.
+**Provenance:** The design methodology began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill). The render pipeline was rebuilt to run fully offline: it vendors [Excalidraw](https://github.com/excalidraw/excalidraw) (`@excalidraw/excalidraw`, MIT) under `references/vendor/` and serves it locally — no CDN at render time. The icon-library ingestion approach (split a `.excalidrawlib` into per-icon files + an index, then place deterministically) is credited to [github/awesome-copilot](https://github.com/github/awesome-copilot) (MIT); the scripts here are an independent implementation. The MIT license on this skill covers the skill content; the vendored Excalidraw bundle and fonts remain under their own (MIT / respective) licenses, and any user-supplied icon libraries remain under theirs.
 
 ## Customization
 
@@ -452,6 +452,29 @@ See `references/element-templates.md` for copy-paste JSON templates for each ele
 
 - **`cicd-pipeline`** — simple/moderate: assembly-line flow, a decision diamond that branches pass/fail by color, evidence chips with real commands.
 - **`oauth-authcode-flow`** — comprehensive/technical: a sequence diagram whose front-/back-channel coloring carries the security argument, plus dark evidence panels showing the actual RFC 6749 token exchange.
+
+## Using icons in architecture diagrams
+
+For technical **cloud/infra architecture** diagrams, you can place real service icons (AWS, Azure, GCP, K8s) instead of generic rectangles. Icons are the *concrete detail layer* — the structure, flow, and visual argument are still yours to author (this is not license to drop icons in a uniform grid; that's "display", not "argue").
+
+**Only when a library is installed.** Check `references/libraries/` for a `<set>/reference.md`. If none exists, tell the user how to add one (see `references/libraries/README.md`) — don't invent icons.
+
+**Workflow:**
+1. Read `references/libraries/<set>/reference.md` to pick icons by name. It lists each icon's size so you can plan spacing — **never open the icon JSON files**, that's what the placement script is for.
+2. Place each icon deterministically (icon JSON never enters your context):
+   ```bash
+   cd references
+   uv run python scripts/place_icon.py --diagram <file.excalidraw> \
+       --icon "Lambda" --library libraries/aws --x 400 --y 240 [--label "Auth"]
+   ```
+   It offsets the icon to `(x, y)`, regenerates all ids/groups so repeated placements never collide, merges image data for raster icons, and appends to the diagram. Flags: `--anchor center`, `--scale <f>` (best-effort), `--label` (see below).
+3. **Hand-author the connectors, labels, and evidence artifacts** yourself, per the methodology — icons don't make the argument, your layout does.
+4. Run the normal **render → view → fix** loop. Icon spacing/overlap is caught there.
+
+**Gotchas:**
+- **Many cloud icons embed their own name text** — for those, omit `--label` or you'll double the caption. Render once to check.
+- **Fidelity:** community icons are recognizable and correctly colored but hand-drawn style, not official-flat vendor icons. Set expectations accordingly.
+- Sizes vary (~60–170px); read the size column and space accordingly.
 
 ---
 
