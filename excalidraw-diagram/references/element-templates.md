@@ -36,6 +36,35 @@ Copy-paste JSON templates for each Excalidraw element type. The `strokeColor` an
 }
 ```
 
+**Free-floating text does not wrap.** Unlike text bound to a container (which
+wraps to the container's width), a free-floating `text` element renders on a
+single line no matter how large its `width` is — the renderer ignores `width`
+for wrapping and draws the whole string. A long line therefore runs off the edge
+and gets clipped in the PNG. To break a line, put the breaks in the string
+yourself with `\n`, and set `width`/`height` to match the widest line and the
+line count. `originalText` should carry the same `\n`s as `text`.
+
+```json
+{
+  "type": "text",
+  "id": "legend1",
+  "x": 100, "y": 100,
+  "width": 260, "height": 60,
+  "text": "Front channel: via the browser,\nobservable — carries only the code.",
+  "originalText": "Front channel: via the browser,\nobservable — carries only the code.",
+  "fontSize": 14, "fontFamily": 3,
+  "textAlign": "left", "verticalAlign": "top",
+  "strokeColor": "<detail color from palette>",
+  "backgroundColor": "transparent",
+  "lineHeight": 1.25,
+  "containerId": null
+}
+```
+
+Rule of thumb: keep free-floating lines short, and hand-break anything longer
+than ~40–50 characters. If you want automatic wrapping instead, bind the text to
+a container (see "Text (centered in shape)") — a container wraps to its width.
+
 ## Line (structural, not arrow)
 ```json
 {
