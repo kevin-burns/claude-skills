@@ -9,6 +9,8 @@ Generate `.excalidraw` JSON files that **argue visually**, not just display info
 
 **Setup:** If the user asks you to set up this skill (renderer, dependencies, etc.), see `README.md` for instructions.
 
+**Provenance:** The design methodology began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill). The render pipeline was rebuilt to run fully offline: it vendors [Excalidraw](https://github.com/excalidraw/excalidraw) (`@excalidraw/excalidraw`, MIT) under `references/vendor/` and serves it locally — no CDN at render time. The MIT license on this skill covers the skill content; the vendored Excalidraw bundle and fonts remain under their own (MIT / respective) licenses.
+
 ## Customization
 
 **All colors and brand-specific styles live in one file:** `references/color-palette.md`. Read it before generating any diagram and use it as the single source of truth for all color choices — shape fills, strokes, text colors, evidence artifact backgrounds, everything.
