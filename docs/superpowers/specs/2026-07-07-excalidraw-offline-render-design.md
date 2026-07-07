@@ -125,17 +125,38 @@ Harden `references/render_excalidraw.py`:
 - **README** updated to describe offline rendering, the no-committed-venv setup,
   and the deliberate re-vendor procedure for version bumps.
 
-### Follow-up (out of scope here, worth doing next)
+### Follow-ups (out of scope here — separate spec + plan each)
 
-A survey of the `github/awesome-copilot` `excalidraw-diagram-generator` skill
-(community-curated, not an official Excalidraw project) surfaced one feature
-worth adopting later: **icon-library ingestion** — scripts that split an official
-Excalidraw `.excalidrawlib` (AWS/GCP/Azure/K8s) into per-icon JSON + a
-lightweight `reference.md`, then place real cloud icons into a diagram
-deterministically without loading large icon JSON into the agent's context. That
-would materially improve architecture diagrams. Its templates and add-arrow
-scripts are lower value given this skill's methodology-driven approach. Deferred
-to keep this change scoped to the render-reliability fix.
+Surfaced while surveying the `github/awesome-copilot`
+`excalidraw-diagram-generator` skill (community-curated, **not** an official
+Excalidraw project). Deferred to keep this change scoped to the render fix.
+
+**1. Icon-library ingestion.** Scripts that split an official Excalidraw
+`.excalidrawlib` (AWS/GCP/Azure/K8s) into per-icon JSON + a lightweight
+`reference.md`, then place real cloud icons into a diagram deterministically —
+so 200–1000-line icon JSON never enters the agent's context. Materially improves
+architecture diagrams. Highest-value follow-up.
+
+**2. Methodology-exemplar references (primary template idea).** A small set of
+*worked examples of this skill's own patterns done well* — a strong fan-out, a
+timeline, an evidence-artifact code snippet — each committed **with its rendered
+PNG** (cheap now that rendering is offline). Teaches the agent what "good" looks
+like in this skill's voice (JSON *and* the visual result), reinforcing "argue,
+not display" rather than diluting it. Read on demand (progressive disclosure) so
+the large JSON never sits in context unless that pattern is being drawn.
+
+**3. Convention-bound type scaffolds (selective).** Reference `.excalidraw`
+scaffolds for the diagram types with an established visual grammar readers
+expect: **sequence, ER, class, swimlane**. For these, following convention is
+correctness, not laziness. Explicitly framed in SKILL.md as "scaffolds you still
+apply the methodology on top of," never fill-in-the-blank. **Deliberately
+exclude** the generic flowchart / mind map / relationship templates from
+awesome-copilot — those are exactly where the pattern-driven methodology should
+take over, and importing them would pull output toward generic card grids.
+
+The awesome-copilot `add-arrow.py` / `add-icon-to-diagram.py` mutation scripts
+are lower value given this skill's hand-authored, methodology-driven flow —
+reconsider only if icon ingestion (follow-up 1) needs deterministic placement.
 
 ## Data flow (render, after)
 
