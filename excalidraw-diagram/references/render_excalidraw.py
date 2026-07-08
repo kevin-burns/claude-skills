@@ -1,9 +1,10 @@
 """Render Excalidraw JSON to PNG using Playwright + headless Chromium.
 
-Rendering is fully offline: the Excalidraw engine and its fonts are vendored
-under ``vendor/`` (see ``vendor/VERSION``) and served over a loopback HTTP
-server. No CDN, no external network — so a render can never be broken by
-dependency drift, an esm.sh outage, or a sandboxed network.
+Rendering is offline: the fonts are vendored under ``vendor/`` and the Excalidraw
+engine (``vendor/excalidraw.mjs``) is downloaded once on first run from a pinned,
+sha256-verified GitHub Release (see ``vendor/bundle.lock.json``) — like
+``playwright install chromium``. Everything is then served over a loopback HTTP
+server, so subsequent renders never touch the network.
 
 Usage:
     cd .claude/skills/excalidraw-diagram/references
@@ -24,10 +25,103 @@ import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import hashlib
+import os
+import tempfile
+import urllib.error
+import urllib.request
 
 REFERENCES_DIR = Path(__file__).parent
 MODULE_READY_TIMEOUT_MS = 8000
 RENDER_TIMEOUT_MS = 15000
+
+VENDOR_DIR = REFERENCES_DIR / "vendor"
+BUNDLE_PATH = VENDOR_DIR / "excalidraw.mjs"
+LOCK_PATH = VENDOR_DIR / "bundle.lock.json"
+DOWNLOAD_TIMEOUT_S = 30
+_DOWNLOAD_CHUNK = 65536
+
+
+class BundleError(Exception):
+    """The render-engine bundle is missing and could not be fetched/verified."""
+
+
+def _load_bundle_lock() -> dict:
+    """Read vendor/bundle.lock.json (url + sha256 for the render engine)."""
+    try:
+        return json.loads(LOCK_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise BundleError(
+            f"references/vendor/bundle.lock.json is missing or invalid ({e}); "
+            "cannot locate the render engine."
+        )
+
+
+def _download_and_verify(url: str, sha256: str, dest: Path) -> None:
+    """Download ``url`` into ``dest`` atomically, verifying it hashes to ``sha256``.
+
+    Streams to a temp file beside ``dest``, hashing as it goes; on a hash
+    mismatch (or any error) it removes the temp file and raises, so a failed
+    fetch never leaves a partial or unverified bundle in place.
+    """
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=dest.parent, prefix=".excalidraw.mjs.", suffix=".part")
+    tmp = Path(tmp_name)
+    try:
+        digest = hashlib.sha256()
+        req = urllib.request.Request(url, headers={"User-Agent": "excalidraw-diagram-skill"})
+        with os.fdopen(fd, "wb") as out, urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_S) as resp:
+            while True:
+                chunk = resp.read(_DOWNLOAD_CHUNK)
+                if not chunk:
+                    break
+                out.write(chunk)
+                digest.update(chunk)
+        actual = digest.hexdigest()
+        if actual != sha256:
+            raise BundleError(
+                f"downloaded bundle failed its integrity check (expected {sha256}, "
+                f"got {actual}). Refusing to use it. This may mean the release asset "
+                "was changed. Rebuild with references/scripts/vendor.sh."
+            )
+        os.replace(tmp, dest)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
+def _ensure_bundle() -> Path:
+    """Return the render-engine bundle path, downloading it once if absent.
+
+    A present bundle is used as-is (no network, no re-hash) — it was verified at
+    download time. This mirrors ``playwright install chromium``: the engine is
+    fetched once, then every render is fully offline.
+    """
+    if BUNDLE_PATH.exists():
+        return BUNDLE_PATH
+    lock = _load_bundle_lock()
+    url = lock["url"]
+    sha256 = lock["sha256"]
+    print("Downloading the Excalidraw render engine (first run, ~8 MB)...", file=sys.stderr)
+    try:
+        _download_and_verify(url, sha256, BUNDLE_PATH)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise BundleError(
+                f"{url} returned 404 — the release asset for excalidraw "
+                f"{lock.get('excalidraw_version', '?')} hasn't been published yet. "
+                "Build it locally with references/scripts/vendor.sh."
+            )
+        raise BundleError(
+            f"couldn't download the Excalidraw render engine from {url}: HTTP {e.code}. "
+            "Check your connection, or build it locally with references/scripts/vendor.sh."
+        )
+    except (urllib.error.URLError, OSError, TimeoutError) as e:
+        raise BundleError(
+            f"couldn't download the Excalidraw render engine from {url}: {e}. "
+            "Check your connection, or build it locally with references/scripts/vendor.sh."
+        )
+    return BUNDLE_PATH
 
 
 def validate_excalidraw(data: dict) -> list[str]:
@@ -155,11 +249,11 @@ def render(
             print(f"  - {err}", file=sys.stderr)
         sys.exit(1)
 
-    # Confirm the vendored engine is present before spinning anything up.
-    bundle = REFERENCES_DIR / "vendor" / "excalidraw.mjs"
-    if not bundle.exists():
-        print(f"ERROR: Vendored Excalidraw bundle not found at {bundle}", file=sys.stderr)
-        print("The skill ships this file; re-install the skill or regenerate it with scripts/vendor.sh", file=sys.stderr)
+    # Ensure the render engine is present (downloaded once on first run), then use it.
+    try:
+        _ensure_bundle()
+    except BundleError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
     # Compute viewport size from element bounding box
