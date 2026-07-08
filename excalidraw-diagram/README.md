@@ -9,7 +9,7 @@ Compatible with any coding agent that supports skills. For agents that read from
 - **Diagrams that argue, not display.** Every shape/group of shapes mirrors the concept it represents — fan-outs for one-to-many, timelines for sequences, convergence for aggregation. No uniform card grids.
 - **Evidence artifacts.** As an example, technical diagrams include real code snippets and actual JSON payloads.
 - **Built-in visual validation.** A Playwright-based render pipeline lets the agent see its own output, catch layout issues (overlapping text, misaligned arrows, unbalanced spacing), and fix them in a loop before delivering.
-- **Fully offline, deterministic rendering.** The Excalidraw engine and its fonts are vendored under `references/vendor/` and served over a loopback HTTP server — no CDN, no external network. A render can't break from dependency drift, a CDN outage, or a sandboxed network, and failures report the real cause instead of hanging.
+- **Deterministic rendering, offline after a one-time engine download.** The fonts are vendored under `references/vendor/`; the Excalidraw engine is fetched once on first render from a pinned, sha256-verified GitHub Release (see `references/vendor/bundle.lock.json`) and served locally from then on — no CDN at render time. Once cached, a render can't break from dependency drift, a CDN outage, or a sandboxed network, and failures report the real cause instead of hanging.
 - **Brand-customizable.** All colors and brand styles live in a single file (`references/color-palette.md`). Swap it out and every diagram follows your palette.
 
 ## Installation
@@ -20,7 +20,7 @@ Copy this skill directory into your project's `.claude/skills/` directory (or yo
 cp -r excalidraw-diagram /path/to/.claude/skills/excalidraw-diagram
 ```
 
-The design methodology in this skill began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill); the render engine has since been rebuilt to run fully offline (see below).
+The design methodology in this skill began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill); the render engine has since been rebuilt to run offline after a one-time fetch (see below).
 
 ## Setup
 
@@ -38,7 +38,7 @@ uv sync
 uv run playwright install chromium
 ```
 
-That's the whole setup — the Excalidraw engine itself ships vendored in `references/vendor/`, so nothing is fetched from a CDN at render time.
+That's the whole setup — on first render, the Excalidraw engine downloads once from a pinned, sha256-verified GitHub Release (see `references/vendor/bundle.lock.json`) and is cached under `references/vendor/`; nothing is fetched from a CDN at render time.
 
 ## Usage
 
@@ -64,9 +64,12 @@ excalidraw-diagram/
     render_excalidraw.py            # Render .excalidraw to PNG (offline)
     render_template.html            # Browser template for rendering
     pyproject.toml                  # Python dependencies (playwright)
-    vendor/                         # Pinned, offline Excalidraw engine + fonts
-      excalidraw.mjs                #   self-contained exportToSvg bundle
-      fonts/                        #   Latin font families
+    vendor/                         # Pinned Excalidraw engine + fonts
+      excalidraw.mjs                #   exportToSvg bundle — fetched from a pinned
+                                     #   GitHub Release on first render, cached here
+                                     #   (NOT committed)
+      bundle.lock.json              #   integrity pin (release url + sha256) — committed
+      fonts/                        #   Latin font families — committed
       VERSION                       #   pinned versions + provenance
     scripts/
       vendor.sh                     # Regenerate vendor/ on a version bump
@@ -88,8 +91,10 @@ hand-drawn style (not official-flat vendor icons).
 
 ## Updating the Excalidraw version
 
-The vendored engine is pinned (see `references/vendor/VERSION`) and committed, so
-normal use never touches the network. To bump it deliberately:
+The vendored engine is pinned (see `references/vendor/VERSION` and
+`references/vendor/bundle.lock.json`); the fonts are committed, but the engine
+itself downloads once on first render and is sha256-verified against the pin.
+To bump the pin deliberately:
 
 ```bash
 cd .claude/skills/excalidraw-diagram/references
@@ -98,3 +103,7 @@ scripts/vendor.sh 0.18.1          # or any version; requires node + npm
 
 Then render a test diagram, eyeball it (a new Excalidraw version can change
 export behavior), update `vendor/VERSION`, and commit.
+
+Before the refreshed `bundle.lock.json` pin will actually work, publish the
+rebuilt bundle with the `gh release` command `scripts/vendor.sh` prints at the
+end of its run.

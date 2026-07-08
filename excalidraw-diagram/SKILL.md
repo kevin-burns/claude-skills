@@ -9,7 +9,7 @@ Generate `.excalidraw` JSON files that **argue visually**, not just display info
 
 **Setup:** If the user asks you to set up this skill (renderer, dependencies, etc.), see `README.md` for instructions.
 
-**Provenance:** The design methodology began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill). The render pipeline was rebuilt to run fully offline: it vendors [Excalidraw](https://github.com/excalidraw/excalidraw) (`@excalidraw/excalidraw`, MIT) under `references/vendor/` and serves it locally — no CDN at render time. The icon-library ingestion approach (split a `.excalidrawlib` into per-icon files + an index, then place deterministically) is credited to [github/awesome-copilot](https://github.com/github/awesome-copilot) (MIT); the scripts here are an independent implementation. The MIT license on this skill covers the skill content; the vendored Excalidraw bundle and fonts remain under their own (MIT / respective) licenses, and any user-supplied icon libraries remain under theirs.
+**Provenance:** The design methodology began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill). The render pipeline was rebuilt around [Excalidraw](https://github.com/excalidraw/excalidraw) (`@excalidraw/excalidraw`, MIT): the engine is fetched from a pinned, sha256-verified GitHub Release on first render, cached under `references/vendor/`, and served locally from then on — offline after that one-time fetch, like `playwright install chromium`. The icon-library ingestion approach (split a `.excalidrawlib` into per-icon files + an index, then place deterministically) is credited to [github/awesome-copilot](https://github.com/github/awesome-copilot) (MIT); the scripts here are an independent implementation. The MIT license on this skill covers the skill content; the vendored Excalidraw bundle and fonts remain under their own (MIT / respective) licenses, and any user-supplied icon libraries remain under theirs.
 
 ## Customization
 
@@ -490,7 +490,7 @@ cd .claude/skills/excalidraw-diagram/references && uv run python render_excalidr
 
 This outputs a PNG next to the `.excalidraw` file. Then use the **Read tool** on the PNG to actually view it.
 
-**Rendering is fully offline.** The Excalidraw engine and fonts are vendored under `references/vendor/` and served locally — nothing is fetched from a CDN. So if a render fails, it is *not* a network or sandbox problem: don't go looking for one. The renderer prints the real cause (a console error, a page error, or a failed local request) and exits non-zero within a few seconds. If it complains the vendored bundle is missing, the skill wasn't installed completely — re-copy `references/vendor/` or regenerate it with `references/scripts/vendor.sh`.
+**Rendering is offline after a one-time engine download.** The fonts are vendored under `references/vendor/`; the Excalidraw engine (`vendor/excalidraw.mjs`) is fetched once on first render from a pinned, sha256-verified GitHub Release (see `vendor/bundle.lock.json`) — exactly like `playwright install chromium` — then served locally. So a *failed first fetch* is a network problem; a render that fails *after* the engine is present is not — the renderer prints the real cause and exits non-zero within a few seconds. If the download fails, build the engine locally with `references/scripts/vendor.sh`.
 
 ### The Loop
 

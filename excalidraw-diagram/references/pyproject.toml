@@ -5,3 +5,9 @@ requires-python = ">=3.11"
 dependencies = [
     "playwright>=1.40.0",
 ]
+
+[dependency-groups]
+dev = ["pytest>=8.0.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
