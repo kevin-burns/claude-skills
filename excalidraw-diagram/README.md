@@ -20,7 +20,7 @@ Copy this skill directory into your project's `.claude/skills/` directory (or yo
 cp -r excalidraw-diagram /path/to/.claude/skills/excalidraw-diagram
 ```
 
-The design methodology in this skill began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill); the render engine has since been rebuilt to run fully offline (see below).
+The design methodology in this skill began as a fork of [coleam00/excalidraw-diagram-skill](https://github.com/coleam00/excalidraw-diagram-skill); the render engine has since been rebuilt to run offline after a one-time fetch (see below).
 
 ## Setup
 
@@ -64,9 +64,12 @@ excalidraw-diagram/
     render_excalidraw.py            # Render .excalidraw to PNG (offline)
     render_template.html            # Browser template for rendering
     pyproject.toml                  # Python dependencies (playwright)
-    vendor/                         # Pinned, offline Excalidraw engine + fonts
-      excalidraw.mjs                #   self-contained exportToSvg bundle
-      fonts/                        #   Latin font families
+    vendor/                         # Pinned Excalidraw engine + fonts
+      excalidraw.mjs                #   exportToSvg bundle — fetched from a pinned
+                                     #   GitHub Release on first render, cached here
+                                     #   (NOT committed)
+      bundle.lock.json              #   integrity pin (release url + sha256) — committed
+      fonts/                        #   Latin font families — committed
       VERSION                       #   pinned versions + provenance
     scripts/
       vendor.sh                     # Regenerate vendor/ on a version bump
@@ -100,3 +103,7 @@ scripts/vendor.sh 0.18.1          # or any version; requires node + npm
 
 Then render a test diagram, eyeball it (a new Excalidraw version can change
 export behavior), update `vendor/VERSION`, and commit.
+
+Before the refreshed `bundle.lock.json` pin will actually work, publish the
+rebuilt bundle with the `gh release` command `scripts/vendor.sh` prints at the
+end of its run.

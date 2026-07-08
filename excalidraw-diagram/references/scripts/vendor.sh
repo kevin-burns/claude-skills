@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# Regenerate references/vendor/ — the offline Excalidraw render engine.
+# Regenerate references/vendor/ — the Excalidraw render engine.
 #
 # You only need this to BUMP the pinned Excalidraw version. Normal use of the
-# skill never runs it: the vendored files are committed and shipped as-is.
+# skill never runs it: the fonts and bundle.lock.json (the integrity pin) are
+# committed, but excalidraw.mjs itself is not — it's fetched from a pinned
+# GitHub Release on first render and cached locally. This script rebuilds
+# excalidraw.mjs and republishes it as that pinned Release asset.
 #
 # Requires: node + npm (Node 18+). Produces a single self-contained ESM bundle
 # plus the Latin font files, all under references/vendor/.
