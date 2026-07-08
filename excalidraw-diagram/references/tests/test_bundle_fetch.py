@@ -81,6 +81,17 @@ def test_load_bundle_lock_missing_is_clear_error(tmp_path, monkeypatch):
     assert "bundle.lock.json" in str(exc.value)
 
 
+def test_load_bundle_lock_missing_keys_is_clear_error(tmp_path, monkeypatch):
+    lock = tmp_path / "bundle.lock.json"
+    lock.write_text(json.dumps({"excalidraw_version": "0.18.1"}))
+    monkeypatch.setattr(rx, "LOCK_PATH", lock)
+
+    with pytest.raises(rx.BundleError) as exc:
+        rx._load_bundle_lock()
+    assert "url" in str(exc.value)
+    assert "sha256" in str(exc.value)
+
+
 def test_ensure_bundle_download_failure_is_clear_error(tmp_path, monkeypatch):
     # Bundle absent + an unreachable URL (nonexistent file://) => clean BundleError,
     # no hang, no partial file. Stands in for "offline + missing engine".

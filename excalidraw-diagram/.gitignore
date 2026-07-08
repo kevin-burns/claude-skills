@@ -10,8 +10,8 @@ __pycache__/
 # NOTE: uv.lock IS committed (pins Playwright for reproducible renders).
 # NOTE: references/vendor/ IS committed — fonts + bundle.lock.json (the render
 # engine's integrity pin). The engine bundle itself is the ONE exception: it's a
-# ~2.9 MB build artifact fetched on first render from a pinned GitHub Release
-# (see vendor/bundle.lock.json), not committed.
+# ~2.9 MB-in-git (8.4 MB on disk) build artifact fetched on first render from a
+# pinned GitHub Release (see vendor/bundle.lock.json), not committed.
 references/vendor/excalidraw.mjs
 
 # User-supplied icon libraries (licensed vendor art) + their split output.

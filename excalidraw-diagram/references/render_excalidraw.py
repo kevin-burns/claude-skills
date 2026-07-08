@@ -49,12 +49,19 @@ class BundleError(Exception):
 def _load_bundle_lock() -> dict:
     """Read vendor/bundle.lock.json (url + sha256 for the render engine)."""
     try:
-        return json.loads(LOCK_PATH.read_text(encoding="utf-8"))
+        lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as e:
         raise BundleError(
             f"references/vendor/bundle.lock.json is missing or invalid ({e}); "
             "cannot locate the render engine."
         )
+    missing = [key for key in ("url", "sha256") if not lock.get(key)]
+    if missing:
+        raise BundleError(
+            f"references/vendor/bundle.lock.json is missing required keys "
+            f"({', '.join(missing)}); cannot locate the render engine."
+        )
+    return lock
 
 
 def _download_and_verify(url: str, sha256: str, dest: Path) -> None:
