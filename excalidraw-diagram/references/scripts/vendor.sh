@@ -53,5 +53,35 @@ done
 echo ">> done."
 echo "   bundle: $(du -h "$VENDOR_DIR/excalidraw.mjs" | cut -f1)"
 echo "   fonts:  $(du -sh "$VENDOR_DIR/fonts" | cut -f1)  ($(ls "$VENDOR_DIR/fonts" | tr '\n' ' '))"
+
+# Update the integrity pin the render script reads.
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}';
+  else shasum -a 256 "$1" | awk '{print $1}'; fi
+}
+BUNDLE_SHA="$(sha256_of "$VENDOR_DIR/excalidraw.mjs")"
+BUNDLE_BYTES="$(wc -c < "$VENDOR_DIR/excalidraw.mjs" | tr -d ' ')"
+TAG="excalidraw-vendor-v$VERSION"
+REPO="kevin-burns/claude-skills"
+URL="https://github.com/$REPO/releases/download/$TAG/excalidraw.mjs"
+
+cat > "$VENDOR_DIR/bundle.lock.json" <<JSON
+{
+  "file": "excalidraw.mjs",
+  "excalidraw_version": "$VERSION",
+  "url": "$URL",
+  "sha256": "$BUNDLE_SHA",
+  "bytes": $BUNDLE_BYTES
+}
+JSON
+echo "   lock:   updated vendor/bundle.lock.json (sha256 $BUNDLE_SHA)"
+
 echo ""
-echo "Next: update vendor/VERSION, render a test diagram, eyeball it, then commit."
+echo "Next: publish the bundle as the pinned release asset, then commit the lock:"
+echo "  gh release create $TAG \"$VENDOR_DIR/excalidraw.mjs\" \\"
+echo "     --repo $REPO --title \"Excalidraw render engine $VERSION\" \\"
+echo "     --notes \"Vendored @excalidraw/excalidraw@$VERSION exportToSvg bundle for excalidraw-diagram.\""
+echo "  # (if the tag already exists: gh release upload $TAG \"$VENDOR_DIR/excalidraw.mjs\" --repo $REPO --clobber)"
+echo "  git add vendor/bundle.lock.json && git commit -m \"excalidraw-diagram: bump render engine to $VERSION\""
+echo ""
+echo "Then render a test diagram and eyeball it before pushing."

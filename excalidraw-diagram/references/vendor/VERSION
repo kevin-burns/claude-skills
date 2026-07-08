@@ -13,8 +13,12 @@ Pinned versions (regenerate deliberately — never implicitly):
   generated              : 2026-07-07
 
 Contents:
-  excalidraw.mjs   single-file ESM bundle exporting exportToSvg (~8 MB)
-  fonts/           Latin font families used by Excalidraw text
+  excalidraw.mjs   single-file ESM bundle exporting exportToSvg (~8 MB).
+                   NOT committed — fetched once on first render from a pinned,
+                   sha256-verified GitHub Release (see bundle.lock.json) and
+                   cached here. Rebuild + republish with scripts/vendor.sh.
+  bundle.lock.json integrity pin (release url + sha256) — committed.
+  fonts/           Latin font families used by Excalidraw text — committed.
 
 Deliberately excluded: the Xiaolai CJK font family (~12 MB of woff2 subset
 chunks). Technical/English diagrams never use it. If you need CJK glyphs, edit
