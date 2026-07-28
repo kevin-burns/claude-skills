@@ -31,14 +31,20 @@ FOLD = 200
 
 
 def count_chars(text: str) -> int:
-    """Count UTF-16 code units, matching JavaScript's String.prototype.length."""
-    return len(text.encode("utf-16-le")) // 2
+    """Count UTF-16 code units, matching JavaScript's String.prototype.length.
+
+    errors="surrogatepass" lets this handle a lone surrogate (reachable from
+    valid JSON, e.g. an unpaired \\ud83d), which plain "utf-16-le" encoding
+    raises UnicodeEncodeError on. It also matches JS: a lone surrogate counts
+    as 1 code unit there, same as here.
+    """
+    return len(text.encode("utf-16-le", errors="surrogatepass")) // 2
 
 
 def utf16_slice(text: str, n: int) -> str:
     """First n UTF-16 code units, never splitting a surrogate pair."""
-    truncated = text.encode("utf-16-le")[: n * 2]
-    return truncated.decode("utf-16-le", errors="ignore")
+    truncated = text.encode("utf-16-le", errors="surrogatepass")[: n * 2]
+    return truncated.decode("utf-16-le", errors="surrogatepass")
 
 
 def check_field(name: str, text: str) -> dict:
@@ -148,7 +154,11 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="emit JSON instead of a table")
     args = parser.parse_args()
 
-    raw = open(args.profile).read() if args.profile else sys.stdin.read()
+    if args.profile:
+        with open(args.profile, encoding="utf-8") as fh:
+            raw = fh.read()
+    else:
+        raw = sys.stdin.buffer.read().decode("utf-8")
     results = check_profile(json.loads(raw))
 
     print(json.dumps(results, indent=2) if args.json else _format_table(results))

@@ -64,7 +64,9 @@ so in one line before proceeding, so a wrong guess is cheap to correct.
 - **A CV/resume** (a file, or pasted CV text) → continue to Step 1 below.
 - **A LinkedIn profile** (profile text, a headline/About section, or a request about
   recruiter search or "my LinkedIn") → follow `references/linkedin-profile.md` instead
-  and return here only for the shared de-slop and no-fabrication rules.
+  and return here only for the channel-neutral de-slop parts (pattern list, keyword
+  guard, fabrication floor) and the no-fabrication rules — not the CV-only register
+  rules.
 
 The two are not interchangeable: a profile is one artifact read by many recruiters
 rather than tailored to one job description, and first person is correct there and

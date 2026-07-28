@@ -117,6 +117,38 @@ list skills the candidate genuinely holds; this mode never adds a skill to
 close a coverage gap it can't back up (Section 7 explains why the checker
 doesn't push toward that either).
 
+**Experience descriptions** (2,000 characters per role). Same register as
+About — first person, not the CV's third-person fragment convention. In v1
+this mode does not do full bullet-by-bullet rewrite depth here: apply the
+positioning line and de-slop pass lightly if asked, but treat a
+role-by-role rewrite as future scope. If the user specifically asks for a
+full experience-bullet rewrite, tell them plainly that this mode currently
+rewrites headline, About, and skills, and offer the lighter pass instead of
+silently doing partial work.
+
+## 5.5 De-slopping a profile
+
+Strip AI-written texture from a profile the same way Step 5.5 of the host skill
+does for a CV — but only part of `references/deslop-cv.md` applies here, because
+that file also encodes CV-specific register rules that are wrong for a profile.
+
+**Shared (channel-neutral) — apply as-is:**
+- The AI/slop pattern list (empty vocabulary, weak verbs, significance inflation,
+  superficial `-ing` tails, rule of three, vague quantification, mechanics) — these
+  are about hollow prose, not register, so they hold for a profile too.
+- **The keyword guard** — keep a flagged word when it's referential (a target-role
+  keyword or the real name of a tech/metric the candidate used), cut it only when
+  it's empty booster.
+- **The soft-fabrication floor** — no derived numbers, aggregate-time claims, or
+  soft outcomes with no measured basis; use `[VALIDATE]` per Section 3, not
+  `[ADD REAL METRIC]` (this mode's own placeholder convention).
+
+**CV-only — do NOT apply to a profile:**
+- The **"CV-channel rewrite rules" block** (no first person, no contractions, keep
+  fragment action-verb bullets). A profile's About is a first-person personal
+  statement (Section 5) — applying the CV's third-person fragment convention here
+  would silently undo the register this mode deliberately sets.
+
 ## 6. The limits block
 
 LinkedIn does not publish a consolidated limits table. These numbers are
@@ -137,7 +169,7 @@ treat them as liable to drift if LinkedIn changes its UI.
 `scripts/li_profile_check.py` is the enforcement — it holds all six numbers in
 one `LIMITS` block so a drift is a one-line fix in that file rather than a
 hunt through this prose. In v1 this mode rewrites headline, About, and skills
-(experience-bullet rewrite is deferred — see the skill's own scope notes), so
+at full depth, with a lighter pass on experience descriptions (Section 5), so
 the checker's input schema currently checks headline, About, and skills
 against their limits; position title, company name, and experience-description
 limits are in the table above for reference if you're eyeballing those fields
@@ -177,9 +209,11 @@ that in a loop if you're iterating on a draft.
 - `keywords` — target-role keywords to check for coverage (Section 4's
   placement targets). Advisory, see below.
 - `must_contain` — the user's own specifics that must appear **above the
-  fold** (the first ~200 characters of About) — e.g. the target role phrase
-  from the positioning line, a name, a distinctive fact. Drives the front-load
-  check.
+  fold** (the first ~200 characters of About) — e.g. the metric from the
+  positioning line, a named system they own, a distinctive fact. Not a
+  target-role keyword — Section 4's placement rule keeps those out of the
+  pre-fold text, so requiring one here would fight the rule this checker is
+  supposed to protect. Drives the front-load check.
 
 **What each part of the output means:**
 
@@ -205,7 +239,11 @@ misread:**
    "Google" or "Django" — the checker isn't doing anything smarter than
    `needle in haystack.lower()`. Treat a "covered" result as a hint to verify,
    not proof the keyword is genuinely present in a useful sense, especially
-   for short keywords.
+   for short keywords. **The same substring logic drives `front_load`'s check
+   on `must_contain`** — and unlike coverage, `front_load` *does* gate `ok`
+   and the exit code, so a short `must_contain` term can false-pass and turn
+   a genuinely buried specific green. Prefer a distinctive phrase (a metric,
+   a named system) over a short token in `must_contain`.
 2. **Coverage does not affect `ok` or the exit code.** A profile can be fully
    `ok` — every length within limits, everything required above the fold —
    while several target keywords show `covered: false`. This is deliberate,
@@ -236,7 +274,10 @@ into whichever document was right. Surface it in the delivery report
 
 ## 9. The delivery template
 
-Use this structure for every profile report:
+For a single-field request ("just fix my headline"), deliver only that
+field's block plus its character count and the honesty note — not the full
+template. The full structure below applies once more than one field has been
+rewritten in the session.
 
 ```
 # LinkedIn Profile Report — [target role]
