@@ -37,3 +37,6 @@ docs/superpowers/
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# Local beads issue tracker (kept private, not published)
+.beads/
