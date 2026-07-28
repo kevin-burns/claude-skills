@@ -31,3 +31,9 @@ WRITING_CONTEXT.local.md
 
 # Local design specs / brainstorming output (kept out of the public repo)
 docs/superpowers/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
