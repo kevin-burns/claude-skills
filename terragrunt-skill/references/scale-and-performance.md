@@ -6,7 +6,7 @@
 > here is free CLI — the paid **Terragrunt Scale** platform only adds *hosted* orchestration
 > on top (see the last section).
 >
-> Verified against docs.terragrunt.com (current stable v1.1.0, 2026-07-01). Grep-friendly:
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01); reviewed against the **v1.1.1** release notes (2026-07-14) on 2026-07-29 with no changes required — v1.1.1 was bug-fix only, and its two new experiments touch the `terraform` block (see hcl-blocks.md). Grep-friendly:
 > `grep -n '^## ' scale-and-performance.md`.
 
 ## TL;DR recipes
@@ -218,6 +218,7 @@ performance techniques here don't require it.
 - performance troubleshooting: https://docs.terragrunt.com/troubleshooting/performance/
 - provider cache server: https://docs.terragrunt.com/features/provider-cache-server/
 - CAS: https://docs.terragrunt.com/features/caching/cas/
-- experiments (still active: dependency-fetch-output-from-state, azure-backend; cas / mark-many-as-read / opt-out-auth / dag-queue-display / stack-dependencies / catalog-redesign graduated to GA in v1.1.0): https://docs.terragrunt.com/reference/experiments/active
+- experiments — cas / mark-many-as-read / opt-out-auth / dag-queue-display / stack-dependencies / catalog-redesign graduated to GA in v1.1.0. Ten were still active as of v1.1.1: azure-backend, deep-merge, dependency-fetch-output-from-state, hook-context-env, iac-engine, oci, optional-hooks, slow-task-reporting, symlinks, version-attribute (oci and version-attribute are new in v1.1.1). Authoritative list: https://docs.terragrunt.com/reference/experiments/active
 - v1.1.0 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.0
+- v1.1.1 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.1
 - run command flags & exit codes: https://docs.terragrunt.com/reference/cli/commands/run/

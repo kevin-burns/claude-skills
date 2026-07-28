@@ -1,9 +1,18 @@
 # Terragrunt Error Diagnosis Playbook
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Verified against: Terragrunt 1.x (spot-checked vs docs.terragrunt.com; current stable v1.1.0, 2026-07-01); flag and avoid any pre-1.0 idioms.
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01) and updated for **v1.1.1** (2026-07-14). Flag and avoid any pre-1.0 idioms.
 
 Workflow: take the error text, grep this file for distinctive keywords (`grep -in 'state lock' error-patterns.md`), then read the matching ERROR section.
+
+**If the user has a `terragrunt-crash-*.log` file, start there, not here.** Since v1.1.1 Terragrunt
+writes `terragrunt-crash-YYYYMMDDTHHMMSSZ-<pid>.log` when it *panics* — a crash in Terragrunt
+itself, carrying the command line, panic message and stack trace. That is a different animal from
+the configuration and provider errors catalogued below: nothing in this file will fix it, and it is
+worth reporting upstream with the log attached. Check the pinned version against the latest release
+first — several v1.1.1 fixes were for crashes (`run --all` dependency discovery with graph filters,
+`--filter-allow-destroy` over deleted units with dependents), so an older pin may simply be the
+cause.
 
 ## Categories
 - **authentication** (3): AWS credentials not found, Azure authentication required, GCP credentials not found

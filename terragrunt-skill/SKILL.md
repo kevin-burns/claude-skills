@@ -20,19 +20,32 @@ read ONLY the listed reference(s), then act. References are grep-friendly — pr
 2. **Fact-based generation.** Every generated pattern must trace to a documented Gruntwork
    pattern (references here carry doc links to docs.terragrunt.com). Don't invent layouts.
 3. **Knowledge freshness.** Embedded references were verified against Terragrunt 1.x
-   (current stable **v1.1.0**, released 2026-07-01). **v1.1.0 graduated six experiments to
+   (current stable **v1.1.1**, released 2026-07-14). **v1.1.0 graduated six experiments to
    GA** — `stack-dependencies`, `cas`, `catalog-redesign`, `mark-many-as-read`,
    `opt-out-auth`, `dag-queue-display` — so their features are now **enabled by default**;
    passing the old `--experiment`/`TG_EXPERIMENT` value only prints a "completed experiment"
    warning. The stack-dependency features (`autoinclude`, `unit.<name>.path` /
    `stack.<name>.path`, `dependency` on stack dirs via `autoinclude`) and the CAS attributes
    (`update_source_with_cas`, `mutable`) therefore require **v1.1.0+** — flag them and do NOT
-   emit them for repos pinned to ≤1.0.x. (`azure-backend` and
-   `dependency-fetch-output-from-state` remain experiments — not graduated.) For anything
-   newer, niche, or not found in the references, use the C7 search skill (Context7) or fetch
+   emit them for repos pinned to ≤1.0.x.
+
+   **v1.1.1 added two experiments** (opt-in, not GA), both on the `terraform` block and both
+   requiring **v1.1.1+**: `oci` (module sources from OCI registries via `oci://`) and
+   `version-attribute` (a `version` constraint for `tfr://` registry modules). Syntax and the
+   gating rules are in `references/hcl-blocks.md` under `## BLOCK: terraform`. v1.1.1 was
+   otherwise a bug-fix release — it introduced no new GA surface.
+
+   **Experiments are not a short list.** Alongside the two above, `azure-backend`,
+   `deep-merge`, `dependency-fetch-output-from-state`, `hook-context-env`, `iac-engine`,
+   `optional-hooks`, `slow-task-reporting` and `symlinks` were all still active experiments as
+   of v1.1.1. These references cover only some of them, so an unfamiliar `--experiment` value
+   is not evidence that it is wrong — look it up rather than flagging it. For anything newer,
+   niche, or not found in the references, use the C7 search skill (Context7) or fetch
    docs.terragrunt.com directly — do not guess.
 4. Terragrunt orchestrates **OpenTofu or Terraform**; don't assume one unless the user's
-   repo indicates it (`.terraform-version`, `engine` block, provider constraints).
+   repo indicates it (`.terraform-version`, `terraform_binary`, provider constraints, or an
+   `engine` block — the latter is gated behind the `iac-engine` experiment and is not covered
+   in `references/hcl-blocks.md`, so look it up before editing one).
 
 ## Terminology (1.0)
 

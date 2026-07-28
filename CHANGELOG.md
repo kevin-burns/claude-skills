@@ -11,6 +11,40 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-07-29
+
+### Changed — `terragrunt-skill` brought up to Terragrunt v1.1.1
+
+The skill was pinned to **v1.1.0** (2026-07-01) and is now current with
+[**v1.1.1**](https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.1) (2026-07-14).
+
+**What actually changed upstream:** v1.1.1 is a bug-fix release with **no new GA surface**. It adds
+two opt-in **experiments**, both on the `terraform` block, and both now documented in
+`references/hcl-blocks.md` with the same version-gating the skill already applies elsewhere:
+
+- **`oci`** — module sources from OCI Distribution registries: `source = "oci://ghcr.io/acme/terraform-modules/vpc?tag=1.0.0"`
+- **`version-attribute`** — a `version` constraint for `tfr://` registry modules, e.g. `version = "~> 3.3"`, instead of pinning the version inside the source URL
+
+**A correction worth calling out.** `SKILL.md` previously implied only two experiments remained
+active after v1.1.0. Ten were active as of v1.1.1, six of which this skill has never documented.
+The skill now says so plainly and tells the agent that an unfamiliar `--experiment` value is *not*
+evidence of an error — look it up instead of flagging it. The same incomplete list in
+`references/scale-and-performance.md` was corrected.
+
+**Also added:** `terragrunt-crash-*.log` panic reports (new in v1.1.1) at the top of
+`references/error-patterns.md`, flagged as a Terragrunt crash rather than a config error, so it
+isn't diagnosed against a catalogue that cannot explain it. And an explicit note that
+`terraform.source` cannot reference `dependency` outputs — module sources must resolve before the
+dependency graph runs. v1.1.1 only improved the *error message* for this, but it is a real
+constraint that was previously undocumented here.
+
+**Verification honesty.** The twelve other v1.1.1 bug fixes need no documentation change — the skill
+never documented any of those behaviours as limitations, so there is nothing to retract. Reference
+footers now distinguish what was **spot-checked against docs** at v1.1.0 from what was **reviewed
+against the v1.1.1 release notes**, rather than claiming a full re-verification that did not happen.
+
+---
+
 ## 2026-07-28 / 2026-07-29
 
 ### Added — `cv-and-human` gains a LinkedIn profile mode

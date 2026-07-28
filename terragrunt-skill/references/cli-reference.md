@@ -2,7 +2,7 @@
 
 > Scope: Terragrunt 1.x (post-1.0 CLI). Never generate pre-1.0 command forms (run-all, hclfmt, plan-all,
 > graph-dependencies, terragrunt- prefixed flags, etc.). Canonical docs: https://docs.terragrunt.com/reference/cli/
-> Verified against the Terragrunt CLI command tree (docs.terragrunt.com; current stable v1.1.0, 2026-07-01).
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01); reviewed against the **v1.1.1** release notes (2026-07-14) on 2026-07-29 with no changes required — v1.1.1 was bug-fix only, and its two new experiments touch the `terraform` block (see hcl-blocks.md).
 > **v1.1.0 note:** CAS, the redesigned `catalog`, reading-detection for local modules, the
 > discovery-auth opt-out, and the dependency-tree run-queue display all graduated to GA and are
 > **on by default** — the matching `--experiment` flags are no longer needed (passing one warns).

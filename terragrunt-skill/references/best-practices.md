@@ -1,7 +1,7 @@
 # Terragrunt Best Practices & Decision Guidance
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Verified against: Terragrunt 1.x (spot-checked vs docs.terragrunt.com; current stable v1.1.0, 2026-07-01); flag and avoid any pre-1.0 idioms.
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01); reviewed against the **v1.1.1** release notes (2026-07-14) on 2026-07-29 with no changes required — v1.1.1 was bug-fix only, and its two new experiments touch the `terraform` block (see hcl-blocks.md). Flag and avoid any pre-1.0 idioms.
 
 Sections: PRACTICE (by category), COMPARISON (block A vs B), DECISION (pattern guidance).
 

@@ -1,7 +1,7 @@
 # Terragrunt HCL Block Reference
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Verified against: Terragrunt 1.x (spot-checked vs docs.terragrunt.com; current stable v1.1.0, 2026-07-01); flag and avoid any pre-1.0 idioms.
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01) and updated for **v1.1.1** (2026-07-14). Flag and avoid any pre-1.0 idioms.
 
 Lookup: `grep -n '^## BLOCK:' hcl-blocks.md`
 
@@ -640,6 +640,7 @@ terraform { ... }
 
 **Attributes:**
 - `source` (string, required): The source URL for the Terraform module. Supports local paths, Git URLs, S3, GCS, and Terraform Registry.
+- `version` (string): **Experiment `version-attribute`, v1.1.1+.** Resolves a `tfr://` registry module by version constraint instead of pinning an exact version in the source URL. Not available without the experiment flag — see below.
 - `include_in_copy` (list): List of glob patterns for additional files to copy to the Terraform working directory.
 - `extra_arguments` (block): Nested block to pass additional CLI arguments to specific Terraform commands.
 - `before_hook` (block): Nested block to execute commands before Terraform runs.
@@ -664,6 +665,35 @@ terraform {
   }
 }
 ```
+
+**Source schemes gated behind experiments (v1.1.1+).** Both are opt-in and will fail on a repo that
+has not enabled them, so confirm the pinned Terragrunt version and the enabled experiments before
+emitting either. Enable with `--experiment <name>` or `TG_EXPERIMENT=<name>`.
+
+*`oci` experiment — module source from an OCI Distribution registry*
+```hcl
+terraform {
+  source = "oci://ghcr.io/acme/terraform-modules/vpc?tag=1.0.0"
+}
+```
+
+*`version-attribute` experiment — resolve a `tfr://` registry module by constraint*
+```hcl
+terraform {
+  source  = "tfr://registry.opentofu.org/terraform-aws-modules/vpc/aws"
+  version = "~> 3.3"
+}
+```
+
+Prefer the `version` attribute over embedding an exact version in a `tfr://` URL *only* where the
+experiment is enabled; otherwise keep pinning in the source string, which works on every 1.x.
+
+**`source` cannot reference `dependency` outputs.** A module's source must resolve before the
+dependency graph runs, so `source = "${dependency.foo.outputs.bar}"` is not a late-binding
+expression — it is a cycle Terragrunt cannot satisfy. v1.1.1 replaced the previous confusing
+failure with an explicit error saying module sources must resolve before dependencies run. If a
+source genuinely varies per environment, drive it from `locals`/`inputs` or an `include`, never
+from a dependency.
 
 Related: remote_state, include, dependency
 
