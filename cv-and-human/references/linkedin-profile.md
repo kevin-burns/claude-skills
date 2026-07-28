@@ -102,6 +102,26 @@ this person different, not a role-title restatement. A recruiter scanning
 search results reads the first handful of words before moving on, so the most
 distinctive fact belongs at the front, not the end.
 
+*When you don't have enough to go on, still hand back headlines.* A user who says
+"just fix my headline" and gives you almost nothing puts two rules in tension: you
+cannot invent a specialty or a metric, but a template plus homework is not the
+thing they asked for — and an eval of exactly this case showed the mode retreating
+to a fill-in-the-blank structure while an unaided model cheerfully produced four
+polished headlines built on skills the user never claimed. Neither is right.
+
+Resolve it by writing **two or three complete candidate headlines with the unknowns
+marked as slots**, not by withholding the deliverable:
+
+    IT Support Lead | [your top 2 tools, e.g. ServiceNow, Intune] | cut [X]% off ticket backlog
+    [Sysadmin / Cloud Ops / Security — pick the true one] supporting [N] users across [Windows/Linux]
+
+A bracketed slot is visibly not a claim, so this fabricates nothing — the user reads
+it as a blank to fill, never as something you asserted about them. They leave with
+something shaped they can finish in thirty seconds, which is what they came for.
+Give each candidate its character count, and say which slot matters most to fill.
+Branching on a plausible specialty is fine *as a labelled branch* ("if you're
+actually in security, this one"); stating the specialty as fact is not.
+
 **About** (2,600 characters). The fold at ~200 characters is the real
 constraint, not the 2,600 limit — almost nobody expands "see more," so
 everything that has to land, lands before the fold. Unlike a CV, first person
