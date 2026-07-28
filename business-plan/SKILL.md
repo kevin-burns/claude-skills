@@ -113,13 +113,17 @@ Run it from the skill's own directory (the script lives in this skill's `scripts
 }
 ```
 
-It returns a dict with `months` (the 12-row monthly table: customers, revenue, cogs, gross_margin,
-marketing, fixed_costs, net, cumulative_net), `break_even_month`, `avg_monthly_burn_while_negative`,
-and `unit_economics` (`contribution_margin_per_customer_monthly`, `ltv`, `cac_payback_months`,
-`ltv_cac_ratio` — each a float or `None` when the math is undefined, e.g. zero churn makes LTV
-undefined). Render the monthly table and break-even month straight into the Financials section, and
-label every figure `(derived from your inputs)` — it's a literally true label because the script
-does nothing but arithmetic on what the founder gave you.
+It returns a dict with:
+- **Top-level keys:** `assumptions` (input assumptions), `months` (12-row monthly table), `break_even_month`,
+  `avg_monthly_burn_while_negative`, `month12_revenue`, and `unit_economics`
+  (`contribution_margin_per_customer_monthly`, `ltv`, `cac_payback_months`, `ltv_cac_ratio` — each
+  a float or `None` when the math is undefined, e.g. zero churn makes LTV undefined)
+- **Per-month rows:** each row includes `month` (1–12) plus `customers`, `revenue`, `cogs`, `gross_margin`,
+  `marketing`, `fixed_costs`, `net`, `cumulative_net`
+
+Render the monthly table and break-even month straight into the Financials section, and label every
+figure `(derived from your inputs)` — it's a literally true label because the script does nothing but
+arithmetic on what the founder gave you.
 
 Flag the **3 make-or-break assumptions** — usually churn, price, and CAC, since small changes to
 these swing break-even and viability far more than the others — and say so explicitly next to the

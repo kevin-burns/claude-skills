@@ -113,6 +113,12 @@ directly — don't re-derive or round the numbers by hand. Call out the burn (ho
 and for how long) and the break-even month explicitly near the top of the section, not buried in the
 table.
 
+**Note on break-even:** The break-even month reported here is the first month where that month's
+operating net turns positive (revenue covers that month's costs) — not the month when cumulative
+losses are fully repaid. A venture with strong unit economics can still show no operating
+break-even within 12 months if fixed costs are high relative to early volume; flag this plainly
+rather than letting readers misinterpret the number as a sign of poor health.
+
 **Lead with unit economics, not top-line revenue.** Revenue growing is not the same as a business
 that works; the helper's `unit_economics` block — contribution margin per customer, LTV, CAC
 payback months, and the LTV:CAC ratio — is what actually decides viability, and a plan that leads
