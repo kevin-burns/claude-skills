@@ -1,6 +1,6 @@
 ---
 name: nano-banana-pro-json
-description: Generate and edit images using Google's Nano Banana Pro (Gemini 3 Pro Image) API. Use when the user asks to generate, create, edit, modify, change, alter, or update images. Also use when user references an existing image file and asks to modify it in any way (e.g., "modify this image", "change the background", "replace X with Y"). Supports simple prompts, style presets (cinematic, film, fashion, studio), JSON-configured camera/lighting/composition parameters, photorealistic enhancement, aspect ratios, and WebP output. This is the default image generation skill. DO NOT read image files first - use --input-image parameter directly.
+description: Generate and edit images using Google's Nano Banana Pro (Gemini 3 Pro Image) API. Use when the user asks to generate, create, edit, modify, change, alter, or update images. Also use when user references an existing image file and asks to modify it in any way (e.g., "modify this image", "change the background", "replace X with Y"). Also use for logo and brand-identity design — "design a logo", "create a brand mark / wordmark / icon", "brand identity", "logo for my startup" — via the brand-brief recipe in references/logo-brand-identity.md. Supports simple prompts, style presets (cinematic, film, fashion, studio), a logo/brand-identity recipe, JSON-configured camera/lighting/composition parameters, photorealistic enhancement, aspect ratios, and WebP output. This is the default image generation skill. DO NOT read image files first - use --input-image parameter directly.
 license: MIT
 ---
 
@@ -52,6 +52,20 @@ uv run ~/.claude/skills/nano-banana-pro-json/scripts/generate_image.py \
   --filename "2025-11-23-14-23-05-studio-portrait.png" \
   --style-preset photorealistic-studio
 ```
+
+## Logos & brand identity
+
+Logos are a distinct mode — flat, iconic, scalable, the opposite of the photographic presets above.
+When the user wants a **logo, brand mark, wordmark, or brand identity**, follow the brand-brief
+recipe in [`references/logo-brand-identity.md`](references/logo-brand-identity.md): take a short
+brief (name, industry, personality, colors, logo type, icon concept), construct a logo-appropriate
+prompt (flat vector, minimal, strong silhouette, limited palette — explicitly *away from*
+photorealism/3D/gradients), generate 3-4 varied concepts at `--aspect-ratio 1:1 --resolution 2K`
+(no photographic `--style-preset`, no `--photorealistic`), then evaluate with the monochrome and
+scalability tests and iterate via `--input-image`.
+
+**Boundary:** output is a **raster** concept, not production vector art — trace the winner to SVG
+for real use. No trademark clearance; verify any wordmark's spelling.
 
 ## JSON Configuration
 

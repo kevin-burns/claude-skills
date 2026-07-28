@@ -1,6 +1,8 @@
 # Nano Banana Pro JSON
 
-Advanced image generation skill for Claude Code using Google's Gemini 3 Pro Image API. Extends the original `nano-banana-pro` skill with structured JSON configuration, style presets, photorealistic enhancement, and WebP output.
+> Part of [claude-skills](../README.md).
+
+Advanced image generation skill for Claude Code using Google's Gemini 3 Pro Image API. Extends the original `nano-banana-pro` skill with structured JSON configuration, style presets, a logo/brand-identity recipe, photorealistic enhancement, and WebP output.
 
 ## Requirements
 
@@ -53,6 +55,20 @@ uv run ~/.claude/skills/nano-banana-pro-json/scripts/generate_image.py \
 | `cinematic` | Kodak Portra 400, 50mm f/1.8 | Golden hour, 3200K | Film grain, bokeh |
 | `high-fashion` | DSLR 85mm f/2.0 | Dramatic flash, cool 5000K | Editorial, bold |
 | `anime-hyperrealistic` | Portrait 85mm f/1.4 | Spotlight, cool 6500K | Anime-inspired |
+
+## Logos & brand identity
+
+A dedicated mode for **logos and brand marks** — flat, iconic, scalable, the opposite of the
+photographic presets. Follow the brand-brief recipe in
+[`references/logo-brand-identity.md`](references/logo-brand-identity.md): take a short brief (name,
+industry, personality, colors, logo type, icon concept), build a logo-appropriate prompt (flat
+vector, minimal, strong silhouette — steered *away* from photorealism/3D/gradients), generate 3-4
+concepts at `--aspect-ratio 1:1 --resolution 2K` (no photographic preset), then run the monochrome
+and scalability tests and iterate via `--input-image`.
+
+**What it does NOT do:** it outputs a **raster** concept, not production vector art — pick a winner
+and trace it to SVG for real use. It does not do trademark clearance, and text in generated marks
+can be imperfect, so verify any wordmark's spelling.
 
 ## JSON Configuration
 
@@ -111,6 +127,8 @@ WebP output is also a conversion layer -- the Gemini API returns PNG/JPEG, and P
 nano-banana-pro-json/
   README.md          # This file
   SKILL.md           # Claude Code skill definition
+  references/
+    logo-brand-identity.md  # Logo/brand-identity brief + prompting recipe
   scripts/
     generate_image.py  # Main script
 ```
