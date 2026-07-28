@@ -41,7 +41,7 @@ uv run ~/.claude/skills/nano-banana-pro-json/scripts/generate_image.py \
 | `--api-key` | `-k` | Gemini API key |
 | `--json-config` | `-j` | JSON file path or inline `{...}` string |
 | `--style-preset` | `-s` | Named style preset |
-| `--aspect-ratio` | `-a` | `1:1`, `4:3`, `16:9`, `9:16`, `3:2`, `2:3` |
+| `--aspect-ratio` | `-a` | `1:1`, `4:3`, `16:9`, `9:16`, `3:2`, `2:3`, `4:5`, `3:4` |
 | `--photorealistic` | | Inject quality markers (8k, ultra-sharp, etc.) |
 | `--webp` | | Force WebP output |
 | `--quality` | | JPEG/WebP quality 1-100 (default 80) |
@@ -70,6 +70,25 @@ The generator makes a **raster** concept; the recipe's final step **traces the w
 SVG locally and for free** (vtracer/potrace) — the exact step Looka/Tailor Brands/Brandmark charge
 for. **What it does NOT do:** trademark clearance or font-license checks (run those yourself before
 shipping), and text in generated marks can be imperfect — verify any wordmark's spelling.
+
+## Product & marketing images
+
+Product shots, e-commerce catalog images, lifestyle scenes, and ad creative — recipe in
+[`references/product-marketing.md`](references/product-marketing.md). Covers e-commerce specs (pure
+`#FFFFFF` background, product fills 70-90%, per-platform aspect ratios), **identity-lock** for a real
+product passed via `--input-image`, consistent shot **sets**, and on-image text.
+
+**What it does NOT do:** for a real product it can subtly alter details — verify against reality; and
+never render fabricated prices/claims/label text or brand-impersonation imagery.
+
+## Infographics & explanatory diagrams
+
+Process flows, comparisons, concept explainers — recipe in
+[`references/infographics-diagrams.md`](references/infographics-diagrams.md). Pick a layout matching
+the content's shape and a named style; supply every label/number verbatim.
+
+**What it does NOT do:** it renders the *look* of an infographic, not trustworthy data — it garbles
+text and **invents numbers**. Supply the facts and verify; for real data viz use `report-builder`.
 
 ## JSON Configuration
 
@@ -129,7 +148,9 @@ nano-banana-pro-json/
   README.md          # This file
   SKILL.md           # Claude Code skill definition
   references/
-    logo-brand-identity.md  # Logo/brand-identity brief + prompting recipe
+    logo-brand-identity.md    # Logo/brand-identity brief + prompting recipe
+    product-marketing.md      # Product shots / e-commerce / lifestyle / ad creative
+    infographics-diagrams.md  # Infographics + explanatory diagrams
   scripts/
     generate_image.py  # Main script
 ```

@@ -1,6 +1,6 @@
 ---
 name: nano-banana-pro-json
-description: Generate and edit images using Google's Nano Banana Pro (Gemini 3 Pro Image) API. Use when the user asks to generate, create, edit, modify, change, alter, or update images. Also use when user references an existing image file and asks to modify it in any way (e.g., "modify this image", "change the background", "replace X with Y"). Also use for logo and brand-identity design — "design a logo", "create a brand mark / wordmark / icon", "brand identity", "logo for my startup" — via the brand-brief recipe in references/logo-brand-identity.md. Supports simple prompts, style presets (cinematic, film, fashion, studio), a logo/brand-identity recipe, JSON-configured camera/lighting/composition parameters, photorealistic enhancement, aspect ratios, and WebP output. This is the default image generation skill. DO NOT read image files first - use --input-image parameter directly.
+description: Generate and edit images using Google's Nano Banana Pro (Gemini 3 Pro Image) API. Use when the user asks to generate, create, edit, modify, change, alter, or update images. Also use when user references an existing image file and asks to modify it in any way (e.g., "modify this image", "change the background", "replace X with Y"). Also use for logo and brand-identity design ("design a logo", "brand mark / wordmark / icon", "brand identity") via references/logo-brand-identity.md; for product & marketing images ("product shot", "e-commerce photo", "hero image", "lifestyle photo", "ad creative", "packaging mockup") via references/product-marketing.md; and for infographics & explanatory diagrams ("infographic", "explainer graphic", "process diagram", "comparison graphic") via references/infographics-diagrams.md. Supports simple prompts, style presets (cinematic, film, fashion, studio), recipes for logos / product-marketing / infographics, JSON-configured camera/lighting/composition parameters, photorealistic enhancement, aspect ratios, and WebP output. This is the default image generation skill. DO NOT read image files first - use --input-image parameter directly.
 license: MIT
 ---
 
@@ -69,6 +69,30 @@ favicon-size, spelling, originality), iterate via `--input-image` one change at 
 SVG locally). It does **not** do trademark clearance or confirm font licensing, and text can slip —
 verify a wordmark's spelling.
 
+## Product & marketing images
+
+For **product shots, e-commerce catalog images, lifestyle scenes, and ad creative**, follow
+[`references/product-marketing.md`](references/product-marketing.md). It's photographic (the presets
+help), and adds the product-specific discipline: e-commerce specs (pure `#FFFFFF` bg, product fills
+70-90%, per-platform aspect ratios), **identity-lock** when you pass a real product via
+`--input-image` ("preserve exact appearance; do not reinterpret"), consistent shot **sets**
+(lock lighting/angle, vary one element), and on-image text.
+
+**Boundary:** for a **real** product it can subtly alter details — verify the render against reality,
+and never render fabricated prices/claims/label text or brand-impersonation imagery.
+
+## Infographics & explanatory diagrams
+
+For **infographics, explainers, and process/comparison diagrams**, follow
+[`references/infographics-diagrams.md`](references/infographics-diagrams.md): pick a layout matching
+the content's shape (timeline / pyramid / hub-and-spoke / comparison / funnel / cross-section) and a
+named style (corporate-flat, isometric, blueprint…), supply **every label and number verbatim in
+quotes**, and proofread the output.
+
+**Boundary:** it renders the *look* of an infographic, not trustworthy data — it garbles text and
+**invents numbers**. Supply the facts and verify them; for real data viz use the `report-builder`
+skill, not this.
+
 ## JSON Configuration
 
 Use `--json-config` with a file path or inline JSON string:
@@ -127,7 +151,7 @@ All fields are optional. Only include what you want to control.
 
 Use `--aspect-ratio` to guide composition (applied as prompt text, not API parameter):
 
-Choices: `1:1`, `4:3`, `16:9`, `9:16`, `3:2`, `2:3`
+Choices: `1:1`, `4:3`, `16:9`, `9:16`, `3:2`, `2:3`, `4:5`, `3:4`
 
 ```bash
 uv run ~/.claude/skills/nano-banana-pro-json/scripts/generate_image.py \

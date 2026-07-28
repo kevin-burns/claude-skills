@@ -159,6 +159,8 @@ ASPECT_RATIO_PROMPT = {
     "9:16": "tall 9:16 vertical portrait aspect ratio",
     "3:2": "3:2 classic 35mm film aspect ratio",
     "2:3": "2:3 tall portrait aspect ratio",
+    "4:5": "4:5 portrait aspect ratio, ideal for social feed and e-commerce",
+    "3:4": "3:4 portrait aspect ratio, product detail composition",
 }
 
 OUTPUT_FORMAT_MAP = {
