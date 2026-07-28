@@ -86,6 +86,16 @@ from another repo. See [dev-fleet](./dev-fleet).
 ## General skill conventions
 
 - Each skill lives in its own directory with a `SKILL.md` (`name` + `description` frontmatter).
+- **Ship a human-facing `README.md` in the skill directory**, following the standard shape:
+  a one-line summary + a `Part of [claude-skills](../README.md)` backlink; **What it does**;
+  **How to use it well**; **What it does NOT do**; **Requirements**. The `SKILL.md` is
+  Claude-facing (loaded into context on trigger); the `README.md` is the human's guide that
+  ships with the package and gets rendered on the repo. The **"what it does NOT do"** section is
+  the load-bearing one — a skill's boundaries (won't invent a fact, won't book, won't predict)
+  are what make its output trustworthy, so state them plainly. Use
+  [`travel-planning/README.md`](./travel-planning/README.md) and
+  [`business-plan/README.md`](./business-plan/README.md) as the templates, and add the skill to
+  the catalog table and the Requirements list in the repo [`README.md`](./README.md).
 - A skill that wraps an external tool or service carries a **Provenance** note in its
   `SKILL.md` crediting the upstream project and its license.
 - Prefer stdlib-only helpers; declare any third-party deps via PEP 723 inline metadata so
