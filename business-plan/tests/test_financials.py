@@ -71,3 +71,16 @@ def test_unit_economics_handles_zero_churn_and_zero_margin():
     assert ue["ltv"] is None                # churn 0 -> LTV undefined
     assert ue["cac_payback_months"] is None  # contribution margin 0 -> undefined
     assert ue["ltv_cac_ratio"] is None
+
+
+def test_month12_revenue_is_actually_month_12():
+    a = Assumptions(price_per_customer_monthly=10, starting_customers=100,
+                    new_customers_per_month=0, monthly_churn_rate=0.0,
+                    variable_cost_per_customer_monthly=0, fixed_costs_monthly=0,
+                    cac=0, months=6)
+    assert project_financials(a)["month12_revenue"] is None   # horizon shorter than 12
+    a12 = Assumptions(price_per_customer_monthly=10, starting_customers=100,
+                      new_customers_per_month=0, monthly_churn_rate=0.0,
+                      variable_cost_per_customer_monthly=0, fixed_costs_monthly=0,
+                      cac=0, months=12)
+    assert project_financials(a12)["month12_revenue"] == 1000

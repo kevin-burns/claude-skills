@@ -69,7 +69,7 @@ def project_financials(a: Assumptions) -> dict:
         "months": rows,
         "break_even_month": break_even_month,
         "avg_monthly_burn_while_negative": round(sum(burn) / len(burn), 2) if burn else 0.0,
-        "month12_revenue": rows[-1]["revenue"] if rows else 0.0,
+        "month12_revenue": rows[11]["revenue"] if len(rows) >= 12 else None,
         "unit_economics": {
             "contribution_margin_per_customer_monthly": round(contribution, 2),
             "ltv": ltv,
