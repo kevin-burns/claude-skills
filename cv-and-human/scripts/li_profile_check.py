@@ -93,6 +93,10 @@ def check_profile(profile: dict) -> dict:
 
     profile: {"headline": str, "about": str, "skills": [str],
               "keywords": [str], "must_contain": [str]}
+
+    Coverage results are advisory and do not affect ok or exit code: a keyword
+    not covered in any field usually means the user lacks that skill, and this
+    skill forbids inventing skills the candidate cannot back up.
     """
     headline = profile.get("headline", "")
     about = profile.get("about", "")

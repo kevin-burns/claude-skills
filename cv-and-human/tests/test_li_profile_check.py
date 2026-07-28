@@ -109,3 +109,20 @@ def test_check_profile_is_ok_on_a_clean_draft():
         "must_contain": ["38%"],
     })
     assert results["ok"] is True
+
+
+def test_uncovered_keyword_is_advisory_and_does_not_flip_ok():
+    from li_profile_check import check_profile
+    # A profile with a fully uncovered keyword but valid lengths/front-load/skills
+    # should still return ok=True because coverage is advisory, not gating.
+    results = check_profile({
+        "headline": "Platform Engineer 🚀",
+        "about": "I cut AWS spend 38%.",
+        "skills": ["Terraform"],
+        "keywords": ["GoLang"],  # Not present anywhere in the profile
+        "must_contain": ["38%"],
+    })
+    assert results["ok"] is True
+    # Verify the keyword is indeed uncovered in coverage results
+    golang_result = [c for c in results["coverage"] if c["keyword"] == "GoLang"][0]
+    assert golang_result["covered"] is False
