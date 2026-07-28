@@ -42,7 +42,12 @@ def count_chars(text: str) -> int:
 
 
 def utf16_slice(text: str, n: int) -> str:
-    """First n UTF-16 code units, never splitting a surrogate pair."""
+    """First n UTF-16 code units, matching JS String.prototype.slice() semantics.
+
+    JS slicing is oblivious to surrogate-pair validity: if the boundary lands
+    inside a pair, the pair is split and a lone surrogate is what comes back
+    -- not dropped. This mirrors that.
+    """
     truncated = text.encode("utf-16-le", errors="surrogatepass")[: n * 2]
     return truncated.decode("utf-16-le", errors="surrogatepass")
 
