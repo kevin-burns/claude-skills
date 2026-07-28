@@ -34,6 +34,9 @@ replace it with the concrete thing it was hiding.
 
 ## CV-channel rewrite rules (override generic humanizing advice)
 
+These overrides apply to a CV. For a LinkedIn profile, see
+`references/linkedin-profile.md` instead — first person is correct there.
+
 A CV is its own channel. Unlike blog/linkedin de-slopping, do **not**:
 - add first person or "I";
 - add contractions, conversational asides, or "personality";

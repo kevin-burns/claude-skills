@@ -1,16 +1,23 @@
 ---
 name: cv-and-human
 description: >
-  Tailor and polish a CV/resume to maximise its score in applicant tracking systems
-  (ATS), covering both keyword/JD-matching screeners and modern LLM-rubric scorers
-  (which often take no job description at all). Use this whenever the user wants to
-  optimise, tailor, rewrite, or "ATS-proof" a CV or resume, asks why their resume
-  isn't getting through screening, wants a keyword/gap analysis against a job
-  description, wants to remove AI-generated texture from a CV, or wants to check
-  whether a CV parses cleanly. Trigger even if the user only supplies a CV (with or
-  without a job description), or asks to "make my resume match this job" or "pass
-  the ATS". Do NOT use for writing a CV from a blank page with no material to work
-  from, or for generic career advice unrelated to a document.
+  Tailor and polish a CV/resume - or a LinkedIn profile - to maximise its score in
+  applicant tracking systems (ATS) and LinkedIn recruiter search, covering both
+  keyword/JD-matching screeners and modern LLM-rubric scorers (which often take no job
+  description at all). Use this whenever the user wants to optimise, tailor, rewrite, or
+  "ATS-proof" a CV or resume, asks why their resume isn't getting through screening,
+  wants a keyword/gap analysis against a job description, wants to remove AI-generated
+  texture from / de-slop / humanize a CV, resume or LinkedIn profile (a CV is its own
+  channel with its own de-slop rules), or wants to check whether a CV parses cleanly.
+  ALSO use for the LinkedIn PROFILE as a career document: "optimise my LinkedIn
+  profile", "rewrite my LinkedIn headline", "my LinkedIn About section", "the experience
+  bullets on my LinkedIn profile", "why am I not showing up in recruiter searches",
+  "make my LinkedIn match my CV", "LinkedIn keywords", "personal brand positioning on my
+  LinkedIn profile". Trigger even if the user only supplies a CV or profile text (with or
+  without a job description). Do NOT use for writing a LinkedIn POST or other social
+  content - that is hook-and-human (persuasive) or clear-and-human (neutral). Do NOT use
+  for writing a CV from a blank page with no material to work from, or for generic career
+  advice unrelated to a document.
 ---
 
 # CV and Human
@@ -48,6 +55,23 @@ JD-less tools. See `references/ats-mechanics.md`.
    into principal-level claims.
 
 ## Workflow
+
+### Step 0 — Which artifact?
+
+This skill handles two career documents. Detect which one is in front of you and say
+so in one line before proceeding, so a wrong guess is cheap to correct.
+
+- **A CV/resume** (a file, or pasted CV text) → continue to Step 1 below.
+- **A LinkedIn profile** (profile text, a headline/About section, or a request about
+  recruiter search or "my LinkedIn") → follow `references/linkedin-profile.md` instead
+  and return here only for the channel-neutral de-slop parts (pattern list, keyword
+  guard, fabrication floor) and the no-fabrication rules — not the CV-only register
+  rules.
+
+The two are not interchangeable: a profile is one artifact read by many recruiters
+rather than tailored to one job description, and first person is correct there and
+wrong on a CV. The LinkedIn mode is **job-seeker-focused and text-only** — it never
+connects, posts, comments, messages, or applies.
 
 ### Step 1 — Gather inputs and identify the ATS family
 
@@ -289,3 +313,9 @@ ALWAYS use this structure for the report:
   red-team fragments. Read when you need a concrete pattern to imitate.
 - `scripts/ats_adversarial_loop.py` — Scoring/stats harness for the red-team's
   measured ATS lens (`selftest` runs without a model backend).
+- `references/linkedin-profile.md` — LinkedIn profile mode (job-seeker lens): the
+  positioning pass, the keyword placement rule, per-field limits, the checker script,
+  and the CV↔profile consistency check. Read during Step 0 whenever the artifact is a
+  LinkedIn profile.
+- `scripts/li_profile_check.py` — Deterministic character/fold/coverage checks for a
+  profile draft. Counts UTF-16 code units to match LinkedIn's own field counter.
