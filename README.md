@@ -4,6 +4,8 @@ A collection of [Claude Code](https://claude.com/claude-code) skills and subagen
 
 All skills here are MIT licensed (see [`LICENSE`](./LICENSE)). Skills that wrap an external tool or service carry a **Provenance** note in their `SKILL.md` crediting the upstream project and its license — the MIT license covers the skill content, not the wrapped tools.
 
+New here, or checking what changed? [`CHANGELOG.md`](./CHANGELOG.md) lists each addition with what it does, when to reach for it, and what it deliberately won't do.
+
 ## Skills
 
 | Skill | What it does | Wraps |
