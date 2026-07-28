@@ -1,0 +1,23 @@
+{
+  "skill_name": "cv-and-human",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Here's my LinkedIn profile text, it's a bit of a mess. I want Platform Engineer roles. Can you sort it out?\n\nHeadline: Cloud Ninja | Tech Enthusiast | Problem Solver\nAbout: Results-driven professional with a proven track record of delivering scalable solutions. Passionate about technology and always eager to learn.\nExperience: Senior Engineer at Fintech Co, 2021-now. Worked on cloud stuff, reduced costs a lot. Built CI/CD. Managed Kubernetes clusters and wrote Terraform.",
+      "expected_output": "Positioning line, then headline/About/skills blocks with character counts within limits, keywords in skills and About tail but not driving the headline, [VALIDATE] on the unquantified cost claim",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I don't really have a LinkedIn profile yet beyond my name and job title. Here's my CV - can you build me one? I'm targeting SRE roles.",
+      "expected_output": "Cold start from CV: positioning pass, headline/About/skills, consistency between CV and new profile, no invented material",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Just fix my LinkedIn headline, it's rubbish: 'Experienced IT Professional | Open to Opportunities'",
+      "expected_output": "A usable headline quickly, without a long positioning interrogation; asks at most one question and delivers a candidate headline with its character count",
+      "files": []
+    }
+  ]
+}

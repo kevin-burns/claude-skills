@@ -10,7 +10,7 @@ All skills here are MIT licensed (see [`LICENSE`](./LICENSE)). Skills that wrap 
 |---|---|---|
 | [clear-and-human](./clear-and-human) | Construct, review, score, and rewrite prose so it reads human, not AI | — |
 | [hook-and-human](./hook-and-human) | Write, punch up, and review persuasive marketing copy without fabricating | — |
-| [cv-and-human](./cv-and-human) | Tailor a CV to pass automated HR/ATS screening while staying truthful and human — keyword/JD matching, parseability, de-slop, optional red-team | — |
+| [cv-and-human](./cv-and-human) | Tailor a CV — or a LinkedIn profile (job-seeker lens) — to pass automated HR/ATS screening and Recruiter search while staying truthful and human — keyword/JD matching, parseability, de-slop, optional red-team | — |
 | [c7search](./c7search) | Fetch up-to-date library docs via the `c7search` CLI | [Context7](https://context7.com) API |
 | [markdown-converter](./markdown-converter) | Convert PDF/Office/HTML/media files to Markdown | [markitdown](https://github.com/microsoft/markitdown) (MS, MIT) |
 | [nano-banana-pro-json](./nano-banana-pro-json) | Generate/edit images (Gemini 3 Pro Image) with structured JSON control + photographic style presets, plus recipes for logos (with a free raster→SVG trace), product/e-commerce shots, and infographics — each with honest boundaries | Google Gemini image API |
