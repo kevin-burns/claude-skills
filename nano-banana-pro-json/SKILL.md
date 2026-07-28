@@ -60,12 +60,14 @@ When the user wants a **logo, brand mark, wordmark, or brand identity**, follow 
 recipe in [`references/logo-brand-identity.md`](references/logo-brand-identity.md): take a short
 brief (name, industry, personality, colors, logo type, icon concept), construct a logo-appropriate
 prompt (flat vector, minimal, strong silhouette, limited palette — explicitly *away from*
-photorealism/3D/gradients), generate 3-4 varied concepts at `--aspect-ratio 1:1 --resolution 2K`
-(no photographic `--style-preset`, no `--photorealistic`), then evaluate with the monochrome and
-scalability tests and iterate via `--input-image`.
+photorealism/3D/gradients), generate a batch of varied concepts at `--aspect-ratio 1:1 --resolution 2K`
+(no photographic `--style-preset`, no `--photorealistic`), run the proof checklist (monochrome,
+favicon-size, spelling, originality), iterate via `--input-image` one change at a time, then
+**vectorize the winner to SVG for free** (vtracer/potrace — the step every paid logo tool charges for).
 
-**Boundary:** output is a **raster** concept, not production vector art — trace the winner to SVG
-for real use. No trademark clearance; verify any wordmark's spelling.
+**Boundary:** the generator makes a **raster** concept (the recipe's Step 5 traces it to production
+SVG locally). It does **not** do trademark clearance or confirm font licensing, and text can slip —
+verify a wordmark's spelling.
 
 ## JSON Configuration
 

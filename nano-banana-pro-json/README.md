@@ -66,9 +66,10 @@ vector, minimal, strong silhouette — steered *away* from photorealism/3D/gradi
 concepts at `--aspect-ratio 1:1 --resolution 2K` (no photographic preset), then run the monochrome
 and scalability tests and iterate via `--input-image`.
 
-**What it does NOT do:** it outputs a **raster** concept, not production vector art — pick a winner
-and trace it to SVG for real use. It does not do trademark clearance, and text in generated marks
-can be imperfect, so verify any wordmark's spelling.
+The generator makes a **raster** concept; the recipe's final step **traces the winner to production
+SVG locally and for free** (vtracer/potrace) — the exact step Looka/Tailor Brands/Brandmark charge
+for. **What it does NOT do:** trademark clearance or font-license checks (run those yourself before
+shipping), and text in generated marks can be imperfect — verify any wordmark's spelling.
 
 ## JSON Configuration
 

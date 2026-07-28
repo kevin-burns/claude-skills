@@ -5,11 +5,13 @@ opposite of the skill's default photography style — flat, iconic, scalable —
 brand brief and logo-appropriate prompting, not a camera profile. The generator does the image call;
 this guide shapes what you ask it for.
 
-**Read the boundary first (it's the point):** the output is a **raster** image (PNG/WebP), not
-production vector art. It's for *concepting and direction* — pick a winner, then trace it to SVG
-(Illustrator's Image Trace, Inkscape, or an auto-tracer) for real use. This does **not** do
-trademark clearance, and text in generated logos can be imperfect — verify any wordmark's spelling
-and expect to redo the typography properly.
+**Read the boundary first (it's the point):** the generator outputs a **raster** image (PNG/WebP),
+not production vector art. It's for *concepting and direction*. But you don't have to stop at raster
+— **Step 5 traces the winner to a real SVG for free**, which is exactly the step every paid logo
+tool (Looka, Tailor Brands, Brandmark, Banana2) charges for. This does **not** do trademark
+clearance or confirm font licensing — run an originality/trademark check and verify any font's
+license before shipping. And text in generated logos can be imperfect: verify a wordmark's spelling
+and expect to finalize the typography in real type.
 
 ## Step 1 — Take the brand brief
 
@@ -21,11 +23,13 @@ Ask for these (assume-and-state if the user wants a quick pass):
 - **Color leanings** — any must-have or must-avoid colors; else propose a small palette that fits the personality.
 - **Logo type** — one of:
   - *wordmark* (the name styled, e.g. Google) — text-heavy, highest AI-text risk;
-  - *lettermark* (initials/monogram, e.g. IBM);
+  - *lettermark / monogram* (initials, e.g. IBM);
   - *icon/symbol* (a mark, no text, e.g. Apple) — safest and most reliable to generate;
-  - *combination* (icon + name).
+  - *combination* (icon + name); *badge/emblem*; *mascot*; *app icon*.
 - **Icon concept** *(optional)* — a specific symbol direction if they have one ("a stylized coffee bean", "an abstract upward arrow"). If not, propose 2-3 concepts before generating.
-- **Where it'll live** — app icon, website header, print — affects how simple it must stay.
+- **Typography feel** *(for word/combination marks)* — geometric, humanist, rounded, techy, serif/classic — so the letterforms match the personality.
+- **One-color requirement** — confirm it must also work in a single flat color (it should); this shapes the prompt away from color-dependent tricks.
+- **Where it'll live** — app icon, website header, print, favicon — affects how simple it must stay.
 
 ## Step 2 — Construct a logo-appropriate prompt
 
@@ -54,6 +58,10 @@ A good skeleton:
 - Generate **3-4 variants**, varying the *concept or style* between runs (a symbol option, a
   monogram option, a more geometric vs. more organic take) rather than re-rolling the same prompt.
   Name them so they're easy to compare.
+- **Be generous with volume — it's the user's own API key, so there's no per-logo fee.** Keepers are
+  rare (expect ~1-2 you like per 8-10 generated), so batch freely. A high-leverage move: ask the
+  model to expand "name + what it does + personality" into **5 distinct logo prompts** first, then
+  generate from all five — cheap here, metered/paywalled on commercial tools.
 
 ```bash
 UV="$(command -v uv || ls "$HOME/.local/bin/uv" /opt/homebrew/bin/uv 2>/dev/null | head -1)"
@@ -66,14 +74,37 @@ Repeat with varied concepts (`-v2-monogram`, `-v3-geometric`, …).
 
 ## Step 4 — Evaluate like a designer, then iterate
 
-For each candidate, apply the tests that separate a logo from a picture:
+Run each candidate through the proof checklist that separates a logo from a picture:
 
-- **Monochrome test** — would it survive in one flat color? Generate or imagine it in solid black.
-  A mark that only reads because of color or shading is a weak logo.
-- **Scalability** — is the silhouette still legible shrunk to a favicon? Kill anything fiddly.
-- **Distinctiveness** — does it look like a generic template? Push for one memorable idea.
+- **Monochrome test** — would it survive in one flat color? A mark that only reads because of color
+  or shading is a weak logo.
+- **Small-size / favicon test** — still legible at ~16-32px? Kill anything fiddly.
+- **Spelling** — on word/combination marks, confirm the text is exactly right (AI text slips).
+- **Originality** — does it accidentally resemble a well-known logo or look like a generic template?
+  Push for one memorable, distinct idea.
 - **On-brief** — does it actually carry the personality adjectives?
 
 Iterate on a winner with **image-to-image editing** (`--input-image logo-...png` + a change
-instruction) rather than starting over — "simplify the mark", "make the negative space cleaner",
-"try it in a single color". Then hand the chosen raster off to be traced to vector for production.
+instruction) — **one change at a time**, and use masking language to protect what works
+("keep the symbol exactly; only adjust the wordmark spacing"). If the model stops cooperating after
+~3 edits, start fresh: re-run with the latest image as the new `--input-image`. Then vectorize it
+(Step 5).
+
+## Step 5 — Vectorize the winner (this is the wedge)
+
+The generator gives you a raster. Production logos need **vector (SVG)** — infinitely scalable, tiny
+files, editable paths. Every paid logo tool charges for this exact step; here it's free and local.
+Flat, high-contrast logo art traces cleanly:
+
+```bash
+# Color logos — vtracer handles multi-color flat art (brew install vtracer, or cargo install vtracer)
+vtracer --input logo-chaptr-v1-icon.png --output logo-chaptr-v1-icon.svg --mode polygon
+
+# One-color / monochrome marks — potrace (brew install potrace imagemagick):
+magick logo-mono.png -threshold 55% logo-mono.pbm      # bitmap
+potrace logo-mono.pbm -s -o logo-mono.svg              # -s = SVG output
+```
+
+Open the SVG, sanity-check the paths (simplify stray nodes, re-set exact brand colors, and rebuild
+any text as real type rather than traced outlines — traced letters aren't editable text). That's a
+production-ready logo, from a free recipe.
