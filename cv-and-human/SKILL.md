@@ -5,7 +5,8 @@ description: >
   applicant tracking systems (ATS) and LinkedIn recruiter search, covering both
   keyword/JD-matching screeners and modern LLM-rubric scorers (which often take no job
   description at all). Use this whenever the user wants to optimise, tailor, rewrite, or
-  "ATS-proof" a CV or resume, asks why their resume isn't getting through screening,
+  "ATS-proof" a CV or resume, asks why their resume isn't getting past the ATS or
+  automated screening,
   wants a keyword/gap analysis against a job description, wants to remove AI-generated
   texture from / de-slop / humanize a CV, resume or LinkedIn profile (a CV is its own
   channel with its own de-slop rules), or wants to check whether a CV parses cleanly.
@@ -13,11 +14,16 @@ description: >
   profile", "rewrite my LinkedIn headline", "my LinkedIn About section", "the experience
   bullets on my LinkedIn profile", "why am I not showing up in recruiter searches",
   "make my LinkedIn match my CV", "LinkedIn keywords", "personal brand positioning on my
-  LinkedIn profile". Trigger even if the user only supplies a CV or profile text (with or
-  without a job description). Do NOT use for writing a LinkedIn POST or other social
-  content - that is hook-and-human (persuasive) or clear-and-human (neutral). Do NOT use
-  for writing a CV from a blank page with no material to work from, or for generic career
-  advice unrelated to a document.
+  LinkedIn profile". Trigger even if there is no job description, as long as the user names
+  something to be DONE to the document - tailored, ATS-proofed, parse-checked, de-slopped,
+  or a specific LinkedIn field rewritten. Do NOT use for writing a LinkedIn POST or other
+  social content - that is hook-and-human (persuasive) or clear-and-human (neutral). Do NOT
+  use when the user has no target role in mind and is asking an open question about
+  themselves - what roles they are credible for, what evidence they are missing, whether
+  they are pigeonholed, or "does this look OK" over a bare CV - that is cv-evidence-base,
+  which recovers the material this skill then tailors. Do NOT use for writing a CV from a
+  blank page with no material to work from, or for generic career advice unrelated to a
+  document.
 ---
 
 # CV and Human
@@ -74,6 +80,16 @@ wrong on a CV. The LinkedIn mode is **job-seeker-focused and text-only** — it 
 connects, posts, comments, messages, or applies.
 
 ### Step 1 — Gather inputs and identify the ATS family
+
+**If the CV's material is thin, stop and say so before tailoring it.** This skill
+reframes and surfaces what is already there; it cannot recover evidence that never
+made it onto the page, because it has no method for asking the candidate the
+questions that dislodge it. When the CV is mostly a technology list, when the
+bullets describe duties rather than outcomes, or when the candidate has no target
+role in mind, point them at **`cv-evidence-base`** first and come back with what it
+produces. Tailoring thin material does not make it less thin — it makes a
+well-optimised document that argues a weaker case than the candidate could support,
+and it is where the temptation to invent lives.
 
 Get the **CV** and, if one exists, the **target job description**. There are two
 ATS families (see `references/ats-mechanics.md`), and which one you're optimising

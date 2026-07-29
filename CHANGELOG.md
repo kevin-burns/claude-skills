@@ -11,6 +11,86 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-07-29 (later)
+
+### Added — `cv-evidence-base`, and a routing fork with `cv-and-human`
+
+**What:** a skill that interrogates a CV to recover the evidence that never made it onto the
+page, and grades which role archetypes the person is genuinely credible for — deriving those
+archetypes from what they demonstrably did rather than from their job titles, and naming at
+least one they are **not** credible for every time. It elicits through oblique questions
+(difficulty, causation, counterfactuals, what colleagues rely on you for) because direct
+questions return the bullets already on the page. It maintains two files across sessions: a
+durable `evidence-base.md` and a perishable, target-specific `action-ledger.md`.
+
+**Reach for it when:** someone has *no target role yet* — they ask what they could
+realistically go for, whether they're pigeonholed, why they get no callbacks, what they're
+missing, or hand over a CV with no instruction at all ("does this look OK", "be honest with
+me"). Also for a career change, a step up, or going freelance.
+
+**Won't do:** rewrite or reformat the CV. It drafts the top third and stops. It never invents
+a number or a scale — a claim that would be stronger with a figure the person doesn't have
+becomes a *quantify* action, not an estimate — and every entry is tagged `confirmed`,
+`approximate` or `unverified`, with unverified material barred from drafted prose unless the
+uncertainty stays visible.
+
+**Provenance and the reason it is separate.** It was built by a second agent that had no
+knowledge of `cv-and-human`, then reviewed by a design council which ruled **keep separate,
+do not merge**. The deciding evidence was empirical rather than architectural: in the bundled
+evals, the *baseline* (no skill) answered "am I positioned right?" by restructuring the CV —
+and in doing so invented a certification count and produced an umbrella date range that
+silently absorbed a seven-month gap into a continuous engagement. Nobody invented an
+achievement; **the reformatting itself manufactured claims the source could not support.**
+That is the failure mode of transform-first tools when the evidence is thin, and it is what
+this skill exists upstream of. Measured effect over three evals: 100% / 100% / 100% with the
+skill against 40% / 36% / 90% without (one run per cell — no variance data, and the
+benchmark's token figures are unusable because capture failed on four of six runs).
+
+### Changed — the `cv-and-human` ↔ `cv-evidence-base` routing fork
+
+Both descriptions were re-cut around one discriminator: **a named document operation**
+(tailor, ATS-proof, parse-check, de-slop, rewrite a LinkedIn field) routes to `cv-and-human`;
+**an open positioning question** with no target role routes to `cv-evidence-base`. Each skill
+now names the other and says when to hand over.
+
+**Measured before and after, and the result is worth recording honestly.** The pre-change
+descriptions overlapped in the text — both claimed the bare-CV-no-instruction case outright —
+and that looked like a live defect. It wasn't: the baseline arm scored **84/84** across 3 reps
+on a 28-utterance labelled set, and the revised arm also scored **84/84**, with no regression
+on the LinkedIn triggers shipped the previous day. The router was resolving the overlap
+correctly on its own. The edits stand on clarity and on removing a latent ambiguity, **not**
+on a measured failure — and the prediction that there was one was wrong.
+
+`cv-and-human` also gained a Step 1 instruction to stop and redirect when a CV's material is
+too thin to tailor, because tailoring thin material produces a well-optimised document
+arguing a weaker case than the candidate could support — and that is where the temptation to
+invent lives.
+
+**Also:** `cv-evidence-base` ships a README, 17 contract tests, and eval assertions —
+including four derived from the measured baseline failures, which generic "no fabricated
+numbers" checks did not catch: invented counts of the CV's own contents, stripped hedges
+(`~400` → `400`), and restructuring that merges date ranges over a gap.
+
+**One defect found by testing and fixed before release.** The anti-fabrication rule governed
+*invented* numbers but said nothing about numbers the skill produces **about the CV itself**.
+Two independent runs described a Jul 2023 → Mar 2024 employment gap as "eight months" when
+the blank months are August to February — seven; one also reported "fourteen lines of
+technologies" for thirteen. These read as observations rather than claims, which is precisely
+why they slip: nobody double-checks a figure they think they just read off the page. The rule
+now says count it and be right, or hedge it visibly — and calls out gap arithmetic
+specifically, since it is the number a screener is most likely to check, and a candidate who
+repeats "eight-month gap" in an interview was handed that error by a tool whose whole promise
+is that it doesn't do that.
+
+**On the fixtures:** the technical eval fixture is a **fictional CV** (`alex-doyle-cv.md`).
+It was originally a real one, which would have published a working email address and mobile
+number to a public repo permanently. It is structurally faithful — the certification stack,
+the AI-vs-platform positioning gap, the `~400` and `~35–40%` hedges, the Jul 2023–Mar 2024
+gap, the orphan skills and the eight-year-stale management role are all preserved, because
+those are exactly what the assertions grade. Only identity was changed.
+
+---
+
 ## 2026-07-29
 
 ### Changed — `terragrunt-skill` brought up to Terragrunt v1.1.1

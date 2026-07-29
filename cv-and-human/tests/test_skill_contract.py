@@ -88,6 +88,43 @@ def test_neighbouring_skill_still_routes_profile_work_here(skill_name, required)
     assert "profile" in description
 
 
+# --- the fork against cv-evidence-base -------------------------------------
+# Measured 2026-07-29 at 84/84 across 3 reps. The fork is: a named document
+# OPERATION lands here; an open POSITIONING question lands on cv-evidence-base.
+
+
+def test_description_hands_open_positioning_questions_to_the_sibling():
+    """Without this carve-out, 'here's my CV, does this look OK' is claimed by
+    both skills. It routed correctly even before the carve-out existed, but the
+    ambiguity is real in the text and one router change could expose it."""
+    description = _description(SKILL_MD).lower()
+    assert "cv-evidence-base" in description, (
+        "cv-and-human no longer routes open positioning questions to "
+        "cv-evidence-base — re-run docs/superpowers/specs/linkedin-router-harness/v3_check.py"
+    )
+    assert "no target role" in description, (
+        "the fork's discriminator ('no target role in mind') is gone from the description"
+    )
+
+
+def test_every_sibling_skill_named_in_skill_md_exists():
+    """The repo ships these skills together, so cross-skill pointers are legal —
+    but a pointer at a skill that was renamed or removed is a dead end the user
+    only discovers mid-task. Nothing else in the suite checks across skills."""
+    body = SKILL_MD.read_text()
+    named = set(re.findall(r"`([a-z][a-z0-9]*(?:-[a-z0-9]+)+)`", body))
+    siblings = {n for n in named if (REPO_ROOT / n / "SKILL.md").exists()
+                or n.count("-") >= 2 and not n.endswith((".py", ".md"))}
+    # Only assert on names that look like sibling skills we actually reference.
+    for name in sorted(n for n in named if n.endswith("-and-human") or n == "cv-evidence-base"):
+        if name == SKILL_DIR.name:
+            continue
+        assert (REPO_ROOT / name / "SKILL.md").exists(), (
+            f"SKILL.md points at sibling skill {name!r}, which does not exist"
+        )
+    assert siblings, "SKILL.md no longer names any sibling skill"
+
+
 # --- documentation must not drift from the code ---------------------------
 
 

@@ -1,0 +1,12 @@
+[project]
+name = "cv-evidence-base"
+version = "0.1.0"
+description = "CV evidence recovery and role-archetype grading"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
