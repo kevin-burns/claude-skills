@@ -1,12 +1,12 @@
 ---
 name: use-linearis
-description: Use when running Linear.app operations from the command line — creating, updating, archiving, listing, or filtering issues, setting project milestones, or wiring blocked-by relations via the `linearis` CLI (binaries `linear` and `linearis`, JSON output) instead of an MCP or the web UI. Triggers on any Linear issue/project/milestone task in a terminal, and on syncing Kevin's Ogham roadmap with its shared-memory database. Covers generic install/auth setup, the CLI's sharp edges, and how to resolve your own workspace identifiers. Not a full reference — that's `linear <cmd> --help`.
+description: Use when running Linear.app operations from the command line — creating, updating, archiving, listing, or filtering issues, setting project milestones, or wiring blocked-by relations via the `linearis` CLI (binaries `linear` and `linearis`, JSON output) instead of an MCP or the web UI. Triggers on any Linear issue/project/milestone task in a terminal, and on syncing Kevin's Ogham roadmap with its shared-memory database. Covers generic install/auth setup, the CLI's sharp edges, and the local ids.env split that keeps workspace identifiers out of the repo. Not a full reference — that's `linear <cmd> --help`.
 license: MIT
 ---
 
 # use-linearis
 
-`linearis` is a Node CLI for Linear.app — JSON output, smart ID resolution, cursor pagination, built for LLM agents. It ships two identical binaries, `linear` and `linearis`. It is **not** an MCP: no tool schemas land in context, so every fresh session pays a discovery tax. This skill pays that tax up front — generic setup, the CLI's sharp edges, and the Ogham dogfooding workflow. It carries **no real workspace identifiers**; resolve your own (see below).
+`linearis` is a Node CLI for Linear.app — JSON output, smart ID resolution, cursor pagination, built for LLM agents. It ships two identical binaries, `linear` and `linearis`. It is **not** an MCP: no tool schemas land in context, so every fresh session pays a discovery tax. This skill pays that tax up front — generic setup, the CLI's sharp edges, and the Ogham dogfooding workflow. It carries **no real workspace identifiers** — those live in a local `~/.config/linearis/ids.env` you source (see below).
 
 If Linear ships an official MCP with write support, migrate to it. Until then, `linearis` is the agent-shaped CLI.
 
@@ -52,7 +52,7 @@ linear issues --help          # per-subcommand flags
 linear issues list --project "Ogham"                                  # resolves
 linear issues list --project "00000000-proj-0000-0000-000000000000"   # resolves
 linear issues list --project "abcdef012345"                           # Project not found
-linear issues list --project "myproject-abcdef012345"                     # Project not found
+linear issues list --project "myproject-abcdef012345"                  # Project not found
 ```
 
 Same on `milestones list --project`. Use the display name or the full UUID.
@@ -80,31 +80,38 @@ linear --version; npm view linearis version    # drifted? re-verify 1-8 before r
 
 ---
 
-## Workspace identifiers — discover once, cache locally
+## Workspace identifiers — `~/.config/linearis/ids.env`
 
-This skill deliberately contains **no real IDs**. It is a public repo, and workspace, team, project and milestone UUIDs describe someone's private tracker even though they are not credentials. Every example below uses obvious placeholders (`00000000-proj-…`, `abcdef012345`).
+This skill is public and carries **no real IDs**. Team, project and milestone UUIDs are not credentials — nobody can act on them without your auth — but they describe a private tracker, so they live in a local file instead. Every example here uses obvious placeholders (`00000000-proj-…`, `abcdef012345`, `ENG-123`).
 
-Resolve yours once per session and keep them in shell variables — that costs three calls and beats hard-coding values that drift anyway:
-
-```bash
-TEAM=ENG                                    # your team key
-PROJECT=$(linear projects list --limit 20 | jq -r '.nodes[] | select(.name=="Ogham") | .id')
-linear milestones list --project "$PROJECT" | jq -r '.nodes[] | "\(.name)  \(.id)  \(.targetDate)"'
-linear labels list | jq -r '.nodes[].name'   # label names are case-sensitive on create
-```
-
-If you want them to survive across sessions, write them to a gitignored file rather than back into this skill:
+**Do not resolve IDs by querying at session start.** That reinstates exactly the discovery tax this skill exists to remove, and burns calls against the complexity ceiling in gotcha 6. Source the file instead — zero API calls:
 
 ```bash
-mkdir -p ~/.config/linearis
-cat > ~/.config/linearis/ids.env <<EOF
-TEAM=$TEAM
-PROJECT=$PROJECT
-EOF
-# then: source ~/.config/linearis/ids.env
+source ~/.config/linearis/ids.env
+linear issues list --project "$LINEAR_PROJECT_OGHAM" --limit 20
 ```
 
-Remember gotcha 5: `--project` takes the **display name or full UUID**, never the slug from the project URL.
+Create it once. Keep it outside any git repo, `chmod 600`:
+
+```bash
+mkdir -p ~/.config/linearis && chmod 700 ~/.config/linearis
+linear teams list --limit 10 | jq -r '.nodes[] | "\(.key)  \(.id)  \(.name)"'
+linear projects list --limit 20 | jq -r '.nodes[] | "\(.name)  \(.id)"'
+linear milestones list --project "<project-uuid>" | jq -r '.nodes[] | "\(.name)  \(.id)  \(.targetDate)"'
+```
+
+then write the values into `ids.env` as exports and `chmod 600` it. The names this skill's recipes expect:
+
+| Variable | Holds |
+|---|---|
+| `LINEAR_TEAM` | team key, e.g. `ENG` |
+| `LINEAR_TEAM_ID` | team UUID |
+| `LINEAR_PROJECT_<NAME>` | project UUID, one per project you work in |
+| `LINEAR_MS_<VERSION>` | milestone UUID, one per active release |
+
+Refresh after a workspace change — milestone IDs are stable but target dates and labels drift.
+
+Remember gotcha 5: `--project` takes the **display name or full UUID**, never a `slugId` and never the slug in a project URL.
 
 ### Ogham conventions
 
@@ -139,10 +146,10 @@ Examples use the Ogham IDs above; swap `OGHAM`/`ENG`/milestone IDs for your own 
 **Create an atomic issue against a milestone**:
 
 ```bash
-OGHAM=00000000-proj-0000-0000-000000000000
-V16_MS=00000000-ms02-0000-0000-000000000000
+source ~/.config/linearis/ids.env
+# milestone id comes from ids.env too
 linear issues create "[v0.16] <what>" \
-  --team ENG --project "$OGHAM" --project-milestone "$V16_MS" \
+  --team "$LINEAR_TEAM" --project "$LINEAR_PROJECT_OGHAM" --project-milestone "$LINEAR_MS_V0_16" \
   --labels "Feature" --priority 2 \
   --description "$(cat <<'MD'
 Body markdown.
@@ -156,7 +163,7 @@ MD
 OUT=/tmp/linear_batch.jsonl; : > "$OUT"
 mk() {
   local title=${title:?} labels=${labels:?} prio=${prio:?} body=${body:?}
-  linear issues create "$title" --team ENG --project "$OGHAM" \
+  linear issues create "$title" --team "$LINEAR_TEAM" --project "$LINEAR_PROJECT_OGHAM" \
     --labels "$labels" --priority "$prio" --description "$body" 2>&1 \
     | tee -a "$OUT" | grep '"identifier"'
 }
@@ -170,9 +177,9 @@ grep '"error"' "$OUT" || echo "clean"
 **Backfill a milestone across a range of issues**:
 
 ```bash
-V16_MS=00000000-ms02-0000-0000-000000000000
+# milestone id comes from ids.env too
 for n in 109 110 111 112 113; do
-  linear issues update "$TEAM-$n" --project-milestone "$V16_MS" | grep '"identifier"'
+  linear issues update "$LINEAR_TEAM-$n" --project-milestone "$LINEAR_MS_V0_16" | grep '"identifier"'
 done
 ```
 
@@ -181,14 +188,14 @@ done
 ```bash
 blocker=121
 for dep in 109 110 111 112 113 114 115 116 117 118 119 120 122 123; do
-  linear issues update "$TEAM-$blocker" --blocked-by "$TEAM-$dep" 2>&1 | grep '"error"'
+  linear issues update "$LINEAR_TEAM-$blocker" --blocked-by "$LINEAR_TEAM-$dep" 2>&1 | grep '"error"'
 done
 ```
 
 **Filter open issues in a release**:
 
 ```bash
-linear issues list --project "$OGHAM" --milestone v0.16 --limit 50 | \
+linear issues list --project "$LINEAR_PROJECT_OGHAM" --milestone v0.16 --limit 50 | \
   jq -r '.nodes[] | "\(.identifier)  \(.state.name)  \(.title)"'
 ```
 
