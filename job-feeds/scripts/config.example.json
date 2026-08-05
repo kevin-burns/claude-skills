@@ -1,0 +1,48 @@
+{
+  "defaults": {
+    "window": 14,
+    "exclude_company": ["randstad", "hays"],
+    "exclude_title": ["recruiter", "werkstudent", "praktikant", "intern"]
+  },
+  "lanes": [
+    {
+      "name": "platform",
+      "label": "Platform",
+      "match": "platform engineer|terraform|terragrunt|kubernetes|landing zone|finops|\\bsre\\b|site reliability"
+    },
+    {
+      "name": "em",
+      "label": "EM",
+      "match": "engineering manager|tech lead|team lead|head of engineering|director of engineering"
+    },
+    {
+      "name": "fde",
+      "label": "FDE",
+      "match": "forward deployed|solutions engineer|solutions architect|customer engineer"
+    },
+    {
+      "name": "ai",
+      "label": "AI",
+      "match": "\\bai\\b|machine learning|\\bllm\\b|agentic|\\bmcp\\b|\\brag\\b"
+    }
+  ],
+  "highlight": [
+    "terragrunt",
+    "finops",
+    "landing zone",
+    "multi-account",
+    "agentic",
+    "mcp",
+    "cloud governance"
+  ],
+  "sources": {
+    "arbeitnow": { "enabled": true },
+    "jobicy": { "enabled": true },
+    "remotive": { "enabled": true },
+    "remoteok": { "enabled": true },
+    "nomads": { "enabled": true },
+    "4dayweek": { "enabled": true },
+    "wwr": { "enabled": true },
+    "pythonorg": { "enabled": true }
+  }
+}

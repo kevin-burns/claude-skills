@@ -96,10 +96,15 @@ class RateLimiter:
             return False, f"next poll {following.strftime('%H:%M')} (documented fair use)"
         return True, ""
 
-    def record(self, source, now=None):
+    def record(self, source, now=None, force=False):
         """No-op for sources with no declared limit, so a fresh install
-        does not accumulate empty state files."""
-        if not source.rate_limit_seconds:
+        does not accumulate empty state files.
+
+        `force` overrides that for backpressure: a 429 from a source with
+        no standing limit still has to be remembered, or the next run
+        retries immediately.
+        """
+        if not source.rate_limit_seconds and not force:
             return
         now = now or datetime.now(timezone.utc)
         with self._lock:
@@ -264,8 +269,12 @@ def http_open(url, headers):
         with urllib.request.urlopen(request, timeout=30) as response:
             return response.getcode(), response.read(), dict(response.headers)
     except urllib.error.HTTPError as exc:
-        if exc.code == 304:
-            return 304, b"", dict(exc.headers or {})
+        # 304 and the backpressure codes are outcomes to act on, not errors
+        # to raise: 304 means unchanged, 429/503 mean "slow down". Raising
+        # them would report a source as broken and invite an immediate
+        # retry, which is exactly how a soft limit becomes a hard block.
+        if exc.code in (304, 429, 503):
+            return exc.code, b"", dict(exc.headers or {})
         raise
 
 
@@ -309,6 +318,17 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
                 return FetchResult(source.name, "unchanged",
                                    "not modified since last fetch", [], pages,
                                    headers.get("If-None-Match"))
+            if status in (429, 503):
+                # Record the poll so the next run waits instead of walking
+                # straight back into the same wall. Observed live on
+                # 2026-08-05 when this project's own pagination probing
+                # tripped Arbeitnow's limiter.
+                limiter.record(source, now, force=True)
+                retry_after = response_headers.get("Retry-After")
+                detail = f", Retry-After {retry_after}s" if retry_after else ""
+                return FetchResult(source.name, "throttled",
+                                   f"HTTP {status} — backing off{detail}",
+                                   [], pages, None)
             payload = _parse(source, body)
             page_rows = list(source.rows(payload))
             raw_rows.extend(page_rows)

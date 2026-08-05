@@ -182,5 +182,83 @@ class TestConditionalGet(FetchCase):
         self.assertEqual(result.etag, 'W/"xyz"')
 
 
+class TestBackpressure(FetchCase):
+    """A 429 is the server asking us to slow down, which is different from a
+    failure: retrying it is actively harmful, and reporting it as `failed`
+    invites exactly that. Observed live on 2026-08-05 after this project's
+    own pagination probing tripped Arbeitnow's limiter."""
+
+    def test_a_429_is_throttled_not_failed(self):
+        result, _ = self.run_one("arbeitnow", {ARB: (429, b"", {})})
+        self.assertEqual(result.status, "throttled")
+        self.assertIn("429", result.reason)
+
+    def test_a_429_records_a_backoff_so_the_next_run_waits(self):
+        """Without this the next `jfeeds fetch` hits the same wall
+        immediately, which is how a soft limit becomes a hard block.
+
+        Asserted on the state FILE, not via allows(): a missing file
+        already fails closed for a seen source, so an allows()-based check
+        passes whether or not the backoff was ever written -- it cannot
+        distinguish "recorded" from "never existed".
+        """
+        self.limiter.record(SOURCES["jobicy"], NOW)      # file now exists
+        self.assertNotIn("arbeitnow",
+                         json.loads(self.limiter.path.read_text(encoding="utf-8")))
+        self.run_one("arbeitnow", {ARB: (429, b"", {})})
+        written = json.loads(self.limiter.path.read_text(encoding="utf-8"))
+        self.assertIn("arbeitnow", written,
+                      "a 429 must be remembered even though arbeitnow declares "
+                      "no standing rate limit")
+
+    def test_retry_after_is_honoured_when_the_server_sends_one(self):
+        result, _ = self.run_one("arbeitnow", {ARB: (429, b"", {"Retry-After": "120"})})
+        self.assertIn("120", result.reason)
+
+    def test_a_503_is_also_treated_as_backpressure(self):
+        result, _ = self.run_one("arbeitnow", {ARB: (503, b"", {})})
+        self.assertEqual(result.status, "throttled")
+
+    def test_an_ordinary_error_status_is_still_a_failure(self):
+        result, _ = self.run_one("arbeitnow", {ARB: (500, b"", {})})
+        self.assertEqual(result.status, "failed")
+
+
+class TestHttpOpenStatusMapping(unittest.TestCase):
+    """http_open is the real network function. Every other test injects a
+    fake opener, so without this its status handling is entirely unguarded
+    -- and it is the piece that decides whether a 429 becomes backpressure
+    or a crash."""
+
+    def _open(self, code):
+        import urllib.error
+
+        import job_feeds
+
+        def boom(request, timeout=None):
+            raise urllib.error.HTTPError(request.full_url, code, "nope", {}, None)
+
+        real = job_feeds.urllib.request.urlopen
+        job_feeds.urllib.request.urlopen = boom
+        try:
+            return job_feeds.http_open("https://example.org", {})
+        finally:
+            job_feeds.urllib.request.urlopen = real
+
+    def test_304_429_and_503_are_returned_not_raised(self):
+        for code in (304, 429, 503):
+            with self.subTest(code=code):
+                status, body, _ = self._open(code)
+                self.assertEqual(status, code)
+                self.assertEqual(body, b"")
+
+    def test_other_error_statuses_still_raise(self):
+        import urllib.error
+        for code in (404, 418, 500):
+            with self.subTest(code=code):
+                with self.assertRaises(urllib.error.HTTPError):
+                    self._open(code)
+
+
 if __name__ == "__main__":
     unittest.main()
