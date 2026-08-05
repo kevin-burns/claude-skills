@@ -60,3 +60,73 @@ def to_utc(value):
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=dt.timezone.utc)
     return parsed.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# --------------------------------------------------------------------------
+# Deduplication.
+#
+# The rule below was measured against 424 rows fetched live from all eight
+# feeds on 2026-08-05, not reasoned about in the abstract, because the two
+# obvious rules are both wrong:
+#
+#   company + title + raw location -> 0 cross-source merges. The same job on
+#     two boards carries different location text, so nothing ever matches.
+#   company + title (no location)  -> 3 cross-source merges but 7 FALSE ones.
+#     Grafana Labs runs the same platform-engineer opening in the UK, Spain
+#     and Ireland; Peroptyx runs one in Sweden, Australia, Canada and Japan.
+#     Those are separate applications, not duplicates.
+#
+# company + title + loc_bucket gives 3 merges and 0 false ones.
+# --------------------------------------------------------------------------
+
+import hashlib  # noqa: E402
+
+# (m/w/d) and its variants are German job-ad gender markers -- maennlich /
+# weiblich / divers. The same posting is syndicated with and without them,
+# so leaving them in splits one job into two.
+_NOISE = re.compile(
+    r"\((?:m/w/d|m/f/d|w/m/d|d/m/w|m/w/x|all genders?|remote|hybrid|on-?site)\)"
+    r"|\b(?:m/w/d|m/f/d|w/m/d)\b", re.IGNORECASE)
+_PUNCT = re.compile(r"[^\w\s]", re.UNICODE)
+_WS = re.compile(r"\s+")
+
+_MODE = re.compile(
+    r"\b(fully remote|work from home|wfh|remote|hybrid|on ?site|onsite)\b", re.IGNORECASE)
+_ANYWHERE = re.compile(r"\b(anywhere|worldwide|global)\b", re.IGNORECASE)
+_REGION = re.compile(
+    r"\b(americas?|europe|asia|africa|oceania|apac|emea|latin america|"
+    r"north america|south america)\b", re.IGNORECASE)
+
+
+def norm(value):
+    """Lowercase, drop gender markers and punctuation, collapse whitespace."""
+    text = value.lower() if isinstance(value, str) else ""
+    text = _NOISE.sub(" ", text)
+    text = _PUNCT.sub(" ", text)
+    return _WS.sub(" ", text).strip()
+
+
+def loc_bucket(location):
+    """Coarse location identity for deduplication.
+
+    The work-mode marker is stripped FIRST, deliberately: 'Sweden - Remote'
+    is Sweden, not anywhere. Testing for the bare word 'remote' before
+    stripping merges Sweden with Japan, which are two real and distinct
+    Peroptyx postings in the same payload.
+
+    What remains collapses to one token only if it is empty, names an
+    anywhere-synonym, or lists two or more regions -- a spread rather than
+    a place. A single region ('Europe') is a place and survives.
+    """
+    text = _WS.sub(" ", _MODE.sub(" ", norm(location))).strip()
+    if not text or _ANYWHERE.search(text):
+        return "anywhere"
+    if len({match.lower() for match in _REGION.findall(text)}) >= 2:
+        return "anywhere"
+    return text
+
+
+def dedupe_key(company, title, location):
+    """Stable 16-char identity for a posting, shared across sources."""
+    joined = "|".join((norm(company), norm(title), loc_bucket(location)))
+    return hashlib.sha256(joined.encode("utf-8")).hexdigest()[:16]
