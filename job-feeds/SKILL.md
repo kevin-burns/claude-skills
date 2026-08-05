@@ -79,6 +79,37 @@ calls**.
 Exit codes: `0` clean, `1` one or more sources failed or drifted (the rest still
 printed), `2` config or usage error.
 
+## Smoke testing without tripping rate limits
+
+Free feeds are free because they are not abused. Verify the pipeline with the
+**smallest possible footprint**, not the full sweep:
+
+```bash
+jfeeds doctor                                        # zero network calls
+jfeeds fetch --only pythonorg --max-pages 1          # ONE request, ~70KB
+jfeeds sources
+jfeeds digest
+jfeeds report --out /tmp/jobs.html                   # zero network calls
+```
+
+`python.org` is the lightest source — 20 items, no pagination, no documented limit.
+`doctor`, `digest` and `sources` never touch the network at all, and `report` reads only
+what is already stored, so the whole check above costs exactly one HTTP request.
+
+For a check with **zero** requests, run the offline eval instead — it exercises drift
+rejection, dedupe, backoff, escaping and attribution against recorded fixtures:
+
+```bash
+python3 "$HOME/.claude/skills/job-feeds/evals/grade.py"
+```
+
+Do **not** disguise the client to get more throughput. The User-Agent identifies the tool
+and links to its source so an operator can contact you rather than silently blocking you;
+a browser-shaped one evades the fair-use terms under which these feeds are handed out
+with no API key. If you are hitting limits, the fix is fewer requests — `--only`,
+`--max-pages`, and letting the cache do its job — not a different name on the same
+traffic.
+
 ## Configuration
 
 `~/.config/job-feeds/config.json`:
