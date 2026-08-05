@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from sources import SOURCES, strip_contacts  # noqa: E402
+from sources import SOURCES, strip_contacts, validate_schema  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 RSS_SOURCES = ("wwr", "pythonorg")
@@ -168,6 +168,70 @@ class TestContactStripping(unittest.TestCase):
                 for raw in source.rows(payload):
                     description = source.normalise(raw)["description"] or ""
                     self.assertNotRegex(description, r"[\w.+-]+@[\w-]+\.[\w.]+")
+
+
+class TestSchemaDrift(unittest.TestCase):
+    """Eight upstreams, no CI in this repo, and a renamed field yields FEWER
+    ROWS rather than an error -- which reads as "no new jobs today". The
+    design council's red team named this the real risk, above the HTTP
+    client choice. So a drifted source is rejected wholesale and reported,
+    never half-parsed into rows full of silent Nones.
+    """
+
+    def healthy_row(self):
+        return {"slug": "a", "title": "T", "company_name": "C", "location": "L",
+                "remote": True, "created_at": 1785930923, "url": "u"}
+
+    def test_a_healthy_payload_is_accepted_whole(self):
+        accepted, reason = validate_schema(SOURCES["arbeitnow"], [self.healthy_row()])
+        self.assertIsNone(reason)
+        self.assertEqual(len(accepted), 1)
+
+    def test_a_missing_required_key_rejects_every_row_and_names_the_field(self):
+        row = self.healthy_row()
+        del row["created_at"]
+        accepted, reason = validate_schema(SOURCES["arbeitnow"], [row])
+        self.assertEqual(accepted, [])
+        self.assertIn("created_at", reason)
+        self.assertIn("schema-drift", reason)
+
+    def test_several_missing_keys_are_all_named_and_sorted(self):
+        row = self.healthy_row()
+        del row["created_at"], row["url"]
+        _, reason = validate_schema(SOURCES["arbeitnow"], [row])
+        self.assertIn("created_at, url", reason)
+
+    def test_an_added_key_is_tolerated(self):
+        """Upstreams add fields routinely; that is not a failure."""
+        row = dict(self.healthy_row(), brand_new_field=1)
+        accepted, reason = validate_schema(SOURCES["arbeitnow"], [row])
+        self.assertIsNone(reason)
+        self.assertEqual(len(accepted), 1)
+
+    def test_an_empty_payload_is_not_drift(self):
+        """A feed legitimately returning nothing must not be reported as
+        broken -- that cries wolf on a quiet day and trains you to ignore
+        the one time it matters."""
+        accepted, reason = validate_schema(SOURCES["arbeitnow"], [])
+        self.assertEqual(accepted, [])
+        self.assertIsNone(reason)
+
+    def test_sources_with_no_declared_keys_skip_validation(self):
+        """RSS sources have no dict to inspect; their normalisers validate."""
+        sentinel = object()
+        accepted, reason = validate_schema(SOURCES["wwr"], [sentinel])
+        self.assertIsNone(reason)
+        self.assertEqual(accepted, [sentinel])
+
+    def test_every_real_fixture_passes_its_own_declared_schema(self):
+        """If a fixture failed this, the declared key set would be wrong --
+        the guard would fire on healthy data and the source would look
+        permanently degraded."""
+        for name in SOURCES:
+            with self.subTest(source=name):
+                source, payload = load(name)
+                _, reason = validate_schema(source, source.rows(payload))
+                self.assertIsNone(reason, f"{name}: {reason}")
 
 
 if __name__ == "__main__":

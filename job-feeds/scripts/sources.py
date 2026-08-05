@@ -274,6 +274,33 @@ def n_pythonorg(item):
                 item.findtext("description"), [])
 
 
+def validate_schema(source, rows):
+    """Reject a whole source whose payload lost a required key.
+
+    Returns (accepted_rows, drift_reason). A drift_reason means every row
+    is dropped, deliberately: half-parsing a changed upstream produces rows
+    full of silent Nones, which is worse than reporting nothing because it
+    looks like a quiet day rather than a broken feed. With eight upstreams
+    and no CI in this repo, that is the failure that would otherwise be
+    discovered on the morning it matters.
+
+    An empty payload is NOT drift -- a feed is allowed to have nothing new,
+    and crying wolf on quiet days trains you to ignore the real alarm.
+    Sources declaring no required keys (the two RSS feeds) have no dict to
+    inspect and are validated by their normaliser instead.
+    """
+    rows = list(rows)
+    if not rows or not source.required:
+        return rows, None
+    first = rows[0]
+    if not isinstance(first, dict):
+        return rows, None
+    missing = sorted(source.required - set(first.keys()))
+    if missing:
+        return [], "schema-drift: missing " + ", ".join(missing)
+    return rows, None
+
+
 SOURCES = {
     "arbeitnow": Source(
         "arbeitnow", "https://www.arbeitnow.com/api/job-board-api",
