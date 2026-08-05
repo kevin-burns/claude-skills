@@ -25,11 +25,14 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 # Skills that predate the README convention. New skills must ship one, so
 # this list may shrink but must never grow -- a check enforces that below.
+#
+# Shrunk 2026-08-05 from fourteen to seven: the skills someone might plausibly
+# INSTALL without reading SKILL.md were done first, because that is where a
+# README earns its keep. What remains is small, self-evident, or personal
+# tooling. See claude-skills-xrs.
 README_GRANDFATHERED = {
-    "azadvertizer", "c7search", "clear-and-human", "convert-to-webp", "dev-fleet",
-    "hook-and-human", "markdown-converter", "report-builder", "social-image-prep",
-    "source-snapshot", "terraform-registry", "terragrunt-skill", "use-linearis",
-    "ux-audit",
+    "clear-and-human", "convert-to-webp", "dev-fleet", "hook-and-human",
+    "markdown-converter", "social-image-prep", "use-linearis",
 }
 
 failures = []
