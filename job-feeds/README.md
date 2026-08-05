@@ -69,7 +69,11 @@ a 429, or an upstream that renamed a field — rather than leaving you to guess 
 quiet day is real.
 
 **Expect Arbeitnow to dominate the German results** and Python.org to be tiny but high
-signal. Coverage is uneven by design; the sources are not interchangeable.
+signal. Coverage is uneven by design; the sources are not interchangeable. Run
+`jfeeds locations` to see the split on your own fetch rather than taking that on trust —
+on one real 1,323-row fetch, thirteen of the top twenty locations were German and Arbeitnow
+alone was 78% of the corpus. Every `digest` also prints a one-line summary of where its
+rows are, so a wrong-country result announces itself instead of looking like a quiet week.
 
 ## What it does NOT do
 
@@ -81,6 +85,11 @@ signal. Coverage is uneven by design; the sources are not interchangeable.
   Spoofing a browser to get past either would be circumventing an access control.
 - **It does not touch LinkedIn.** That needs a signed-in session and a different risk
   model entirely.
+- **It counts location strings; it does not understand them.** `jfeeds locations` reports
+  what the feeds stored, so `Berlin`, `Berlin HQ` and `Berlin, Germany` are three separate
+  entries, and `Munich` and `München` are two. Grouping them would be a guess, and there
+  is still **no location filter** — the tool can show you the corpus is German, it cannot
+  hand you Spanish jobs it never fetched.
 - **It does not republish.** This is personal aggregation. The database is not a dataset
   to redistribute — in the EU the *sui generis* database right (§§ 87a–87e UrhG, from
   Directive 96/9/EC) attaches to a substantial extract even though no individual posting

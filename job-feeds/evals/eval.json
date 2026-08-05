@@ -61,6 +61,11 @@
       "id": 11,
       "name": "contacts-stripped-at-ingest",
       "asserts": "no email address survives normalisation of any real fixture"
+    },
+    {
+      "id": 12,
+      "name": "unplaced-rows-are-counted-not-dropped",
+      "asserts": "a stored row with no location survives the Store round trip and is counted under its own label, because a breakdown that silently omits rows has the same failure shape as the bug it exists to expose"
     }
   ]
 }

@@ -663,6 +663,68 @@ def lanes_for(job, config):
             if lane.pattern.search(_haystack(job, lane.title_only))]
 
 
+LOC_LIMIT = 20
+
+
+def location_counts(rows):
+    """(label, count) per distinct location string, most common first.
+
+    Counts the STORED string. The only normalisation is casefold, and it is
+    the only one measured to matter: on the 1,323-row fetch of 2026-08-05,
+    'Remote' and 'remote' are separate strings, and reporting them apart
+    splits the largest non-city group (48 rows) into 33 and 15.
+
+    Nothing else is merged. 'Berlin' (250), 'Berlin HQ' (22) and
+    'Berlin, Germany' (17) stay three lines. Every grouping rule is an
+    inference, and an inference about place is exactly what produced this
+    defect -- the substring 'Germany' appears in 40 rows while roughly 806
+    are German, because the cities arrive bare.
+
+    Deliberately NOT loc_bucket(). That is a dedupe key, not a geography
+    classifier: it maps 'Remote job' to 'job', and dedupe_key() consumes it
+    as the jobs PRIMARY KEY, so changing its output would orphan every
+    stored row and reset first_seen.
+
+    A missing location is its own key. Never folded into a place, never
+    folded into 'anywhere', never dropped: 12 of those 1,323 rows had none.
+    """
+    tally = {}
+    for row in rows:
+        text = row.get("location")
+        stated = text.strip() if isinstance(text, str) and text.strip() else None
+        key = stated.casefold() if stated is not None else None
+        surface, count = tally.get(key, ({}, 0))
+        if stated is not None:
+            surface[stated] = surface.get(stated, 0) + 1
+        tally[key] = (surface, count + 1)
+
+    out = []
+    for key, (surface, count) in tally.items():
+        # Most frequent spelling, ties broken lexicographically. Without the
+        # tie-break the displayed spelling flips between runs, because dict
+        # order follows ORDER BY posted_at DESC.
+        label = ("(none)" if key is None
+                 else sorted(surface, key=lambda s: (-surface[s], s))[0])
+        out.append((label, count))
+    out.sort(key=lambda pair: (-pair[1], pair[0]))
+    return out
+
+
+def where_line(rows, limit=5):
+    """The one-line 'where are these actually' summary for digest/report.
+
+    Always on, and short. A visibility feature you have to remember to ask
+    for does not fix a defect whose signature is that it looks like it
+    worked -- the Spain install produced a tidy digest of German jobs and
+    nothing said so.
+    """
+    top = location_counts(rows)
+    shown = "; ".join(f"{label} ({count})" for label, count in top[:limit])
+    if len(top) > limit:
+        shown += f"; +{len(top) - limit} more"
+    return shown
+
+
 def exclusion_reason(job, config):
     """(rule, matched_term) if this job is excluded, else None.
 
@@ -736,7 +798,8 @@ def build_parser(out=None, err=None):
     parser = _Parser(prog="jfeeds", out=out, err=err,
                      description="Aggregate sanctioned public job feeds.")
     parser.add_argument("command",
-                        choices=["fetch", "digest", "report", "sources", "doctor"])
+                        choices=["fetch", "digest", "report", "sources",
+                                 "locations", "doctor"])
     parser.add_argument("--config", default=str(CONFIG_DEFAULT))
     parser.add_argument("--db", default=str(DB_DEFAULT))
     parser.add_argument("--window", type=int, default=None)
@@ -817,6 +880,52 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                       f"{state['reason'] or ''}".rstrip(), file=out)
             return 0
 
+        if args.command == "locations":
+            if args.remote:
+                # Warn and ignore rather than refuse. `AND remote = 1` drops
+                # every row whose flag is NULL -- measured, 20 of 1,323, all
+                # python.org -- and a completeness report that quietly loses
+                # a source is the exact bug this command exists to expose.
+                # So the flag is not honoured; saying so is the point.
+                log("job-feeds: ignoring --remote for locations — the remote "
+                    "flag is a source selector, not a row property, and its "
+                    "SQL silently drops rows that carry no flag")
+            selected = store.select(window, now, False)
+            if not selected:
+                log("job-feeds: nothing fetched yet — run 'jfeeds fetch'")
+                return 0
+            counts = location_counts(selected)
+            if args.as_json:
+                # Complete and untruncated on purpose: the tail is where a
+                # rare location lives, and a rare location is the whole
+                # question a user outside the German market is asking.
+                print(json.dumps(
+                    [{"location": None if label == "(none)" else label,
+                      "rows": count} for label, count in counts], indent=2), file=out)
+                return 0
+            print(f"{len(selected)} row(s) in the {window}-day window, "
+                  f"{len(counts)} distinct location(s). Undated rows included.",
+                  file=out)
+            print("", file=out)
+            width = max(len(label) for label, _ in counts[:LOC_LIMIT])
+            for label, count in counts[:LOC_LIMIT]:
+                print(f"  {label:<{width}}  {count:>5}  "
+                      f"{100.0 * count / len(selected):>5.1f}%", file=out)
+            tail = counts[LOC_LIMIT:]
+            if tail:
+                rest = sum(count for _, count in tail)
+                print(f"  {'+ ' + str(len(tail)) + ' other value(s)':<{width}}"
+                      f"  {rest:>5}  {100.0 * rest / len(selected):>5.1f}%", file=out)
+            print("", file=out)
+            by_source = {}
+            for row in selected:
+                name = row.get("source") or "?"
+                by_source[name] = by_source.get(name, 0) + 1
+            print("source  " + " · ".join(
+                f"{name} {n}" for name, n in
+                sorted(by_source.items(), key=lambda kv: (-kv[1], kv[0]))), file=out)
+            return 0
+
         if args.command == "fetch":
             wanted = {n.strip() for n in args.only.split(",") if n.strip()}
             chosen = [SOURCES[n] for n in enabled if not wanted or n in wanted]
@@ -863,6 +972,14 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                                 for rule, terms in sorted(counts.items()))
             log(f"job-feeds: {len(dropped)} row(s) excluded — {summary}")
 
+        if rows:
+            # After the lane drop, not before: "where the things I am about
+            # to show you actually are", not where 1,145 rows you will never
+            # see happen to be. stderr, so `digest --json | jq` is
+            # unaffected -- and it fires on the --json path too, which today
+            # carries no aggregate at all.
+            log(f"job-feeds: {len(rows)} row(s) — where: {where_line(rows)}")
+
         if args.command == "digest":
             if args.as_json:
                 # [] even on the common "nothing new" outcome, so a
@@ -872,6 +989,12 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                 print(render_table(rows), file=out)
             else:
                 log(f"job-feeds: nothing matched in the last {window} day(s)")
+                if selected:
+                    # The dead end a user outside the German market hits.
+                    # `selected` is already window-filtered, so it must not
+                    # be described as "in the store".
+                    log(f"job-feeds: {len(selected)} row(s) in the window — "
+                        f"run 'jfeeds locations' to see where they are")
             return 0
 
         if args.command == "report":

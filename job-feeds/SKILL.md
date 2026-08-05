@@ -67,8 +67,15 @@ Instead, ask them three questions and write the file yourself:
    **German-weighted**: on a real run Arbeitnow supplied 84 of 98 matches. A test install
    for a Spain-based data engineer fetched 1,321 rows of which **two mentioned Spain**,
    neither a data role. So if the user is outside Germany and not targeting remote, say so
-   *before* they invest in lanes — otherwise they get a tidy digest of jobs in the wrong
-   country and no signal that anything is wrong.
+   *before* they invest in lanes — and then **measure it on their corpus, not on mine**:
+   write a first-cut config, `jfeeds fetch`, then `jfeeds locations`, and read them their
+   own top twenty. On the install those figures come from, thirteen of the top twenty
+   locations were German and covered 606 rows — which answers the question far better than
+   any warning.
+
+   Order matters: `load_config` requires lanes, so `fetch` is impossible before a config
+   exists. First-cut config → fetch → locations → *then* tune the lanes against what came
+   back.
 3. **Anything to rule out?** Agencies, previous employers, seniority levels. These become
    `exclude_company` and `exclude_title` — plain case-insensitive substrings, not regex.
 
@@ -143,6 +150,7 @@ jfeeds digest --window 7 --remote # narrower window, remote only
 jfeeds digest --json              # machine-readable, always valid JSON even when empty
 jfeeds report --out jobs.html     # self-contained HTML, opens with no network
 jfeeds sources                    # per-source status, staleness, and WHY
+jfeeds locations                  # where the fetched rows actually are
 jfeeds doctor                     # config and counts, makes no network calls
 ```
 
@@ -162,6 +170,7 @@ Free feeds are free because they are not abused. Verify the pipeline with the
 jfeeds doctor                                        # zero network calls
 jfeeds fetch --only pythonorg --max-pages 1          # ONE request, ~70KB
 jfeeds sources
+jfeeds locations
 jfeeds digest
 jfeeds report --out /tmp/jobs.html                   # zero network calls
 ```

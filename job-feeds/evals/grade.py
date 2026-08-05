@@ -21,7 +21,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import report  # noqa: E402
-from job_feeds import RateLimiter, Store, fetch_all, load_config  # noqa: E402
+from job_feeds import (  # noqa: E402
+    RateLimiter, Store, fetch_all, load_config, location_counts)
 from sources import SOURCES, validate_schema  # noqa: E402
 
 FIXTURES = ROOT / "scripts" / "tests" / "fixtures"
@@ -159,6 +160,26 @@ def main():
                 leaked.append(name)
                 break
     check(11, "contacts-stripped-at-ingest", not leaked, f"leaked: {leaked}")
+
+    # Goes through a real Store round trip, which the unit tests do not: the
+    # value has to survive SQLite and come back as None rather than the empty
+    # string, or the breakdown silently loses the rows it exists to surface.
+    store = Store(Path(tempfile.mkdtemp()) / "jobs.db")
+    store.upsert([
+        {"title": "Platform Engineer", "company": "Acme", "location": "Berlin",
+         "remote": True, "posted_at": "2026-08-04T00:00:00Z", "url": "https://x/1",
+         "description": "", "tags": [], "salary": None, "source": "arbeitnow"},
+        {"title": "Data Engineer", "company": "Bcme", "location": None,
+         "remote": True, "posted_at": "2026-08-04T00:00:00Z", "url": "https://x/2",
+         "description": "", "tags": [], "salary": None, "source": "arbeitnow"},
+        {"title": "SRE", "company": "Ccme", "location": "   ",
+         "remote": True, "posted_at": "2026-08-04T00:00:00Z", "url": "https://x/3",
+         "description": "", "tags": [], "salary": None, "source": "arbeitnow"},
+    ], NOW)
+    counts = dict(location_counts(store.select(30, NOW, False)))
+    check(12, "unplaced-rows-are-counted-not-dropped",
+          counts.get("(none)") == 2 and sum(counts.values()) == 3,
+          f"counts: {counts}")
 
     width = max(len(name) for _, name, _, _ in results)
     failures = 0

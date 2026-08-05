@@ -122,3 +122,46 @@ class TestDedupeKey(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDedupeKeyIsFrozen(unittest.TestCase):
+    """The dedupe key is the jobs table PRIMARY KEY.
+
+    Changing loc_bucket -- even to "improve" it, even to fold a diacritic --
+    orphans every stored row, re-inserts the whole corpus as new, and resets
+    first_seen for every job. first_seen is the only reason SQLite is in this
+    project at all: it is what answers "what is new since I last looked",
+    which the feeds themselves cannot.
+
+    Note the last two entries. 'Americas, Europe, Spain' and None produce the
+    SAME key, because both bucket to 'anywhere'. That is correct for dedup,
+    where company and title still gate the merge -- and it is exactly why
+    loc_bucket must never be used to decide GEOGRAPHY. A function that cannot
+    tell a three-continent posting from a posting with no location is not a
+    geography classifier. The location breakdown counts stored strings for
+    this reason; see location_counts() in job_feeds.py.
+
+    Hashes computed against the tree, not transcribed from a design doc.
+    """
+
+    PINNED = {
+        ("Acme", "Data Engineer", "Sweden - Remote"): "63f3fe3e0e2b046a",
+        ("Acme", "Data Engineer", "München, Bavaria"): "df3c98c6ff62e06d",
+        ("Acme", "Data Engineer", "Remote job"): "4f88ace4fb6ab029",
+        ("Peroptyx", "Search Analyst", "Japan - Remote"): "c88c5b9fa20a4927",
+        ("Acme", "Data Engineer", "Americas, Europe, Spain"): "163fea2727430e2e",
+        ("Acme", "Data Engineer", None): "163fea2727430e2e",
+    }
+
+    def test_the_keys_have_not_moved(self):
+        for args, expected in self.PINNED.items():
+            with self.subTest(args=args):
+                self.assertEqual(dedupe_key(*args), expected)
+
+    def test_loc_bucket_is_not_a_geography_classifier(self):
+        """Stated as a test so the claim above cannot quietly become false.
+        'Remote job' losing its only word to the work-mode strip is the
+        clearest evidence; eight real rows carry that exact string."""
+        self.assertEqual(loc_bucket("Remote job"), "job")
+        self.assertEqual(loc_bucket("Americas, Europe, Spain"), "anywhere")
+        self.assertEqual(loc_bucket(None), "anywhere")
