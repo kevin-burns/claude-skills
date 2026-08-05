@@ -64,8 +64,11 @@ jobs:
       # fetches its own interpreter for those, so they run on every matrix leg
       # including 3.9 -- the leg's Python governs the skills' own tests, not
       # the grader's shebang.
+      # Pinned to an exact tag on purpose: setup-uv publishes only full semver
+      # tags, with no floating `v9` alias, so the usual major-version pin fails
+      # to resolve at all rather than degrading gracefully.
       - name: Install uv
-        uses: astral-sh/setup-uv@v9
+        uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: true
 
