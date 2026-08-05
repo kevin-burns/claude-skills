@@ -122,6 +122,29 @@ everything, which makes the whole exercise worthless — a grading with no
 exclusions is flattery wearing a lab coat. Always name at least one archetype
 they are not currently credible for, and say what is missing.
 
+**Enumerate the evidence before assigning any bucket, and grade on the work
+rather than on the words.** List the demonstrated work for that archetype across
+the whole document first — every bullet showing the shape, wherever it sits —
+then assign the bucket from that list. The self-check is short: *if a
+not-credible grading rests on one line, it is wrong.* Evidence is a pattern
+across roles, not a sentence.
+
+This exists because the skill got it badly wrong in the field: it graded
+"solution architect" not credible on the strength of one hedging line —
+"partnering with senior architects on the overall solution design" — while
+ignoring six bullets across four roles that began *Architected and built*,
+*Designed*, *Led the design and implementation of*. A phrase that names an
+archetype is not evidence about it in either direction; "partnering with senior
+architects" is no more evidence against design ownership than "Architect" in a
+title is evidence for it. Both are labels. The trap is that the hedging phrase is
+lexically closer to the archetype than the bullets that demonstrate it, so it
+captures attention first. `references/archetypes.md` has the full account.
+
+Where the enumeration is genuinely mixed, that is *one or two artifacts away* —
+name the artifact — not *not credible*. A wrongly generous grading gets corrected
+at interview; a wrongly harsh one tells someone their real experience does not
+count, in a confident register that makes the error look principled.
+
 If the user declares a target up front, still do this grading. Their declared
 target may be the thing that is holding them back.
 

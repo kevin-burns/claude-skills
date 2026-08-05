@@ -62,6 +62,89 @@ def test_not_credible_exclusion_is_mandatory(doc):
     )
 
 
+@pytest.mark.parametrize("doc", [SKILL_MD, ARCHETYPES])
+def test_grading_runs_on_enumerated_evidence_not_on_one_line(doc):
+    """The field failure this guards (2026-07-29): 'solution architect' graded
+    NOT credible on one hedging line -- 'partnering with senior architects on the
+    overall solution design' -- while six bullets across four roles began
+    'Architected and built', 'Designed', 'Led the design and implementation of',
+    and one job title read 'AWS Architect'.
+
+    Both documents must carry the rule, because SKILL.md is always loaded and
+    archetypes.md is only read when the model chooses to. Putting it in the
+    reference alone means the always-loaded half can still commit the error.
+    """
+    text = _flat(doc)
+    assert "if a not-credible grading rests on one line, it is wrong" in text, (
+        f"{doc.name} lost the one-line self-check — this is the specific test "
+        "that catches the measured failure"
+    )
+    assert "pattern across roles, not a sentence" in text, (
+        f"{doc.name} no longer says evidence is a pattern rather than a sentence"
+    )
+
+
+@pytest.mark.parametrize("doc", [SKILL_MD, ARCHETYPES])
+def test_naming_an_archetype_is_not_evidence_either_way(doc):
+    """The symmetric half, and the one that makes the rule general rather than a
+    patch for one CV. 'Strip the titles' was already the stated method; the
+    failure was applying it to titles but not to title-adjacent prose, where a
+    hedging phrase that NAMES the archetype outranks a bullet that demonstrates
+    it. Without the symmetry the rule reads as 'be more generous', which would
+    quietly undermine the not-credible bucket the tests above defend."""
+    text = _flat(doc)
+    assert "in either direction" in text, (
+        f"{doc.name} lost the symmetry — a label is not evidence FOR an "
+        "archetype either, and dropping that half turns this into 'grade softer'"
+    )
+    assert "both are labels" in text, f"{doc.name} lost the label/evidence distinction"
+
+
+def test_mixed_evidence_lands_in_the_middle_bucket():
+    """Where enumeration is genuinely mixed the answer is 'one or two artifacts
+    away' with the artifact named, not 'not credible'. Without this the fix has
+    no landing place and the model must still choose between two wrong buckets."""
+    text = _flat(SKILL_MD)
+    assert "one or two artifacts away" in text
+    assert "wrongly harsh" in text, (
+        "the asymmetry argument is gone — a wrongly generous grading is "
+        "correctable at interview, a wrongly harsh one is believed"
+    )
+
+
+def test_eval_guards_the_architect_grading_failure():
+    """The prose rule and the behavioural assertion have to move together. The
+    fixture alex-doyle-cv.md already contains the exact trap, so this failure is
+    reproducible rather than hypothetical."""
+    data = json.loads(EVALS.read_text())
+    eval_zero = next(e for e in data["evals"] if e["id"] == 0)
+    joined = " ".join(eval_zero["assertions"]).lower()
+    assert "solution architect" in joined, (
+        "eval 0 no longer guards the architect grading failure"
+    )
+    assert "hedging line" in joined or "one hedging" in joined, (
+        "eval 0 no longer names the hedging line as the disallowed basis"
+    )
+
+
+def test_the_architect_trap_is_actually_present_in_the_fixture():
+    """Guards the guard. If the fixture is ever edited to remove the hedging
+    line or the demonstrative bullets, the assertions above become untestable
+    while still reading as though they cover something."""
+    cv = _flat(SKILL_DIR / "evals" / "fixtures" / "alex-doyle-cv.md")
+    assert "partnering with senior architects" in cv, (
+        "the fixture lost the hedging line the failure turned on"
+    )
+    demonstrated = ["architected and built", "designed unified ci/cd",
+                    "architecture blueprint", "redesigned the backup",
+                    "led the design and implementation"]
+    present = [phrase for phrase in demonstrated if phrase in cv]
+    assert len(present) >= 4, (
+        f"the fixture no longer carries the demonstrative design bullets that "
+        f"make the wrong grading wrong — found only {present}"
+    )
+
+
 def test_exclusions_must_say_what_is_missing():
     """An exclusion with no stated gap reads as a door closing rather than a map,
     and is indistinguishable from a token exclusion picked to satisfy the rule."""

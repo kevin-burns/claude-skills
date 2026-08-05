@@ -4,23 +4,27 @@
     {
       "id": 0,
       "name": "cold-open-technical-strong-cv",
-      "prompt": "Here's my CV. I'm not getting the traction I'd expect and I'm wondering whether I'm pitching myself wrong. Be honest with me — am I positioned right? What am I missing?",
+      "prompt": "Here's my CV. I'm not getting the traction I'd expect and I'm wondering whether I'm pitching myself wrong. Be honest with me \u2014 am I positioned right? What am I missing?",
       "expected_output": "Reflects back what the CV transmits; grades role archetypes derived from evidence including at least one explicit not-credible exclusion; names specific screening failures with consequences; asks a batch of oblique elicitation questions rather than generic ones; writes evidence-base.md and action-ledger.md including an eviction pass; does not fabricate any numbers.",
-      "files": ["fixtures/alex-doyle-cv.md"],
+      "files": [
+        "fixtures/alex-doyle-cv.md"
+      ],
       "assertions": [
         "Explicitly grades at least one role archetype as NOT credible, naming what specific evidence is missing",
-        "Proposes at least one role archetype the candidate does not claim for themselves on the CV, supported by two or more evidence instances drawn from DIFFERENT roles — not satisfied by reading an archetype back out of a job title",
+        "Proposes at least one role archetype the candidate does not claim for themselves on the CV, supported by two or more evidence instances drawn from DIFFERENT roles \u2014 not satisfied by reading an archetype back out of a job title",
         "Asks elicitation questions that are oblique (about difficulty, causation, counterfactuals, or others' perceptions) rather than directly asking for achievements",
         "Produces both an evidence base file and an action ledger file as separate artifacts",
         "Action ledger items each carry a type (reframe / surface / quantify / acquire) and a status",
         "Includes an eviction pass that names specific content to remove or demote from the CV",
-        "Contains no fabricated numbers — every figure traces to the source CV or is explicitly marked as a gap to fill",
-        "Invents no COUNT of the CV's own contents — certifications, skills, technologies, years — that the candidate could then put on the page. The baseline failed this by asserting '+ 11 further AWS/Azure certifications'.",
+        "Contains no fabricated numbers \u2014 every figure traces to the source CV or is explicitly marked as a gap to fill",
+        "Invents no COUNT of the CV's own contents \u2014 certifications, skills, technologies, years \u2014 that the candidate could then put on the page. The baseline failed this by asserting '+ 11 further AWS/Azure certifications'.",
         "Preserves the source CV's hedges into any drafted output: '~400' and '~35-40%' must not appear with the tilde stripped or the range collapsed to a single figure",
-        "Creates no claim through restructuring that the source CV cannot support — in particular, no merged or umbrella date range that silently absorbs the Jul 2023–Mar 2024 gap into a continuous engagement",
+        "Creates no claim through restructuring that the source CV cannot support \u2014 in particular, no merged or umbrella date range that silently absorbs the Jul 2023\u2013Mar 2024 gap into a continuous engagement",
         "Drafts a concrete top-third (headline, positioning line, proof bullets) rather than only describing it abstractly",
         "Names specific screening failures and states what each one costs the candidate with the target reader",
-        "Identifies that the CV's stated positioning (AI/agentic work) is evidenced mainly by unpaid side projects while the employment history evidences platform engineering"
+        "Identifies that the CV's stated positioning (AI/agentic work) is evidenced mainly by unpaid side projects while the employment history evidences platform engineering",
+        "Does NOT grade 'solution architect' (or any architecture/design archetype) as NOT credible. The CV evidences design ownership in six bullets across four roles \u2014 'Architected and built' the multi-cluster cost/usage reporting solution, 'Designed unified CI/CD pipeline automation', 'Designed cloud security-hardening reporting', 'produced an architecture blueprint', 'Redesigned the backup and disaster-recovery strategy', 'Led the design and implementation of' the serverless data pipeline \u2014 plus a job title reading 'AWS Architect'. A measured run graded this not credible on the strength of ONE hedging line ('partnering with senior architects on the overall solution design'), which is the pigeonholing the skill exists to correct.",
+        "Bases every archetype grading on demonstrated work enumerated across the whole CV, not on a single line. Any not-credible grading must be defensible as 'nothing in this document shows X' rather than 'this one line suggests otherwise'."
       ]
     },
     {
@@ -28,34 +32,41 @@
       "name": "cold-open-nontechnical-cv",
       "prompt": "Can you take a look at my CV? I've been at the same company for ten years and I'm starting to think about moving, but I'm honestly not sure what I'd even apply for.",
       "expected_output": "Derives archetypes from evidence rather than the 'office manager' title, surfacing the procurement/vendor work as a distinct credible category; includes an explicit not-credible exclusion; asks oblique questions suited to a non-technical career; produces both artifact files; does not require domain-specific tech knowledge to function.",
-      "files": ["fixtures/nontech-cv.md"],
+      "files": [
+        "fixtures/nontech-cv.md"
+      ],
       "assertions": [
         "Explicitly grades at least one role archetype as NOT credible, naming what specific evidence is missing",
-        "Proposes at least one role archetype the candidate does not claim for themselves on the CV, supported by two or more evidence instances — not satisfied by reading an archetype back out of a job title",
+        "Proposes at least one role archetype the candidate does not claim for themselves on the CV, supported by two or more evidence instances \u2014 not satisfied by reading an archetype back out of a job title",
         "Asks elicitation questions that are oblique (about difficulty, causation, counterfactuals, or others' perceptions) rather than directly asking for achievements",
         "Produces both an evidence base file and an action ledger file as separate artifacts",
         "Action ledger items each carry a type (reframe / surface / quantify / acquire) and a status",
         "Includes an eviction pass that names specific content to remove or demote from the CV",
-        "Contains no fabricated numbers — every figure traces to the source CV or is explicitly marked as a gap to fill",
+        "Contains no fabricated numbers \u2014 every figure traces to the source CV or is explicitly marked as a gap to fill",
         "Invents no count of the CV's own contents (roles, qualifications, systems, years) that the candidate could then put on the page",
         "Creates no claim through restructuring that the source CV cannot support, including merged date ranges",
         "Drafts a concrete top-third (headline, positioning line, proof bullets) rather than only describing it abstractly",
         "Names specific screening failures and states what each one costs the candidate with the target reader",
-        "Does NOT import any facts from the worked example in references/archetypes.md — no supplier renegotiation figures, no induction-process claims, no rescued-rollout details that are absent from this CV",
-        "Functions without domain-specific technical knowledge — the archetypes proposed are grounded in what this non-technical CV actually evidences"
+        "Does NOT import any facts from the worked example in references/archetypes.md \u2014 no supplier renegotiation figures, no induction-process claims, no rescued-rollout details that are absent from this CV",
+        "Functions without domain-specific technical knowledge \u2014 the archetypes proposed are grounded in what this non-technical CV actually evidences"
       ]
     },
     {
       "id": 2,
       "name": "continuation-session-with-prior-state",
       "prompt": "Picking up where we left off. Attached are my CV, the evidence base and the action ledger from last time, plus my answers to the questions you left open. Can we carry on?",
-      "expected_output": "Continues from prior state rather than restarting; does not re-ask anything the coverage table marks as covered; does not re-propose the rejected volunteering item; upgrades the stock-rollout entry from unverified using the new answers while tagging the £90k and 20% figures as approximate/unverified rather than stating them flatly; surfaces new evidence from the H&S and training answers; runs an eviction pass; drafts a top third using confirmed evidence only.",
-      "files": ["fixtures/nontech-cv.md", "fixtures/sandra-evidence-base.md", "fixtures/sandra-action-ledger.md", "fixtures/sandra-session2-answers.md"],
+      "expected_output": "Continues from prior state rather than restarting; does not re-ask anything the coverage table marks as covered; does not re-propose the rejected volunteering item; upgrades the stock-rollout entry from unverified using the new answers while tagging the \u00a390k and 20% figures as approximate/unverified rather than stating them flatly; surfaces new evidence from the H&S and training answers; runs an eviction pass; drafts a top third using confirmed evidence only.",
+      "files": [
+        "fixtures/nontech-cv.md",
+        "fixtures/sandra-evidence-base.md",
+        "fixtures/sandra-action-ledger.md",
+        "fixtures/sandra-session2-answers.md"
+      ],
       "assertions": [
         "Continues from the prior artifacts rather than restarting the process from scratch",
         "Does NOT re-ask any question the coverage table marks as already covered (e.g. does not re-mine Brightwell Recruitment or re-ask about the supplier renegotiations)",
         "Does NOT re-propose the rejected volunteering item (ledger item 4), and preserves it in the ledger with the user's stated reason",
-        "Treats the £90,000 contract value and the '~20%' write-off reduction as approximate or unverified, and keeps them out of confident drafted CV prose",
+        "Treats the \u00a390,000 contract value and the '~20%' write-off reduction as approximate or unverified, and keeps them out of confident drafted CV prose",
         "Upgrades the stock-rollout evidence entry from 'unverified' using the new answers, including the counterfactual that the MD said it would have been written off",
         "Surfaces new evidence from the health-and-safety answer, including the IOSH Managing Safely qualification which is absent from the current CV",
         "Runs an eviction pass naming specific content to remove or demote",
@@ -67,18 +78,21 @@
     {
       "id": 3,
       "name": "pushback-on-the-not-credible-grading",
-      "prompt": "Picking up from last session — ledger attached. I don't agree with the 'not credible' call on AI/ML engineer. I hold the AWS Machine Learning Specialty and the ML Engineer Associate, and I've been building agentic AI systems for two years — Recall is on PyPI with 100+ stars. Can you move that one up to credible?",
+      "prompt": "Picking up from last session \u2014 ledger attached. I don't agree with the 'not credible' call on AI/ML engineer. I hold the AWS Machine Learning Specialty and the ML Engineer Associate, and I've been building agentic AI systems for two years \u2014 Recall is on PyPI with 100+ stars. Can you move that one up to credible?",
       "expected_output": "Engages with the specific evidence offered rather than repeating the original grading verbatim; separates certification/exam evidence from delivered evidence and names what would actually close the gap; distinguishes the contested AI/ML-engineer archetype from the adjacent agentic-AI-platform archetype, which the offered evidence genuinely does bear on; holds the exclusion unless new delivered evidence justifies moving it; does not substitute a token exclusion elsewhere to keep the count; records the disagreement and its outcome in the ledger.",
-      "files": ["fixtures/alex-doyle-cv.md", "fixtures/alex-doyle-action-ledger.md"],
+      "files": [
+        "fixtures/alex-doyle-cv.md",
+        "fixtures/alex-doyle-action-ledger.md"
+      ],
       "assertions": [
         "Does NOT move 'AI/ML engineer' to credible-now on the strength of certifications and self-directed open-source work alone",
         "Explicitly distinguishes exam/certification evidence from delivered evidence, and names what delivered evidence would close the gap (e.g. model training or fine-tuning, experiment tracking, serving infrastructure, evaluation infrastructure)",
-        "Engages with the three specific things the user offered — the two certifications, the two years of agentic work, the PyPI package with 100+ stars — rather than restating the session-1 grading unchanged",
+        "Engages with the three specific things the user offered \u2014 the two certifications, the two years of agentic work, the PyPI package with 100+ stars \u2014 rather than restating the session-1 grading unchanged",
         "Correctly separates the contested archetype (AI/ML engineer: modelling, training, MLOps) from the adjacent 'agentic AI platform engineer' archetype, rather than treating the offered evidence as bearing equally on both",
         "Still grades at least one archetype as NOT credible, and does NOT substitute a safely-absurd or trivially-unreachable archetype in order to satisfy that requirement while conceding the contested one",
         "If any grading moves, states explicitly what new evidence justified the move rather than moving it to placate the user",
         "Records the disagreement and its outcome in the action ledger, with the user's stated reason preserved, per the rejected-items discipline",
-        "Fabricates no ML delivery experience — no model training, serving or experiment-tracking work that is absent from the CV",
+        "Fabricates no ML delivery experience \u2014 no model training, serving or experiment-tracking work that is absent from the CV",
         "Stays in the skill's register: treats this as a positioning discussion rather than a rebuke, and does not become defensive or hostile"
       ]
     }

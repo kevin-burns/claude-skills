@@ -23,6 +23,59 @@ below are patterns to reason from, not a menu to pick from.
    description from 2018 may map onto a category that only got a name in 2023.
 4. **Grade honestly**, including exclusions.
 
+## Strip the labels from the prose, not just from the titles
+
+Step 1 says strip the titles. The harder half is stripping the title-adjacent
+phrases *inside the bullets*, and skipping it produced the worst failure this
+skill has had in the field.
+
+Running on a real CV (2026-07-29) it graded **solution architect** as NOT
+CREDIBLE on the strength of a single line — "Engaged as the senior engineer on
+complex builds, partnering with senior architects on the overall solution
+design" — reasoning that this put the person next to the architect rather than
+in the chair. The same document contained six bullets across four roles
+demonstrating design ownership: *Architected and built* a multi-cluster cost and
+usage reporting solution; *Designed* unified CI/CD pipeline automation;
+*Designed* cloud security-hardening reporting; *produced an architecture
+blueprint* for operational monitoring; *Redesigned* the backup and DR strategy;
+*Led the design and implementation of* a serverless data pipeline. One of the
+job titles read, literally, "AWS Architect". The candidate had to push back with
+evidence that was already on the page.
+
+The mechanism is worth naming, because it will recur: **a hedging phrase that
+NAMES the archetype is lexically closer to it than a bullet that DEMONSTRATES it
+without naming it.** Retrieval by surface similarity beats retrieval by
+evidence. Worse, the constructions that produce those phrases — *Support
+framing* and *Downgrade by modesty*, both listed below as patterns to correct —
+are exactly what gets mistaken for a negative finding. Grading on them commits
+the pigeonholing this skill exists to undo, and does it in the skill's own
+confident register, which makes the error look principled.
+
+So the rule, and it cuts both ways:
+
+**A phrase that names an archetype is not evidence about that archetype, in either direction.**
+"Partnering with senior architects" is not evidence against design ownership,
+exactly as "Solution Architect" in a title is not evidence for it.
+Both are labels. Grade on what was built, owned, decided or changed.
+
+### Enumerate before you assign a bucket
+
+Before writing any grading, list the demonstrated work for that archetype across
+the *whole* document — every bullet showing the shape, wherever it sits. Assign
+the bucket from that list.
+
+This makes the failure structurally hard rather than merely discouraged, and it
+gives a usable self-check: **if a not-credible grading rests on one line, it is
+wrong.** Evidence for or against an archetype is a pattern across roles, not a
+sentence. A defensible exclusion reads "nothing in this document shows X" — not
+"this line suggests otherwise."
+
+The asymmetry is deliberate. A wrongly generous grading gets corrected at
+interview, uncomfortably but recoverably. A wrongly harsh one tells someone
+their real experience does not count, and they may believe it — so where the
+enumeration is genuinely mixed, that is *one or two artifacts away*, and you say
+which artifact. It is not *not credible*.
+
 ## The three buckets
 
 **Credible now** — the evidence exists and would survive an interview. The
