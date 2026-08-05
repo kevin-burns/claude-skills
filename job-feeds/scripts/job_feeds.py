@@ -27,6 +27,18 @@ CONFIG_DEFAULT = CONFIG_DIR / "config.json"
 DB_DEFAULT = CONFIG_DIR / "jobs.db"
 RATELIMIT_DEFAULT = CONFIG_DIR / "ratelimit.json"
 
+
+def ratelimit_path_for(db_path):
+    """Rate-limit state lives BESIDE the database it accompanies.
+
+    Scoping it to --db is what makes a scratch or test run isolated;
+    a fixed default path meant every such run read and wrote the
+    operator's real state. It is still a separate FILE, so the
+    original property holds -- deleting jobs.db must not make the
+    tool forget it already polled a source.
+    """
+    return Path(db_path).parent / "ratelimit.json"
+
 STAMP = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -71,33 +83,54 @@ class RateLimiter:
         polled at least once — which makes an absent state file lost
         state rather than a first run.
         """
-        if not source.rate_limit_seconds:
-            return True, ""
         now = now or datetime.now(timezone.utc)
         state, problem = self._load()
 
         if problem == "unreadable":
             return False, f"rate-limit state unreadable at {self.path} — refusing to poll"
         if problem == "missing":
-            if seen:
+            if seen and source.rate_limit_seconds:
                 return False, (f"no rate-limit state at {self.path} but {source.name} has "
                                f"been polled before — refusing to poll (failing closed)")
             return True, ""
 
-        last = state.get(source.name)
-        if not last:
+        entry = state.get(source.name)
+        if not entry:
             return True, ""
-        try:
-            when = datetime.strptime(last, STAMP).replace(tzinfo=timezone.utc)
-        except (TypeError, ValueError):
+        when, backoff = self._entry(entry)
+        if when is None:
             return False, (f"unparseable last-poll time for {source.name} "
-                           f"({last!r}) — refusing to poll")
+                           f"({entry!r}) — refusing to poll")
+
+        # A 429/503 backoff applies even to a source with no standing limit
+        # -- those are precisely the ones that get throttled, and a backoff
+        # nothing reads just walks back into the same wall every run.
+        if backoff:
+            until = when + timedelta(seconds=backoff)
+            if now < until:
+                return False, f"backing off until {until.strftime('%H:%M')} (server asked)"
+            return True, ""
+
+        if not source.rate_limit_seconds:
+            return True, ""
         following = when + timedelta(seconds=source.rate_limit_seconds)
         if now < following:
             return False, f"next poll {following.strftime('%H:%M')} (documented fair use)"
         return True, ""
 
-    def record(self, source, now=None, force=False):
+    @staticmethod
+    def _entry(value):
+        """(when, backoff_seconds). Accepts the legacy flat timestamp as well
+        as the {'at': ..., 'backoff': N} form, because a state file written
+        by an older version must not crash or silently unblock everything."""
+        raw, backoff = (value, 0) if isinstance(value, str) else (
+            (value or {}).get("at"), (value or {}).get("backoff") or 0)
+        try:
+            return datetime.strptime(raw, STAMP).replace(tzinfo=timezone.utc), int(backoff)
+        except (TypeError, ValueError):
+            return None, 0
+
+    def record(self, source, now=None, force=False, backoff_seconds=0):
         """No-op for sources with no declared limit, so a fresh install
         does not accumulate empty state files.
 
@@ -110,7 +143,9 @@ class RateLimiter:
         now = now or datetime.now(timezone.utc)
         with self._lock:
             state, _ = self._load()
-            state[source.name] = now.strftime(STAMP)
+            stamp = now.strftime(STAMP)
+            state[source.name] = ({"at": stamp, "backoff": int(backoff_seconds)}
+                                  if backoff_seconds else stamp)
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self.path.write_text(json.dumps(state, indent=1), encoding="utf-8")
 
@@ -286,6 +321,9 @@ def build_user_agent(contact=None):
 
 RSS_SOURCES = ("wwr", "pythonorg")
 
+# Applied when a 429/503 arrives without a parseable Retry-After.
+DEFAULT_BACKOFF_SECONDS = 3600
+
 
 def http_open(url, headers):
     """(status, body, response_headers).
@@ -352,8 +390,15 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
                 # straight back into the same wall. Observed live on
                 # 2026-08-05 when this project's own pagination probing
                 # tripped Arbeitnow's limiter.
-                limiter.record(source, now, force=True)
                 retry_after = response_headers.get("Retry-After")
+                try:
+                    backoff = max(60, min(int(retry_after), 86400))
+                except (TypeError, ValueError):
+                    # No Retry-After, or a date-form one we do not parse.
+                    # An hour is the conservative default: too short pokes
+                    # the same wall repeatedly, too long loses a whole day.
+                    backoff = DEFAULT_BACKOFF_SECONDS
+                limiter.record(source, now, force=True, backoff_seconds=backoff)
                 detail = f", Retry-After {retry_after}s" if retry_after else ""
                 return FetchResult(source.name, "throttled",
                                    f"HTTP {status} — backing off{detail}",
@@ -641,7 +686,8 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
             if not chosen:
                 raise ConfigError(
                     "no sources selected — check --only against config 'sources'")
-            results = fetch_all(chosen, opener or http_open, RateLimiter(), store,
+            limiter = RateLimiter(ratelimit_path_for(args.db))
+            results = fetch_all(chosen, opener or http_open, limiter, store,
                                 now or datetime.now(timezone.utc), args.max_pages,
                                 window, build_user_agent(config.contact))
             failed = []

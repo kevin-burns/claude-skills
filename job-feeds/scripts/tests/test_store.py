@@ -197,5 +197,100 @@ class TestRateLimiterConcurrency(unittest.TestCase):
         self.assertEqual(sorted(written), [f"src{i}" for i in range(8)])
 
 
+class TestBackoffIsActuallyHonoured(unittest.TestCase):
+    """A recorded backoff that nothing reads is worse than none: it looks
+    like protection while every run walks back into the same 429, which is
+    exactly what turns a soft limit into a hard block.
+
+    Caught on a live run. Jobicy recovered correctly after its documented
+    hour, but Arbeitnow -- which declares NO standing limit -- sent a
+    request to rediscover it was still throttled, because allows() returned
+    early on `not source.rate_limit_seconds` and never consulted the
+    backoff that had been written for it.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.path = Path(self._tmp.name) / "ratelimit.json"
+
+    def test_a_backoff_blocks_a_source_with_no_standing_limit(self):
+        limiter = RateLimiter(self.path)
+        limiter.record(SOURCES["arbeitnow"], NOW, force=True, backoff_seconds=3600)
+        allowed, reason = RateLimiter(self.path).allows(
+            SOURCES["arbeitnow"], NOW + timedelta(minutes=30), seen=True)
+        self.assertFalse(allowed, "a 429 backoff must be honoured, not merely stored")
+        self.assertIn("backing off", reason)
+
+    def test_the_backoff_expires(self):
+        limiter = RateLimiter(self.path)
+        limiter.record(SOURCES["arbeitnow"], NOW, force=True, backoff_seconds=3600)
+        allowed, _ = RateLimiter(self.path).allows(
+            SOURCES["arbeitnow"], NOW + timedelta(hours=1, seconds=1), seen=True)
+        self.assertTrue(allowed)
+
+    def test_a_retry_after_value_sets_the_backoff_length(self):
+        limiter = RateLimiter(self.path)
+        limiter.record(SOURCES["arbeitnow"], NOW, force=True, backoff_seconds=120)
+        early, _ = RateLimiter(self.path).allows(
+            SOURCES["arbeitnow"], NOW + timedelta(seconds=60), seen=True)
+        later, _ = RateLimiter(self.path).allows(
+            SOURCES["arbeitnow"], NOW + timedelta(seconds=121), seen=True)
+        self.assertFalse(early)
+        self.assertTrue(later)
+
+    def test_an_ordinary_poll_does_not_create_a_backoff(self):
+        """Only a 429/503 backs off. A healthy fetch of a limitless source
+        must leave it immediately pollable."""
+        RateLimiter(self.path).record(SOURCES["arbeitnow"], NOW)
+        allowed, _ = RateLimiter(self.path).allows(
+            SOURCES["arbeitnow"], NOW + timedelta(seconds=1), seen=True)
+        self.assertTrue(allowed)
+
+    def test_a_standing_limit_still_works_alongside_backoffs(self):
+        limiter = RateLimiter(self.path)
+        limiter.record(SOURCES["jobicy"], NOW)
+        blocked, _ = limiter.allows(SOURCES["jobicy"], NOW + timedelta(minutes=30))
+        freed, _ = limiter.allows(SOURCES["jobicy"], NOW + timedelta(hours=1, seconds=1))
+        self.assertFalse(blocked)
+        self.assertTrue(freed)
+
+    def test_legacy_flat_timestamp_state_is_still_readable(self):
+        """The state file predates the backoff format; a stale one on disk
+        must not crash or silently unblock everything."""
+        self.path.write_text(json.dumps({"jobicy": NOW.strftime(STAMP)}), encoding="utf-8")
+        allowed, _ = RateLimiter(self.path).allows(
+            SOURCES["jobicy"], NOW + timedelta(minutes=5))
+        self.assertFalse(allowed)
+
+
+class TestRateLimitStateIsScopedToTheDatabase(unittest.TestCase):
+    """--db must isolate everything. Before this, main() built a
+    RateLimiter on the DEFAULT path, so every scratch run and every test
+    read and wrote the operator's real ~/.config/job-feeds/ratelimit.json.
+    A live Arbeitnow backoff leaked into the test suite and failed two
+    unrelated tests, which is how it was found.
+
+    The file still sits BESIDE the database rather than inside it, so the
+    original property holds: deleting jobs.db does not lose the record of
+    what has already been polled.
+    """
+
+    def test_the_path_is_derived_from_the_database_location(self):
+        from job_feeds import ratelimit_path_for
+        self.assertEqual(ratelimit_path_for("/tmp/x/jobs.db"),
+                         Path("/tmp/x/ratelimit.json"))
+
+    def test_a_scratch_db_does_not_touch_the_real_state_file(self):
+        from job_feeds import RATELIMIT_DEFAULT, ratelimit_path_for
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertNotEqual(ratelimit_path_for(Path(tmp) / "jobs.db"),
+                                RATELIMIT_DEFAULT)
+
+    def test_the_default_db_still_maps_to_the_default_state_file(self):
+        from job_feeds import DB_DEFAULT, RATELIMIT_DEFAULT, ratelimit_path_for
+        self.assertEqual(ratelimit_path_for(DB_DEFAULT), RATELIMIT_DEFAULT)
+
+
 if __name__ == "__main__":
     unittest.main()
