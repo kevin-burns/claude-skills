@@ -1,0 +1,135 @@
+name: ci
+
+# What this does and does NOT do, stated up front so nobody mistakes a
+# green tick for more than it is.
+#
+# It validates STRUCTURE and runs the tests that exist. Most skills here
+# are prose — instructions for a model — and nothing automated can tell
+# you whether those instructions are any good. Five of twenty-one skills
+# ship executable tests; those get a real run, the rest get their
+# conventions checked and nothing more.
+#
+# The failure mode CI cannot see is the one that actually bites a repo
+# this size: two skill descriptions overlapping so a request routes to the
+# wrong skill. Catching that needs a model, so it stays a local check.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conventions:
+    name: conventions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      # No pip install: the checker is stdlib-only, so a stray third-party
+      # import fails here rather than passing on a pre-populated runner.
+      - name: Structural checks
+        run: python3 .github/scripts/check_conventions.py
+
+  skill-tests:
+    name: skill tests (python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.9 is the floor several skills document, and it is not
+        # decoration: it has already caught two real defects that never
+        # appeared on a newer interpreter — datetime.fromisoformat
+        # rejecting a 'Z' suffix, and backslashes being illegal inside
+        # f-string expressions before 3.12.
+        python: ['3.9', '3.13']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      # pytest is a CI tool here, not a runtime dependency. The skills
+      # themselves stay stdlib-only; nothing below installs anything a
+      # skill imports at run time.
+      - name: Install test runner
+        run: python3 -m pip install --quiet pytest
+
+      # Both runners are discovered, not enumerated, so a new skill with
+      # tests is picked up without anyone remembering to edit this file.
+      # Two layouts exist in this repo and only one is unittest — running
+      # just `unittest discover` silently skipped 62 passing tests, which
+      # is exactly the kind of quiet gap this job is supposed to close.
+      - name: Run every skill's tests
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -u
+          status=0
+          found=0
+
+          run_suite() {                       # dir, runner-command...
+            local where="$1"; shift
+            local skill="${where%%/*}"
+            found=$((found + 1))
+            echo "::group::${skill} (${where})"
+            if ( cd "$where" && "$@" ); then
+              echo "${skill}: pass"
+            else
+              echo "::error title=${skill}::test suite failed (${where})"
+              status=1
+            fi
+            echo "::endgroup::"
+          }
+
+          for suite in */scripts/tests; do
+            [ -d "$suite" ] || continue
+            run_suite "${suite%/tests}" python3 -m unittest discover -s tests
+          done
+
+          for suite in */tests */*/tests; do
+            [ -d "$suite" ] || continue
+            case "$suite" in */scripts/tests|*/.venv/*|*/site-packages/*) continue ;; esac
+            run_suite "${suite%/tests}" python3 -m pytest tests -q
+          done
+
+          if [ "$found" -eq 0 ]; then
+            echo "::error::no test suites discovered — the globs are wrong"
+            exit 1
+          fi
+          echo "ran ${found} suite(s)"
+          exit $status
+
+      - name: Run every skill's offline eval
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -u
+          status=0
+          ran=0
+          for grader in */evals/grade.py; do
+            [ -f "$grader" ] || continue
+            skill="${grader%%/*}"
+            # PEP 723 graders need uv. Skip rather than fail, but say so —
+            # a silently unrun eval is worse than a visibly skipped one.
+            if head -3 "$grader" | grep -q 'uv run --script'; then
+              echo "${skill}: SKIPPED (needs uv)"
+              continue
+            fi
+            ran=$((ran + 1))
+            echo "::group::${skill}"
+            if ( cd "$skill" && python3 evals/grade.py ); then
+              echo "${skill}: pass"
+            else
+              echo "::error title=${skill}::eval failed"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          echo "ran ${ran} eval(s)"
+          exit $status
