@@ -59,8 +59,16 @@ Instead, ask them three questions and write the file yourself:
 
 1. **What roles are you after?** Plain English — "platform engineering and SRE", "data
    engineering", "engineering management". One lane per distinct track.
-2. **Where?** Country, region, or remote-only. This sets `location_filter` and whether
-   `--remote` will be their normal mode.
+2. **Where?** Ask, but **be honest about the answer: there is no location filter.**
+   The only geography control is `--remote`, a boolean from per-source metadata, and it is
+   unreliable — a posting reading "Germany remote" can still carry `remote = 0`.
+
+   Coverage is decided by the source mix, not by config, and the mix is
+   **German-weighted**: on a real run Arbeitnow supplied 84 of 98 matches. A test install
+   for a Spain-based data engineer fetched 1,321 rows of which **two mentioned Spain**,
+   neither a data role. So if the user is outside Germany and not targeting remote, say so
+   *before* they invest in lanes — otherwise they get a tidy digest of jobs in the wrong
+   country and no signal that anything is wrong.
 3. **Anything to rule out?** Agencies, previous employers, seniority levels. These become
    `exclude_company` and `exclude_title` — plain case-insensitive substrings, not regex.
 
@@ -97,7 +105,6 @@ having.
 {
   "defaults": {
     "window": 14,
-    "location_filter": "germany|remote|europe",
     "exclude_company": ["randstad", "hays"],
     "exclude_title": ["recruiter", "werkstudent"]
   },
@@ -111,6 +118,14 @@ having.
 ```
 
 `sources` may be left empty — every source is enabled unless explicitly disabled.
+
+**Only these keys are read.** Top level: `defaults`, `lanes`, `highlight`, `sources`.
+Inside `defaults`: `window`, `contact`, `exclude_company`, `exclude_title`. Inside a lane:
+`name`, `label`, `match`, `match_in`. Anything else is ignored — `jfeeds doctor` lists
+unrecognised keys so a typo or an invented field is visible rather than silently dropped.
+
+Two other flags exist for pointing at non-default locations, useful when testing:
+`--config <path>` and `--db <path>`.
 
 ## Commands
 

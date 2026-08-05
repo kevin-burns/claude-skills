@@ -538,6 +538,40 @@ Config = namedtuple(
     "lanes highlight exclude_companies exclude_titles window sources contact")
 
 
+KNOWN_TOP_LEVEL = {"defaults", "lanes", "highlight", "sources"}
+KNOWN_DEFAULTS = {"window", "contact", "exclude_company", "exclude_title"}
+KNOWN_LANE = {"name", "label", "match", "match_in"}
+
+
+def unknown_keys(path):
+    """Keys the loader does not read, so `doctor` can say so.
+
+    Silently ignoring them is how a documented-but-unimplemented option
+    survives: SKILL.md once told the agent to write `location_filter`,
+    nothing read it, and doctor confirmed the file was fine. The user's
+    primary constraint was dropped without a word.
+
+    Reported, never fatal — an unknown key may be a comment or a field
+    from a newer version, and refusing to run would be worse than saying
+    so. Returns a sorted list of "where: key" strings.
+    """
+    try:
+        raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []          # a broken config is load_config's problem, not this one
+    if not isinstance(raw, dict):
+        return []
+
+    found = [f"top level: {k}" for k in raw if k not in KNOWN_TOP_LEVEL]
+    defaults = raw.get("defaults")
+    if isinstance(defaults, dict):
+        found += [f"defaults: {k}" for k in defaults if k not in KNOWN_DEFAULTS]
+    for index, lane in enumerate(raw.get("lanes") or []):
+        if isinstance(lane, dict):
+            found += [f"lanes[{index}]: {k}" for k in lane if k not in KNOWN_LANE]
+    return sorted(found)
+
+
 def load_config(path):
     """Parse and hard-validate the config. Raises ConfigError.
 
@@ -747,6 +781,13 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
             print(f"database  {args.db}", file=out)
             print(f"sources   {len(enabled)} enabled of {len(SOURCES)}", file=out)
             print(f"window    {window} day(s)", file=out)
+            stray = unknown_keys(args.config)
+            if stray:
+                print("", file=out)
+                print(f"{len(stray)} key(s) not recognised — these are IGNORED, so "
+                      f"anything you expected them to do is not happening:", file=out)
+                for item in stray:
+                    print(f"  {item}", file=out)
             return 0
 
         store = Store(args.db)

@@ -415,5 +415,69 @@ class TestDocumentedExampleActuallyWorks(unittest.TestCase):
                         "the documented example must model the rule the docs give")
 
 
+class TestUnknownConfigKeysAreReported(ConfigCase):
+    """A new-user test caught this: doctor answered a config containing a
+    field that does not exist, a typo'd exclusion list and a key named
+    `totally_made_up_key` with "ok, 1 lane(s)" and exit 0.
+
+    Silently ignoring unknown keys is how a documented-but-unimplemented
+    option survives. It did: SKILL.md told the agent to write
+    `location_filter`, nothing read it, and doctor -- the one validation
+    step the docs prescribe -- confirmed the file was fine. The user's
+    primary constraint was dropped without a word.
+    """
+
+    def run_cli(self, *argv, **kwargs):
+        out, err = io.StringIO(), io.StringIO()
+        code = main(list(argv), out=out, err=err, now=NOW, **kwargs)
+        return code, out.getvalue(), err.getvalue()
+
+    def doctor_on(self, data):
+        return self.run_cli("doctor", "--config", str(self.write(data)),
+                            "--db", str(self.tmp / "j.db"))
+
+    def test_an_unknown_default_is_named(self):
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        data["defaults"]["location_filter"] = "spain|remote"
+        code, out, err = self.doctor_on(data)
+        combined = out + err
+        self.assertIn("location_filter", combined)
+        self.assertIn("not recognised", combined.lower())
+
+    def test_a_typo_in_a_known_key_is_named(self):
+        """exclude_titel silently does nothing, and the user believes their
+        exclusions are applied."""
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        data["defaults"]["exclude_titel"] = ["recruiter"]
+        _, out, err = self.doctor_on(data)
+        self.assertIn("exclude_titel", out + err)
+
+    def test_an_unknown_top_level_key_is_named(self):
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        data["archetypes"] = []
+        _, out, err = self.doctor_on(data)
+        self.assertIn("archetypes", out + err)
+
+    def test_an_unknown_lane_key_is_named(self):
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        data["lanes"][0]["match_on"] = "title"
+        _, out, err = self.doctor_on(data)
+        self.assertIn("match_on", out + err)
+
+    def test_unknown_keys_warn_rather_than_fail(self):
+        """A warning, not an error: an unknown key may be a comment or a
+        field from a newer version, and refusing to run would be worse
+        than saying so."""
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        data["defaults"]["location_filter"] = "spain"
+        code, _, _ = self.doctor_on(data)
+        self.assertEqual(code, 0)
+
+    def test_a_clean_config_reports_nothing(self):
+        code, out, err = self.doctor_on(GOOD_CONFIG)
+        self.assertEqual(code, 0)
+        self.assertNotIn("not recognised", (out + err).lower())
+
+
 if __name__ == "__main__":
     unittest.main()
