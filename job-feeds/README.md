@@ -23,6 +23,24 @@ You define *lanes* — a name and a regex — and a job is shown only if it matc
 one. A role can belong to several; all are shown, which is usually the interesting
 signal.
 
+### The sources, and what each is actually good for
+
+Coverage is uneven by design — these are not interchangeable. Verified 2026-08-05.
+
+| Source | Good for | Worth knowing |
+|---|---|---|
+| [Arbeitnow](https://www.arbeitnow.com) | **Germany.** 84 of 98 matches on a real run | Board is only ~7 days deep, so a 14-day window can't get 14 days from it. Burst-sensitive: pages are capped and paced |
+| [Jobicy](https://jobicy.com) | Europe-weighted remote | Documents 1 poll/hour fair use, which the tool enforces |
+| [Remotive](https://remotive.com) | Remote, broad | Ignores its own `limit` parameter |
+| [Remote OK](https://remoteok.com) | Volume — 100 rows/fetch | Requires a dofollow backlink; the report carries it. Some listings are low quality |
+| [Working Nomads](https://www.workingnomads.com) | Remote, curated | Undocumented endpoint — could vanish without notice |
+| [4 Day Week](https://4dayweek.io) | Reduced-hours roles | Small but distinctive inventory |
+| [We Work Remotely](https://weworkremotely.com) | Remote engineering | Per-category RSS |
+| [Python.org](https://www.python.org/jobs/) | Python roles, high signal | Tiny volume, and publishes **no dates at all** — those rows show `—` |
+
+[`SKILL.md`](./SKILL.md) carries the rest: exact endpoints, pagination behaviour, rate-limit
+details and how to read `jfeeds sources` when something looks thin.
+
 ```bash
 jfeeds fetch                    # poll the sources
 jfeeds digest --window 7        # what matched, as a table
