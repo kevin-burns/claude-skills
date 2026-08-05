@@ -365,3 +365,264 @@ def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
                                window_days, s.name in known, reasons.get(s.name, ""))
                    for s in sources]
         return [f.result() for f in futures]
+
+
+# --------------------------------------------------------------------------
+# Config, matching, and the CLI.
+# --------------------------------------------------------------------------
+
+import argparse  # noqa: E402
+import re  # noqa: E402
+import sys  # noqa: E402
+
+Lane = namedtuple("Lane", "name label pattern")
+Config = namedtuple(
+    "Config", "lanes highlight exclude_companies exclude_titles window sources")
+
+
+def load_config(path):
+    """Parse and hard-validate the config. Raises ConfigError.
+
+    Errors name the offending lane, because a bare `re.error: missing )`
+    gives no clue which of eight lanes to fix.
+    """
+    path = Path(path)
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, IsADirectoryError, PermissionError):
+        raise ConfigError(f"config not readable: {path}") from None
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ConfigError(f"config is not valid JSON: {path} ({exc})") from None
+    if not isinstance(raw, dict):
+        raise ConfigError(f"config must be a JSON object: {path}")
+
+    defaults = raw.get("defaults") or {}
+    if not isinstance(defaults, dict):
+        raise ConfigError(f"config 'defaults' must be a JSON object: {path}")
+    entries = raw.get("lanes") or []
+    if not entries:
+        raise ConfigError(f"config has no lanes: {path}")
+
+    lanes = []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise ConfigError(f"lane[{index}] must be a JSON object")
+        missing = [f for f in ("name", "label", "match")
+                   if not isinstance(entry.get(f), str) or not entry[f].strip()]
+        if missing:
+            raise ConfigError(
+                f"lane[{index}] missing or empty field(s): {', '.join(missing)}")
+        try:
+            pattern = re.compile(entry["match"], re.IGNORECASE)
+        except re.error as exc:
+            raise ConfigError(
+                f"lane '{entry['name']}' has an invalid match regex: {exc}") from None
+        lanes.append(Lane(entry["name"], entry["label"], pattern))
+
+    names = [lane.name for lane in lanes]
+    duplicates = sorted({n for n in names if names.count(n) > 1})
+    if duplicates:
+        raise ConfigError(f"duplicate lane name(s): {', '.join(duplicates)}")
+
+    try:
+        window = int(defaults.get("window", 14))
+    except (TypeError, ValueError):
+        raise ConfigError(f"'window' must be a whole number of days: {path}") from None
+
+    return Config(
+        lanes=tuple(lanes),
+        highlight=tuple(h.lower() for h in (raw.get("highlight") or [])
+                        if isinstance(h, str)),
+        exclude_companies=tuple(c.lower() for c in defaults.get("exclude_company", [])
+                                if isinstance(c, str)),
+        exclude_titles=tuple(t.lower() for t in defaults.get("exclude_title", [])
+                             if isinstance(t, str)),
+        window=window,
+        sources=raw.get("sources") or {})
+
+
+def _haystack(job):
+    parts = (job.get("title"), job.get("description"))
+    return " ".join(p for p in parts if isinstance(p, str)).lower()
+
+
+def lanes_for(job, config):
+    """Labels of every lane this job matches -- a job can belong to several."""
+    haystack = _haystack(job)
+    return [lane.label for lane in config.lanes if lane.pattern.search(haystack)]
+
+
+def is_excluded(job, config):
+    company = (job.get("company") or "").lower()
+    title = (job.get("title") or "").lower()
+    return (any(term in company for term in config.exclude_companies)
+            or any(term in title for term in config.exclude_titles))
+
+
+def is_highlighted(job, config):
+    haystack = _haystack(job)
+    return any(term in haystack for term in config.highlight)
+
+
+def source_enabled(name, config):
+    entry = config.sources.get(name)
+    if not isinstance(entry, dict):
+        return True
+    return bool(entry.get("enabled", True))
+
+
+def render_table(rows):
+    """Plain-text table with computed widths -- a long company name must not
+    silently truncate a column."""
+    header = ("Posted", "Lanes", "Company", "Role", "Where")
+    body = [((row["posted_at"] or "—")[:10],
+             ",".join(row["lanes"]),
+             (row["company"] or "")[:28],
+             ("★ " if row["highlight"] else "") + (row["title"] or "")[:44],
+             (row["location"] or "")[:24]) for row in rows]
+    widths = ([max(len(str(cell)) for cell in column)
+               for column in zip(header, *body)] if body else [len(h) for h in header])
+    heading = "  ".join(h.ljust(w) for h, w in zip(header, widths))
+    lines = [heading, "-" * len(heading)]
+    lines += ["  ".join(str(c).ljust(w) for c, w in zip(row, widths)) for row in body]
+    return "\n".join(lines)
+
+
+class _Parser(argparse.ArgumentParser):
+    """argparse writes to the real streams and raises SystemExit. Both are
+    routed through the injected streams so main() keeps its int-return
+    contract and tests can capture output."""
+
+    def __init__(self, *args, **kwargs):
+        self._out = kwargs.pop("out", None) or sys.stdout
+        self._err = kwargs.pop("err", None) or sys.stderr
+        super().__init__(*args, **kwargs)
+
+    def _print_message(self, message, file=None):
+        if message:
+            (self._err if file is sys.stderr else self._out).write(message)
+
+    def error(self, message):
+        self._err.write(f"job-feeds: {message}\n")
+        raise SystemExit(2)
+
+
+def build_parser(out=None, err=None):
+    parser = _Parser(prog="jfeeds", out=out, err=err,
+                     description="Aggregate sanctioned public job feeds.")
+    parser.add_argument("command",
+                        choices=["fetch", "digest", "report", "sources", "doctor"])
+    parser.add_argument("--config", default=str(CONFIG_DEFAULT))
+    parser.add_argument("--db", default=str(DB_DEFAULT))
+    parser.add_argument("--window", type=int, default=None)
+    parser.add_argument("--only", default="")
+    parser.add_argument("--remote", action="store_true")
+    parser.add_argument("--json", dest="as_json", action="store_true")
+    parser.add_argument("--out", default=None)
+    parser.add_argument("--max-pages", type=int, default=50)
+    return parser
+
+
+def main(argv=None, out=None, err=None, now=None, opener=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    out = out if out is not None else sys.stdout
+    err = err if err is not None else sys.stderr
+
+    def log(message):
+        print(message, file=err)
+
+    try:
+        try:
+            args = build_parser(out=out, err=err).parse_args(argv)
+        except SystemExit as exc:
+            # --help exits 0, a usage error exits 2. Converted to a return
+            # so main never lets SystemExit escape except under __main__.
+            return exc.code if isinstance(exc.code, int) else 2
+
+        config = load_config(args.config)
+        window = config.window if args.window is None else args.window
+        if window < 0:
+            raise ConfigError("--window must not be negative")
+
+        enabled = [name for name in SOURCES if source_enabled(name, config)]
+
+        if args.command == "doctor":
+            print(f"config    {args.config}: ok, {len(config.lanes)} lane(s)", file=out)
+            print(f"database  {args.db}", file=out)
+            print(f"sources   {len(enabled)} enabled of {len(SOURCES)}", file=out)
+            print(f"window    {window} day(s)", file=out)
+            return 0
+
+        store = Store(args.db)
+
+        if args.command == "sources":
+            states = store.source_states()
+            if not states:
+                log("job-feeds: nothing fetched yet — run 'jfeeds fetch'")
+                return 0
+            for state in states:
+                print(f"{state['name']:<12}{state['status']:<11}"
+                      f"{state['last_fetch'] or '':<22}{state['row_count'] or 0:>6} rows  "
+                      f"{state['reason'] or ''}".rstrip(), file=out)
+            return 0
+
+        if args.command == "fetch":
+            wanted = {n.strip() for n in args.only.split(",") if n.strip()}
+            chosen = [SOURCES[n] for n in enabled if not wanted or n in wanted]
+            if not chosen:
+                raise ConfigError(
+                    "no sources selected — check --only against config 'sources'")
+            results = fetch_all(chosen, opener or http_open, RateLimiter(), store,
+                                now or datetime.now(timezone.utc), args.max_pages, window)
+            failed = []
+            for result in results:
+                store.record_source(
+                    result.name, result.status,
+                    f"etag:{result.etag}" if result.etag else result.reason,
+                    len(result.jobs), result.pages, now)
+                if result.jobs:
+                    store.upsert(result.jobs, now)
+                if result.status in ("failed", "degraded"):
+                    failed.append(result.name)
+                    log(f"job-feeds: {result.name}: {result.reason}")
+            log(f"job-feeds: {sum(len(r.jobs) for r in results)} row(s) "
+                f"from {len(results)} source(s)")
+            return 1 if failed else 0
+
+        rows = [row for row in store.select(window, now, args.remote)
+                if not is_excluded(row, config)]
+        for row in rows:
+            row["lanes"] = lanes_for(row, config)
+            row["highlight"] = is_highlighted(row, config)
+        rows = [row for row in rows if row["lanes"]]
+
+        if args.command == "digest":
+            if args.as_json:
+                # [] even on the common "nothing new" outcome, so a
+                # downstream jq always sees well-formed JSON.
+                print(json.dumps(rows, indent=2), file=out)
+            elif rows:
+                print(render_table(rows), file=out)
+            else:
+                log(f"job-feeds: nothing matched in the last {window} day(s)")
+            return 0
+
+        if args.command == "report":
+            from report import render_html
+            stamp = (now or datetime.now(timezone.utc)).strftime(STAMP)
+            document = render_html(rows, config, window, store.source_states(), stamp)
+            if args.out:
+                Path(args.out).write_text(document, encoding="utf-8")
+                log(f"job-feeds: wrote {args.out} ({len(rows)} row(s))")
+            else:
+                print(document, file=out)
+            return 0
+        return 2
+
+    except ConfigError as exc:
+        log(f"job-feeds: {exc}")
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
