@@ -1,0 +1,66 @@
+{
+  "skill_name": "job-feeds",
+  "note": "Offline behavioural eval. Run: uv run evals/grade.py (or python3 evals/grade.py -- the skill is stdlib-only). Exits non-zero on any failure. Fixtures are trimmed real payloads captured 2026-08-05 and live in scripts/tests/fixtures; no network is used. These assert the behaviours whose absence would be SILENT -- a source returning fewer rows, a duplicate quietly dropped, a rate limit forgotten -- rather than the ones that would crash loudly.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "schema-drift-rejects-wholesale",
+      "asserts": "a payload missing a required key yields status=degraded, zero rows, and a reason naming the field -- never a partial parse, which would read as a quiet day"
+    },
+    {
+      "id": 1,
+      "name": "healthy-fixtures-pass-their-own-schema",
+      "asserts": "every one of the eight real fixtures validates against its declared key set, so the drift guard cannot fire on healthy data"
+    },
+    {
+      "id": 2,
+      "name": "dedupe-collapses-cross-source",
+      "asserts": "the same posting from two boards with different location text collapses to one row and records also_seen_on"
+    },
+    {
+      "id": 3,
+      "name": "dedupe-preserves-distinct-cities",
+      "asserts": "the same title at the same company in two different cities stays two rows -- these are separate applications"
+    },
+    {
+      "id": 4,
+      "name": "first-seen-survives-refetch",
+      "asserts": "re-inserting a known job updates last_seen and leaves first_seen untouched"
+    },
+    {
+      "id": 5,
+      "name": "undated-rows-are-kept",
+      "asserts": "a row with no posted_at survives the window filter, because three sources publish no dates and a naive filter would delete them silently"
+    },
+    {
+      "id": 6,
+      "name": "ratelimit-fails-closed",
+      "asserts": "a missing ratelimit.json for a previously-polled source refuses the poll rather than assuming it never happened"
+    },
+    {
+      "id": 7,
+      "name": "backpressure-is-not-failure",
+      "asserts": "HTTP 429 yields status=throttled and records a backoff, so the next run waits instead of retrying into the same wall"
+    },
+    {
+      "id": 8,
+      "name": "report-escapes-hostile-input",
+      "asserts": "a title containing a script tag and a company containing both quote characters render escaped; the document holds exactly one script tag and no unquoted attributes"
+    },
+    {
+      "id": 9,
+      "name": "attribution-is-present",
+      "asserts": "a report containing a Remote OK row carries a dofollow remoteok.com link, which is a condition of API access"
+    },
+    {
+      "id": 10,
+      "name": "report-is-self-contained-and-deterministic",
+      "asserts": "no external asset references, and two renders of identical input are byte-identical"
+    },
+    {
+      "id": 11,
+      "name": "contacts-stripped-at-ingest",
+      "asserts": "no email address survives normalisation of any real fixture"
+    }
+  ]
+}

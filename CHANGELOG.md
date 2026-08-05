@@ -11,6 +11,50 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-08-05
+
+### Added — `job-feeds`
+
+**What:** aggregates eight sanctioned public job feeds into one deduplicated SQLite store,
+matches postings against career lanes you define, and renders a filterable self-contained HTML
+report. Sources: Arbeitnow, Jobicy, Remotive, Remote OK, Working Nomads, 4 Day Week, We Work
+Remotely and Python.org Jobs — weighted towards the German and EU-remote market.
+
+**When to reach for it:** monitoring job boards over time rather than searching once. Because it
+keeps a `first_seen` per posting, it answers the question the feeds themselves cannot — what is
+genuinely new since you last looked. Every feed returns a rolling window with no notion of
+newness, so without a local store each fetch looks like a fresh set of results.
+
+**What it deliberately won't do:**
+
+- **Scrape.** Only documented JSON APIs and RSS feeds. No HTML parsing, no sitemaps, no JS
+  rendering.
+- **Work around a block.** Two boards were dropped from the source list for this reason:
+  Himalayas returns 403 to any honestly-identified client despite its `robots.txt` saying
+  otherwise, and aijobs.net has no feed at its documented path. Spoofing a browser past either
+  would be circumventing an access control.
+- **Touch LinkedIn.** Different auth model, different risk, separate tool.
+- **Republish.** Personal aggregation only. In the EU the *sui generis* database right
+  (§§ 87a–87e UrhG) attaches to a substantial extract even though no individual posting is
+  copyrightable.
+- **Store recruiter contact details.** Emails and phone numbers are stripped at ingest, before
+  anything reaches disk.
+- **Strip attribution.** Remote OK requires a dofollow backlink as a condition of API access;
+  the report carries it.
+- **Invent data.** Three sources publish no dates at all; those rows render as `—`, never as
+  today.
+- **Rank or judge fit.** It matches your regexes and shows what matched.
+
+**Two design notes worth recording.** A source whose payload loses a required field is rejected
+*wholesale* and reported as `degraded`, rather than half-parsed — a partial parse yields rows
+full of silent nulls, which reads as a quiet day rather than a broken feed. And rate-limit state
+lives outside the database on purpose, so rebuilding `jobs.db` cannot make the tool forget it
+already polled.
+
+Standard library only, so `python3` works as a runner alongside `uv`. No API keys, no accounts.
+
+---
+
 ## 2026-07-29 (later)
 
 ### Added — `cv-evidence-base`, and a routing fork with `cv-and-human`
