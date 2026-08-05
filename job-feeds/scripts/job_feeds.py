@@ -17,6 +17,7 @@ third-party packages, so `python3` is a supported runner alongside `uv`.
 from __future__ import annotations
 
 import json
+import re
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -252,8 +253,36 @@ from sources import SOURCES, to_utc, validate_schema  # noqa: E402
 
 FetchResult = namedtuple("FetchResult", "name status reason jobs pages etag")
 
-USER_AGENT = ("job-feeds/0.1 (personal job-search aggregator; "
-              "+https://github.com/kevin-burns/claude-skills)")
+# Identifies the TOOL, never its author.
+#
+# This skill is installed and run by other people. A User-Agent naming the
+# author would attribute every downstream user's traffic to them: an
+# operator investigating abuse would find the wrong person, and the
+# author's account name would be broadcast from machines they have never
+# touched. That is a real leak, not a stylistic preference.
+#
+# Anonymity is not the goal -- unattributability is. An operator can still
+# see exactly what is calling them, and any user who wants to be reachable
+# can set `defaults.contact` in their own config.
+DEFAULT_USER_AGENT = "job-feeds/0.1 (job-search feed aggregator)"
+
+_HEADER_UNSAFE = re.compile(r"[\r\n\x00-\x1f\x7f]")
+
+
+def build_user_agent(contact=None):
+    """DEFAULT_USER_AGENT, plus an operator-supplied contact if configured.
+
+    The contact is sanitised because a config file is a file: it gets
+    copied between machines and pasted from the internet, and a CRLF in a
+    header value is header injection.
+    """
+    if not isinstance(contact, str) or not contact.strip():
+        return DEFAULT_USER_AGENT
+    cleaned = _HEADER_UNSAFE.sub(" ", contact).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)[:120]
+    if not cleaned:
+        return DEFAULT_USER_AGENT
+    return f"{DEFAULT_USER_AGENT[:-1]}; +{cleaned})"
 
 RSS_SOURCES = ("wwr", "pythonorg")
 
@@ -291,7 +320,7 @@ def _oldest_on_page(rows):
 
 
 def _fetch_one(source, opener, limiter, now, max_pages, window_days,
-               seen_before=False, stored_reason=""):
+               seen_before=False, stored_reason="", user_agent=DEFAULT_USER_AGENT):
     """Fetch one source. Takes plain values, never a Store.
 
     sqlite3 connections are bound to the thread that created them, so a
@@ -303,7 +332,7 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
     if not allowed:
         return FetchResult(source.name, "throttled", refusal, [], 0, None)
 
-    headers = {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"}
+    headers = {"User-Agent": user_agent, "Accept-Encoding": "identity"}
     if stored_reason.startswith("etag:"):
         headers["If-None-Match"] = stored_reason[len("etag:"):]
 
@@ -364,7 +393,7 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
 
 
 def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
-              max_pages=50, window_days=30):
+              max_pages=50, window_days=30, user_agent=DEFAULT_USER_AGENT):
     """Fetch every source concurrently, isolating failures per source.
 
     A source that raises never propagates: it becomes a `failed` result so
@@ -382,7 +411,8 @@ def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
     reasons = {state["name"]: (state["reason"] or "") for state in store.source_states()}
     with ThreadPoolExecutor(max_workers=min(8, len(sources))) as pool:
         futures = [pool.submit(_fetch_one, s, opener, limiter, now, max_pages,
-                               window_days, s.name in known, reasons.get(s.name, ""))
+                               window_days, s.name in known, reasons.get(s.name, ""),
+                               user_agent)
                    for s in sources]
         return [f.result() for f in futures]
 
@@ -392,12 +422,12 @@ def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
 # --------------------------------------------------------------------------
 
 import argparse  # noqa: E402
-import re  # noqa: E402
 import sys  # noqa: E402
 
 Lane = namedtuple("Lane", "name label pattern")
 Config = namedtuple(
-    "Config", "lanes highlight exclude_companies exclude_titles window sources")
+    "Config",
+    "lanes highlight exclude_companies exclude_titles window sources contact")
 
 
 def load_config(path):
@@ -458,7 +488,8 @@ def load_config(path):
         exclude_titles=tuple(t.lower() for t in defaults.get("exclude_title", [])
                              if isinstance(t, str)),
         window=window,
-        sources=raw.get("sources") or {})
+        sources=raw.get("sources") or {},
+        contact=defaults.get("contact"))
 
 
 def _haystack(job):
@@ -593,7 +624,8 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                 raise ConfigError(
                     "no sources selected — check --only against config 'sources'")
             results = fetch_all(chosen, opener or http_open, RateLimiter(), store,
-                                now or datetime.now(timezone.utc), args.max_pages, window)
+                                now or datetime.now(timezone.utc), args.max_pages,
+                                window, build_user_agent(config.contact))
             failed = []
             for result in results:
                 store.record_source(

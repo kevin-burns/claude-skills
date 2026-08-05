@@ -103,12 +103,34 @@ rejection, dedupe, backoff, escaping and attribution against recorded fixtures:
 python3 "$HOME/.claude/skills/job-feeds/evals/grade.py"
 ```
 
-Do **not** disguise the client to get more throughput. The User-Agent identifies the tool
-and links to its source so an operator can contact you rather than silently blocking you;
-a browser-shaped one evades the fair-use terms under which these feeds are handed out
-with no API key. If you are hitting limits, the fix is fewer requests — `--only`,
-`--max-pages`, and letting the cache do its job — not a different name on the same
-traffic.
+Do **not** disguise the client to get more throughput. A browser-shaped User-Agent evades
+the fair-use terms under which these feeds are handed out with no API key, and it does not
+work anyway: rate limits key on request volume, not on the name attached to it. If you are
+hitting limits the fix is fewer requests — `--only`, `--max-pages`, and letting the cache
+do its job.
+
+### Identifying yourself
+
+The default User-Agent names the **tool**, never its author:
+
+```
+job-feeds/0.1 (job-search feed aggregator)
+```
+
+That is deliberate. This skill is installed by other people, so an author-tagged agent
+would attribute every downstream user's traffic to one person — an operator investigating
+abuse would find the wrong party, and that person's account name would be broadcast from
+machines they have never touched.
+
+If **you** want to be reachable — worth doing if you poll often — set your own contact:
+
+```json
+{ "defaults": { "contact": "mailto:you@example.org" } }
+```
+
+which sends `job-feeds/0.1 (job-search feed aggregator; +mailto:you@example.org)`. It is
+optional, off by default, and yours alone. Control characters are stripped and the value
+is capped, because a header value containing CRLF is header injection.
 
 ## Configuration
 

@@ -1,8 +1,17 @@
 {
   "defaults": {
     "window": 14,
-    "exclude_company": ["randstad", "hays"],
-    "exclude_title": ["recruiter", "werkstudent", "praktikant", "intern"]
+    "contact": "",
+    "exclude_company": [
+      "randstad",
+      "hays"
+    ],
+    "exclude_title": [
+      "recruiter",
+      "werkstudent",
+      "praktikant",
+      "intern"
+    ]
   },
   "lanes": [
     {
@@ -36,13 +45,29 @@
     "cloud governance"
   ],
   "sources": {
-    "arbeitnow": { "enabled": true },
-    "jobicy": { "enabled": true },
-    "remotive": { "enabled": true },
-    "remoteok": { "enabled": true },
-    "nomads": { "enabled": true },
-    "4dayweek": { "enabled": true },
-    "wwr": { "enabled": true },
-    "pythonorg": { "enabled": true }
+    "arbeitnow": {
+      "enabled": true
+    },
+    "jobicy": {
+      "enabled": true
+    },
+    "remotive": {
+      "enabled": true
+    },
+    "remoteok": {
+      "enabled": true
+    },
+    "nomads": {
+      "enabled": true
+    },
+    "4dayweek": {
+      "enabled": true
+    },
+    "wwr": {
+      "enabled": true
+    },
+    "pythonorg": {
+      "enabled": true
+    }
   }
 }

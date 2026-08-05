@@ -260,5 +260,113 @@ class TestHttpOpenStatusMapping(unittest.TestCase):
                     self._open(code)
 
 
+class TestUserAgentCarriesNoPersonalData(unittest.TestCase):
+    """This skill is installed by other people. A User-Agent naming the
+    AUTHOR means every downstream user's traffic is attributed to them --
+    so an operator investigating abuse finds the wrong person, and the
+    author's identity is broadcast from machines they have never touched.
+
+    Identify the TOOL. Let each operator opt in to their own contact.
+    """
+
+    def test_the_default_names_no_person_or_account(self):
+        from job_feeds import DEFAULT_USER_AGENT
+        lowered = DEFAULT_USER_AGENT.lower()
+        for leak in ("kevin", "burns", "github.com/", "@", "mailto:"):
+            with self.subTest(leak=leak):
+                self.assertNotIn(leak, lowered,
+                                 f"default User-Agent leaks {leak!r}: {DEFAULT_USER_AGENT}")
+
+    def test_the_default_still_identifies_the_tool_and_version(self):
+        """Anonymous is not the goal -- unattributable is. An operator must
+        still be able to tell what is calling them."""
+        from job_feeds import DEFAULT_USER_AGENT
+        self.assertTrue(DEFAULT_USER_AGENT.startswith("job-feeds/"))
+        self.assertRegex(DEFAULT_USER_AGENT, r"job-feeds/\d+\.\d+")
+
+    def test_an_operator_can_add_their_own_contact(self):
+        from job_feeds import build_user_agent
+        agent = build_user_agent("mailto:someone@example.org")
+        self.assertIn("job-feeds/", agent)
+        self.assertIn("someone@example.org", agent)
+
+    def test_no_contact_configured_means_no_contact_fragment(self):
+        from job_feeds import DEFAULT_USER_AGENT, build_user_agent
+        self.assertEqual(build_user_agent(None), DEFAULT_USER_AGENT)
+        self.assertEqual(build_user_agent(""), DEFAULT_USER_AGENT)
+        self.assertEqual(build_user_agent("   "), DEFAULT_USER_AGENT)
+
+    def test_a_contact_cannot_inject_extra_headers(self):
+        """CRLF in a header value is header injection. The contact comes
+        from a config file, and config files get copied and pasted.
+
+        The invariant is that the result is a SINGLE LINE with no control
+        characters. Residual text like 'X-Injected: yes' surviving as inert
+        content inside the User-Agent is not a defect: once the CRLF is
+        gone it is a string, not a header. Asserting its absence would also
+        be wrong, since a legitimate contact contains a colon --
+        'mailto:you@example.org' is the primary use case.
+        """
+        from job_feeds import build_user_agent
+        # A NUL is included deliberately: the \s+ collapse further down
+        # already eats \r and \n, so a CRLF-only payload cannot detect
+        # _HEADER_UNSAFE being removed. NUL is not whitespace, so it can.
+        agent = build_user_agent("me@x.org\r\nX-Injected: yes\x00\x07")
+        self.assertNotIn("\r", agent)
+        self.assertNotIn("\n", agent)
+        self.assertEqual(len(agent.splitlines()), 1)
+        self.assertFalse(any(ord(c) < 32 or ord(c) == 127 for c in agent))
+
+    def test_a_normal_mailto_contact_survives_intact(self):
+        """Pins the sanitiser to control characters only. A colon is legal
+        and load-bearing here."""
+        from job_feeds import build_user_agent
+        self.assertIn("mailto:you@example.org",
+                      build_user_agent("mailto:you@example.org"))
+
+    def test_an_overlong_contact_is_truncated(self):
+        from job_feeds import build_user_agent
+        self.assertLess(len(build_user_agent("x" * 5000)), 200)
+
+    def test_the_configured_agent_is_what_actually_goes_on_the_wire(self):
+        """A build_user_agent nobody wires up is decoration."""
+        opener = FakeOpener({ARB: (200, arb_payload([arb_row(1)]), {})})
+        with tempfile.TemporaryDirectory() as tmp:
+            fetch_all([SOURCES["arbeitnow"]], opener,
+                      RateLimiter(Path(tmp) / "r.json"), Store(Path(tmp) / "j.db"),
+                      NOW, user_agent="job-feeds/9.9 (probe)")
+        self.assertEqual(opener.calls[0][1]["User-Agent"], "job-feeds/9.9 (probe)")
+
+
+class TestConfiguredContactReachesTheWire(unittest.TestCase):
+    """build_user_agent is only useful if main() actually wires it up.
+    Passing user_agent= directly to fetch_all proves the parameter works,
+    not that the config path does -- those are different claims."""
+
+    def _run(self, defaults):
+        import io
+
+        from job_feeds import main
+        opener = FakeOpener({ARB: (200, arb_payload([arb_row(1)]), {})})
+        with tempfile.TemporaryDirectory() as tmp:
+            config = Path(tmp) / "config.json"
+            config.write_text(json.dumps({
+                "defaults": defaults,
+                "lanes": [{"name": "p", "label": "P", "match": "engineer"}],
+                "sources": {name: {"enabled": name == "arbeitnow"} for name in SOURCES},
+            }), encoding="utf-8")
+            main(["fetch", "--config", str(config), "--db", str(Path(tmp) / "j.db")],
+                 out=io.StringIO(), err=io.StringIO(), now=NOW, opener=opener)
+        return opener.calls[0][1]["User-Agent"]
+
+    def test_a_configured_contact_appears_on_the_wire(self):
+        self.assertIn("mailto:you@example.org",
+                      self._run({"contact": "mailto:you@example.org"}))
+
+    def test_no_configured_contact_sends_the_bare_default(self):
+        from job_feeds import DEFAULT_USER_AGENT
+        self.assertEqual(self._run({}), DEFAULT_USER_AGENT)
+
+
 if __name__ == "__main__":
     unittest.main()
