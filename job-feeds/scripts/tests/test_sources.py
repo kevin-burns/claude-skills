@@ -121,6 +121,35 @@ class TestSourceSpecificTraps(unittest.TestCase):
         self.assertEqual(SOURCES["pythonorg"].normalise(item)["location"],
                          "Warsaw (fully remote), Poland")
 
+    def test_4dayweek_picks_the_PRIMARY_location_not_the_first(self):
+        """Synthesised, and it has to be: every real fixture row carries
+        exactly ONE location, so next(is_primary) and places[0] are
+        indistinguishable there and the selection is unguarded. A
+        multi-location row with the primary listed second is the only shape
+        that can tell them apart.
+        """
+        raw = {"id": "x", "title": "Platform Engineer", "url": "https://x/1",
+               "posted_at": "2026-08-05T00:00:00Z", "company": {"name": "Acme"},
+               "locations": [
+                   {"city": "Bengaluru", "country": "India", "is_primary": False},
+                   {"city": "Berlin", "country": "Germany", "is_primary": True},
+               ]}
+        job = SOURCES["4dayweek"].normalise(raw)
+        self.assertEqual(job["location"], "Berlin, Germany")
+
+    def test_4dayweek_falls_back_to_the_first_location_when_none_is_primary(self):
+        raw = {"id": "x", "title": "Platform Engineer", "url": "https://x/1",
+               "posted_at": "2026-08-05T00:00:00Z", "company": {"name": "Acme"},
+               "locations": [{"city": "Lisbon", "country": "Portugal"}]}
+        self.assertEqual(SOURCES["4dayweek"].normalise(raw)["location"],
+                         "Lisbon, Portugal")
+
+    def test_4dayweek_with_no_locations_at_all_is_not_a_crash(self):
+        raw = {"id": "x", "title": "Platform Engineer", "url": "https://x/1",
+               "posted_at": "2026-08-05T00:00:00Z", "company": {"name": "Acme"},
+               "locations": []}
+        self.assertIsNone(SOURCES["4dayweek"].normalise(raw)["location"])
+
     def test_4dayweek_reads_locations_plural_not_location(self):
         """4dayweek has no `location` key. It has `locations`, a list of
         dicts carrying an is_primary flag."""
