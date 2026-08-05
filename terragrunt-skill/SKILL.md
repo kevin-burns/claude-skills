@@ -118,9 +118,11 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 - `templates/stack/terragrunt.stack.hcl`, `templates/catalog/` — explicit stacks & catalog units
 - `templates/module/terragrunt.hcl` — standalone unit
 - `templates/backends/` — remote_state for S3/GCS/Azure, essential + advanced tiers.
-  **Azure caveat:** `azurerm` passes through to the native backend; Terragrunt does NOT
-  bootstrap/migrate/delete Azure storage — the account/container must pre-exist. Full
-  detail + gotchas in `references/azure-backend.md`.
+  **Azure caveat:** by default `azurerm` passes through to the native backend and
+  Terragrunt does NOT bootstrap/migrate/delete Azure storage, so the account/container
+  must pre-exist — which is what these templates assume. On **v1.1.2+ with
+  `--experiment azure-backend`** that reverses and Terragrunt does manage them. Establish
+  the version before advising; full detail in `references/azure-backend.md`.
 - `templates/providers/` — provider `generate` blocks (`aws-generate-provider.hcl`,
   `azure-generate-provider.hcl`). For Azure, `subscription_id` is **required** by
   `azurerm` provider v4+ — see `references/azure-backend.md`.
