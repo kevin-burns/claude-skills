@@ -1,12 +1,12 @@
 ---
 name: use-linearis
-description: Use when running Linear.app operations from the command line — creating, updating, archiving, listing, or filtering issues, setting project milestones, or wiring blocked-by relations via the `linearis` CLI (binaries `linear` and `linearis`, JSON output) instead of an MCP or the web UI. Triggers on any Linear issue/project/milestone task in a terminal, and on syncing Kevin's Ogham roadmap with its shared-memory database. Covers generic install/auth setup, the CLI's sharp edges, and the local ids.env split that keeps workspace identifiers out of the repo. Not a full reference — that's `linear <cmd> --help`.
+description: Use when running Linear.app operations from the command line — creating, updating, archiving, listing, or filtering issues, setting project milestones, or wiring blocked-by relations via the `linearis` CLI (binaries `linear` and `linearis`, JSON output) instead of an MCP or the web UI. Triggers on any Linear issue/project/milestone task in a terminal, and on syncing Kevin's Ogham roadmap with its shared-memory database. Covers generic install/auth setup, the CLI's sharp edges, and the local env.sh split that keeps workspace identifiers out of the repo. Not a full reference — that's `linear <cmd> --help`.
 license: MIT
 ---
 
 # use-linearis
 
-`linearis` is a Node CLI for Linear.app — JSON output, smart ID resolution, cursor pagination, built for LLM agents. It ships two identical binaries, `linear` and `linearis`. It is **not** an MCP: no tool schemas land in context, so every fresh session pays a discovery tax. This skill pays that tax up front — generic setup, the CLI's sharp edges, and the Ogham dogfooding workflow. It carries **no real workspace identifiers** — those live in a local `~/.config/linearis/ids.env` you source (see below).
+`linearis` is a Node CLI for Linear.app — JSON output, smart ID resolution, cursor pagination, built for LLM agents. It ships two identical binaries, `linear` and `linearis`. It is **not** an MCP: no tool schemas land in context, so every fresh session pays a discovery tax. This skill pays that tax up front — generic setup, the CLI's sharp edges, and the Ogham dogfooding workflow. It carries **no real workspace identifiers** — those live in a local `~/.config/dotfiles/env.sh` you source (see below).
 
 If Linear ships an official MCP with write support, migrate to it. Until then, `linearis` is the agent-shaped CLI.
 
@@ -80,14 +80,14 @@ linear --version; npm view linearis version    # drifted? re-verify 1-8 before r
 
 ---
 
-## Workspace identifiers — `~/.config/linearis/ids.env`
+## Workspace identifiers — `~/.config/dotfiles/env.sh`
 
 This skill is public and carries **no real IDs**. Team, project and milestone UUIDs are not credentials — nobody can act on them without your auth — but they describe a private tracker, so they live in a local file instead. Every example here uses obvious placeholders (`00000000-proj-…`, `abcdef012345`, `ENG-123`).
 
 **Do not resolve IDs by querying at session start.** That reinstates exactly the discovery tax this skill exists to remove, and burns calls against the complexity ceiling in gotcha 6. Source the file instead — zero API calls:
 
 ```bash
-source ~/.config/linearis/ids.env
+source ~/.config/dotfiles/env.sh
 linear issues list --project "$LINEAR_PROJECT_OGHAM" --limit 20
 ```
 
@@ -100,7 +100,7 @@ linear projects list --limit 20 | jq -r '.nodes[] | "\(.name)  \(.id)"'
 linear milestones list --project "<project-uuid>" | jq -r '.nodes[] | "\(.name)  \(.id)  \(.targetDate)"'
 ```
 
-then write the values into `ids.env` as exports and `chmod 600` it. The names this skill's recipes expect:
+then write the values into `env.sh` as exports and `chmod 600` it. The names this skill's recipes expect:
 
 | Variable | Holds |
 |---|---|
@@ -126,12 +126,12 @@ The reason to drive `linearis` from Claude Code rather than clicking Linear's we
 
 Ogham ships its own CLI — a Go binary, MCP client for the Ogham memory stack, JSON output by default. Source: <https://github.com/ogham-mcp/ogham-cli>.
 
-**Do not hardcode its path or assume its name.** The binary is `omcli` on some machines and `ogham` on others, and is sometimes only a checkout rather than on `PATH`. Worse, on machines running the Python MCP a bare `ogham` may resolve to *that* rather than the Go CLI. So resolve it — `ids.env` (above) exports `OGHAM_CLI` by trying `omcli` first, then `ogham`, then the known checkout locations, and leaves it empty rather than failing if nothing is found.
+**Do not hardcode its path or assume its name.** The binary is `omcli` on some machines and `ogham` on others, and is sometimes only a checkout rather than on `PATH`. Worse, on machines running the Python MCP a bare `ogham` may resolve to *that* rather than the Go CLI. So resolve it — `env.sh` (above) exports `OGHAM_CLI` by trying `omcli` first, then `ogham`, then the known checkout locations, and leaves it empty rather than failing if nothing is found.
 
 So when an agent picks up `ENG-114`:
 
 ```bash
-source ~/.config/linearis/ids.env
+source ~/.config/dotfiles/env.sh
 linear issues read ENG-114                          # durable: atomic spec, status, blocked-by
 "$OGHAM_CLI" search "typed edges store_triple"      # transient: design memory (hybrid vector+keyword)
 ```
@@ -147,8 +147,8 @@ Examples use the Ogham IDs above; swap `OGHAM`/`ENG`/milestone IDs for your own 
 **Create an atomic issue against a milestone**:
 
 ```bash
-source ~/.config/linearis/ids.env
-# milestone id comes from ids.env too
+source ~/.config/dotfiles/env.sh
+# milestone id comes from env.sh too
 linear issues create "[v0.16] <what>" \
   --team "$LINEAR_TEAM" --project "$LINEAR_PROJECT_OGHAM" --project-milestone "$LINEAR_MS_V0_16" \
   --labels "Feature" --priority 2 \
@@ -178,7 +178,7 @@ grep '"error"' "$OUT" || echo "clean"
 **Backfill a milestone across a range of issues**:
 
 ```bash
-# milestone id comes from ids.env too
+# milestone id comes from env.sh too
 for n in 109 110 111 112 113; do
   linear issues update "$LINEAR_TEAM-$n" --project-milestone "$LINEAR_MS_V0_16" | grep '"identifier"'
 done
