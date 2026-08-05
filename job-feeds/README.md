@@ -110,6 +110,13 @@ is the intended path: the lanes are regexes, and hand-writing them is the part m
 get wrong. `scripts/config.example.json` is there if you would rather edit JSON, but note
 it encodes one person's career and matches the wrong jobs unedited.
 
+Nothing is excluded by default. `exclude_company` and `exclude_title` both ship empty on
+purpose — a first run should show you what the feeds actually contain before it hides any
+of it. Once a firm you do not want has turned up three times, add its name; `jfeeds
+digest` then reports how many rows each rule removed, so an over-broad entry is visible
+rather than silently eating half your results. `SKILL.md` carries a reference list of
+common staffing intermediaries for when you want it.
+
 `jfeeds doctor` tells you if the config is missing or malformed before you fetch anything.
 
 See [`SKILL.md`](./SKILL.md) for the full field reference, the rules for writing lanes that

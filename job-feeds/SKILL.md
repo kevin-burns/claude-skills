@@ -72,6 +72,12 @@ Instead, ask them three questions and write the file yourself:
 3. **Anything to rule out?** Agencies, previous employers, seniority levels. These become
    `exclude_company` and `exclude_title` — plain case-insensitive substrings, not regex.
 
+   **Ask; do not assume.** Both lists ship empty on purpose. Excluding intermediaries is a
+   preference, not a correction — a contractor or a freelancer may want exactly the
+   marketplace postings someone else finds noise. If the user says they do want agencies
+   filtered, offer the reference list under [Common intermediaries](#common-intermediaries)
+   rather than making them recall names they have not seen yet.
+
 Then write `~/.config/job-feeds/config.json`, run `jfeeds doctor` to confirm it parses, and
 `jfeeds fetch && jfeeds digest` to show them real output. Tune the lanes against what comes
 back rather than in the abstract — a lane is only judgeable once you see what it catches.
@@ -246,17 +252,38 @@ is capped, because a header value containing CRLF is header injection.
   `jfeeds digest` reports how many rows each rule removed and which terms fired, so an
   over-broad entry is findable rather than silently eating half your results.
 
-  **On agencies specifically:** the shipped list names real marketplaces and
-  staff-augmentation firms — Proxify, Toptal, Turing, Lemon.io, Zartis, EPAM and others —
-  because they post under their own brand and read like direct employers. A substring like
-  `recruitment` never catches them, which is why the list, not a pattern, does the work.
+  **Both ship empty**, and that is deliberate. A fresh install should show you what the
+  feeds actually contain before anything is filtered out of them. Exclusions are a
+  reaction — you run it, notice the same firm four times, add the name, and the exclusion
+  report confirms it fired. Shipping someone else's conclusions inverts that: you would be
+  pre-filtering firms you have never seen, and a contractor may want precisely the
+  marketplace ads another user calls noise.
 
-  There is deliberately **no automatic agency detection**, and that is a measured decision
-  rather than a gap. Across 1,276 live rows no signal separated an intermediary from a
-  direct employer: "our client" appeared in 7% of known-agency ads and 4% of everything
-  else, and posting volume was dominated by genuine employers hiring hard. A heuristic
-  would be guesswork that silently drops real jobs. Add names as you meet them; the
-  exclusion report tells you when one starts working.
+  There is deliberately **no automatic agency detection** either, and that one is a
+  measured decision rather than a gap. Across 1,276 live rows no signal separated an
+  intermediary from a direct employer: "our client" appeared in 7% of known-agency ads and
+  4% of everything else, and posting volume was dominated by genuine employers hiring hard.
+  A heuristic would be guesswork that silently drops real jobs.
+
+  <a id="common-intermediaries"></a>
+  **Common intermediaries — a reference list, not a default.** These are marketplaces and
+  staff-augmentation firms that post under their *own* brand, so they read like direct
+  employers and a substring like `recruitment` never catches them. Offer this list when a
+  user asks to filter agencies; do not apply it unasked.
+
+  ```
+  randstad · hays · adecco · manpower · michael page · robert walters · robert half
+  experis · gulp · hunting heads · proxify · toptal · turing · lemon.io · andela
+  x-team · crossover · gun.io · arc.dev · zartis · globant · luxoft · epam
+  grid dynamics · distributed systems · scalable path · gigster
+  ```
+
+  Verified against live postings on 2026-08-05. It is a starting point, not a taxonomy —
+  the list any given user ends up with is the one they built from their own results.
+
+  For `exclude_title`, the terms that come up most often are `recruiter` (ads *for*
+  recruiters), and `werkstudent` / `praktikant` / `intern` on the German-weighted sources.
+  Same rule: useful to offer, wrong to assume.
 - **`sources`** — omit a source or set `enabled: false` to skip it.
 
 The `lanes` shape deliberately mirrors `li-assist`'s `archetypes.json`, so lane

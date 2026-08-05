@@ -539,17 +539,34 @@ class TestExclusionsAreVisible(ConfigCase):
                                  "--db", str(db))
         self.assertNotIn("excluded", err.lower())
 
-    def test_the_shipped_example_names_real_intermediaries(self):
-        """You cannot exclude names you do not know. The starter list is
-        the whole usability fix -- these are marketplaces and staff-aug
-        firms that post under their OWN name, so a substring like
-        'recruitment' never catches them."""
+    def test_the_shipped_example_excludes_nothing(self):
+        """A fresh install must show what the feeds contain before it hides
+        any of it. An earlier version shipped 27 company names -- one
+        person's accumulated annoyance -- so a stranger pre-filtered 27
+        firms before seeing a single job, including firms a contractor
+        would actively want. Exclusions are a reaction to results, so
+        there is nothing to react to yet on install."""
         example = json.loads(
             (Path(__file__).resolve().parents[1] / "config.example.json").read_text())
-        listed = {c.lower() for c in example["defaults"]["exclude_company"]}
-        for name in ("proxify", "turing", "toptal", "lemon.io", "zartis"):
+        defaults = example["defaults"]
+        self.assertEqual(defaults["exclude_company"], [],
+                         "the example must not pre-filter employers")
+        self.assertEqual(defaults["exclude_title"], [],
+                         "seniority is a preference too -- ask, do not assume")
+
+    def test_the_intermediary_names_survive_as_documentation(self):
+        """The paired half of the test above, and the reason they are
+        separate: emptying the config is only correct if the knowledge
+        moves rather than dies. You cannot exclude names you have not met,
+        and these firms post under their OWN brand, so no pattern finds
+        them. Deleting the reference list would leave the empty default
+        looking like an oversight."""
+        skill = (Path(__file__).resolve().parents[2] / "SKILL.md").read_text()
+        for name in ("proxify", "turing", "toptal", "lemon.io", "zartis", "randstad"):
             with self.subTest(company=name):
-                self.assertIn(name, listed)
+                self.assertIn(name, skill.lower())
+        self.assertIn("reference list, not a default", skill,
+                      "the list must be framed as optional, or it is a default again")
 
 
 if __name__ == "__main__":

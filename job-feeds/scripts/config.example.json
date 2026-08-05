@@ -2,41 +2,8 @@
   "defaults": {
     "window": 14,
     "contact": "",
-    "exclude_company": [
-      "randstad",
-      "hays",
-      "adecco",
-      "manpower",
-      "michael page",
-      "robert walters",
-      "robert half",
-      "experis",
-      "gulp",
-      "hunting heads",
-      "proxify",
-      "toptal",
-      "turing",
-      "lemon.io",
-      "andela",
-      "x-team",
-      "crossover",
-      "gun.io",
-      "arc.dev",
-      "zartis",
-      "globant",
-      "luxoft",
-      "epam",
-      "grid dynamics",
-      "distributed systems",
-      "scalable path",
-      "gigster"
-    ],
-    "exclude_title": [
-      "recruiter",
-      "werkstudent",
-      "praktikant",
-      "intern"
-    ]
+    "exclude_company": [],
+    "exclude_title": []
   },
   "lanes": [
     {
