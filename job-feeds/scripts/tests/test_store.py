@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from job_feeds import STAMP, RateLimiter  # noqa: E402
+from job_feeds import STAMP, RateLimiter, Store  # noqa: E402
 from sources import SOURCES  # noqa: E402
 
 NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
@@ -77,6 +77,103 @@ class TestRateLimiter(unittest.TestCase):
         fresh install does not accumulate empty state."""
         RateLimiter(self.path).record(SOURCES["arbeitnow"], NOW)
         self.assertFalse(self.path.exists())
+
+
+def job(company="Acme", title="Cloud Engineer", location="Berlin",
+        posted_at="2026-08-04T00:00:00Z", source="arbeitnow", url="https://x/1",
+        description="d", remote=True):
+    return {"title": title, "company": company, "location": location, "remote": remote,
+            "posted_at": posted_at, "url": url, "description": description,
+            "tags": [], "salary": None, "source": source}
+
+
+class TestStore(unittest.TestCase):
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.store = Store(Path(self._tmp.name) / "jobs.db")
+
+    def test_first_insert_counts_as_new(self):
+        self.assertEqual(self.store.upsert([job()], NOW), (1, 0))
+
+    def test_reinserting_the_same_job_is_seen_not_new(self):
+        self.store.upsert([job()], NOW)
+        self.assertEqual(self.store.upsert([job()], NOW + timedelta(days=1)), (0, 1))
+
+    def test_first_seen_is_preserved_on_reinsert(self):
+        """The reason SQLite is here at all. The feeds return a rolling
+        window with no notion of newness, so first_seen is the ONLY way to
+        answer "what appeared since I last looked"."""
+        self.store.upsert([job()], NOW)
+        self.store.upsert([job()], NOW + timedelta(days=3))
+        row = self.store.select(window_days=30, now=NOW + timedelta(days=3))[0]
+        self.assertEqual(row["first_seen"], NOW.strftime(STAMP))
+        self.assertEqual(row["last_seen"], (NOW + timedelta(days=3)).strftime(STAMP))
+
+    def test_the_same_job_from_two_sources_collapses_to_one_row(self):
+        self.store.upsert([job(source="remotive", url="https://a"),
+                           job(source="wwr", url="https://b")], NOW)
+        rows = self.store.select(window_days=30, now=NOW)
+        self.assertEqual(len(rows), 1)
+
+    def test_a_cross_source_duplicate_records_where_else_it_appeared(self):
+        """Surfacing "also on X" beats silently dropping the second copy --
+        the other listing may be the one worth applying through."""
+        self.store.upsert([job(source="remotive", url="https://a")], NOW)
+        self.store.upsert([job(source="wwr", url="https://b")], NOW)
+        self.assertEqual(self.store.select(30, NOW)[0]["also_seen_on"], "wwr")
+
+    def test_rows_outside_the_window_are_excluded(self):
+        self.store.upsert([job(posted_at="2026-06-01T00:00:00Z")], NOW)
+        self.assertEqual(self.store.select(window_days=14, now=NOW), [])
+
+    def test_undated_rows_are_kept_not_silently_dropped(self):
+        """python.org carries no dates at all, so a naive date filter would
+        delete that entire source without saying so."""
+        self.store.upsert([job(posted_at=None, source="pythonorg")], NOW)
+        rows = self.store.select(window_days=14, now=NOW)
+        self.assertEqual(len(rows), 1)
+        self.assertIsNone(rows[0]["posted_at"])
+
+    def test_remote_only_filters(self):
+        self.store.upsert([job(title="A", remote=True),
+                           job(title="B", remote=False)], NOW)
+        rows = self.store.select(30, NOW, remote_only=True)
+        self.assertEqual([r["title"] for r in rows], ["A"])
+
+    def test_rows_are_ordered_newest_first_with_undated_last(self):
+        self.store.upsert([job(title="old", posted_at="2026-08-01T00:00:00Z"),
+                           job(title="undated", posted_at=None),
+                           job(title="new", posted_at="2026-08-04T00:00:00Z")], NOW)
+        self.assertEqual([r["title"] for r in self.store.select(30, NOW)],
+                         ["new", "old", "undated"])
+
+    def test_source_state_records_the_reason_not_just_the_status(self):
+        """Two years on, "jobicy returned nothing" could be a rate limit, a
+        geo filter, a schema change or a swallowed exception."""
+        self.store.record_source("remotive", "degraded",
+                                 "schema-drift: missing publication_date", 0, 0, NOW)
+        state = {s["name"]: s for s in self.store.source_states()}["remotive"]
+        self.assertEqual(state["status"], "degraded")
+        self.assertIn("publication_date", state["reason"])
+
+    def test_recording_a_source_twice_updates_rather_than_duplicates(self):
+        self.store.record_source("jobicy", "ok", "", 5, 1, NOW)
+        self.store.record_source("jobicy", "throttled", "fair use", 0, 0, NOW)
+        states = [s for s in self.store.source_states() if s["name"] == "jobicy"]
+        self.assertEqual(len(states), 1)
+        self.assertEqual(states[0]["status"], "throttled")
+
+    def test_known_sources_reports_what_has_been_polled(self):
+        self.assertEqual(self.store.known_sources(), set())
+        self.store.record_source("jobicy", "ok", "", 5, 1, NOW)
+        self.assertEqual(self.store.known_sources(), {"jobicy"})
+
+    def test_a_reopened_database_keeps_its_rows(self):
+        path = Path(self._tmp.name) / "persist.db"
+        Store(path).upsert([job()], NOW)
+        self.assertEqual(len(Store(path).select(30, NOW)), 1)
 
 
 if __name__ == "__main__":
