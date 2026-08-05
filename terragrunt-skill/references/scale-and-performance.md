@@ -109,6 +109,16 @@ downloads/stores each provider exactly once across all units.
 
 - Enable: `--provider-cache` flag, or `TG_PROVIDER_CACHE=1`. Tune with `--provider-cache-dir`,
   `--provider-cache-registry-names`.
+- **Require v1.1.2+ if the cache server can reach a private registry.** Before v1.1.2 the
+  endpoint that downloads provider archives was the only one on the cache server that did
+  not require the token generated for the run — and that endpoint attaches whatever registry
+  credentials are configured for the upstream host. Any other process on the same machine
+  could therefore drive a running cache server to pull artifacts from a private registry
+  using the credentials of whoever started the run. This matters most where the blast radius
+  is largest: a shared CI runner, or a workstation running anything untrusted. v1.1.2 puts a
+  secret path segment (regenerated per server start, redacted from the server's own logs)
+  into the URLs handed to OpenTofu/Terraform; requests without it get a 404. No config change
+  is needed — the fix is the upgrade.
 - **Do NOT set `TF_PLUGIN_CACHE_DIR` yourself with `run --all`** — OpenTofu/Terraform's
   built-in plugin cache is not concurrency-safe, and parallel units corrupt it
   (`Error: Failed to install provider`). Let Terragrunt manage caching. On OpenTofu ≥ 1.10,
@@ -218,7 +228,8 @@ performance techniques here don't require it.
 - performance troubleshooting: https://docs.terragrunt.com/troubleshooting/performance/
 - provider cache server: https://docs.terragrunt.com/features/provider-cache-server/
 - CAS: https://docs.terragrunt.com/features/caching/cas/
-- experiments — cas / mark-many-as-read / opt-out-auth / dag-queue-display / stack-dependencies / catalog-redesign graduated to GA in v1.1.0. Ten were still active as of v1.1.1: azure-backend, deep-merge, dependency-fetch-output-from-state, hook-context-env, iac-engine, oci, optional-hooks, slow-task-reporting, symlinks, version-attribute (oci and version-attribute are new in v1.1.1). Authoritative list: https://docs.terragrunt.com/reference/experiments/active
+- experiments — cas / mark-many-as-read / opt-out-auth / dag-queue-display / stack-dependencies / catalog-redesign graduated to GA in v1.1.0. Twelve active as of v1.1.2: azure-backend, deep-merge, dependency-fetch-output-from-state, hook-context-env, iac-engine, oci, optional-hooks, otel-logs, profiling, slow-task-reporting, symlinks, version-attribute (oci and version-attribute new in v1.1.1; otel-logs and profiling new in v1.1.2, and v1.1.2 also made azure-backend functional — see azure-backend.md). Authoritative list: https://docs.terragrunt.com/reference/experiments/active
 - v1.1.0 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.0
 - v1.1.1 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.1
+- v1.1.2 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.2 — provider cache server download endpoint now requires the run's secret path segment; `find_in_parent_folders()` 7–10x faster; local-source hashing honours `include_in_copy`/`exclude_from_copy` so uncopied files no longer force a re-init
 - run command flags & exit codes: https://docs.terragrunt.com/reference/cli/commands/run/

@@ -1,7 +1,7 @@
 # Terragrunt HCL Block Reference
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01) and updated for **v1.1.1** (2026-07-14). Flag and avoid any pre-1.0 idioms.
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01), updated for **v1.1.1** (2026-07-14), then reviewed against the **v1.1.2** release notes (2026-07-29) on 2026-08-05 — one change: `iam_role` carries a v1.1.1 regression warning (see `## BLOCK: iam_role`). Flag and avoid any pre-1.0 idioms.
 
 Lookup: `grep -n '^## BLOCK:' hcl-blocks.md`
 
@@ -286,6 +286,17 @@ iam_role = "<role_arn>"
 ```hcl
 iam_role = "arn:aws:iam::${local.account_id}:role/TerraformDeployRole"
 ```
+
+**Broken on v1.1.1 — avoid that exact version.** Where static AWS credentials are supplied
+*and* a role is configured (this attribute, `--iam-assume-role`, or `TG_IAM_ASSUME_ROLE`),
+v1.1.1 made backend operations such as state-bucket bootstrapping perform a second role
+assumption of their own. The run was already using the role session by then, so the role
+tried to assume itself and AWS rejected it with `AccessDenied` unless the trust policy
+happened to name the role itself. Fixed in v1.1.2, which reuses the session assumed at the
+start of the run, as v1.1.0 and earlier did. Worth recognising because the error names a
+trust-policy problem and invites you to go and edit the trust policy — the fix is the
+upgrade. Does **not** affect `remote_state`'s `assume_role`: roles configured there are
+backend-specific and are still assumed on top of the supplied credentials.
 
 Related: iam_assume_role_duration, iam_assume_role_session_name
 
@@ -641,7 +652,7 @@ terraform { ... }
 **Attributes:**
 - `source` (string, required): The source URL for the Terraform module. Supports local paths, Git URLs, S3, GCS, and Terraform Registry.
 - `version` (string): **Experiment `version-attribute`, v1.1.1+.** Resolves a `tfr://` registry module by version constraint instead of pinning an exact version in the source URL. Not available without the experiment flag — see below.
-- `include_in_copy` (list): List of glob patterns for additional files to copy to the Terraform working directory.
+- `include_in_copy` (list): List of glob patterns for additional files to copy to the Terraform working directory. **v1.1.2 note:** for a *local* `source`, Terragrunt decides whether its cached copy is stale by hashing the source directory. Before v1.1.2 that hash covered every file in the directory — hidden files and `exclude_from_copy` matches included — so creating or touching a file that is never copied (an editor swap file, a scratch note) forced a needless re-copy and auto-init on the next run. The hash now covers only the files a copy would actually deliver, honouring the default hidden-file rule alongside `include_in_copy` and `exclude_from_copy`.
 - `extra_arguments` (block): Nested block to pass additional CLI arguments to specific Terraform commands.
 - `before_hook` (block): Nested block to execute commands before Terraform runs.
 - `after_hook` (block): Nested block to execute commands after Terraform runs.

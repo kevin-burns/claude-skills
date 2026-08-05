@@ -60,13 +60,16 @@ Automatically provisions the backend resources needed for remote state storage �
 **but only for the backends Terragrunt natively manages: S3 (bucket + optional
 DynamoDB lock table + access-logging bucket) and GCS (bucket).**
 
-> **Azure (azurerm) is NOT bootstrapped.** Azure support is gated behind the
-> `azure-backend` experiment, which currently does not change behavior — Terragrunt
-> does **not** create, migrate, or delete Azure storage accounts/containers. The
-> `azurerm` backend is passed through to OpenTofu/Terraform as-is, so the storage
-> account and blob container must already exist (create them with `az`, Bicep, or a
-> separate bootstrap unit). Do not tell users `backend bootstrap` provisions Azure
-> state. Ref: references/azure-backend.md ·
+> **Azure (azurerm): depends on version AND experiment — ask before advising.**
+> By default, and on anything below **v1.1.2**, Terragrunt does **not** create,
+> migrate or delete Azure storage accounts/containers; the `azurerm` backend is
+> passed through to OpenTofu/Terraform as-is, so the storage account and blob
+> container must already exist (create them with `az`, Bicep, or a separate
+> bootstrap unit). On **v1.1.2+ with `--experiment azure-backend`** this reverses:
+> Terragrunt bootstraps the resource group, storage account and container, detects
+> whether bootstrapping is needed, converges versioning/soft-delete, and deletes or
+> migrates state blobs within the same account. Still opt-in and still an
+> experiment. Ref: references/azure-backend.md ·
 > https://docs.terragrunt.com/reference/experiments/active
 
 **Options:**

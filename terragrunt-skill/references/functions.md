@@ -1,7 +1,7 @@
 # Terragrunt Built-in Functions
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01); reviewed against the **v1.1.1** release notes (2026-07-14) on 2026-07-29 with no changes required — v1.1.1 was bug-fix only, and its two new experiments touch the `terraform` block (see hcl-blocks.md). Flag and avoid any pre-1.0 idioms.
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01); reviewed against the **v1.1.1** release notes (2026-07-14) on 2026-07-29 with no changes required — v1.1.1 was bug-fix only, and its two new experiments touch the `terraform` block (see hcl-blocks.md). Reviewed against the **v1.1.2** release notes (2026-07-29) on 2026-08-05, again with no changes required: v1.1.2 made `find_in_parent_folders()` 7–10x faster by checking only the filename the call names rather than also probing for default config filenames at every level, but its signature, parameters and documented behaviour are unchanged. Nothing in this file claimed a cost for it, so nothing needed retracting. Flag and avoid any pre-1.0 idioms.
 
 Lookup: `grep -n '^## FUNCTION:' functions.md` to list; `grep -A 30 '^## FUNCTION: get_env' functions.md` to read one.
 

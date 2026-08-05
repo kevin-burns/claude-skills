@@ -20,7 +20,7 @@ read ONLY the listed reference(s), then act. References are grep-friendly — pr
 2. **Fact-based generation.** Every generated pattern must trace to a documented Gruntwork
    pattern (references here carry doc links to docs.terragrunt.com). Don't invent layouts.
 3. **Knowledge freshness.** Embedded references were verified against Terragrunt 1.x
-   (current stable **v1.1.1**, released 2026-07-14). **v1.1.0 graduated six experiments to
+   (current stable **v1.1.2**, released 2026-07-29). **v1.1.0 graduated six experiments to
    GA** — `stack-dependencies`, `cas`, `catalog-redesign`, `mark-many-as-read`,
    `opt-out-auth`, `dag-queue-display` — so their features are now **enabled by default**;
    passing the old `--experiment`/`TG_EXPERIMENT` value only prints a "completed experiment"
@@ -35,10 +35,29 @@ read ONLY the listed reference(s), then act. References are grep-friendly — pr
    gating rules are in `references/hcl-blocks.md` under `## BLOCK: terraform`. v1.1.1 was
    otherwise a bug-fix release — it introduced no new GA surface.
 
-   **Experiments are not a short list.** Alongside the two above, `azure-backend`,
-   `deep-merge`, `dependency-fetch-output-from-state`, `hook-context-env`, `iac-engine`,
-   `optional-hooks`, `slow-task-reporting` and `symlinks` were all still active experiments as
-   of v1.1.1. These references cover only some of them, so an unfamiliar `--experiment` value
+   **v1.1.2 added no new GA surface either, but two of its fixes change what to advise.**
+   Recommend **v1.1.2+** rather than v1.1.1 wherever either applies:
+   - The **provider cache server**'s archive-download endpoint did not require the run's
+     token before v1.1.2, so another local process could use a running cache server to pull
+     from a private registry with the starting user's registry credentials. Relevant on
+     shared CI runners. See `references/scale-and-performance.md`.
+   - **v1.1.1 specifically broke `iam_role`** (and `--iam-assume-role` / `TG_IAM_ASSUME_ROLE`)
+     when combined with static AWS credentials: backend operations assumed the role a second
+     time, so it tried to assume itself and AWS returned `AccessDenied`. The error points at
+     the trust policy, but editing the trust policy is the wrong fix — upgrading is. See
+     `references/hcl-blocks.md` under `## BLOCK: iam_role`.
+
+   **Experiments are not a short list, and they move in patch releases.** Alongside the two
+   above, `azure-backend`, `deep-merge`, `dependency-fetch-output-from-state`,
+   `hook-context-env`, `iac-engine`, `optional-hooks`, `slow-task-reporting` and `symlinks`
+   were active as of v1.1.1, and **v1.1.2 added `otel-logs`** (OpenTelemetry logs signal via
+   `TG_TELEMETRY_LOGS_EXPORTER`) **and `profiling`** (pprof CPU/heap/goroutine collection for
+   debugging Terragrunt itself, not the infrastructure it manages) — twelve active as of
+   v1.1.2. v1.1.2 also changed two existing ones: `azure-backend` went from inert to
+   functional (see `references/azure-backend.md` — this reverses a long-standing "Terragrunt
+   never bootstraps Azure state" rule), and `oci` gained CAS caching plus Docker
+   credential-helper auth. These references cover only some of them, so an unfamiliar
+   `--experiment` value
    is not evidence that it is wrong — look it up rather than flagging it. For anything newer,
    niche, or not found in the references, use the C7 search skill (Context7) or fetch
    docs.terragrunt.com directly — do not guess.
@@ -82,7 +101,8 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
   `## COMPARISON:` (e.g. dependency vs dependencies) and `## DECISION:` guides
 - `references/advanced-examples.md` — 21 worked examples. `grep '^## EXAMPLE:'`
 - `references/azure-backend.md` — Azure (`azurerm`) remote state + provider setup and
-  gotchas: Terragrunt does NOT bootstrap Azure, backend key list, auth methods,
+  gotchas: whether Terragrunt bootstraps Azure depends on version + experiment
+  (no by default, yes on v1.1.2+ with `--experiment azure-backend`), backend key list, auth methods,
   `use_azuread_auth`/Entra ID, provider v4 `subscription_id`, RBAC + shared-key gotchas,
   OIDC for CI. Read this for ANY Azure backend/provider task.
 - `references/scale-and-performance.md` — running only changed units/stacks at scale:
