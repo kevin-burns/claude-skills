@@ -424,7 +424,7 @@ def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
 import argparse  # noqa: E402
 import sys  # noqa: E402
 
-Lane = namedtuple("Lane", "name label pattern")
+Lane = namedtuple("Lane", "name label pattern title_only")
 Config = namedtuple(
     "Config",
     "lanes highlight exclude_companies exclude_titles window sources contact")
@@ -467,7 +467,14 @@ def load_config(path):
         except re.error as exc:
             raise ConfigError(
                 f"lane '{entry['name']}' has an invalid match regex: {exc}") from None
-        lanes.append(Lane(entry["name"], entry["label"], pattern))
+        scope = entry.get("match_in", "title+description")
+        if scope not in ("title", "title+description"):
+            # Falling back silently would make a typo look like a lane that
+            # simply stopped matching -- the hardest kind of bug to notice.
+            raise ConfigError(
+                f"lane '{entry['name']}' has an unknown match_in {scope!r} "
+                f"(expected 'title' or 'title+description')")
+        lanes.append(Lane(entry["name"], entry["label"], pattern, scope == "title"))
 
     names = [lane.name for lane in lanes]
     duplicates = sorted({n for n in names if names.count(n) > 1})
@@ -492,15 +499,26 @@ def load_config(path):
         contact=defaults.get("contact"))
 
 
-def _haystack(job):
-    parts = (job.get("title"), job.get("description"))
+def _haystack(job, title_only=False):
+    parts = (job.get("title"),) if title_only else (job.get("title"), job.get("description"))
     return " ".join(p for p in parts if isinstance(p, str)).lower()
 
 
 def lanes_for(job, config):
-    """Labels of every lane this job matches -- a job can belong to several."""
-    haystack = _haystack(job)
-    return [lane.label for lane in config.lanes if lane.pattern.search(haystack)]
+    """Labels of every lane this job matches -- a job can belong to several.
+
+    Scope is per lane. Measured on 229 live rows: of twelve Platform-lane
+    hits, all four TITLE matches were right and all eight DESCRIPTION
+    matches were wrong -- discipline lists, "e.g., Systems Engineer"
+    asides, section headings. Role identity lives in the title; a
+    description lists everything a candidate might ever touch.
+
+    The default still searches both, because some lanes genuinely want it:
+    spotting Terragrunt in the body of an otherwise generic "Senior
+    Engineer" ad is exactly the catch worth having.
+    """
+    return [lane.label for lane in config.lanes
+            if lane.pattern.search(_haystack(job, lane.title_only))]
 
 
 def is_excluded(job, config):

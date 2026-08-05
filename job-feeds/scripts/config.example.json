@@ -17,22 +17,26 @@
     {
       "name": "platform",
       "label": "Platform",
-      "match": "platform engineer|terraform|terragrunt|kubernetes|landing zone|finops|\\bsre\\b|site reliability"
+      "match": "\\b(platform|infrastructure|devops|cloud|systems|reliability)\\s*(engineer|architect|lead|manager)\\b|\\bsre\\b|\\bdevops\\b|terragrunt|landing zone|finops",
+      "match_in": "title"
     },
     {
       "name": "em",
       "label": "EM",
-      "match": "engineering manager|tech lead|team lead|head of engineering|director of engineering"
+      "match": "engineering manager|tech lead|team lead|head of engineering|director of engineering",
+      "match_in": "title"
     },
     {
       "name": "fde",
       "label": "FDE",
-      "match": "forward deployed|solutions engineer|solutions architect|customer engineer"
+      "match": "forward deployed|solutions engineer|solutions architect|customer engineer",
+      "match_in": "title"
     },
     {
       "name": "ai",
       "label": "AI",
-      "match": "\\b(ai|ml)\\s*(engineer|scientist|architect|lead)\\b|machine learning engineer|\\bllm\\b|agentic|\\bmcp\\b|\\brag\\b|generative ai|applied (ai|ml)"
+      "match": "\\b(ai|ml)\\s*(engineer|scientist|architect|lead)\\b|machine learning engineer|\\bllm\\b|agentic|\\bmcp\\b|\\brag\\b|generative ai|applied (ai|ml)",
+      "match_in": "title"
     }
   ],
   "highlight": [

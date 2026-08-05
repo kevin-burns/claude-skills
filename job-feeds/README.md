@@ -36,6 +36,12 @@ jfeeds sources                  # per-source status and why
 regexes are what decide whether the output is useful or noise. Start narrow. A lane like
 `\bai\b` will match a startling number of jobs that merely mention AI in passing.
 
+**Set `"match_in": "title"` on role-shaped lanes.** On a real run, every one of the
+Platform lane's description matches was wrong — agency ads listing every discipline they
+staff, services blurbs, section headings — while every title match was right. Role
+identity lives in the title. Leave the default where you want the body searched, such as
+catching a niche tool named deep in an otherwise generic ad.
+
 **Run `fetch` occasionally, `digest` freely.** Fetching is rate-limited and polite;
 reading is free. `digest` and `report` make zero network calls, so re-run them as often
 as you like.

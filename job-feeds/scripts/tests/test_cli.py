@@ -246,5 +246,68 @@ class TestDocDrift(unittest.TestCase):
         self.assertEqual(documented - known, set())
 
 
+class TestLaneMatchScope(unittest.TestCase):
+    """Measured on 229 live rows, 2026-08-05: of twelve Platform-lane hits,
+    all four TITLE matches were correct and all eight DESCRIPTION matches
+    were wrong -- Lemon.io boilerplate listing every discipline, a "Finance,
+    Project Management, DevOps, Data" services blurb, an "e.g., Systems
+    Engineer" aside, a section heading. Two rounds of regex tightening did
+    not fix it, because the problem is not the pattern: role identity lives
+    in the title, while descriptions list everything a candidate might ever
+    touch.
+
+    So a lane can declare its match scope. Default stays title+description
+    -- some lanes genuinely want it, e.g. spotting Terragrunt in the body
+    of an otherwise generic "Senior Engineer" ad.
+    """
+
+    def config_with(self, **lane_extra):
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        data["lanes"] = [dict({"name": "platform", "label": "Platform",
+                               "match": "devops"}, **lane_extra)]
+        return load_config(self.write(data))
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.tmp = Path(self._tmp.name)
+
+    def write(self, data, name="c.json"):
+        path = self.tmp / name
+        path.write_text(json.dumps(data), encoding="utf-8")
+        return path
+
+    JOB = {"title": "C++ Developer",
+           "description": "We work across Finance, Project Management, DevOps, Data."}
+
+    def test_default_scope_still_searches_the_description(self):
+        self.assertEqual(lanes_for(self.JOB, self.config_with()), ["Platform"])
+
+    def test_title_only_scope_ignores_the_description(self):
+        config = self.config_with(match_in="title")
+        self.assertEqual(lanes_for(self.JOB, config), [])
+
+    def test_title_only_still_matches_a_real_title(self):
+        config = self.config_with(match_in="title")
+        job = {"title": "Senior DevOps Engineer", "description": "nothing relevant"}
+        self.assertEqual(lanes_for(job, config), ["Platform"])
+
+    def test_an_unknown_match_in_value_is_a_config_error(self):
+        """Silently falling back would make a typo look like a lane that
+        simply stopped matching."""
+        with self.assertRaises(ConfigError) as caught:
+            self.config_with(match_in="titel")
+        self.assertIn("titel", str(caught.exception))
+        self.assertIn("platform", str(caught.exception))
+
+    def test_scope_is_per_lane_not_global(self):
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        data["lanes"] = [
+            {"name": "a", "label": "TitleOnly", "match": "devops", "match_in": "title"},
+            {"name": "b", "label": "Both", "match": "devops"},
+        ]
+        self.assertEqual(lanes_for(self.JOB, load_config(self.write(data))), ["Both"])
+
+
 if __name__ == "__main__":
     unittest.main()

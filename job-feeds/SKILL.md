@@ -152,8 +152,20 @@ is capped, because a header value containing CRLF is header injection.
 }
 ```
 
-- **`lanes`** — a job is shown only if it matches at least one lane's `match` regex,
-  tested against title *and* description. A job can match several; all are shown.
+- **`lanes`** — a job is shown only if it matches at least one lane's `match` regex. A job
+  can match several; all are shown.
+- **`match_in`** (per lane) — `"title"` or `"title+description"` (the default).
+
+  **Use `"title"` for role-shaped lanes.** Measured on 229 live rows: of twelve
+  Platform-lane hits, all four *title* matches were right and all eight *description*
+  matches were wrong — an agency ad listing every discipline it staffs, a "Finance,
+  Project Management, DevOps, Data" services blurb, an "e.g., Systems Engineer" aside, a
+  section heading. Role identity lives in the title; a description lists everything a
+  candidate might ever touch. Two rounds of regex tightening did not fix that, because it
+  is not a regex problem.
+
+  Keep the default when the *body* carries the signal you want — spotting `terragrunt` in
+  an otherwise generic "Senior Engineer" ad is exactly the catch worth having.
 - **`highlight`** — terms that star a row. They do not filter.
 - **`exclude_company` / `exclude_title`** — plain case-insensitive substrings, not regex.
 - **`sources`** — omit a source or set `enabled: false` to skip it.
