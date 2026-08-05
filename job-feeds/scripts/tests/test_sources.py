@@ -13,7 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from sources import SOURCES, strip_contacts, validate_schema  # noqa: E402
+from sources import (  # noqa: E402
+    SOURCES, clean_text, strip_contacts, validate_schema)
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 RSS_SOURCES = ("wwr", "pythonorg")
@@ -232,6 +233,62 @@ class TestSchemaDrift(unittest.TestCase):
                 source, payload = load(name)
                 _, reason = validate_schema(source, source.rows(payload))
                 self.assertIsNone(reason, f"{name}: {reason}")
+
+
+class TestCleanText(unittest.TestCase):
+    """Two upstream data defects, both observed live on 2026-08-05 in the
+    Remote OK payload, both of which reach the report as visible garbage."""
+
+    def test_html_entities_are_decoded(self):
+        """Remote OK ships HTML-escaped text: 'Food &amp; Beverage
+        Positions'. Stored raw it renders as '&amp;' on the page, because
+        the report escapes it a second time."""
+        self.assertEqual(clean_text("Food &amp; Beverage"), "Food & Beverage")
+        self.assertEqual(clean_text("Caf&eacute; &#8212; Berlin"), "Café — Berlin")
+
+    def test_double_encoded_utf8_is_repaired(self):
+        """Remote OK double-encodes non-Latin locations: UTF-8 bytes decoded
+        as Latin-1 and re-encoded. Verified recoverable by round trip."""
+        self.assertEqual(clean_text("Ø¯Ø¨Ù\x8a"), "دبي")
+        self.assertEqual(clean_text("Launch â\x80\x94 99 Seconds"), "Launch — 99 Seconds")
+
+    def test_legitimate_non_ascii_is_NOT_corrupted(self):
+        """The guard that makes the repair safe. A blind latin-1 round trip
+        would mangle Nordic and German names; these must fail it and be
+        left exactly as they are."""
+        for text in ("Ørsted", "Ålesund, Norway", "München, Germany", "Zürich",
+                     "Café", "naïve — dash", "دبي", "東京"):
+            with self.subTest(text=text):
+                self.assertEqual(clean_text(text), text)
+
+    def test_plain_ascii_is_unchanged(self):
+        self.assertEqual(clean_text("San Francisco, United States"),
+                         "San Francisco, United States")
+
+    def test_none_and_empty_are_safe(self):
+        self.assertIsNone(clean_text(None))
+        self.assertEqual(clean_text(""), "")
+
+    def test_entities_are_decoded_in_real_fixture_titles(self):
+        """Applied by the normalisers, not merely available to them."""
+        for name in SOURCES:
+            with self.subTest(source=name):
+                source, payload = load(name)
+                for raw in source.rows(payload):
+                    job = source.normalise(raw)
+                    for field in ("title", "company", "location"):
+                        value = job[field] or ""
+                        self.assertNotIn("&amp;", value)
+                        self.assertNotIn("&#", value)
+
+    def test_no_mojibake_survives_in_real_fixtures(self):
+        for name in SOURCES:
+            with self.subTest(source=name):
+                source, payload = load(name)
+                for raw in source.rows(payload):
+                    location = source.normalise(raw)["location"] or ""
+                    self.assertNotIn("Ã", location)
+                    self.assertNotIn("Ø¯Ø¨", location)
 
 
 if __name__ == "__main__":

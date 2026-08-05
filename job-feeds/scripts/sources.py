@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import datetime as dt
 import email.utils
+import html
 import re
 
 _DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -165,6 +166,34 @@ def strip_contacts(text):
     return _PHONE.sub(_REDACTED, _EMAIL.sub(_REDACTED, text))
 
 
+def clean_text(text):
+    """Repair two upstream data defects, both observed live 2026-08-05.
+
+    1. Double-encoded UTF-8. Remote OK serves locations whose UTF-8 bytes
+       were decoded as Latin-1 and re-encoded, so 'دبي' arrives as 'Ø¯Ø¨Ù'.
+       The round trip recovers it exactly.
+
+       The safety of that repair rests entirely on the round trip FAILING
+       for legitimate text: 'Ørsted' encodes to Latin-1 fine but 0xD8
+       followed by 'r' is not valid UTF-8, so it raises and is left alone.
+       Verified against Ørsted, Ålesund, München, Zürich, Café, naïve,
+       correctly-encoded Arabic and Japanese -- none is touched.
+
+    2. HTML entities. Remote OK ships 'Food &amp; Beverage'. Stored raw it
+       renders as '&amp;' on the page, because the report escapes it a
+       second time. Unescaping here is safe precisely because the report
+       escapes on output: a title containing '&lt;script&gt;' becomes
+       '<script>' in the store and is escaped straight back when rendered.
+    """
+    if not isinstance(text, str) or not text:
+        return text
+    try:
+        repaired = text.encode("latin-1").decode("utf-8")
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        repaired = text
+    return html.unescape(repaired)
+
+
 def _text(item, tag):
     return (item.findtext(tag) or "").strip()
 
@@ -174,15 +203,18 @@ def _first_line(text):
 
 
 def _job(title, company, location, remote, posted_at, url, description, tags, salary=None):
-    return {"title": (title or "").strip() or None,
-            "company": (company or "").strip() or None,
-            "location": (location or "").strip() or None if isinstance(location, str)
-            else location,
+    def field(value):
+        cleaned = clean_text(value) if isinstance(value, str) else value
+        return (cleaned or "").strip() or None if isinstance(cleaned, str) else cleaned
+
+    return {"title": field(title),
+            "company": field(company),
+            "location": field(location),
             "remote": remote,
             "posted_at": posted_at,
             "url": (url or "").strip() or None,
-            "description": strip_contacts(description),
-            "tags": [t for t in (tags or []) if isinstance(t, str)],
+            "description": strip_contacts(clean_text(description)),
+            "tags": [clean_text(t) for t in (tags or []) if isinstance(t, str)],
             "salary": salary}
 
 

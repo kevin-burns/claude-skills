@@ -32,7 +32,7 @@
     {
       "name": "ai",
       "label": "AI",
-      "match": "\\bai\\b|machine learning|\\bllm\\b|agentic|\\bmcp\\b|\\brag\\b"
+      "match": "\\b(ai|ml)\\s*(engineer|scientist|architect|lead)\\b|machine learning engineer|\\bllm\\b|agentic|\\bmcp\\b|\\brag\\b|generative ai|applied (ai|ml)"
     }
   ],
   "highlight": [
