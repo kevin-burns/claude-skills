@@ -368,5 +368,128 @@ class TestConfiguredContactReachesTheWire(unittest.TestCase):
         self.assertEqual(self._run({}), DEFAULT_USER_AGENT)
 
 
+class TestRateLimitBudget(FetchCase):
+    """Arbeitnow publishes its budget in every response:
+
+        x-ratelimit-limit: 50
+        x-ratelimit-remaining: 49
+
+    We were ignoring it and paginating up to 50 pages -- at or above their
+    entire allowance. That is what produced the 429 during development,
+    and no amount of backing off afterwards is as good as not spending the
+    budget in the first place. The header is the source of truth; guessing
+    a safe page count is not.
+    """
+
+    def paged(self, count, remaining_by_page):
+        """count pages, each reporting the given remaining budget."""
+        responses = {}
+        for i in range(count):
+            url = ARB if i == 0 else f"{ARB}?page={i}"
+            nxt = f"{ARB}?page={i + 1}"
+            headers = {}
+            if i < len(remaining_by_page) and remaining_by_page[i] is not None:
+                headers["X-RateLimit-Remaining"] = str(remaining_by_page[i])
+            responses[url] = (200, arb_payload([arb_row(i)], nxt), headers)
+        return responses
+
+    def test_pagination_stops_when_the_published_budget_runs_low(self):
+        result, opener = self.run_one(
+            "arbeitnow", self.paged(20, [40, 30, 20, 10, 4, 3, 2, 1]), max_pages=20)
+        self.assertLessEqual(result.pages, 5,
+                             "must stop once remaining drops to the reserve")
+        self.assertEqual(result.status, "ok", "a budget stop is not a failure")
+
+    def test_a_healthy_budget_does_not_stop_pagination(self):
+        result, _ = self.run_one(
+            "arbeitnow", self.paged(4, [49, 48, 47, 46]), max_pages=3)
+        self.assertEqual(result.pages, 3)
+
+    def test_a_missing_budget_header_does_not_stop_pagination(self):
+        """Seven of the eight sources publish no such header. Treating its
+        absence as exhaustion would silently truncate every one of them."""
+        result, _ = self.run_one("arbeitnow", self.paged(4, [None] * 4), max_pages=3)
+        self.assertEqual(result.pages, 3)
+
+    def test_an_unparseable_budget_header_is_ignored(self):
+        result, _ = self.run_one(
+            "arbeitnow", self.paged(4, ["lots", "many", "?", "-"]), max_pages=3)
+        self.assertEqual(result.pages, 3)
+
+    def test_the_stop_is_reported_rather_than_silent(self):
+        """A truncated crawl that says nothing looks like a board that
+        simply ran out of jobs."""
+        result, _ = self.run_one("arbeitnow", self.paged(20, [10, 3]), max_pages=20)
+        self.assertIn("budget", result.reason.lower())
+
+
+class TestDefaultPageCapRespectsPublishedBudgets(unittest.TestCase):
+    """The default page cap was 50 -- Arbeitnow's ENTIRE advertised request
+    budget (x-ratelimit-limit: 50). Walking it in one run is what produced
+    the 429 repeatedly; a single deep crawl could exhaust the allowance for
+    everything else sharing the IP.
+
+    Measured 2026-08-05: page 10 of Arbeitnow reaches ~1.7 days back, so a
+    cap of 10 still covers a daily delta comfortably, and the
+    older-than-cutoff rule usually stops earlier still. A deliberate first
+    crawl can pass --max-pages explicitly.
+    """
+
+    def test_the_default_cap_is_well_below_the_smallest_known_budget(self):
+        import inspect
+
+        from job_feeds import fetch_all
+        default = inspect.signature(fetch_all).parameters["max_pages"].default
+        self.assertLessEqual(default, 25,
+                             "default must leave headroom in a 50-request budget")
+
+    def test_the_cli_default_matches(self):
+        from job_feeds import build_parser
+        parser = build_parser()
+        action = next(a for a in parser._actions if "--max-pages" in a.option_strings)
+        self.assertLessEqual(action.default, 25)
+
+
+class TestPagePacing(FetchCase):
+    """Capping pages was not enough. Measured live 2026-08-05: ten uncached
+    page requests in ~1s succeeded from a rested budget, but a second run
+    moments later was refused -- Arbeitnow's limiter is burst-sensitive,
+    tighter than its advertised 50-per-window suggests.
+
+    Sequential requests to ONE host should be paced. This costs a few
+    seconds on a job run twice a day and is the difference between being a
+    welcome client and a blocked one.
+    """
+
+    def test_pages_after_the_first_are_paced(self):
+        slept = []
+        result, _ = self.run_one(
+            "arbeitnow",
+            {ARB: (200, arb_payload([arb_row(1)], ARB + "?page=2"), {}),
+             ARB + "?page=2": (200, arb_payload([arb_row(2)], ARB + "?page=3"), {}),
+             ARB + "?page=3": (200, arb_payload([arb_row(3)], None), {})},
+            max_pages=5, sleep=slept.append)
+        self.assertEqual(result.pages, 3)
+        self.assertEqual(len(slept), 2, "one pause before each page after the first")
+        self.assertTrue(all(d > 0 for d in slept))
+
+    def test_the_first_request_is_not_delayed(self):
+        slept = []
+        self.run_one("arbeitnow", {ARB: (200, arb_payload([arb_row(1)], None), {})},
+                     sleep=slept.append)
+        self.assertEqual(slept, [], "a single-page fetch must not pause at all")
+
+    def test_a_non_paginating_source_never_pauses(self):
+        slept = []
+        self.run_one("nomads", {SOURCES["nomads"].url: (200, b"[]", {})},
+                     sleep=slept.append)
+        self.assertEqual(slept, [])
+
+    def test_the_default_pace_is_a_real_delay(self):
+        """A default of zero would make the guard decorative."""
+        from job_feeds import PAGE_DELAY_SECONDS
+        self.assertGreaterEqual(PAGE_DELAY_SECONDS, 0.5)
+
+
 if __name__ == "__main__":
     unittest.main()

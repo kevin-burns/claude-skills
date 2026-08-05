@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import re
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -324,6 +325,38 @@ RSS_SOURCES = ("wwr", "pythonorg")
 # Applied when a 429/503 arrives without a parseable Retry-After.
 DEFAULT_BACKOFF_SECONDS = 3600
 
+# Stop paginating while this much of a published budget is left.
+# Arbeitnow advertises x-ratelimit-limit: 50 and we used to walk up
+# to 50 pages -- its entire allowance -- which is what produced the
+# 429 during development. Leaving a reserve means the next run, and
+# anything else sharing the IP, still has requests to spend.
+RATELIMIT_RESERVE = 5
+
+# Pages to walk before giving up on a paginating source.
+#
+# This was 50, which is Arbeitnow's ENTIRE advertised budget
+# (x-ratelimit-limit: 50) -- one deep crawl could spend the whole
+# allowance, and repeatedly did, producing the 429s seen during
+# development. Measured 2026-08-05: page 10 reaches ~1.7 days back, so 10
+# covers a daily delta comfortably and the older-than-cutoff rule usually
+# stops sooner. Pass --max-pages for a deliberate first crawl.
+#
+# Note the published budget header cannot be relied on to stop us: every
+# Arbeitnow response is a Cloudflare cache HIT, so x-ratelimit-remaining
+# reports the CACHED value (a constant 49) rather than our real
+# consumption. _budget_remaining still honours it where a source reports
+# it truthfully, but the page cap is what actually protects the budget.
+DEFAULT_MAX_PAGES = 10
+
+# Pause between sequential pages of ONE source.
+#
+# Capping pages proved insufficient: ten uncached requests in ~1s
+# succeeded from a rested budget, but a second run moments later was
+# refused. Arbeitnow's limiter is burst-sensitive. A second between pages
+# costs ~9s on a job run twice a day, and is the difference between a
+# welcome client and a blocked one.
+PAGE_DELAY_SECONDS = 1.0
+
 
 def http_open(url, headers):
     """(status, body, response_headers).
@@ -349,6 +382,23 @@ def _parse(source, body):
     return ET.fromstring(body) if source.name in RSS_SOURCES else json.loads(body)
 
 
+def _budget_remaining(headers):
+    """Requests left, from whichever budget header the source publishes.
+
+    Only Arbeitnow ships one today. Absence must never read as exhaustion,
+    or the seven sources without it would be truncated to a single page.
+    """
+    for name in ("X-RateLimit-Remaining", "x-ratelimit-remaining", "RateLimit-Remaining"):
+        raw = headers.get(name)
+        if raw is None:
+            continue
+        try:
+            return int(str(raw).strip())
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
 def _oldest_on_page(rows):
     """Oldest UTC stamp on this page, or None when the page carries no
     usable dates (an RSS page, or one whose rows are all undated)."""
@@ -358,7 +408,8 @@ def _oldest_on_page(rows):
 
 
 def _fetch_one(source, opener, limiter, now, max_pages, window_days,
-               seen_before=False, stored_reason="", user_agent=DEFAULT_USER_AGENT):
+               seen_before=False, stored_reason="", user_agent=DEFAULT_USER_AGENT,
+               sleep=time.sleep):
     """Fetch one source. Takes plain values, never a Store.
 
     sqlite3 connections are bound to the thread that created them, so a
@@ -376,9 +427,12 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
 
     cutoff = (now - timedelta(days=window_days)).strftime(STAMP)
     url, pages, raw_rows, etag = source.url, 0, [], None
+    budget_note = ""
 
     try:
         while url and pages < max_pages:
+            if pages:
+                sleep(PAGE_DELAY_SECONDS)   # never before the first request
             status, body, response_headers = opener(url, headers)
             if status == 304:
                 limiter.record(source, now)
@@ -418,6 +472,14 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
                 oldest = _oldest_on_page(page_rows)
                 if url and oldest and oldest < cutoff:
                     url = None   # everything below here is outside the window
+                remaining = _budget_remaining(response_headers)
+                if url and remaining is not None and remaining <= RATELIMIT_RESERVE:
+                    # The server told us how much is left. Believe it, and
+                    # say so -- a silently truncated crawl is indistinguishable
+                    # from a board that simply ran out of jobs.
+                    url = None
+                    budget_note = (f"stopped early: {remaining} of the source's "
+                                   f"published request budget left")
     except (OSError, ValueError, ET.ParseError) as exc:
         limiter.record(source, now)
         return FetchResult(source.name, "failed", f"{type(exc).__name__}: {exc}",
@@ -434,11 +496,12 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
         if entry["title"] and entry["url"]:
             entry["source"] = source.name
             jobs.append(entry)
-    return FetchResult(source.name, "ok", "", jobs, pages, etag)
+    return FetchResult(source.name, "ok", budget_note, jobs, pages, etag)
 
 
 def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
-              max_pages=50, window_days=30, user_agent=DEFAULT_USER_AGENT):
+              max_pages=10, window_days=30, user_agent=DEFAULT_USER_AGENT,
+              sleep=time.sleep):
     """Fetch every source concurrently, isolating failures per source.
 
     A source that raises never propagates: it becomes a `failed` result so
@@ -457,7 +520,7 @@ def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
     with ThreadPoolExecutor(max_workers=min(8, len(sources))) as pool:
         futures = [pool.submit(_fetch_one, s, opener, limiter, now, max_pages,
                                window_days, s.name in known, reasons.get(s.name, ""),
-                               user_agent)
+                               user_agent, sleep)
                    for s in sources]
         return [f.result() for f in futures]
 
@@ -633,7 +696,7 @@ def build_parser(out=None, err=None):
     parser.add_argument("--remote", action="store_true")
     parser.add_argument("--json", dest="as_json", action="store_true")
     parser.add_argument("--out", default=None)
-    parser.add_argument("--max-pages", type=int, default=50)
+    parser.add_argument("--max-pages", type=int, default=10)
     return parser
 
 

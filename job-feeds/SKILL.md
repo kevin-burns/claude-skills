@@ -93,6 +93,13 @@ jfeeds report --out /tmp/jobs.html                   # zero network calls
 ```
 
 `python.org` is the lightest source — 20 items, no pagination, no documented limit.
+
+**If a source starts returning 429, look at your own request volume first.** During
+development Arbeitnow throttled us repeatedly, and the cause was ours every time: the page
+cap was 50, which is its entire advertised budget. Capping at 10 and pacing pages a second
+apart fixed it completely — 1075 rows, status `ok`. Note its `x-ratelimit-remaining` header
+cannot help you here: every response is a Cloudflare cache HIT, so it reports a constant
+`49` rather than your real consumption.
 `doctor`, `digest` and `sources` never touch the network at all, and `report` reads only
 what is already stored, so the whole check above costs exactly one HTTP request.
 
@@ -180,7 +187,7 @@ Verified 2026-08-05. Re-check before trusting any of it in six months.
 
 | Source | Notes |
 |---|---|
-| Arbeitnow | Best single source for Germany. Paginates; board is **~7 days deep, 40 pages**. `links.last` is always null. |
+| Arbeitnow | Best single source for Germany — 84 of 98 matches on a real run. Paginates; board is **~7 days deep, 40 pages**, `links.last` always null. Publishes `x-ratelimit-limit: 50` and is **burst-sensitive**: ten uncached pages in a second is enough to earn a 429. Pages are paced 1s apart and capped at 10 by default for exactly this reason. |
 | Jobicy | Documents **1 poll/hour fair use** — enforced; a second poll inside the hour is refused without a request. |
 | Remotive | **Ignores `limit`.** Ships a legal notice in the payload. |
 | Remote OK | First array element is a ToS object, not a job. Requires the backlink. |
