@@ -50,6 +50,17 @@ linear issues --help          # per-subcommand flags
 
 **6. Query-complexity ceiling.** `linear projects list` with no filter returned `Query too complex — complexity 13950 / 10000` on a 20+ project workspace. Use `--limit 5` or filter down.
 
+**7. Fetching one issue is `read`, not `get`.** `linear issues read <issue>` returns the full record including the description. There is no `get` subcommand — asking for one fails with `error: too many arguments for 'issues'. Expected 0 arguments but got 2`, which reads like a flag problem rather than a wrong verb and sends you looking in the wrong place. Related verbs on the same object: `search <query>` (full-text), `archive` / `unarchive` / `delete <issue>`.
+
+**8. Sub-collections come back as `{nodes: […]}`, not bare arrays.** `issues read` returns `labels`, `comments`, `children` and `relations` each wrapped in a `nodes` key, while `issues list` returns its results under a top-level `nodes`. So `jq '[.labels[].name]'` fails with `Cannot index array with string "name"` — it needs `jq '[.labels.nodes[].name]'`. Cheap way to avoid guessing:
+
+```bash
+linear issues read TBU-227 | jq 'keys'          # what fields exist
+linear issues read TBU-227 | jq '.labels'       # what shape a given field is
+```
+
+**Version pin:** the gotchas above were verified against **2026.4.9**. Check `linear --version` against `npm view linearis version` before trusting them — several are the kind of thing an upstream release fixes silently.
+
 ---
 
 ## Kevin's Ogham project (pre-loaded identifiers)
@@ -94,7 +105,7 @@ alias ogham=~/Developer/web-projects/ogham-cli/ogham   # adjust to your checkout
 So when an agent picks up `TBU-114`:
 
 ```bash
-linear issues get TBU-114                       # durable: atomic spec, status, blocked-by
+linear issues read TBU-114                      # durable: atomic spec, status, blocked-by
 ogham search "typed edges store_triple"         # transient: design memory (hybrid vector+keyword)
 ```
 
