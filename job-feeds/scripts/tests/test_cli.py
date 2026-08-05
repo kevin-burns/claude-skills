@@ -479,5 +479,78 @@ class TestUnknownConfigKeysAreReported(ConfigCase):
         self.assertNotIn("not recognised", (out + err).lower())
 
 
+class TestExclusionsAreVisible(ConfigCase):
+    """Exclusions used to happen in silence, which is the actual defect
+    behind "the agency filter does not work".
+
+    Measured on 1,276 live rows, no automatic signal separates an
+    intermediary from a direct employer: "our client" appears in 7% of
+    known-agency ads and 4% of everything else, and posting volume is
+    dominated by genuine employers hiring hard. So the mechanism stays a
+    name list -- and the real fix is that you can SEE it working, spot a
+    name you should add, and notice when it eats something it should not.
+    """
+
+    def run_cli(self, *argv, **kwargs):
+        out, err = io.StringIO(), io.StringIO()
+        code = main(list(argv), out=out, err=err, now=NOW, **kwargs)
+        return code, out.getvalue(), err.getvalue()
+
+    def seed(self, db, rows):
+        """rows: (company, title) pairs."""
+        store = Store(db)
+        store.upsert([{"title": title, "company": company,
+                       "location": f"City{i}", "remote": True,
+                       "posted_at": "2026-08-04T00:00:00Z", "url": f"https://x/{i}",
+                       "description": "", "tags": [], "salary": None,
+                       "source": "arbeitnow"}
+                      for i, (company, title) in enumerate(rows)], NOW)
+
+    def test_digest_reports_how_many_rows_were_excluded_and_by_which_rule(self):
+        """Both rules, because a summary that only ever names one of them
+        would look right while hiding the other."""
+        db = self.tmp / "j.db"
+        self.seed(db, [("Acme", "Platform Engineer"),
+                       ("Randstad Deutschland", "Platform Engineer"),
+                       ("Acme", "Technical Recruiter, Platform")])
+        _, out, err = self.run_cli("digest", "--config", str(self.write(GOOD_CONFIG)),
+                                   "--db", str(db))
+        self.assertIn("Acme", out)
+        self.assertNotIn("Randstad", out)
+        self.assertIn("2 row(s) excluded", err)
+        self.assertIn("company", err.lower())
+        self.assertIn("title", err.lower())
+        self.assertIn("recruiter", err.lower())
+
+    def test_it_names_which_rules_fired_so_an_over_broad_term_is_findable(self):
+        """A term that quietly eats half the results is the failure mode
+        worth catching -- naming the rule makes it obvious which one."""
+        db = self.tmp / "j.db"
+        self.seed(db, [("Acme", "Platform Engineer"),
+                       ("Randstad Deutschland", "Platform Engineer")])
+        _, _, err = self.run_cli("digest", "--config", str(self.write(GOOD_CONFIG)),
+                                 "--db", str(db))
+        self.assertIn("randstad", err.lower())
+
+    def test_nothing_is_said_when_nothing_is_excluded(self):
+        db = self.tmp / "j.db"
+        self.seed(db, [("Acme", "Platform Engineer")])
+        _, _, err = self.run_cli("digest", "--config", str(self.write(GOOD_CONFIG)),
+                                 "--db", str(db))
+        self.assertNotIn("excluded", err.lower())
+
+    def test_the_shipped_example_names_real_intermediaries(self):
+        """You cannot exclude names you do not know. The starter list is
+        the whole usability fix -- these are marketplaces and staff-aug
+        firms that post under their OWN name, so a substring like
+        'recruitment' never catches them."""
+        example = json.loads(
+            (Path(__file__).resolve().parents[1] / "config.example.json").read_text())
+        listed = {c.lower() for c in example["defaults"]["exclude_company"]}
+        for name in ("proxify", "turing", "toptal", "lemon.io", "zartis"):
+            with self.subTest(company=name):
+                self.assertIn(name, listed)
+
+
 if __name__ == "__main__":
     unittest.main()

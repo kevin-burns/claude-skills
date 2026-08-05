@@ -663,11 +663,25 @@ def lanes_for(job, config):
             if lane.pattern.search(_haystack(job, lane.title_only))]
 
 
-def is_excluded(job, config):
+def exclusion_reason(job, config):
+    """(rule, matched_term) if this job is excluded, else None.
+
+    Returns WHICH term fired, not just that something did, so an
+    over-broad entry is findable instead of silently eating results.
+    """
     company = (job.get("company") or "").lower()
+    for term in config.exclude_companies:
+        if term in company:
+            return ("company", term)
     title = (job.get("title") or "").lower()
-    return (any(term in company for term in config.exclude_companies)
-            or any(term in title for term in config.exclude_titles))
+    for term in config.exclude_titles:
+        if term in title:
+            return ("title", term)
+    return None
+
+
+def is_excluded(job, config):
+    return exclusion_reason(job, config) is not None
 
 
 def is_highlighted(job, config):
@@ -828,12 +842,26 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                 f"from {len(results)} source(s)")
             return 1 if failed else 0
 
-        rows = [row for row in store.select(window, now, args.remote)
-                if not is_excluded(row, config)]
+        selected = store.select(window, now, args.remote)
+        rows, dropped = [], []
+        for row in selected:
+            reason = exclusion_reason(row, config)
+            (dropped if reason else rows).append(reason or row)
         for row in rows:
             row["lanes"] = lanes_for(row, config)
             row["highlight"] = is_highlighted(row, config)
         rows = [row for row in rows if row["lanes"]]
+
+        if dropped:
+            # Silent filtering is what made "the agency filter does not
+            # work" hard to see: you cannot tell a term that is missing a
+            # name from one that is quietly eating half your results.
+            counts = {}
+            for rule, term in dropped:
+                counts.setdefault(rule, set()).add(term)
+            summary = "; ".join(f"{rule} ({', '.join(sorted(terms))})"
+                                for rule, terms in sorted(counts.items()))
+            log(f"job-feeds: {len(dropped)} row(s) excluded — {summary}")
 
         if args.command == "digest":
             if args.as_json:

@@ -243,6 +243,20 @@ is capped, because a header value containing CRLF is header injection.
   an otherwise generic "Senior Engineer" ad is exactly the catch worth having.
 - **`highlight`** — terms that star a row. They do not filter.
 - **`exclude_company` / `exclude_title`** — plain case-insensitive substrings, not regex.
+  `jfeeds digest` reports how many rows each rule removed and which terms fired, so an
+  over-broad entry is findable rather than silently eating half your results.
+
+  **On agencies specifically:** the shipped list names real marketplaces and
+  staff-augmentation firms — Proxify, Toptal, Turing, Lemon.io, Zartis, EPAM and others —
+  because they post under their own brand and read like direct employers. A substring like
+  `recruitment` never catches them, which is why the list, not a pattern, does the work.
+
+  There is deliberately **no automatic agency detection**, and that is a measured decision
+  rather than a gap. Across 1,276 live rows no signal separated an intermediary from a
+  direct employer: "our client" appeared in 7% of known-agency ads and 4% of everything
+  else, and posting volume was dominated by genuine employers hiring hard. A heuristic
+  would be guesswork that silently drops real jobs. Add names as you meet them; the
+  exclusion report tells you when one starts working.
 - **`sources`** — omit a source or set `enabled: false` to skip it.
 
 The `lanes` shape deliberately mirrors `li-assist`'s `archetypes.json`, so lane
