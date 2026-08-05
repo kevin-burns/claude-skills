@@ -36,13 +36,13 @@ linear --help
 linear issues --help          # per-subcommand flags
 ```
 
-## Gotchas (the ones that cost time — version 2026.4.9)
+## Gotchas (the ones that cost time — re-verified against 2026.6.0 on 2026-08-05)
 
-**1. Flag asymmetry between `issues create`/`update` and `issues list`.** Create/update take `--project-milestone <id>`; list takes `--milestone <name>` (and requires `--project`). Same concept, two flag names. Likewise `--label` (singular) on list vs `--labels` (comma-separated names) on create/update.
+**1. Flag asymmetry between `issues create`/`update` and `issues list`.** Create/update take `--project-milestone <ms>`; list takes `--milestone <name>` (and requires `--project`). Same concept, two flag names. Likewise `--label` (singular, comma-separated) on list vs `--labels` on create/update.
 
-**2. Milestone create is broken.** `linear milestones create <name> --project <id>` returns `Variable "$projectId" of required type "String!" was not provided` even with the flag set. Create milestones in the web UI (Project → Milestones → New milestone, ~30s each) and reuse their IDs.
+**2. ~~Milestone create is broken.~~ Fixed in 2026.6.0.** It used to return `Variable "$projectId" of required type "String!" was not provided` even with `--project` set, so the workaround was to create milestones in the web UI. The project id is now passed correctly — an invalid project yields a clean `Project "X" not found` instead of the variable error. `milestones` also gained `read` and `update`. Note there is still **no `milestones delete`**, so a mistyped milestone has to be cleaned up in the web UI; that is why the fix above was probed with a deliberately invalid project rather than by creating a throwaway.
 
-**3. Labels can't be created via CLI.** `linear labels` only has `list` and `usage`. Create labels in the web UI (Settings → Labels). A nonexistent label name on create fails with `Label "X" not found` and **no issue is created**.
+**3. ~~Labels can't be created via CLI.~~ Fixed in 2026.6.0.** `linear labels` now has `create`, `read`, `update` and `delete` alongside `list`. Still true, and still the expensive part: a nonexistent label name passed to `issues create` fails with `Label "X" not found` and **no issue is created** — so create the label first, or the whole call is a no-op.
 
 **4. The stored token isn't a raw Personal API Key.** Copying `~/.linearis/token` into a `curl` `Authorization: Bearer …` header returns 401. Don't bypass the CLI by hitting GraphQL directly — fix `linearis` or stay on its surface.
 
@@ -59,7 +59,11 @@ linear issues read TBU-227 | jq 'keys'          # what fields exist
 linear issues read TBU-227 | jq '.labels'       # what shape a given field is
 ```
 
-**Version pin:** the gotchas above were verified against **2026.4.9**. Check `linear --version` against `npm view linearis version` before trusting them — several are the kind of thing an upstream release fixes silently.
+**Version pin:** every gotcha above was re-verified against **2026.6.0** on 2026-08-05. Two of the eight had already gone stale by then (2 and 3 — both told you to go and use the web UI for something the CLI had since learned to do), so check before trusting:
+
+```bash
+linear --version; npm view linearis version    # drifted? re-verify 1-8 before relying on them
+```
 
 ---
 
