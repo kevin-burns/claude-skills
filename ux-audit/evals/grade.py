@@ -4,6 +4,14 @@
 # ///
 """Grade ux-audit eval runs by keyword-scanning the produced findings.
 
+ci-skip: needs-eval-workspace
+
+This grades skill-creator RUNS, not the skill. It reads
+`ux-audit-workspace/iteration-N/`, which is gitignored because it holds
+generated eval output, so there is nothing for CI to point it at. The marker
+line above is what CI greps for -- it used to skip this file with the reason
+"needs uv", which was wrong and implied that installing uv would enable it.
+
 Usage:
     uv run grade.py <iteration-dir>
     # default: ../../ux-audit-workspace/iteration-1

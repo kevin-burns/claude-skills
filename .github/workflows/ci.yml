@@ -60,6 +60,15 @@ jobs:
       - name: Install test runner
         run: python3 -m pip install --quiet pytest
 
+      # Some graders are PEP 723 scripts pinning requires-python >= 3.12. uv
+      # fetches its own interpreter for those, so they run on every matrix leg
+      # including 3.9 -- the leg's Python governs the skills' own tests, not
+      # the grader's shebang.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+
       # Both runners are discovered, not enumerated, so a new skill with
       # tests is picked up without anyone remembering to edit this file.
       # Two layouts exist in this repo and only one is unittest — running
@@ -112,18 +121,41 @@ jobs:
           set -u
           status=0
           ran=0
+          skipped=0
+
+          # Two different things live under evals/grade.py, and conflating them
+          # is how three evals sat unrun behind the reason "needs uv":
+          #
+          #   * Offline behavioural evals — self-contained, assert on committed
+          #     fixtures. These are the ones CI exists to run.
+          #   * skill-creator workspace graders — they score generated eval RUNS
+          #     under <skill>-workspace/iteration-N/, which is gitignored. No
+          #     amount of tooling makes these runnable here; there is nothing to
+          #     grade. They declare `ci-skip: needs-eval-workspace` in their
+          #     docstring and are skipped by that marker, with the real reason
+          #     printed rather than a misleading one.
           for grader in */evals/grade.py; do
             [ -f "$grader" ] || continue
             skill="${grader%%/*}"
-            # PEP 723 graders need uv. Skip rather than fail, but say so —
-            # a silently unrun eval is worse than a visibly skipped one.
-            if head -3 "$grader" | grep -q 'uv run --script'; then
-              echo "${skill}: SKIPPED (needs uv)"
+
+            if grep -q '^ci-skip: needs-eval-workspace' "$grader"; then
+              echo "${skill}: SKIPPED — grades skill-creator runs, not the skill"
+              skipped=$((skipped + 1))
               continue
             fi
+
+            # A PEP 723 shebang means the grader pins its own interpreter and
+            # deps; run it through uv so that pin is honoured. Everything else
+            # runs on the matrix Python, which is the point of the 3.9 leg.
+            if head -3 "$grader" | grep -q 'uv run --script'; then
+              runner="uv run --script evals/grade.py"
+            else
+              runner="python3 evals/grade.py"
+            fi
+
             ran=$((ran + 1))
-            echo "::group::${skill}"
-            if ( cd "$skill" && python3 evals/grade.py ); then
+            echo "::group::${skill} (${runner%% *})"
+            if ( cd "$skill" && $runner ); then
               echo "${skill}: pass"
             else
               echo "::error title=${skill}::eval failed"
@@ -131,5 +163,12 @@ jobs:
             fi
             echo "::endgroup::"
           done
-          echo "ran ${ran} eval(s)"
+
+          # Guards the globs and the marker together: if a rename or a stray
+          # marker silences everything, a green tick must not be the result.
+          if [ "$ran" -eq 0 ]; then
+            echo "::error::no evals ran — check the glob and the ci-skip markers"
+            exit 1
+          fi
+          echo "ran ${ran} eval(s), skipped ${skipped}"
           exit $status

@@ -101,5 +101,12 @@ from another repo. See [dev-fleet](./dev-fleet).
 - Prefer stdlib-only helpers; declare any third-party deps via PEP 723 inline metadata so
   `uv run` is self-contained (no separate install step).
 - Ship a deterministic, offline eval under `evals/` where the behavior is objectively checkable
-  (run with `uv run python grade.py`). Add a test when you add behavior.
+  (run with `uv run python grade.py`). Add a test when you add behavior. CI runs every
+  `*/evals/grade.py` it finds, through `uv` when the file carries a PEP 723 shebang and
+  through the matrix `python3` otherwise, so an eval only needs to exist to be enforced.
+- If a `grade.py` scores generated **skill-creator eval runs** rather than the skill itself —
+  it reads `<skill>-workspace/iteration-N/`, which is gitignored — put `ci-skip:
+  needs-eval-workspace` at the start of a line in its docstring. CI skips those by that
+  marker and prints why. Without it CI will try to run the grader and go red, which is the
+  intended outcome: the alternative is a grader silently excluded for a reason nobody checks.
 - All skill content here is MIT licensed (see [`LICENSE`](./LICENSE)).

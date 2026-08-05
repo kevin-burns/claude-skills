@@ -4,6 +4,14 @@
 # ///
 """Grade report-builder eval runs by inspecting the produced HTML.
 
+ci-skip: needs-eval-workspace
+
+This grades skill-creator RUNS, not the skill. It reads
+`report-builder-workspace/iteration-N/`, which is gitignored because it holds
+generated eval output, so there is nothing for CI to point it at. The marker
+line above is what CI greps for -- it used to skip this file with the reason
+"needs uv", which was wrong and implied that installing uv would enable it.
+
 Usage:
     uv run grade.py <iteration-dir>
     # default: ../../report-builder-workspace/iteration-1
