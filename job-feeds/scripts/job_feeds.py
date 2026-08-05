@@ -716,6 +716,25 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
             # so main never lets SystemExit escape except under __main__.
             return exc.code if isinstance(exc.code, int) else 2
 
+        if args.command == "doctor" and not Path(args.config).exists():
+            # Only doctor offers setup help. `jfeeds digest` explaining how
+            # to author a config would be noise in a pipeline, so every
+            # other command keeps the plain error.
+            log(f"job-feeds: no config yet at {args.config}")
+            log("")
+            log("  The config defines your LANES — a name, a label and a regex per")
+            log("  career track. Nothing is shown unless it matches one, so the lanes")
+            log("  are the whole of the tool's judgement and they have to be yours.")
+            log("")
+            log("  Ask Claude to set it up: describe the roles you want and it will")
+            log("  write the file. Or copy the example and edit it by hand:")
+            log(f"    mkdir -p {Path(args.config).parent}")
+            log(f"    cp <skill>/scripts/config.example.json {args.config}")
+            log("")
+            log("  The example encodes one person's career (platform, EM, forward")
+            log("  deployed, AI). Used unedited it will match the wrong jobs.")
+            return 2
+
         config = load_config(args.config)
         window = config.window if args.window is None else args.window
         if window < 0:

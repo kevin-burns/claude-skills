@@ -104,9 +104,17 @@ signal. Coverage is uneven by design; the sources are not interchangeable.
 
 ## Configuration
 
-`~/.config/job-feeds/config.json` — copy `scripts/config.example.json` to start. See
-[`SKILL.md`](./SKILL.md) for the full field reference and the per-source notes
-(pagination depth, rate limits, and which feeds carry no dates).
+`~/.config/job-feeds/config.json`. **The easiest way to create it is to ask Claude** —
+describe the roles you want, where, and anything to rule out, and it writes the file. That
+is the intended path: the lanes are regexes, and hand-writing them is the part most people
+get wrong. `scripts/config.example.json` is there if you would rather edit JSON, but note
+it encodes one person's career and matches the wrong jobs unedited.
+
+`jfeeds doctor` tells you if the config is missing or malformed before you fetch anything.
+
+See [`SKILL.md`](./SKILL.md) for the full field reference, the rules for writing lanes that
+do not misfire, and the per-source notes (pagination depth, rate limits, and which feeds
+carry no dates).
 
 Data lives in `~/.config/job-feeds/jobs.db`. Rate-limit state is kept separately in
 `ratelimit.json`, deliberately: deleting the database must never make the tool forget it

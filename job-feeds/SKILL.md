@@ -48,16 +48,69 @@ jfeeds() { python3 "$HOME/.claude/skills/job-feeds/scripts/job_feeds.py" "$@"; }
 
 The function is named `jfeeds`, **not `jobs`** — `jobs` is a shell builtin.
 
-First run:
+## First run — write the config FOR the user
 
-```bash
-mkdir -p ~/.config/job-feeds
-cp "$HOME/.claude/skills/job-feeds/scripts/config.example.json" ~/.config/job-feeds/config.json
-jfeeds doctor
+`jfeeds doctor` exits 2 with `no config yet` until `~/.config/job-feeds/config.json`
+exists. **Do not tell the user to copy the example and edit it.** The example encodes one
+person's career; used unedited it matches the wrong jobs, and hand-editing regexes is the
+part a user is least equipped to do well.
+
+Instead, ask them three questions and write the file yourself:
+
+1. **What roles are you after?** Plain English — "platform engineering and SRE", "data
+   engineering", "engineering management". One lane per distinct track.
+2. **Where?** Country, region, or remote-only. This sets `location_filter` and whether
+   `--remote` will be their normal mode.
+3. **Anything to rule out?** Agencies, previous employers, seniority levels. These become
+   `exclude_company` and `exclude_title` — plain case-insensitive substrings, not regex.
+
+Then write `~/.config/job-feeds/config.json`, run `jfeeds doctor` to confirm it parses, and
+`jfeeds fetch && jfeeds digest` to show them real output. Tune the lanes against what comes
+back rather than in the abstract — a lane is only judgeable once you see what it catches.
+
+### Writing lanes that work
+
+Three rules, each learned from a lane that misfired on live data:
+
+- **Set `"match_in": "title"` on role-shaped lanes.** Measured across 229 real postings:
+  every one of a Platform lane's *description* matches was wrong — an agency ad listing
+  every discipline it staffs, a "Finance, Project Management, DevOps, Data" services blurb,
+  an "e.g., Systems Engineer" aside, and one job advertising "**No** Kubernetes". Every
+  *title* match was right. Role identity lives in the title.
+- **Start narrow, widen after seeing results.** A lane of `\bai\b` matched 49 of 52 rows,
+  including "Administrative Assistant" and "NO CURRENT OPENINGS", because their ad copy
+  genuinely says "AI tools". Prefer role-shaped phrases: `ai engineer`, `machine learning
+  engineer`, `llm`, `agentic`.
+- **Anchor word boundaries.** `platform engineer` without a trailing `\b` also matches
+  "Platform Engineer**ing**", which is exactly the phrase in agency boilerplate.
+
+Keep the default `title+description` only where the *body* carries the signal — spotting a
+niche tool like `terragrunt` in an otherwise generic "Senior Engineer" ad is the catch worth
+having.
+
+### A worked example
+
+> "I'm after platform engineering or SRE work, Germany or remote-EU, and I don't want
+> agencies."
+
+```json
+{
+  "defaults": {
+    "window": 14,
+    "location_filter": "germany|remote|europe",
+    "exclude_company": ["randstad", "hays"],
+    "exclude_title": ["recruiter", "werkstudent"]
+  },
+  "lanes": [
+    { "name": "platform", "label": "Platform", "match_in": "title",
+      "match": "\\b(platform|infrastructure|devops|cloud|site reliability)\\s*(engineer|architect|lead)\\b|\\bsre\\b" }
+  ],
+  "highlight": ["terraform", "kubernetes"],
+  "sources": {}
+}
 ```
 
-Then edit `~/.config/job-feeds/config.json` — the `lanes` are the part that matters; they
-decide what counts as a match.
+`sources` may be left empty — every source is enabled unless explicitly disabled.
 
 ## Commands
 

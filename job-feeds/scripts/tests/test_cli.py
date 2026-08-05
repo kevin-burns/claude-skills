@@ -309,5 +309,111 @@ class TestLaneMatchScope(unittest.TestCase):
         self.assertEqual(lanes_for(self.JOB, load_config(self.write(data))), ["Both"])
 
 
+class TestFirstRunExperience(ConfigCase):
+    """The first command a new user runs is `jfeeds doctor`, and until now
+    it answered a missing config with `config not readable: <path>` and
+    exit 2. That is accurate and useless: it names the file but not the
+    fact that the file is supposed to be created, nor how.
+
+    This skill is installed by strangers whose careers are nothing like
+    the example's, so the setup path has to be part of the tool rather
+    than a paragraph in the docs someone may not read.
+    """
+
+    def run_cli(self, *argv, **kwargs):
+        out, err = io.StringIO(), io.StringIO()
+        code = main(list(argv), out=out, err=err, now=NOW, **kwargs)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_doctor_without_a_config_explains_how_to_create_one(self):
+        code, out, err = self.run_cli("doctor", "--config", str(self.tmp / "absent.json"),
+                                      "--db", str(self.tmp / "j.db"))
+        combined = out + err
+        self.assertEqual(code, 2, "a missing config is still an error")
+        self.assertIn("absent.json", combined, "must name the path it looked at")
+        self.assertIn("no config yet", combined.lower())
+        self.assertIn("lanes", combined.lower(),
+                      "must say what the file is FOR, not just that it is missing")
+
+    def test_doctor_without_a_config_does_not_traceback(self):
+        code, _, err = self.run_cli("doctor", "--config", str(self.tmp / "absent.json"),
+                                    "--db", str(self.tmp / "j.db"))
+        self.assertEqual(code, 2)
+        self.assertNotIn("Traceback", err)
+
+    def test_other_commands_still_get_the_plain_config_error(self):
+        """Only doctor offers setup help. `jfeeds digest` explaining how to
+        write a config would be noise in a pipeline."""
+        code, _, err = self.run_cli("digest", "--config", str(self.tmp / "absent.json"),
+                                    "--db", str(self.tmp / "j.db"))
+        self.assertEqual(code, 2)
+        self.assertIn("not readable", err)
+        self.assertNotIn("no config yet", err.lower())
+
+    def test_doctor_with_a_malformed_config_does_not_claim_it_is_missing(self):
+        """A broken config and an absent one need different advice --
+        telling someone to create a file they already have wastes their
+        time looking in the wrong place."""
+        path = self.tmp / "broken.json"
+        path.write_text("{not json", encoding="utf-8")
+        code, out, err = self.run_cli("doctor", "--config", str(path),
+                                      "--db", str(self.tmp / "j.db"))
+        combined = (out + err).lower()
+        self.assertEqual(code, 2)
+        self.assertNotIn("no config yet", combined)
+        self.assertIn("not valid json", combined)
+
+    def test_doctor_with_a_valid_config_is_unchanged(self):
+        code, out, _ = self.run_cli("doctor", "--config", str(self.write(GOOD_CONFIG)),
+                                    "--db", str(self.tmp / "j.db"))
+        self.assertEqual(code, 0)
+        self.assertIn("2 lane", out)
+
+
+class TestDocumentedExampleActuallyWorks(unittest.TestCase):
+    """SKILL.md shows a worked lane and tells the reader what it catches.
+    A documented example that has quietly stopped behaving as described is
+    worse than none: the reader copies it and blames their own config.
+
+    The example is READ FROM SKILL.md rather than duplicated here, so the
+    two cannot drift apart.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        import re
+        skill = Path(__file__).resolve().parents[2] / "SKILL.md"
+        blocks = [b for b in re.findall(r"```json\n(.*?)```", skill.read_text(), re.S)
+                  if '"name": "platform"' in b]
+        assert blocks, "the worked platform-lane example is missing from SKILL.md"
+        cls._tmp = tempfile.TemporaryDirectory()
+        path = Path(cls._tmp.name) / "example.json"
+        path.write_text(blocks[0], encoding="utf-8")
+        cls.config = load_config(path)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_it_matches_the_roles_the_docs_claim(self):
+        for title in ("Senior Platform Engineer", "Site Reliability Engineer",
+                      "Cloud Architect", "SRE Lead", "DevOps Engineer"):
+            with self.subTest(title=title):
+                self.assertTrue(lanes_for({"title": title, "description": ""}, self.config))
+
+    def test_it_rejects_roles_that_merely_mention_the_tech(self):
+        """The failure that motivated match_in: these all name Kubernetes or
+        DevOps in the body while being something else entirely."""
+        body = "You will work with Kubernetes, Terraform and our DevOps team."
+        for title in ("Senior Graphic Designer", "Backend Developer", "C++ Developer"):
+            with self.subTest(title=title):
+                self.assertFalse(lanes_for({"title": title, "description": body},
+                                           self.config))
+
+    def test_the_example_declares_title_only_matching(self):
+        self.assertTrue(all(lane.title_only for lane in self.config.lanes),
+                        "the documented example must model the rule the docs give")
+
+
 if __name__ == "__main__":
     unittest.main()
