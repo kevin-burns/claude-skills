@@ -1,0 +1,330 @@
+{
+ "data": [
+  {
+   "id": "019fd1da-3226-7f39-b228-eb1bf8f66302",
+   "slug": "staff-technical-writer-at-okta-deebea51",
+   "title": "Staff Technical Writer",
+   "description": "**Secure Every Identity, from AI to Human** Identity is the key to unlocking the potential of AI. Okta secures AI by building the trusted, neutral infrastructure that enables organizations to safely embrace this new era. This work requires a relentless drive to solve complex challenges with real-world stakes. We are looking for builders and owners who operate with speed and urgency and execute with excellence.\n\nThis is an opportunity to do career-defining work. We're all in on this mission. If you are too, let's talk.\n\nOkta is seeking a Staff Technical Writer to lead documentation for major product launches, spanning both [developer.okta.com](http://developer.okta.com) (APIs, SDKs, integration guides) and the [help.okta.com](http://help.okta.com) (admin/product guides).\n\nReporting to the Manager of Technical Documentation, you'll quickly ramp up on the team\u2019s guidelines and processes and set expectations with cross-functional partners on documentation deliverables.\n\n**Location:** Bengaluru, Karnataka, India\n\n**Work Mode:** Hybrid (minimum of 2 days onsite/week)\n\n**Note:** Requires an in-person meeting with the Hiring Manager at our Bengaluru office following the final rounds.\n\nOnboarding requires in-person travelling to our _Bengaluru office._\n\n### **What you'll be doing**\n\n- Work closely with Engineering, Product Management, QA, Support, and members of the Information Development team.\n- Prioritize documentation work across concurrent initiatives to meet release dates.\n- Create end-to-end feature documentation for multiple engineering teams. These include [developer content](http://developer.okta.com)(API references and SDK/CLI/Terraform guides) and [admin/product content](http://help.okta.com) (feature and configuration guides).\n- Develop comprehensive product expertise through hands-on engagement to ensure documentation accuracy and alignment with customer workflows.\n- Become an expert in the Information Development team\u2019s guidelines, processes, and tools.\n- Identify scope for improvement and suggest enhancements, including the use of Generative AI tools to increase productivity.\n- Analyze customer feedback before and after delivering documentation to enhance content depth, quality, and relevance.\n\n### **Minimum knowledge, skills, and abilities**\n\n- 7+ years writing documentation for Cloud or Enterprise products.\n- **Tools/Technologies**: Oxygen XML Author, VS Code, Acrolinx, Git/GitHub, Jira, and Confluence.\n\n**Framework: DITA, Markdown, OpenAPI, and API publishing platforms.**\n\n- **AI Tools**: Hands-on experience with Generative AI tools to enhance documentation quality and workflow productivity.\n- Security/IAM domain knowledge (Okta or similar IDaaS).\n\n- Track record of leading the documentation efforts independently for a launch.\n- Strong technical fluency to read code and API specs and validate content firsthand.\n- Experience writing for Developers, such as SDK, CLI, or API reference guides.\n- Comfortable prioritizing and negotiating scope or timelines with stakeholders.\n\n- Self-starter and a strong communicator (both verbal and written).\n- Experience working with team members across different timezones.\n- A team player who enjoys collaborating with different stakeholders.\n- Experience working in a fast-paced, agile environment.\n\n### **Desired knowledge**\n\n- Familiarity with localization and translation best practices.\n- Working knowledge of HTML, CSS, and JavaScript.\n\n### **Education**\n\n- Bachelor, Diploma or Masters degree in Technical Communications, Information Systems, or a related technical field, and equivalent work experience, is required for this role.\n\n#LI-Hybrid\n\n#P25446\n\n**The Okta Experience**\n\n- [Supporting Your Well-Being](http://rewards.okta.com)\n- [Driving Social Impact](https://www.okta.com/company/okta-for-good/)\n- [Developing Talent and Fostering Connection + Community](https://www.okta.com/company/talent-connection-community/)\n\nWe are intentional about connection. Our global community, spanning over 20 offices worldwide, is united by a drive to innovate. Your journey begins with an immersive, in-person onboarding experience designed to accelerate your impact and connect you to our mission and team from day one.\n\nOkta is an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, ancestry, marital status, age, physical or mental disability, or status as a protected veteran. We also consider for employment qualified applicants with arrest and convictions records, consistent with applicable laws.\n\nIf reasonable accommodation is needed to complete any part of the job application, interview process, or onboarding please\u00a0[use this Form](https://docs.google.com/forms/d/1EfiEYZrIyhA2X4Fijk0R3RKYOzNoS3wtvyM4nhbZnXE/edit) to request an accommodation.\n\nNotice for New York City Applicants & Employees: Okta may use Automated Employment Decision Tools (AEDT), as defined by New York City Local Law 144, that use artificial intelligence, machine learning, or other automated processes to assist in our recruitment and hiring process. In accordance with NYC Local Law 144, if you are an applicant or employee residing in New York City, please\u00a0[click here](https://talent.okta.com/new-york-city-aedt-notice.html) to view our full NYC AEDT Notice.",
+   "url": "https://4dayweek.io/job/staff-technical-writer-at-okta-deebea51",
+   "category": "other",
+   "role": "Technical Writer",
+   "level": "senior",
+   "contract_type": "permanent",
+   "schedule_type": "best_place_to_work",
+   "hours_per_week_min": 40,
+   "hours_per_week_max": 40,
+   "work_arrangement": "hybrid",
+   "locations": [
+    {
+     "city": "Bengaluru",
+     "country": "India",
+     "continent": "Asia",
+     "latitude": 12.97194,
+     "longitude": 77.59369,
+     "work_arrangement": "hybrid",
+     "is_primary": true
+    }
+   ],
+   "skills": [
+    {
+     "name": "Agile",
+     "slug": "agile"
+    },
+    {
+     "name": "Communication",
+     "slug": "communication"
+    },
+    {
+     "name": "IAM",
+     "slug": "iam"
+    },
+    {
+     "name": "Security",
+     "slug": "security"
+    },
+    {
+     "name": "Technical Writing",
+     "slug": "technical-writing"
+    }
+   ],
+   "stack": [
+    {
+     "name": "CSS",
+     "slug": "css"
+    },
+    {
+     "name": "DITA",
+     "slug": "dita"
+    },
+    {
+     "name": "HTML",
+     "slug": "html"
+    },
+    {
+     "name": "JavaScript",
+     "slug": "javascript"
+    },
+    {
+     "name": "Markdown",
+     "slug": "markdown"
+    },
+    {
+     "name": "OpenAPI",
+     "slug": "openapi"
+    }
+   ],
+   "tools": [
+    {
+     "name": "Acrolinx",
+     "slug": "acrolinx"
+    },
+    {
+     "name": "Confluence",
+     "slug": "confluence"
+    },
+    {
+     "name": "Git",
+     "slug": "git"
+    },
+    {
+     "name": "GitHub",
+     "slug": "github"
+    },
+    {
+     "name": "Jira",
+     "slug": "jira"
+    },
+    {
+     "name": "Oxygen XML Author",
+     "slug": "oxygen-xml-author"
+    },
+    {
+     "name": "VS Code",
+     "slug": "vs-code"
+    }
+   ],
+   "posted_at": "2026-08-05T12:16:06Z",
+   "company": {
+    "id": "019e8337-80eb-7769-89f8-d642ed1fd91b",
+    "slug": "okta",
+    "name": "Okta",
+    "url": "https://4dayweek.io/company/okta",
+    "website": "https://www.okta.com",
+    "logo_url": "https://media.4dayweek.io/files/1780307303943_f492fa7966a8d134.jpg",
+    "short_description": "Identity and access management platform.",
+    "country": "United States",
+    "employees": 6000,
+    "schedule_type": "best_place_to_work",
+    "hours_full_time": 40,
+    "remote_level": "hybrid",
+    "hires_worldwide": false
+   }
+  },
+  {
+   "id": "019fd1da-3094-7a2d-8cc9-94964e8de54f",
+   "slug": "staff-site-reliability-engineer-at-okta-80b1f9a8",
+   "title": "Staff Site Reliability Engineer",
+   "description": "**Secure Every Identity, from AI to Human** Identity is the key to unlocking the potential of AI. Okta secures AI by building the trusted, neutral infrastructure that enables organizations to safely embrace this new era. This work requires a relentless drive to solve complex challenges with real-world stakes. We are looking for builders and owners who operate with speed and urgency and execute with excellence.\n\nThis is an opportunity to do career-defining work. We're all in on this mission. If you are too, let's talk.\n\n**Get to know Okta**\n\nOkta is The World\u2019s Identity Company. We free everyone to safely use any technology\u2014anywhere, on any device or app. Our Workforce and Customer Identity Clouds enable secure yet flexible access, authentication, and automation that transforms how people move through the digital world, putting Identity at the heart of business security and growth.\n\nAt Okta, we celebrate a variety of perspectives and experiences. We are not looking for someone who checks every single box, we\u2019re looking for lifelong learners and people who can make us better with their unique experiences.\n\nJoin our team! We\u2019re building a world where Identity belongs to you.\n\n## **The Engineering Opportunity**\n\nWe are looking for an experienced Staff Site Reliability Engineer to join Okta's Emerging Products Group (EPG). Our mission is to build highly reliable, scalable, and secure cloud services that our customers can trust. We embrace an automation-first mindset and continuously invest in platform engineering, observability, and operational excellence to enable our engineering teams to move quickly and safely.\n\nThis role is ideal for an engineer who enjoys solving complex technical challenges at scale, building automation, and improving the reliability of production systems. You will serve as a technical leader within the EPG SRE organization, partnering closely with software engineers, architects, and product teams to design, build, and operate world-class cloud services.\n\nThe ideal candidate exemplifies the philosophy of \"if you have to do it more than once, automate it\" and possesses a strong passion for continuous improvement, operational excellence, and software engineering.\n\n## **What You'll Be Doing**\n\n### **Reliability & Operations**\n\n- Design, build, and operate large-scale cloud infrastructure and production services.\n- Participate in an on-call rotation supporting highly available customer-facing systems.\n- Lead incident response efforts and drive post-incident reviews focused on systemic improvements.\n- Define, measure, and improve Service Level Indicators (SLIs), Service Level Objectives (SLOs), and error budgets.\n- Partner with engineering teams to improve service availability, scalability, performance, and resilience.\n- Continuously improve observability through metrics, logging, tracing, dashboards, and alerting.\n\n### **Engineering & Automation**\n\n- Develop software, automation, and infrastructure using Go, Python, Terraform, and related technologies.\n- Eliminate operational toil through automation, tooling, and platform engineering.\n- Improve deployment safety and operational workflows through CI/CD and GitOps practices.\n- Collaborate on modernizing existing workloads and aligning them with evolving platform capabilities.\n- Build self-service platforms, operational guardrails, and automation that improve developer velocity while maintaining reliability and security.\n\n### **Technical Leadership**\n\n- Lead complex reliability initiatives spanning multiple engineering teams.\n- Guide engineers in adopting operational best practices and reliability engineering principles.\n- Mentor engineers through technical collaboration, design reviews, incident analysis, and knowledge sharing.\n- Influence architecture and operational decisions through data-driven recommendations and engineering expertise.\n- Drive projects from conception through production rollout and long-term operational ownership.\n\n### **Innovation**\n\n- Explore and apply AI-assisted engineering techniques to improve operational efficiency, incident response, troubleshooting, and automation.\n- Identify opportunities to leverage emerging technologies to reduce toil and improve engineering productivity.\n\n### **Our Tech Stack**\n\n- Infrastructure/Orchestration: Kubernetes (EKS/GKE), Terraform, Helm, Git, ArgoCD, GitOps\n- Programming: Golang, Python\n- Observability: Datadog, Splunk\n- Data Stores: PostgreSQL, Redis, OpenSearch\n\n**What We Are Looking For**\n\n### **Technical Excellence**\n\n- Strong experience operating large-scale production services in AWS and/or GCP.\n- Deep expertise with Kubernetes in production environments.\n- Experience troubleshooting Kubernetes networking, storage, scheduling, scaling, and workload lifecycle issues.\n- Extensive experience with Infrastructure as Code technologies such as Terraform and Helm.\n- Strong software engineering skills in Golang and/or Python.\n- Experience building automation and internal engineering platforms.\n- Experience operating and troubleshooting distributed data platforms such as PostgreSQL, Redis, OpenSearch, MySQL, Cassandra, or similar technologies.\n- Strong understanding of cloud networking fundamentals including DNS, load balancing, ingress, TLS, service networking, and traffic management.\n- Experience with observability platforms, monitoring strategies, and production telemetry.\n- Experience with or strong interest in AI-assisted engineering and operational automation.\n\n### **Operational Excellence**\n\n- Strong expertise operating customer-facing production systems.\n- Experience leading incident response and driving operational improvements.\n- Deep understanding of reliability engineering concepts including SLIs, SLOs, error budgets, and capacity planning.\n- Strong understanding of CI/CD pipelines, deployment strategies, and automation-first operational practices.\n- Proven ability to balance reliability, scalability, security, and engineering velocity.\n\n### **Security & Compliance**\n\n- Understanding of cloud security fundamentals, IAM, secrets management, and secure infrastructure design.\n- Experience implementing operational controls and best practices in regulated or security-sensitive environments is a plus.\n\n### **Leadership**\n\n- Demonstrated success leading complex engineering initiatives across multiple teams.\n- Strong collaboration and communication skills.\n- Experience working effectively within globally distributed engineering organizations spanning multiple timezones and cultures.\n- Experience mentoring engineers and elevating technical capabilities within an organization.\n- Ability to influence technical direction through expertise, partnership, and execution.\n\n### **Preferred Qualifications**\n\n- Experience operating SaaS platforms serving large-scale customer workloads.\n- Experience working within Kubernetes-based microservices environments.\n- Experience supporting globally distributed production environments.\n- Experience with GitOps and ArgoCD.\n- Experience implementing AI-assisted operational tooling or automation workflows.\n\n#LI-Hybrid\n\n#P25320_3468110\n\n**The Okta Experience**\n\n- [Supporting Your Well-Being](http://rewards.okta.com)\n- [Driving Social Impact](https://www.okta.com/company/okta-for-good/)\n- [Developing Talent and Fostering Connection + Community](https://www.okta.com/company/talent-connection-community/)\n\nWe are intentional about connection. Our global community, spanning over 20 offices worldwide, is united by a drive to innovate. Your journey begins with an immersive, in-person onboarding experience designed to accelerate your impact and connect you to our mission and team from day one.\n\nOkta is an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, ancestry, marital status, age, physical or mental disability, or status as a protected veteran. We also consider for employment qualified applicants with arrest and convictions records, consistent with applicable laws.\n\nIf reasonable accommodation is needed to complete any part of the job application, interview process, or onboarding please\u00a0[use this Form](https://docs.google.com/forms/d/1EfiEYZrIyhA2X4Fijk0R3RKYOzNoS3wtvyM4nhbZnXE/edit) to request an accommodation.\n\nNotice for New York City Applicants & Employees: Okta may use Automated Employment Decision Tools (AEDT), as defined by New York City Local Law 144, that use artificial intelligence, machine learning, or other automated processes to assist in our recruitment and hiring process. In accordance with NYC Local Law 144, if you are an applicant or employee residing in New York City, please\u00a0[click here](https://talent.okta.com/new-york-city-aedt-notice.html) to view our full NYC AEDT Notice.",
+   "url": "https://4dayweek.io/job/staff-site-reliability-engineer-at-okta-80b1f9a8",
+   "category": "devops",
+   "role": "Site Reliability Engineer",
+   "level": "senior",
+   "contract_type": "permanent",
+   "schedule_type": "best_place_to_work",
+   "hours_per_week_min": 40,
+   "hours_per_week_max": 40,
+   "work_arrangement": "hybrid",
+   "locations": [
+    {
+     "city": "Bengaluru",
+     "country": "India",
+     "continent": "Asia",
+     "latitude": 12.97194,
+     "longitude": 77.59369,
+     "work_arrangement": "hybrid",
+     "is_primary": true
+    }
+   ],
+   "skills": [
+    {
+     "name": "Capacity Planning",
+     "slug": "capacity-planning"
+    },
+    {
+     "name": "Collaboration",
+     "slug": "collaboration"
+    },
+    {
+     "name": "Communication",
+     "slug": "communication"
+    },
+    {
+     "name": "Incident Response",
+     "slug": "incident-response"
+    },
+    {
+     "name": "Mentoring",
+     "slug": "mentoring"
+    },
+    {
+     "name": "Reliability Engineering",
+     "slug": "reliability-engineering"
+    },
+    {
+     "name": "SLIs",
+     "slug": "slis"
+    },
+    {
+     "name": "SLOs",
+     "slug": "slos"
+    }
+   ],
+   "stack": [
+    {
+     "name": "Go",
+     "slug": "go"
+    },
+    {
+     "name": "Kubernetes",
+     "slug": "kubernetes"
+    },
+    {
+     "name": "OpenSearch",
+     "slug": "opensearch"
+    },
+    {
+     "name": "PostgreSQL",
+     "slug": "postgresql"
+    },
+    {
+     "name": "Python",
+     "slug": "python"
+    },
+    {
+     "name": "Redis",
+     "slug": "redis"
+    }
+   ],
+   "tools": [
+    {
+     "name": "AWS",
+     "slug": "aws"
+    },
+    {
+     "name": "ArgoCD",
+     "slug": "argocd"
+    },
+    {
+     "name": "Datadog",
+     "slug": "datadog"
+    },
+    {
+     "name": "GCP",
+     "slug": "gcp"
+    },
+    {
+     "name": "Git",
+     "slug": "git"
+    },
+    {
+     "name": "Helm",
+     "slug": "helm"
+    },
+    {
+     "name": "Splunk",
+     "slug": "splunk"
+    },
+    {
+     "name": "Terraform",
+     "slug": "terraform"
+    }
+   ],
+   "posted_at": "2026-08-05T12:16:05Z",
+   "company": {
+    "id": "019e8337-80eb-7769-89f8-d642ed1fd91b",
+    "slug": "okta",
+    "name": "Okta",
+    "url": "https://4dayweek.io/company/okta",
+    "website": "https://www.okta.com",
+    "logo_url": "https://media.4dayweek.io/files/1780307303943_f492fa7966a8d134.jpg",
+    "short_description": "Identity and access management platform.",
+    "country": "United States",
+    "employees": 6000,
+    "schedule_type": "best_place_to_work",
+    "hours_full_time": 40,
+    "remote_level": "hybrid",
+    "hires_worldwide": false
+   }
+  },
+  {
+   "id": "019fd1d9-f730-783d-994f-bccaabedd320",
+   "slug": "home-manager-at-cornwall-council-646af283",
+   "title": "Home Manager",
+   "description": "*Please note that although the closing date for this advert is 2nd September 2026, applications will be reviewed on a weekly basis.\u00a0 This means that the advert will be withdrawn should the vacancies become filled before the closing date*\n\n**Lead with purpose. Inspire change. Transform lives.**\n\nIf you're passionate about improving outcomes for children and thrive on making a real difference, we want to hear from you.This is a fantastic opportunity to join a forward-thinking, innovative, and solution-focused Children\u2019s Service that puts children at the heart of everything we do.\n\n**The Service and Team**\n\nPoppins is a children\u2019s home offering specialist residential care and support for children with disabilities and complex individual needs. We provide a safe, stable, and nurturing environment where children can develop independent living skills and enjoy enriching activities and experiences that may not otherwise be available to them.\n\nWe use Positive Behaviour Support (PBS) and trauma-informed approaches, and we\u2019re committed to achieving Restraint Reduction Network accreditation. Our goal is to transform children\u2019s lived experiences and promote meaningful outcomes through inclusive, child-centred care.\n\nAt Cornwall Council, we don\u2019t just offer a job \u2014 we invest in your future. From bespoke training and professional development to clear pathways for career progression, we\u2019re committed to helping you grow as a leader while making a lasting impact in children\u2019s lives.\n\n**The Role**\n\nAs Registered Manager, you\u2019ll lead a dedicated team within the Disabled Children & Therapy Service. You\u2019ll work alongside experienced Registered Managers and Area Team Managers in a supportive network, driving high standards of care and improving outcomes for disabled children and young people.\n\nThis is a public/customer-facing role, where the statutory English language requirement for public sector workers applies.\n\nThis position will be subject to an enhanced criminal record disclosure check.\n\n**What you\u2019ll need to succeed:**\n\nTo thrive in this role, you\u2019ll bring a strong blend of leadership, specialist knowledge, and a deep commitment to improving the lives of disabled children and young people. You\u2019ll need:\n\n- Level 5 Diploma in Leadership and Management for Residential Childcare (or equivalent).\n- Proven track record of successful performance in residential care provision.\n- Extensive knowledge of relevant legislation and safeguarding frameworks.\n- A flexible, resourceful, and emotionally resilient approach to supporting children with complex needs.\n- Ability to work collaboratively with multi-agency teams and families.\n\n_**Please read the role profile for the full details of this role attached below in this advert**_\n\n**What you\u2019ll get in return:**\n\n- a recruitment and retention bonus of \u00a32000 upon starting the role, followed by an additional \u00a32000 after completing your first year with us.\n- competitive salary and generous relocation package of up to \u00a38000 for eligible candidates\n- specialist training offer for residential staff in addition to our core training programme for children and families services.\n- defined benefit pension scheme, based on your career average earnings. This includes the option for extra voluntary contributions\n- generous annual leave entitlement with the potential to purchase additional leave.\n- Employee benefits scheme giving employees access to a wide range of discounts to local and national goods and services.\n\n**Additional Information:**\n\n**Cornwall Council is unable to offer visa sponsorship or transfer existing sponsorship for this role.**\n\nThe full role profile is attached\u00a0[here](https://www.cornwall.gov.uk/media/lsppisyd/role_profile_registered_home_manager_new_competancies_june_26.pdf)\n\nWe recommend saving a copy of this to refer to if you are invited to an interview.\n\nFor more information or an informal chat about the role please contact Sharron Adams on [sharron.adams@cornwall.gov.uk](mailto:sharon.adams@cornwall.gov.uk)\n\nYou can find out more about our residential services [here](https://www.cornwall.gov.uk/jobs-and-careers/work-with-children-and-young-people/childrens-residential-services/)\n\n**Application Process**\n\nPlease attach a supporting statement to your application, you can add your Education & Qualifications details manually using the application form timeline or you can upload your CV. Remember to demonstrate\u00a0why you are suitable against each of the points marked as \u2018Application\u2019 on the Role Profile using examples from your experience or transferable skills. This might be through qualifications or descriptive examples from your work / personal experience, which clearly illustrates what you did and the effect it had. Guidance on how to complete your application can be found here \u2013\u00a0[The application process](https://www.cornwall.gov.uk/jobs-and-careers/working-here/application-process/).\n\nPlease note that applications cannot be edited after they have been submitted, please contact\u00a0[careers@cornwall.gov.uk](mailto:careers@cornwall.gov.uk)\u00a0if you have any queries or require assistance with your application.\n\n**Existing employees must apply using their Cornwall Council email address through the Opportunity Marketplace on Oracle.**",
+   "url": "https://4dayweek.io/job/home-manager-at-cornwall-council-646af283",
+   "category": "other",
+   "role": "Home Manager",
+   "level": "senior",
+   "contract_type": "permanent",
+   "schedule_type": "compressed_week",
+   "hours_per_week_min": 37,
+   "hours_per_week_max": 37,
+   "work_arrangement": "hybrid",
+   "locations": [
+    {
+     "city": "Redruth",
+     "country": "United Kingdom",
+     "continent": "Europe",
+     "work_arrangement": "hybrid",
+     "is_primary": true
+    }
+   ],
+   "timezones": [
+    "GMT",
+    "BST"
+   ],
+   "skills": [
+    {
+     "name": "Leadership",
+     "slug": "leadership"
+    },
+    {
+     "name": "PBS",
+     "slug": "pbs"
+    },
+    {
+     "name": "Residential Care",
+     "slug": "residential-care"
+    },
+    {
+     "name": "Safeguarding",
+     "slug": "safeguarding"
+    },
+    {
+     "name": "Trauma-Informed Care",
+     "slug": "trauma-informed-care"
+    }
+   ],
+   "posted_at": "2026-08-05T12:15:51Z",
+   "company": {
+    "id": "019e5b3c-fa03-71a7-8824-adc714281d17",
+    "slug": "cornwall-council",
+    "name": "Cornwall Council",
+    "url": "https://4dayweek.io/company/cornwall-council",
+    "website": "https://www.cornwall.gov.uk",
+    "logo_url": "https://media.4dayweek.io/files/1779492411772_bb385165bb43c828.jpg",
+    "short_description": "Cornwall's unitary local authority. Staff can request compressed hours including a 9-day fortnight on full pay.",
+    "country": "United Kingdom",
+    "employees": 5000,
+    "schedule_type": "compressed_week",
+    "hours_full_time": 37,
+    "remote_level": "hybrid",
+    "hires_worldwide": false
+   }
+  }
+ ],
+ "page": 1,
+ "limit": 25,
+ "total": 23149,
+ "has_more": true
+}

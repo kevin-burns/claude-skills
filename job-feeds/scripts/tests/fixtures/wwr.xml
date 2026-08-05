@@ -1,0 +1,154 @@
+<rss version="2.0">
+  <channel>
+    <title>We Work Remotely: Remote jobs in design, programming, marketing and more</title>
+    <link>https://weworkremotely.com/categories/remote-programming-jobs.rss</link>
+    <description>We Work Remotely: Remote jobs in design, programming, marketing and more</description>
+    <language>en-US</language>
+    <ttl>60</ttl>
+    <item>
+      <title>Stripe: Backend Engineer, AI Security</title>
+      <region>Anywhere in the World</region>
+      <category>Back-End Programming</category>
+      <description>
+
+&lt;p&gt;
+  &lt;strong&gt;Headquarters:&lt;/strong&gt; New York, San Francisco, Seattle, or Remote (US/Canada)
+&lt;/p&gt;
+
+&lt;h2&gt;Who we are&lt;/h2&gt;
+&lt;h3&gt;About Stripe&lt;/h3&gt;
+&lt;p&gt;Stripe is a financial infrastructure platform for businesses. Millions of companies—from the world's largest enterprises to the most ambitious startups—use Stripe to accept payments, grow their revenue, and accelerate new business opportunities. Our mission is to increase the GDP of the internet, and we have a staggering amount of work ahead. That means you have an unprecedented opportunity to put the global economy within everyone's reach while doing the most important work of your career.&lt;/p&gt;
+&lt;h3&gt;About the team&lt;/h3&gt;
+&lt;p&gt;AI is moving fast and Stripe is moving fast to adopt it. But we need to make sure we do all of this safely, and for most of these tools, enterprise-grade security isn't just available off the shelf. That's where the AI security team comes in—we're responsible for building and partnering to create the right security primitives to enable Stripe to move fast safely.&lt;/p&gt;
+&lt;p&gt;This is a team that works in the low-level components of our AI stack, so both infrastructure and security experience are pluses. This space is moving fast, so being comfortable with ambiguity and changes in priority is a must.&lt;/p&gt;
+&lt;p&gt;This is a foundational role—you'd be the first engineer on the team.&lt;/p&gt;
+&lt;h2&gt;What you'll do&lt;/h2&gt;
+&lt;p&gt;Engineers on this team do a mixture of partnering and advising with teams building AI infrastructure and products, and building security infrastructure primitives for AI.&lt;/p&gt;
+&lt;p&gt;One of our major focuses is building a security tooling layer that sits in the inference path, providing detection and protection against AI-specific threats like prompt injection, jailbreaks, and tool misuse.&lt;/p&gt;
+&lt;h3&gt;Responsibilities&lt;/h3&gt;
+&lt;p&gt;• Build security frameworks integrated with our core AI infrastructure&lt;/p&gt;
+&lt;p&gt;• Design and implement defenses against AI-specific threats like prompt injection and jailbreaks&lt;/p&gt;
+&lt;p&gt;• Collaborate with other engineering teams to ensure our AI infrastructure and products are built securely&lt;/p&gt;
+&lt;p&gt;• Support other engineering teams in integrating security primitives&lt;/p&gt;
+&lt;p&gt;• Uphold our high engineering standards and improve our codebase and processes&lt;/p&gt;
+&lt;p&gt;• Design and build systems that help define the state of the art for AI security&lt;/p&gt;
+&lt;h2&gt;Who you are&lt;/h2&gt;
+&lt;p&gt;We're looking for someone who meets the minimum requirements to be considered for the role. If you meet these requirements, you are encouraged to apply. The preferred qualifications are a bonus, not a requirement.&lt;/p&gt;
+&lt;h3&gt;Minimum requirements&lt;/h3&gt;
+&lt;p&gt;• 5+ years of software development experience&lt;/p&gt;
+&lt;p&gt;• Experience independently designing and developing medium-to-large projects&lt;/p&gt;
+&lt;p&gt;• Experience working collaboratively across multiple engineering teams&lt;/p&gt;
+&lt;p&gt;• Experience writing high-quality code in a major programming language&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;• Ability to drive clear next steps when working in an ambiguous environment&lt;/p&gt;
+&lt;p&gt;• Ability to think creatively and reason clearly in a complex problem domain&lt;/p&gt;
+&lt;h3&gt;Preferred qualifications&lt;/h3&gt;
+&lt;p&gt;• Experience developing, deploying, and maintaining reliable infrastructure systems&lt;/p&gt;
+&lt;p&gt;• Experience in security engineering&lt;/p&gt;
+&lt;p&gt;• Experience building AI agents or LLM-based systems&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;To apply:&lt;/strong&gt; &lt;a href="https://weworkremotely.com/remote-jobs/stripe-backend-engineer-ai-security"&gt;https://weworkremotely.com/remote-jobs/stripe-backend-engineer-ai-security&lt;/a&gt;&lt;/p&gt;
+</description>
+      <pubDate>Wed, 22 Jul 2026 07:01:06 +0000</pubDate>
+      <guid>https://weworkremotely.com/remote-jobs/stripe-backend-engineer-ai-security</guid>
+      <link>https://weworkremotely.com/remote-jobs/stripe-backend-engineer-ai-security</link>
+    </item>
+    <item>
+      <title>Cloudflare: Principal Partner Solutions Engineer, SAARC (Based in Bangalore)</title>
+      <region>Anywhere in the World</region>
+      <category>Full-Stack Programming</category>
+      <description>
+
+&lt;p&gt;
+  &lt;strong&gt;Headquarters:&lt;/strong&gt; Hybrid or Remote
+&lt;/p&gt;
+
+&lt;div class="content-intro"&gt;&lt;div&gt;&lt;strong&gt;About Us&lt;/strong&gt;&lt;/div&gt;
+&lt;div&gt;
+&lt;p&gt;At Cloudflare, we are on a mission to help build a better Internet. Today the company runs one of the world’s largest networks that powers millions of websites and other Internet properties for customers ranging from individual bloggers to SMBs to Fortune 500 companies. Cloudflare protects and accelerates any Internet application online without adding hardware, installing software, or changing a line of code. Internet properties powered by Cloudflare all have web traffic routed through its intelligent global network, which gets smarter with every request. As a result, they see significant improvement in performance and a decrease in spam and other attacks. Cloudflare was named to Entrepreneur Magazine’s Top Company Cultures list and ranked among the World’s Most Innovative Companies by Fast Company.&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;At Cloudflare, we’re not looking for people who wait for a polished roadmap; we’re looking for the builders who see the cracks in the Internet that everyone else has simply learned to live with. We value candidates who have the instinct to spot a "normalized" problem and the AI-native curiosity to create a solution using the latest tools. Our culture is built on iteration, leveraging AI to ship faster today to make it better tomorrow, while ensuring that every improvement, no matter how small, is shared across the team to lift everyone up. If you’re the type of person who values curiosity over bureaucracy, and that AI is a partner in solving tough problems to keep the Internet moving forward, you’ll fit right in.&lt;/p&gt;
+&lt;/div&gt;&lt;/div&gt;&lt;h2&gt;Available Locations&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;Bengaluru, India&lt;/li&gt;&lt;li&gt;India&lt;/li&gt;&lt;/ul&gt;&lt;h2&gt;About the Role&lt;/h2&gt;&lt;p&gt;The Principal Partner Solution Engineer (PSE) is a high-impact, strategic technical sales leader&amp;nbsp; responsible for end-to-end technical lifecycle and enablement of the assigned partners, managing both pre-sales and post-sales engineering activities. In this role, you will act as the single technical point of contact as the trusted advisory for your assigned partners, driving technical validation during the sales cycle, architecting their delivery readiness and ensuring ongoing Partner Success.&lt;/p&gt;&lt;p&gt;The role focuses heavily on driving value-based solution selling to accelerate the adoption of Cloudflare platform with focus on One (SASE/SSE) and AI Infrastructure (Workers AI / AI Gateway). By cultivating deeply technical champions within the partner organization, aligning architectures to tangible business outcomes, optimizing post-sales delivery and building joint managed services offering, you will directly expand and influence the pipeline to maximize Partner-Influenced Opportunity (PIO) revenue.&lt;/p&gt;&lt;h2&gt;Responsibilities&lt;/h2&gt;&lt;h3&gt;1. Pre-Sales Engineering &amp;amp; Champion Building&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Technical Alignment, Discovery &amp;amp; Enablement: Own the technical relationship with Partners to align on building joint Go-To-Market (GTM) strategies. Align, build, and accelerate partner technical capabilities, enabling them to lead deep technical discovery and architectural design to independently sell scalable solutions leveraging the Cloudflare Platform with a strong focus on AI and Cloudflare One (CF1).&lt;/li&gt;&lt;li&gt;Technical Account Plan Ownership: Own and drive the end-to-end Technical Account Plan (TAP) for assigned strategic partners. Act as the primary architect mapping partner business goals to technical execution milestones, ensuring continuous alignment on CF1 and AI adoption targets.&lt;/li&gt;&lt;li&gt;Building Technical Champions: Identify, enable, and cultivate key technical advocates and "Champions" within the partner organization to scale Cloudflare expertise independently, generate Partner-Influenced Opportunities (PIO), and empower them to deliver high-value professional services around Zero Trust and AI application security.&lt;/li&gt;&lt;li&gt;Driving PIO via Next-Gen Architectures: Collaborate with sales teams to proactively source, qualify, and expand PIO through strategic architectural alignment, focusing on migrating legacy network architectures to CF1 and integrating secure AI solutions.&lt;/li&gt;&lt;li&gt;Deal Support &amp;amp; Qualification: Enable partners' technical validation, proof-of-concept (PoC), demo, pipeline generation, and pipeline acceleration capabilities. Identify joint pursuit accounts, facilitate strategic technical account planning, and deliver cutting-edge solution architecture sessions for Named Partners&lt;/li&gt;&lt;/ul&gt;&lt;h3&gt;2. Accelerate Services Delivery&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;ASD Partner Journey Ownership: Own the ASD partner journey to ensure partners possess the advanced capabilities required to deploy, manage, and support the Cloudflare platform and AI application workloads seamlessly.&lt;/li&gt;&lt;li&gt;Joint Services Offering Acceleration with strong focus on CF1 and A1: Build and co-develop joint services catalogues with key partners, accelerating the creation and launch of their own Cloudflare-focused services offerings, managed CF1 SASE practices, and AI security assessments.&lt;/li&gt;&lt;li&gt;Service Monetization &amp;amp; Performance Metrics: Enable partners to embed CF1 and Workers AI capabilities into their own managed security portfolios to shorten time-to-market, protect client AI pipelines, and maximize profitability. Develop, manage, and track key performance indicators (KPIs) to measure and improve the effectiveness of these partner service deliveries&lt;/li&gt;&lt;li&gt;Technical Account Management &amp;amp; Architectural Health: Act as the escalated technical point of contact to ensure long-term architectural health, utilizing telemetry and proactive design to move the partner relationship from reactive to strategics for Cloudflare.&lt;/li&gt;&lt;/ul&gt;&lt;h3&gt;3. Automation AI Agents &amp;amp; Continuous Innovation&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Leverage Autonomous AI Tools: Champion the use of Cloudflare OS and AI tools (Agent PAT and Agent Echo) to automate standard, repeatable technical tasks, optimizing operational efficiency and freeing up bandwidth for high-touch, strategic partner engagements.&lt;/li&gt;&lt;li&gt;AI &amp;amp; CF1 Product Enhancement Feedback Loop: Engage partner champions in the Partner Technical Advisory Council (PTAC) to give them early access to beta software, capture raw product feedback, and drive joint co-innovation on CF1 features and emerging AI products.&lt;/li&gt;&lt;li&gt;Cross-Functional Enablement: Participate in continuous cross-training programs to maintain peak proficiency in both pre-sales scoping and post-sales service deployment across the entire Cloudflare One and AI ecosystem.&lt;/li&gt;&lt;/ul&gt;&lt;h2&gt;Desirable Skills, Knowledge, and Experience&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;8+ years of technical, partner-facing experience (e.g., Systems Engineer, Solutions Architect, or Technical Account Manager) in cybersecurity, cloud infrastructure, or networking.&lt;/li&gt;&lt;li&gt;Strong technical depth in Cloudflare One (CF1) or equivalent SASE/SSE architectures, Zero Trust, DNS, and application security, alongside hands-on familiarity with AI deployment, AI Gateway, LLM orchestration frameworks, or vector databases.&lt;/li&gt;&lt;li&gt;Proven track record of developing technical talent or building "champion" programs within partner organizations, specifically driving adoption of complex cloud networks and AI technologies.&lt;/li&gt;&lt;li&gt;Enterprise Architecture &amp;amp; Project Management: Deep understanding of enterprise IT, multi-cloud, and hybrid cloud environment while managing complex projects with multiple stakeholders&lt;/li&gt;&lt;li&gt;Demonstrated ability to manage the technical lifecycle of a deal from initial pre-sales discovery and CF1/AI PIO generation through post-sale service delivery.&lt;/li&gt;&lt;li&gt;Strong communication skills with a track record of presenting complex CF1 architectures and AI-driven use cases to partner leadership and technical teams alike.&lt;/li&gt;&lt;li&gt;Bachelor’s degree in Computer Science, Engineering, or equivalent practical experience.&lt;/li&gt;&lt;/ul&gt;&lt;div class="content-conclusion"&gt;&lt;p&gt;&lt;strong&gt;What Makes Cloudflare Special?&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span&gt;We’re not just a highly ambitious, large-scale technology company. We’re a highly ambitious, large-scale technology company with a soul. Fundamental to our mission to help build a better Internet is protecting the free and open Internet.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://blog.cloudflare.com/protecting-free-expression-online/"&gt;&lt;strong&gt;Project Galileo&lt;/strong&gt;&lt;/a&gt;&lt;span&gt;: Since 2014, we've equipped more than 2,400 journalism and civil society organizations in 111 countries with powerful tools to defend themselves against attacks that would otherwise censor their work, technology already used by Cloudflare’s enterprise customers--at no cost.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;a href="https://www.cloudflare.com/athenian/"&gt;Athenian Project&lt;/a&gt;&lt;/strong&gt;&lt;span&gt;: In 2017, we created the Athenian Project to ensure that state and local governments have the highest level of protection and reliability for free, so that their constituents have access to election information and voter registration. Since the project, we've provided services to more than 425 local government election websites in 33 states.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://1.1.1.1/"&gt;&lt;strong&gt;1.1.1.1&lt;/strong&gt;&lt;/a&gt;&lt;span&gt;: We released&lt;/span&gt;&lt;a href="https://1.1.1.1/"&gt; &lt;span&gt;1.1.1.1&lt;/span&gt;&lt;/a&gt;&lt;span&gt; to help fix the foundation of the Internet by building a faster, more secure and privacy-centric public DNS resolver. This is available publicly for everyone to use - it is the first consumer-focused service Cloudflare has ever released. Here’s the deal - we don’t store client IP addresses never, ever. We will continue to abide by our&lt;/span&gt;&lt;a href="https://developers.cloudflare.com/1.1.1.1/privacy/public-dns-resolver"&gt; privacy commitment&lt;/a&gt;&lt;span&gt; and ensure that no user data is sold to advertisers or used to target consumers.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span&gt;Sound like something you’d like to be a part of? We’d love to hear from you!&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span&gt;Please note that applicants who progress to the offer stage of the interview process may be asked to attend an in-person interview within one of the Cloudflare Offices or Cloudflare Hubs.&amp;nbsp; More details about this will be available at that stage of the interview process.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span&gt;This position may require access to information protected under U.S. export control laws, including the U.S. Export Administration Regulations. Please note that any offer of employment may be conditioned on your authorization to receive software or technology controlled under these U.S. export laws without sponsorship for an export license.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span&gt;Cloudflare is proud to be an equal opportunity employer. &amp;nbsp;We are committed to providing equal employment opportunity for all people and place great value in both diversity and inclusiveness. &amp;nbsp;All qualified applicants will be considered for employment without regard to their, or any other person's, perceived or actual&lt;/span&gt; &lt;span&gt;race, color, religion, sex, gender, gender identity, gender expression, sexual orientation, national origin, ancestry, citizenship, age, physical or mental disability, medical condition, family care status, or any other basis protected by law. &lt;/span&gt;&lt;span&gt;We are an AA/Veterans/Disabled Employer.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span&gt;Cloudflare provides reasonable accommodations to qualified individuals with disabilities. &amp;nbsp;Please tell us if you require a reasonable accommodation to apply for a job. Examples of reasonable accommodations include, but are not limited to, changing the application process, providing documents in an alternate format, using a sign language interpreter, or using specialized equipment. &amp;nbsp;If you require a reasonable accommodation to apply for a job, please contact us via e-mail at &lt;/span&gt;&lt;span&gt;hr@cloudflare.com&lt;/span&gt;&lt;span&gt; or via mail at 101 Townsend St. San Francisco, CA 94107.&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;To apply:&lt;/strong&gt; &lt;a href="https://weworkremotely.com/remote-jobs/cloudflare-principal-partner-solutions-engineer-saarc-based-in-bangalore"&gt;https://weworkremotely.com/remote-jobs/cloudflare-principal-partner-solutions-engineer-saarc-based-in-bangalore&lt;/a&gt;&lt;/p&gt;
+</description>
+      <pubDate>Wed, 22 Jul 2026 07:00:51 +0000</pubDate>
+      <guid>https://weworkremotely.com/remote-jobs/cloudflare-principal-partner-solutions-engineer-saarc-based-in-bangalore</guid>
+      <link>https://weworkremotely.com/remote-jobs/cloudflare-principal-partner-solutions-engineer-saarc-based-in-bangalore</link>
+    </item>
+    <item>
+      <title>Gusto, Inc.: Business Money Engineering</title>
+      <region>Anywhere in the World</region>
+      <category>Full-Stack Programming</category>
+      <description>
+
+&lt;p&gt;
+  &lt;strong&gt;Headquarters:&lt;/strong&gt; San Francisco, CA;New York, NY;Ontario, CAN - Remote;Toronto, Ontario, CAN - Remote;United States - Remote
+&lt;/p&gt;
+
+&lt;div class="content-intro"&gt;&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;strong&gt;About Gusto&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;At Gusto, we're on a mission to grow the small business economy. We handle the hard stuff — payroll, health insurance, 401(k)s, and HR — so owners can focus on their craft and their customers. With teams in Denver, San Francisco, and New York, we support more than 500,000 small businesses nationwide and are building a workplace that reflects the people we serve.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;br&gt;All full-time employees receive competitive base pay, benefits, and equity (RSUs) — because everyone who helps build Gusto should share in its success. Offer amounts are determined by role, level, and location. Learn more about our&lt;a href="https://gusto.com/about/careers/total-rewards"&gt; Total Rewards philosophy&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;br&gt;AI is a fundamental part of how work gets done at Gusto. We expect all team members to actively engage with AI tools relevant to their role and grow their fluency as the technology evolves. AI experience requirements vary by role and will be assessed during the interview process.&lt;/p&gt;&lt;/div&gt;&lt;p&gt;&lt;strong&gt;About the Role:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;As a Staff Engineer, you’ll play a significant role in building new products and scaling existing ones to further evolve Gusto’s product offerings. Your work will focus on improving our customers’ financial tools, helping them spend less time managing their finances and more time focusing on their businesses. You will collaborate with a team of highly skilled professionals, contributing engineering expertise throughout the product development lifecycle—from ideation and design to architecture, development, release, and post-release monitoring and scaling.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;About the Team:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;At Gusto, the Business Money team is on a mission to support small and medium-sized businesses by providing financial tools that help them manage cash flow and run their businesses with confidence. The suite of products we own includes (but is not limited to) Bill Pay, Invoicing, Expenses, Payroll Bridge (Payroll Line of Credit to fund payroll), and a Cash Flow Dashboard that offers a comprehensive view of business finances.&lt;/p&gt;
+&lt;p&gt;Our team is relatively small but operates at a fast, startup-like pace. In less than two years, the team has effectively created a new business vertical called Gusto Money, delivering multiple large scale 0-1 products that help small businesses have more control over their business finances and greater confidence in making financial decisions. As we continue to expand our offerings across business finance, accounting, and cash flow management, this is a great opportunity to apply your skills and help shape the future of Gusto Money.&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Here’s what you’ll do day-to-day:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Build products &amp;amp; services and scale the platform that powers business money and accounting experiences at Gusto&lt;/li&gt;
+&lt;li&gt;Take ownership of projects, ensuring they meet high standards of quality and performance&lt;/li&gt;
+&lt;li&gt;Adopt the latest best practices for using AI technologies across all aspects of product development&lt;/li&gt;
+&lt;li&gt;Collaborate on complex and ambiguous problems with partnerships from Engineering, Product Management, Design, Data Science, Compliance, Operations, and other cross-functional teams&lt;/li&gt;
+&lt;li&gt;Engage in a highly supportive environment working with others to drive productivity and innovation&lt;/li&gt;
+&lt;li&gt;Help drive the product development process from concept to launch&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Here’s what we're looking for:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;8+ years of professional software development experience&lt;/li&gt;
+&lt;li&gt;Experience architecting, building, and testing large-scale and resilient distributed systems and/or software platforms&lt;/li&gt;
+&lt;li&gt;Maximizes the use of AI tooling while guiding the team in adopting modern AI practices&lt;/li&gt;
+&lt;li&gt;Comfortable dealing with ambiguity and working with quick iteration cycles&lt;/li&gt;
+&lt;li&gt;Ability to communicate technical complexity and help facilitate informed tradeoffs&lt;/li&gt;
+&lt;li&gt;Willingness to collaborate across different functions&lt;/li&gt;
+&lt;li&gt;An aptitude and interest in bringing clarity and simplicity to complex and ambiguous problems&lt;/li&gt;
+&lt;li&gt;Experience as a technical lead, leading the work of multiple engineers on multi-quarter projects&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Nice, but not required:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Experience in the Fintech industry building scalable backend systems to power financial services and products&lt;/li&gt;
+&lt;li&gt;Experience with accounting, bookkeeping, tax, or financial reporting systems and a strong understanding of accounting workflows&lt;/li&gt;
+&lt;li&gt;Familiarity with small business accounting or tax domains, including concepts such as ledgers, reconciliations, financial statements, payroll accounting, or tax compliance&lt;/li&gt;
+&lt;li&gt;Ruby/Ruby on Rails, GraphQL, React, Typescript, AWS&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Please note that a two day travel to a Gusto office for onboarding is required for this position.&lt;/strong&gt;&amp;nbsp;If you have any questions regarding this requirement, please share with your recruiter.&lt;/p&gt;
+&lt;p&gt;Our cash compensation amount for this role is targeted at $163,000–$204,000 in Denver &amp;amp; most remote locations, and $197,000–$247,000 for San Francisco &amp;amp; New York. Stock equity is additional. Final offer amounts are determined by multiple factors including candidate experience and expertise and may vary from the amounts listed above.&lt;/p&gt;&lt;div class="content-conclusion"&gt;&lt;hr&gt;
+&lt;p&gt;&lt;span&gt;Gusto has physical office spaces in Denver, San Francisco, and New York City. Employees who are based in those locations will be expected to work from the office on designated days approximately &lt;strong&gt;2-3 days &lt;/strong&gt;per week (or more depending on role). The same office expectations apply to all Symmetry roles, Gusto's subsidiary, whose physical office is in Scottsdale.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Note: The San Francisco office expectations encompass both the San Francisco and San Jose metro areas.&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;When approved to work from a location other than a Gusto office, a secure, reliable, and consistent internet connection is required. This includes non-office days for hybrid employees.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;span&gt;Our customers come from all walks of life and so do we. We hire great people from a wide variety of backgrounds, not just because it's the right thing to do, but because it makes our company stronger. If you share our values and our enthusiasm for small businesses, you will find a home at Gusto.&amp;nbsp;&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span&gt;Gusto is proud to be an equal opportunity employer. We do not discriminate in hiring or any employment decision based on race, color, religion, national origin, age, sex (including pregnancy, childbirth, or related medical conditions), marital status, ancestry, physical or mental disability, genetic information, veteran status, gender identity or expression, sexual orientation, or other applicable legally protected characteristic. Gusto considers qualified applicants with criminal histories, consistent with applicable federal, state and local law. Gusto is also committed to providing reasonable accommodations for qualified individuals with disabilities and disabled veterans in our job application procedures. We want to see our candidates perform to the best of their ability. If you require a medical or religious accommodation at any time throughout your candidate journey, please fill out &lt;a href="https://docs.google.com/forms/d/e/1FAIpQLSdEfl7Bp-Twz7LLlhGlha46CrxZ9Kacgakmarf3K2TbnaEgKQ/viewform"&gt;this form&lt;/a&gt; and a member of our team will get in touch with you.&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Gusto takes security and protection of your personal information very seriously. Please review our &lt;a href="https://gusto.com/about/careers/fraudulent-activity-disclaimer"&gt;Fraudulent Activity Disclaimer&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Personal information collected and processed as part of your Gusto application will be subject to&amp;nbsp;&lt;a href="https://gusto.com/about/careers/applicant-privacy-notice"&gt;Gusto's Applicant Privacy Notice&lt;/a&gt;.&lt;/p&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;To apply:&lt;/strong&gt; &lt;a href="https://weworkremotely.com/remote-jobs/gusto-inc-business-money-engineering"&gt;https://weworkremotely.com/remote-jobs/gusto-inc-business-money-engineering&lt;/a&gt;&lt;/p&gt;
+</description>
+      <pubDate>Wed, 22 Jul 2026 04:02:50 +0000</pubDate>
+      <guid>https://weworkremotely.com/remote-jobs/gusto-inc-business-money-engineering</guid>
+      <link>https://weworkremotely.com/remote-jobs/gusto-inc-business-money-engineering</link>
+    </item>
+    </channel>
+</rss>

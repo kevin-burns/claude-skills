@@ -1,0 +1,55 @@
+<rss xmlns:ns0="http://www.w3.org/2005/Atom" version="2.0"><channel><title>Python.org Jobs Feed</title><link>https://www.python.org/jobs/</link><description>Python jobs from Python.org</description><ns0:link href="https://www.python.org/jobs/feed/rss/" rel="self" /><language>en-us</language><lastBuildDate>Wed, 05 Aug 2026 13:10:40 +0000</lastBuildDate><item><title>Lead Python Backend Engineer, Reef Technologies</title><link>https://www.python.org/jobs/8122/</link><description>Warsaw (fully remote), Poland
+&lt;p&gt;&lt;strong&gt;Lead Python Backend Engineer&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;We’re looking for Python backend engineers interested in team management to work on a trustless supercluster of performance-proofed GPU-enabled sandboxed docker container runners controlled by truly decentralized algorithms (not just PAXOS or RAFT).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Wow, that was a mouthful...&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;If you found it interesting, join Reef Technologies and lead a team of senior engineers who tackle complex technical challenges. With us, you’ll work on your own terms:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Contribute from wherever you like—we are fully remote&lt;/li&gt;
+&lt;li&gt;Set your own time commitment, as long as it’s at least 30h per week&lt;/li&gt;
+&lt;li&gt;See how we work in our handbook: github.com/reef-technologies/handbook&lt;/li&gt;
+&lt;li&gt;Influence the way we operate through our Sociocracy 3.0 decision-making process&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Salary on a B2B contract:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;75–90 USD or 300–380 PLN per hour, or 12600–15120 USD or 48000–60800 PLN a month if you work 40 hours per week (most of us work a bit less)&lt;/li&gt;
+&lt;li&gt;Flexible work schedule (as measured with a time tracker)&lt;/li&gt;
+&lt;li&gt;We automatically adjust rates based on inflation twice a year&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So, what do you think? You don't even need a CV, just click &lt;a class="reference external" href="https://careers-3.reef.pl/?utm_source=python-org" rel="noopener noreferrer"&gt;here&lt;/a&gt; and shoot a few quick commands to apply.&lt;/p&gt;
+
+&lt;p&gt;We're looking for someone with 2+ years of team management and 5+ years of programming experience (including at least a year with Python, open source and significant personal projects do count).&lt;/p&gt;
+</description><guid>https://www.python.org/jobs/8122/</guid></item><item><title>Senior Python Backend Engineer, Reef Technologies</title><link>https://www.python.org/jobs/8121/</link><description>Warsaw (fully remote), Poland
+&lt;p&gt;&lt;strong&gt;Senior Python Backend Engineer&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;We’re looking for Python backend engineers to work on a trustless supercluster of performance-proofed GPU-enabled sandboxed docker container runners controlled by truly decentralized algorithms (not just PAXOS or RAFT).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Wow, that was a mouthful...&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;If you found it interesting, join Reef Technologies and tackle complex technical challenges like this on your own terms:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Contribute from wherever you like—we are fully remote&lt;/li&gt;
+&lt;li&gt;Set your own time commitment, as long as it’s at least 30h per week&lt;/li&gt;
+&lt;li&gt;See how we work in our &lt;a class="reference external" href="https://github.com/reef-technologies/handbook" rel="noopener noreferrer"&gt;handbook&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Influence the way we operate through our Sociocracy 3.0 decision-making process&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Salary on a B2B contract:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;45-70 USD or 180-280 PLN per hour&lt;/li&gt;
+&lt;li&gt;Flexible work schedule (as measured with a time tracker)&lt;/li&gt;
+&lt;li&gt;We automatically adjust rates based on inflation twice a year&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So, what do you think? You don't even need a CV, just click &lt;a class="reference external" href="https://careers.reef.pl/?utm_source=python-org" rel="noopener noreferrer"&gt;here&lt;/a&gt; and shoot a few quick commands to apply.&lt;/p&gt;
+
+&lt;p&gt;We're looking for someone with 5+ years of programming experience, including at least a year with Python (including opensource and significant personal projects).&lt;/p&gt;
+</description><guid>https://www.python.org/jobs/8121/</guid></item><item><title>Python Backend Engineer, Constelli Signals</title><link>https://www.python.org/jobs/8120/</link><description>Hyderabad, Telangana, India
+&lt;p&gt;We are hiring a Python Backend Engineer to take ownership of high-throughput backend services. You will work alongside our front-end and C# application teams to build the infrastructure that ingests, processes, and routes real-time data streams across our platforms.&lt;/p&gt;
+&lt;blockquote&gt;
+This role is for someone who enjoys asynchronous Python, complex data-flow problems, and the discipline of building production systems that need to run reliably under sustained load.&lt;/blockquote&gt;
+
+&lt;p&gt;Experience: 4+ years of professional backend software engineering experience, primarily in Python.&lt;/p&gt;
+&lt;p&gt;Asynchronous Python: Strong working knowledge of asyncio and concurrent programming patterns for high-throughput I/O.&lt;/p&gt;
+&lt;p&gt;API Frameworks: Production experience with FastAPI (or comparable async frameworks such as Starlette, aiohttp, or Sanic) and pydantic-based schema validation.&lt;/p&gt;
+&lt;p&gt;Message Brokers: Hands-on experience with at least one event streaming or message broker platform — Apache Kafka, RabbitMQ, NATS, or equivalent.&lt;/p&gt;
+&lt;p&gt;Databases: Proficient with PostgreSQL and capable of writing optimized SQL; comfortable with schema design, indexing, and query profiling.&lt;/p&gt;
+&lt;p&gt;Time-Series Data: Working familiarity with time-series databases (e.g., TimescaleDB, InfluxDB, QuestDB) and the trade-offs of heavy-write workloads.
+Networking: Solid grasp of TCP/UDP, WebSockets, and HTTP/REST; able to debug at the protocol level when needed.&lt;/p&gt;
+&lt;p&gt;Platform &amp;amp; Tooling: Comfortable Git-based workflows.&lt;/p&gt;
+&lt;p&gt;Testing &amp;amp; Quality: Demonstrated practice with pytest, unit and integration testing, and CI pipelines.&lt;/p&gt;
+</description><guid>https://www.python.org/jobs/8120/</guid></item></channel></rss>
