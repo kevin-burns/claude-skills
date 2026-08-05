@@ -124,18 +124,19 @@ Remember gotcha 5: `--project` takes the **display name or full UUID**, never a 
 
 The reason to drive `linearis` from Claude Code rather than clicking Linear's web UI is the Ogham workflow experiment: **durable state lives in Linear** (issue status, blocked-by, milestone); **transient session context lives in Ogham**, the shared-memory database.
 
-Ogham ships its own CLI — `ogham`, a Go binary (MCP client for the Ogham memory stack, JSON output by default). Source: <https://github.com/ogham-mcp/ogham-cli>. It's installed locally but **not on PATH** (currently a `dev` build, behind latest), so invoke it by path or alias it:
+Ogham ships its own CLI — a Go binary, MCP client for the Ogham memory stack, JSON output by default. Source: <https://github.com/ogham-mcp/ogham-cli>.
 
-```bash
-alias ogham=~/Developer/web-projects/ogham-cli/ogham   # adjust to your checkout
-```
+**Do not hardcode its path or assume its name.** The binary is `omcli` on some machines and `ogham` on others, and is sometimes only a checkout rather than on `PATH`. Worse, on machines running the Python MCP a bare `ogham` may resolve to *that* rather than the Go CLI. So resolve it — `ids.env` (above) exports `OGHAM_CLI` by trying `omcli` first, then `ogham`, then the known checkout locations, and leaves it empty rather than failing if nothing is found.
 
 So when an agent picks up `ENG-114`:
 
 ```bash
-linear issues read ENG-114                      # durable: atomic spec, status, blocked-by
-ogham search "typed edges store_triple"         # transient: design memory (hybrid vector+keyword)
+source ~/.config/linearis/ids.env
+linear issues read ENG-114                          # durable: atomic spec, status, blocked-by
+"$OGHAM_CLI" search "typed edges store_triple"      # transient: design memory (hybrid vector+keyword)
 ```
+
+Guard on it if the command is load-bearing: `[ -n "$OGHAM_CLI" ] || echo "ogham cli not found"`.
 
 `ogham search <query>` runs the fast native-Go hybrid search; add `--sidecar` for the full retrieval pipeline (intent detection, MMR, graph augmentation), `--limit N` / `--tags a,b` to scope. That pairing — spec from Linear, design memory from Ogham — is the loop every prior task-tracking attempt was missing. See `ENG-131` for the recipe deliverable in v0.17.
 
