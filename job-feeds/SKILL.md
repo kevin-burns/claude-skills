@@ -60,8 +60,17 @@ Instead, ask them three questions and write the file yourself:
 1. **What roles are you after?** Plain English — "platform engineering and SRE", "data
    engineering", "engineering management". One lane per distinct track.
 2. **Where?** Ask, but **be honest about the answer: there is no location filter.**
-   The only geography control is `--remote`, a boolean from per-source metadata, and it is
-   unreliable — a posting reading "Germany remote" can still carry `remote = 0`.
+   There is no geography control at all. `--remote` is not one, and is worth
+   understanding before you reach for it: it is **effectively a source selector, not a row
+   filter.** Five of the eight feeds are remote-only boards whose normaliser sets the flag
+   to a constant `1`, while Arbeitnow — 78% of the corpus — sets it on 6.8% of rows. So
+   `--remote` roughly means "drop Arbeitnow and 4 Day Week", not "show me remote jobs".
+   Measured on 1,323 rows: of the rows whose location plainly says remote, **52% carry
+   `remote = 0`**, and 19% carry `remote = 1` while naming a specific office. It also
+   discards rows whose flag is unset (all 20 Python.org rows), because the filter is SQL
+   `AND remote = 1` and `NULL = 1` is falsy.
+
+   Use `jfeeds locations` instead to see where the rows actually are.
 
    Coverage is decided by the source mix, not by config, and the mix is
    **German-weighted**: on a real run Arbeitnow supplied 84 of 98 matches. A test install
@@ -146,7 +155,7 @@ Two other flags exist for pointing at non-default locations, useful when testing
 jfeeds fetch                      # poll every enabled source into the local database
 jfeeds fetch --only arbeitnow,wwr # poll a subset
 jfeeds digest                     # matched roles as a table
-jfeeds digest --window 7 --remote # narrower window, remote only
+jfeeds digest --window 7 --remote # narrower window; see the --remote caveat below
 jfeeds digest --json              # machine-readable, always valid JSON even when empty
 jfeeds report --out jobs.html     # self-contained HTML, opens with no network
 jfeeds sources                    # per-source status, staleness, and WHY
