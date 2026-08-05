@@ -55,7 +55,15 @@ class FetchCase(unittest.TestCase):
         self.limiter = RateLimiter(tmp / "ratelimit.json")
 
     def run_one(self, name, responses, **kwargs):
+        """Never sleeps unless a test asks to observe pacing.
+
+        Real pacing is 1s per extra page, which took the suite from 0.2s to
+        18s once it was added. A suite slow enough to skip is a suite that
+        stops catching things, so the delay is injected here and only the
+        pacing tests pass a recorder.
+        """
         opener = FakeOpener(responses)
+        kwargs.setdefault("sleep", lambda _seconds: None)
         results = fetch_all([SOURCES[name]], opener, self.limiter, self.store,
                             kwargs.pop("now", NOW), **kwargs)
         return results[0], opener
@@ -75,7 +83,7 @@ class TestFetchAll(FetchCase):
         opener = FakeOpener({ARB: OSError("connection reset"),
                              SOURCES["nomads"].url: (200, b"[]", {})})
         results = fetch_all([SOURCES["arbeitnow"], SOURCES["nomads"]],
-                            opener, self.limiter, self.store, NOW)
+                            opener, self.limiter, self.store, NOW, sleep=lambda _s: None)
         by_name = {r.name: r for r in results}
         self.assertEqual(by_name["arbeitnow"].status, "failed")
         self.assertIn("connection reset", by_name["arbeitnow"].reason)
@@ -98,7 +106,7 @@ class TestFetchAll(FetchCase):
         self.limiter.record(SOURCES["jobicy"], NOW)
         opener = FakeOpener({})
         results = fetch_all([SOURCES["jobicy"]], opener, self.limiter, self.store,
-                            NOW + timedelta(minutes=5))
+                            NOW + timedelta(minutes=5), sleep=lambda _s: None)
         self.assertEqual(results[0].status, "throttled")
         self.assertEqual(opener.calls, [], "a throttled source must make NO request")
 
@@ -128,7 +136,7 @@ class TestPagination(FetchCase):
                 200, arb_payload([arb_row(i)], f"{ARB}?page={i + 1}"), {})
         opener = FakeOpener(responses)
         results = fetch_all([SOURCES["arbeitnow"]], opener, self.limiter,
-                            self.store, NOW, max_pages=5)
+                            self.store, NOW, max_pages=5, sleep=lambda _s: None)
         self.assertEqual(results[0].pages, 5)
 
     def test_pagination_stops_once_a_page_predates_the_cutoff(self):
@@ -334,7 +342,7 @@ class TestUserAgentCarriesNoPersonalData(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fetch_all([SOURCES["arbeitnow"]], opener,
                       RateLimiter(Path(tmp) / "r.json"), Store(Path(tmp) / "j.db"),
-                      NOW, user_agent="job-feeds/9.9 (probe)")
+                      NOW, user_agent="job-feeds/9.9 (probe)", sleep=lambda _s: None)
         self.assertEqual(opener.calls[0][1]["User-Agent"], "job-feeds/9.9 (probe)")
 
 

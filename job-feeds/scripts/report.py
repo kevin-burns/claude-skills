@@ -168,12 +168,19 @@ input,select{background:var(--card);color:var(--fg);border:1px solid var(--line)
 input[type=text]{min-width:16rem}
 label{font-size:.8rem;color:var(--mut);display:inline-flex;gap:.25rem;align-items:center}
 #count{margin-left:auto;font-size:.8rem;color:var(--mut)}
+/* No overflow:hidden here. It was added for rounded corners and silently
+   disabled position:sticky on the header inside, which is what made the
+   header overlap the first rows instead of pinning above them. */
 table{width:100%;border-collapse:collapse;background:var(--card);
- border:1px solid var(--line);border-radius:.5rem;overflow:hidden}
+ border:1px solid var(--line);border-radius:.5rem}
 th,td{padding:.35rem .6rem;text-align:left;font-size:.82rem;
  border-bottom:1px solid var(--line);vertical-align:top}
-th{position:sticky;top:3rem;background:var(--card);font-size:.72rem;
- text-transform:uppercase;color:var(--mut)}
+/* The offset cannot be a constant: the controls bar is taller than 3rem
+   and WRAPS on narrow screens. The page measures it and sets
+   --controls-h; the fallback only applies if the script never runs. */
+th{position:sticky;top:var(--controls-h, 3.5rem);background:var(--card);
+ font-size:.72rem;text-transform:uppercase;color:var(--mut);z-index:4;
+ box-shadow:inset 0 -1px 0 var(--line)}
 tr.hide{display:none}
 tr:hover td{background:rgba(127,127,127,.07)}
 .lane{display:inline-block;background:var(--fg);color:var(--bg);border-radius:.25rem;
@@ -202,4 +209,13 @@ function apply(){
 }
 ['q','lane','star','rem'].forEach(i=>el(i).addEventListener('input',apply));
 apply();
+
+// The sticky column header sits directly beneath the filter bar. That bar
+// wraps at narrow widths, so its height is only knowable at runtime --
+// a hardcoded offset left the header overlapping the first rows.
+const bar=document.querySelector('.controls');
+const fit=()=>document.documentElement.style.setProperty(
+  '--controls-h', bar.getBoundingClientRect().height+'px');
+fit();
+addEventListener('resize',fit);
 """

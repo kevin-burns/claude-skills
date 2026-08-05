@@ -214,5 +214,78 @@ class TestSelfContained(unittest.TestCase):
         self.assertNotIn("None", doc)
 
 
+class TestStickyHeaderLayout(unittest.TestCase):
+    """The sticky table header overlapped the first two data rows instead of
+    sitting above them. Three causes, and the first is the one that
+    actually broke it:
+
+      1. `overflow:hidden` on the table -- added for rounded corners, but
+         an overflow-clipped ancestor disables position:sticky on its
+         descendants entirely. This is the classic trap.
+      2. `th{top:3rem}` was a magic number. The controls bar is taller
+         than that AND wraps on narrow screens, so no constant is correct.
+      3. `th` had no z-index, so it did not reliably paint over rows.
+
+    These are asserted on the generated CSS rather than on a rendering,
+    because a screenshot cannot be diffed in CI -- but each assertion
+    names the specific rule that caused the visible bug.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.doc = report.render_html([hostile_row()], CONFIG, 14, [], "x")
+        cls.css = cls.doc.split("<style>", 1)[1].split("</style>", 1)[0]
+
+    def rule(self, selector):
+        """Body of the rule whose selector list is exactly `selector`.
+
+        Comments are stripped first and the selector list is compared
+        exactly: a naive prefix match returns the `th,td` rule when asked
+        for `th`, and breaks entirely once a comment precedes a rule.
+        """
+        css = re.sub(r"/\*.*?\*/", "", self.css, flags=re.S)
+        for block in css.split("}"):
+            if "{" not in block:
+                continue
+            head, _, body = block.partition("{")
+            if [part.strip() for part in head.split(",")] == [selector]:
+                return body
+        return ""
+
+    def test_the_rule_helper_finds_the_right_block(self):
+        """This helper is fiddly enough to be silently wrong, which would
+        make every assertion below vacuous."""
+        self.assertIn("position:sticky", self.rule("th"))
+        self.assertNotIn("position:sticky", self.rule("th,td"))
+        self.assertEqual(self.rule("nosuchselector"), "")
+
+    def test_the_table_does_not_clip_overflow(self):
+        """An overflow-clipped ancestor silently disables sticky on the
+        header inside it."""
+        self.assertNotIn("overflow:hidden", self.rule("table"))
+
+    def test_the_sticky_header_offset_is_not_a_hardcoded_length(self):
+        """The controls bar wraps, so its height is not knowable at author
+        time. The offset must come from a variable the page can update."""
+        th = self.rule("th")
+        self.assertIn("position:sticky", th)
+        self.assertIn("var(--controls-h", th)
+
+    def test_the_header_paints_below_the_controls_but_above_rows(self):
+        controls_z = int(self.rule(".controls").split("z-index:")[1].split(";")[0])
+        header_z = int(self.rule("th").split("z-index:")[1].split(";")[0])
+        self.assertLess(header_z, controls_z, "header must not cover the filter bar")
+        self.assertGreater(header_z, 0, "header must paint above table rows")
+
+    def test_the_page_measures_the_controls_height_at_runtime(self):
+        js = self.doc.split("<script>", 1)[1].split("</script>", 1)[0]
+        self.assertIn("--controls-h", js)
+        self.assertIn("resize", js, "a wrapping controls bar changes height on resize")
+
+    def test_a_fallback_offset_exists_if_the_script_never_runs(self):
+        """Printing, or a JS error, must not leave the header pinned at 0."""
+        self.assertRegex(self.rule("th"), r"var\(--controls-h,\s*[\d.]+rem\)")
+
+
 if __name__ == "__main__":
     unittest.main()
