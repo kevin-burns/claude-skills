@@ -176,5 +176,26 @@ class TestStore(unittest.TestCase):
         self.assertEqual(len(Store(path).select(30, NOW)), 1)
 
 
+class TestRateLimiterConcurrency(unittest.TestCase):
+    """record() is a read-modify-write on a file shared by worker threads.
+    Only Jobicy declares a limit today, so nothing collides in practice --
+    but that is luck, not design, and the failure would be silent: one
+    source's poll time overwrites another's, and the lost source becomes
+    pollable again inside its window.
+    """
+
+    def test_concurrent_records_do_not_lose_entries(self):
+        from concurrent.futures import ThreadPoolExecutor
+
+        limited = [SOURCES["jobicy"]._replace(name=f"src{i}", rate_limit_seconds=3600)
+                   for i in range(8)]
+        with tempfile.TemporaryDirectory() as tmp:
+            limiter = RateLimiter(Path(tmp) / "ratelimit.json")
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                list(pool.map(lambda src: limiter.record(src, NOW), limited))
+            written = json.loads(limiter.path.read_text(encoding="utf-8"))
+        self.assertEqual(sorted(written), [f"src{i}" for i in range(8)])
+
+
 if __name__ == "__main__":
     unittest.main()
