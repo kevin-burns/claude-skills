@@ -63,6 +63,31 @@ So any EURES integration needs: a conservative fixed pace decided up front, trea
 500 as *back off*, not *retry*, and a long cool-off. Do not tune this by experiment against
 the live service — that is what caused it.
 
+### Required client behaviour, against what `job-feeds` already has
+
+**No documented limit is not permission.** EURES publishes no rate-limit terms, no
+`Retry-After` and no headers, and it is a public service run for jobseekers — so it gets a
+self-imposed limit rather than an absent one. Three requirements, and only the first is
+already satisfied:
+
+| Requirement | Status in `job-feeds` today |
+|---|---|
+| Persist poll state outside the DB; fail closed on ambiguity; thread-safe | **Present.** `RateLimiter` does all three, and honours `Retry-After` clamped to 60s–86400s |
+| A **standing minimum interval** even with nothing documented | Mechanism exists (`source.rate_limit_seconds`, used by Jobicy's 1/hour) — EURES just needs a deliberately conservative value chosen up front |
+| **Exponential backoff** on repeated throttling | **Missing.** `DEFAULT_BACKOFF_SECONDS = 3600` is flat. Being throttled five times records 3600 every time; it never escalates |
+
+And one gap specific to this service:
+
+> `fetch_all` only routes **429 and 503** into the backoff path (`job_feeds.py:442`).
+> EURES throttles with **500**, which falls through to the generic error branch and is
+> recorded as `failed` — no backoff written, so the next run walks straight back into the
+> wall, which is the exact behaviour that comment at `:444` says it exists to prevent.
+
+Fixing that for EURES alone is safe. Making 500 mean "throttled" for *all* sources is
+**not** an obvious win: a genuinely broken feed returning 500 would be silently backed off
+for an hour instead of surfacing as failed, which hides a real outage behind a
+politeness feature. That should be a per-source policy, not a global rule.
+
 Whether this is a rate limit or a coincident outage is **not established**. Both readings
 fit the evidence; the timing points at us. Re-probe once, after hours, before concluding.
 
