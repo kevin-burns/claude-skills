@@ -1,0 +1,2152 @@
+# ---------------------------------------------------------------------------
+# SNAPSHOT -- do not edit. Read this file instead of re-fetching the source.
+#
+# source_url:      https://github.com/rorar/EURES-API-Documentation/blob/main/openapi.yaml
+# source_commit:   6e5dd81cfb5ad744e6a52814739baef2fe5c5091  (2026-04-08)
+# retrieved_at:    2026-08-06T08:30:00Z
+# content_sha256:  a3597bd8741c7826dbb6e9d7aafb11c5b11b372ec3423789fa1131f18c639f3e
+# source_licence:  MIT
+# official:        NO -- unofficial, reverse-engineered, community-maintained.
+#                  Explicitly "not affiliated with or endorsed by the European
+#                  Commission or the EURES network".
+# status:          REFERENCE ONLY. EURES is NOT an adopted job-feeds source.
+#                  See README.md beside this file, and claude-skills-ffp.
+# ---------------------------------------------------------------------------
+openapi: 3.1.0
+
+info:
+  title: EURES Job Search API
+  version: 1.0.0
+  description: |
+    Reverse-engineered documentation of the EURES (European Employment Services) Job Search API,
+    as exposed by the EURES portal at https://europa.eu/eures.
+
+    This specification is based on observed API calls and responses from the public EURES portal.
+    It is not an official API specification. Endpoints, schemas, and enum values reflect what has
+    been confirmed through direct HTTP interaction with the live API.
+
+    Usage of this API is subject to the EURES portal terms of use:
+    https://europa.eu/eures/portal/jv-se/home?lang=en&pageCode=find_a_job#openDisclaimerQualityDialog
+
+    Neither the maintainers of this documentation project nor the EURES portal accept liability
+    for damages or losses arising from use of this API or its documentation.
+  contact:
+    name: EURES API Documentation
+    url: https://github.com/rorar/EURES-API-Documentation/issues
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+externalDocs:
+  description: EURES API Documentation repository on GitHub
+  url: https://github.com/rorar/EURES-API-Documentation
+
+servers:
+  - url: https://europa.eu/eures/api
+    description: EURES production API
+
+security: []
+
+tags:
+  - name: Job Search
+    description: Job vacancy search and retrieval endpoints
+  - name: Reference Data
+    description: Reference data endpoints for languages, countries, and classification codes
+  - name: Statistics
+    description: Job vacancy statistics and aggregation endpoints
+  - name: Autocomplete
+    description: Type-ahead suggestion endpoints for occupation search
+  - name: Vacancy Detail
+    description: Individual job vacancy retrieval
+  - name: ESCO
+    description: European Skills, Competences, Qualifications and Occupations classification data
+  - name: User
+    description: User profile and authentication state
+  - name: Configuration
+    description: Portal and search engine configuration
+  - name: Translation
+    description: Machine translation availability and configuration
+  - name: Menu
+    description: Portal navigation menu structure
+
+paths:
+  /jv-searchengine/public/jv-search/search:
+    post:
+      operationId: searchJobVacancies
+      summary: Search job vacancies
+      description: |
+        Searches the EURES job vacancy database using a combination of keyword, location,
+        occupation, skill, and filter criteria. Supports pagination and returns both matched
+        vacancies and aggregated facet counts.
+
+        All filter arrays accept empty arrays to indicate no filter is applied. The
+        `requestLanguage` field controls the language of returned text fields.
+      tags:
+        - Job Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobSearchRequest'
+            examples:
+              keywordSearch:
+                summary: Basic keyword search
+                value:
+                  resultsPerPage: 10
+                  page: 1
+                  sortSearch: BEST_MATCH
+                  keywords:
+                    - keyword: software engineer
+                      specificSearchCode: EVERYWHERE
+                  publicationPeriod: null
+                  occupationUris: []
+                  skillUris: []
+                  requiredExperienceCodes: []
+                  positionScheduleCodes: []
+                  sectorCodes: []
+                  educationAndQualificationLevelCodes: []
+                  positionOfferingCodes: []
+                  locationCodes: []
+                  euresFlagCodes: []
+                  otherBenefitsCodes: []
+                  requiredLanguages: []
+                  minNumberPost: null
+                  sessionId: session-abc123
+                  userPreferredLanguage: null
+                  requestLanguage: en
+              filteredSearch:
+                summary: Search with location and experience filters
+                value:
+                  resultsPerPage: 25
+                  page: 1
+                  sortSearch: MOST_RECENT
+                  keywords:
+                    - keyword: nurse
+                      specificSearchCode: EVERYWHERE
+                  publicationPeriod: LAST_WEEK
+                  occupationUris: []
+                  skillUris: []
+                  requiredExperienceCodes:
+                    - between_2_and_5_years
+                    - more_than_5_years
+                  positionScheduleCodes:
+                    - fulltime
+                  sectorCodes:
+                    - q
+                  educationAndQualificationLevelCodes:
+                    - bachelor
+                  positionOfferingCodes:
+                    - directhire
+                    - contract
+                  locationCodes:
+                    - de
+                    - at
+                  euresFlagCodes:
+                    - WITH
+                  otherBenefitsCodes: []
+                  requiredLanguages:
+                    - de(C2)
+                    - en(B1)
+                  minNumberPost: null
+                  sessionId: session-xyz789
+                  userPreferredLanguage: de
+                  requestLanguage: de
+      responses:
+        '200':
+          description: Successful job vacancy search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSearchResponse'
+              examples:
+                searchResult:
+                  summary: Example search result
+                  value:
+                    numberRecords: 1787657
+                    jvs:
+                      - title: Software Engineer
+                        description: <p>HTML description...</p>
+                        id: MTAwMDEtMTAwMTEzOTMxMS1TIDE
+                        creationDate: 1739403609768
+                        lastModificationDate: 1768605849756
+                        numberOfPosts: 1
+                        locationMap:
+                          DE:
+                            - DE12B
+                        euresFlag: false
+                        jobCategoriesCodes:
+                          - http://data.europa.eu/esco/occupation/f2b15a0e-e65a-438a-affb-29b9d50b77d1
+                          - http://data.europa.eu/esco/isco/C5243
+                        positionScheduleCodes:
+                          - fulltime
+                        positionOfferingCode: directhire
+                        employer:
+                          name: SUSS MicroTec Solutions GmbH & Co. KG
+                          legalID: null
+                          organisationSizeCode: null
+                          organisationOwnershipTypeCode: null
+                          website: www.suss.com
+                          sectorCodes: []
+                          description: null
+                        availableLanguages:
+                          - de
+                        score: null
+                        translationType: FIRST_LANGUAGE
+                        translations:
+                          de:
+                            title: Software Engineer Safety (m/w/d)
+                            description: <p>...</p>
+                    facets:
+                      LANGUAGE_SKILLS:
+                        facetEntriesList:
+                          - code: en
+                            count: 68096
+                            childrenList: []
+                      POSITION_SCHEDULE:
+                        facetEntriesList:
+                          - code: fulltime
+                            count: 1102456
+                            childrenList: []
+
+  /shared-data-rest-api/public/reference/languages:
+    get:
+      operationId: getReferenceLanguages
+      summary: Get supported languages
+      description: |
+        Returns the list of all languages supported by the EURES portal. Each entry contains
+        the internal numeric ID, the ISO 639-1 language code, and the language name in its
+        native script. Returns 26 languages total.
+      tags:
+        - Reference Data
+      responses:
+        '200':
+          description: List of supported languages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Language'
+              examples:
+                languages:
+                  summary: Sample language list
+                  value:
+                    - id: 1
+                      isoCode: bg
+                      label: "български"
+                    - id: 6
+                      isoCode: en
+                      label: English
+                    - id: 7
+                      isoCode: de
+                      label: Deutsch
+
+  /shared-data-rest-api/public/reference/countries:
+    get:
+      operationId: getReferenceCountries
+      summary: Get supported countries
+      description: |
+        Returns the list of ISO 3166-1 alpha-2 country codes for all countries covered by
+        EURES. Includes EU member states plus EFTA countries (Iceland, Liechtenstein,
+        Norway, Switzerland). Returns 31 country codes total.
+      tags:
+        - Reference Data
+      responses:
+        '200':
+          description: List of country codes (ISO 3166-1 alpha-2)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: ISO 3166-1 alpha-2 country code
+                  pattern: "^[A-Z]{2}$"
+              examples:
+                countries:
+                  summary: All covered countries
+                  value:
+                    - AT
+                    - BE
+                    - BG
+                    - HR
+                    - CY
+                    - CZ
+                    - DK
+                    - EE
+                    - FI
+                    - FR
+                    - DE
+                    - EL
+                    - HU
+                    - IS
+                    - IE
+                    - IT
+                    - LV
+                    - LI
+                    - LT
+                    - LU
+                    - MT
+                    - NL
+                    - NO
+                    - PL
+                    - PT
+                    - RO
+                    - SK
+                    - SI
+                    - ES
+                    - SE
+                    - CH
+
+  /shared-data-rest-api/public/reference/nace:
+    get:
+      operationId: getReferenceNace
+      summary: Get NACE sector classifications
+      description: |
+        Returns the list of NACE (Nomenclature of Economic Activities) sector classification
+        codes used by EURES. Returns 21 entries at level 1 (top-level divisions), using
+        NACE Revision 2.0. The `code` field corresponds to the uppercase letter codes used
+        in job search requests as lowercase values in `sectorCodes`.
+      tags:
+        - Reference Data
+      responses:
+        '200':
+          description: List of NACE classification entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NaceEntry'
+              examples:
+                naceEntries:
+                  summary: Sample NACE entries
+                  value:
+                    - id: 1
+                      code: A
+                      level: 1
+                      revision: "2.0"
+                    - id: 57
+                      code: B
+                      level: 1
+                      revision: "2.0"
+
+  /jv-searchengine/public/jv/id/{id}:
+    get:
+      operationId: getJobVacancyById
+      summary: Get job vacancy detail
+      description: |
+        Retrieves the full detail of a single job vacancy by its base64-encoded identifier.
+        Returns all language profiles, employer details, location data, application
+        instructions, and translation metadata.
+      tags:
+        - Vacancy Detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Base64-encoded vacancy identifier from search results.
+          example: MTAwMDEtMTAwMTEzOTMxMS1TIDE
+        - name: requestLang
+          in: query
+          required: false
+          schema:
+            type: string
+          description: ISO 639-1 language code for the response content.
+          example: de
+        - name: preferredLang
+          in: query
+          required: false
+          schema:
+            type:
+              - string
+              - "null"
+          description: User's preferred language code, or null.
+          example: null
+      responses:
+        '200':
+          description: Full vacancy detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobVacancyDetail'
+
+  /jv-searchengine/public/statistics/getNumberOfJobs:
+    get:
+      operationId: getNumberOfJobs
+      summary: Get total job count
+      description: Returns the total number of active job vacancies in the EURES portal.
+      tags:
+        - Statistics
+      responses:
+        '200':
+          description: Total job count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobCountResponse'
+
+  /jv-searchengine/public/statistics/getCountryStats:
+    get:
+      operationId: getCountryStats
+      summary: Get job statistics by country
+      description: |
+        Returns hierarchical statistics of job vacancies grouped by country and NUTS
+        sub-regions. Each country entry contains nested region entries in `children`.
+        Includes an `NS` (not specified) entry for vacancies without a classified country.
+      tags:
+        - Statistics
+      responses:
+        '200':
+          description: Country-level job statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CountryStatEntry'
+
+  /jv-searchengine/public/statistics/getSectorStats:
+    get:
+      operationId: getSectorStats
+      summary: Get job statistics by NACE sector
+      description: |
+        Returns job vacancy counts grouped by NACE economic sector codes.
+        Includes an `NS` (not specified) entry for vacancies without a classified sector.
+      tags:
+        - Statistics
+      responses:
+        '200':
+          description: Sector-level job statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SectorStatEntry'
+
+  /jv-searchengine/public/statistics/getOccupationStats:
+    get:
+      operationId: getOccupationStats
+      summary: Get job statistics by occupation
+      description: Returns top ESCO occupation categories ranked by vacancy count.
+      tags:
+        - Statistics
+      responses:
+        '200':
+          description: Occupation-level job statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OccupationStatEntry'
+
+  /jv-searchengine/public/properties:
+    get:
+      operationId: getSearchEngineProperties
+      summary: Get search engine configuration
+      description: Returns search engine configuration key-value pairs.
+      tags:
+        - Configuration
+      responses:
+        '200':
+          description: Configuration properties
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+
+  /jv-searchengine/public/translation/enabled:
+    get:
+      operationId: getTranslationEnabled
+      summary: Check if translation is enabled
+      description: Returns whether machine translation is enabled for the search engine.
+      tags:
+        - Translation
+      responses:
+        '200':
+          description: Translation enabled status
+          content:
+            application/json:
+              schema:
+                type: boolean
+
+  /jv-searchengine/public/translation/languages:
+    get:
+      operationId: getTranslationLanguages
+      summary: Get translation language codes
+      description: |
+        Returns the list of language codes supported for machine translation. The list
+        uses BCP 47 / IETF language tags, which include ISO 639-1 two-letter codes
+        (e.g. `de`, `fr`), ISO 639-3 three-letter codes (e.g. `fil`, `yue`), locale
+        variants (e.g. `fr-CA`, `pt-PT`), script variants (e.g. `zh-Hans`, `sr-Cyrl`),
+        and two special entries: `transliteration` and `dictionary`.
+
+        This endpoint returns the Azure Translator supported language list. Note that
+        translation is currently disabled (`/translation/enabled` returns `false`).
+      tags:
+        - Translation
+      responses:
+        '200':
+          description: List of translation language codes (BCP 47 tags)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: |
+                    BCP 47 language tag, or one of the special values `transliteration`
+                    and `dictionary`.
+
+  /autocomplete-repository-rest-api/public/v2.0/occupations:
+    get:
+      operationId: autocompleteOccupations
+      summary: Autocomplete occupation names
+      description: |
+        Returns type-ahead occupation name suggestions based on a keyword prefix.
+        Results are ranked by vacancy frequency (most common first).
+
+        **Rate limiting:** This endpoint enforces stricter rate limits than other EURES
+        endpoints. Exceeding the limit returns `401 Unauthorized` with a
+        `WWW-Authenticate: Bearer` header (despite not being an authentication issue).
+        The cooldown period is approximately 60 seconds. Callers making rapid successive
+        requests should implement backoff logic.
+      tags:
+        - Autocomplete
+      parameters:
+        - name: language
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ISO 639-1 language code for suggestions.
+          example: de
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search prefix for occupation names.
+          example: Software
+        - name: nbResults
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: Maximum number of suggestions to return.
+          example: 10
+      responses:
+        '200':
+          description: Occupation autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccupationAutocompleteResponse'
+        '401':
+          description: |
+            Rate limit exceeded. Returns an empty body with `WWW-Authenticate: Bearer`
+            header. This is not an authentication error — retry after ~60 seconds.
+
+  /shared-data-rest-api/public/reference/isoLanguages:
+    get:
+      operationId: getIsoLanguages
+      summary: Get all ISO 639-1 languages
+      description: |
+        Returns the complete list of ISO 639-1 languages with an `euresSupported` flag
+        indicating which languages are fully supported by the EURES portal (26 supported,
+        185 total).
+      tags:
+        - Reference Data
+      responses:
+        '200':
+          description: Full ISO language list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IsoLanguage'
+
+  /shared-data-rest-api/public/esco/supportedLanguages:
+    get:
+      operationId: getEscoSupportedLanguages
+      summary: Get ESCO supported language codes
+      description: Returns ISO 639-1 codes of languages supported by the ESCO classification system.
+      tags:
+        - ESCO
+      responses:
+        '200':
+          description: List of ESCO-supported language codes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /shared-data-rest-api/public/esco/label/{lang}:
+    post:
+      operationId: getEscoLabels
+      summary: Resolve ESCO URIs to labels
+      description: |
+        Accepts a list of ESCO URIs (occupations, skills, ISCO codes) and returns their
+        human-readable labels in the specified language.
+      tags:
+        - ESCO
+      parameters:
+        - name: lang
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ISO 639-1 language code for returned labels.
+          example: de
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uri
+            example:
+              - "http://data.europa.eu/esco/isco/C2511"
+              - "http://data.europa.eu/esco/occupation/f2b15a0e-e65a-438a-affb-29b9d50b77d1"
+      responses:
+        '200':
+          description: Map of ESCO URIs to labels
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+
+  /shared-data-rest-api/public/esco/occupation/tree:
+    get:
+      operationId: getEscoOccupationTree
+      summary: Get ESCO occupation hierarchy
+      description: |
+        Returns the full hierarchical tree of ESCO/ISCO occupation classifications.
+        Top-level nodes are ISCO major groups (C0-C9), with nested ISCO sub-groups
+        and individual ESCO occupation URIs as leaf nodes.
+      tags:
+        - ESCO
+      responses:
+        '200':
+          description: Hierarchical occupation tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OccupationTreeNode'
+
+  /public/security/profile:
+    get:
+      operationId: getUserProfile
+      summary: Get current user profile
+      description: |
+        Returns the profile of the currently authenticated user. All personal fields
+        are null for unauthenticated (anonymous) requests.
+      tags:
+        - User
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  /shared-data-rest-api/public/properties/public:
+    get:
+      operationId: getPublicProperties
+      summary: Get portal configuration
+      description: Returns public portal configuration as key-value pairs.
+      tags:
+        - Configuration
+      responses:
+        '200':
+          description: Portal configuration properties
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+
+  /shared-data-rest-api/public/menu/{section}:
+    get:
+      operationId: getMenuEntries
+      summary: Get portal menu entries
+      description: Returns navigation menu entries for a portal section.
+      tags:
+        - Menu
+      parameters:
+        - name: section
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - JOBSEEKERS
+              - EMPLOYERS
+              - LIVING
+              - ABOUT
+              - CONTACT_EURES_HELPDESK
+              - MYEURES
+          description: Portal section identifier.
+          example: JOBSEEKERS
+      responses:
+        '200':
+          description: List of menu entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MenuEntry'
+
+components:
+  schemas:
+
+    # -------------------------------------------------------------------------
+    # Request schemas
+    # -------------------------------------------------------------------------
+
+    JobSearchRequest:
+      type: object
+      required:
+        - resultsPerPage
+        - page
+        - sortSearch
+        - keywords
+        - occupationUris
+        - skillUris
+        - requiredExperienceCodes
+        - positionScheduleCodes
+        - sectorCodes
+        - educationAndQualificationLevelCodes
+        - positionOfferingCodes
+        - locationCodes
+        - euresFlagCodes
+        - otherBenefitsCodes
+        - requiredLanguages
+        - sessionId
+        - requestLanguage
+      properties:
+        resultsPerPage:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Number of job vacancies to return per page.
+          example: 10
+        page:
+          type: integer
+          minimum: 1
+          description: 1-based page index for pagination.
+          example: 1
+        sortSearch:
+          $ref: '#/components/schemas/SortOrder'
+        keywords:
+          type: array
+          description: |
+            List of keyword search terms. An empty array performs an unfiltered search
+            across all vacancies.
+          items:
+            $ref: '#/components/schemas/KeywordEntry'
+        publicationPeriod:
+          type:
+            - string
+            - "null"
+          enum:
+            - LAST_DAY
+            - LAST_THREE_DAYS
+            - LAST_WEEK
+            - LAST_MONTH
+            - LAST_VISIT
+            - null
+          description: |
+            Restricts results to vacancies published within the specified period.
+            `LAST_VISIT` requires an authenticated session. Pass `null` to disable
+            the publication date filter.
+          example: null
+        occupationUris:
+          type: array
+          description: |
+            List of ESCO occupation URI strings to filter by. An empty array applies
+            no occupation filter.
+          items:
+            type: string
+            format: uri
+            description: ESCO occupation URI (e.g. "http://data.europa.eu/esco/occupation/...")
+          example: []
+        skillUris:
+          type: array
+          description: |
+            List of ESCO skill URI strings to filter by. An empty array applies no
+            skill filter.
+          items:
+            type: string
+            format: uri
+            description: ESCO skill URI (e.g. "http://data.europa.eu/esco/skill/...")
+          example: []
+        requiredExperienceCodes:
+          type: array
+          description: |
+            Filter by required work experience level. An empty array applies no
+            experience filter. Use `NS` for "not specified".
+          items:
+            $ref: '#/components/schemas/ExperienceCode'
+          example: []
+        positionScheduleCodes:
+          type: array
+          description: |
+            Filter by working time arrangement. An empty array applies no schedule
+            filter. Use `NS` for "not specified".
+          items:
+            $ref: '#/components/schemas/PositionScheduleCode'
+          example: []
+        sectorCodes:
+          type: array
+          description: |
+            Filter by NACE economic sector. Values are lowercase single-letter NACE
+            division codes (e.g. `a` for Agriculture). An empty array applies no
+            sector filter. Use `NS` for "not specified".
+          items:
+            $ref: '#/components/schemas/SectorCode'
+          example: []
+        educationAndQualificationLevelCodes:
+          type: array
+          description: |
+            Filter by required education or qualification level. An empty array applies
+            no education filter. Use `NS` for "not specified".
+          items:
+            $ref: '#/components/schemas/EducationLevelCode'
+          example: []
+        positionOfferingCodes:
+          type: array
+          description: |
+            Filter by type of employment offering. An empty array applies no offering
+            type filter. Use `NS` for "not specified".
+          items:
+            $ref: '#/components/schemas/PositionOfferingCode'
+          example: []
+        locationCodes:
+          type: array
+          description: |
+            Filter by geographic location using NUTS (Nomenclature of Territorial Units
+            for Statistics) region codes. Codes can be country-level (e.g. `de`),
+            region-level (e.g. `de1`), or `NS` for "not specified". The suffix `-NS`
+            on a country code (e.g. `at-NS`) selects vacancies in that country where
+            the location is not specified.
+          items:
+            type: string
+            description: NUTS region code (lowercase) or country-NS suffix
+          example: []
+        euresFlagCodes:
+          type: array
+          description: |
+            Filter by EURES flag status. `WITH` returns only EURES-flagged vacancies.
+            `WITHOUT` returns only non-EURES-flagged vacancies. An empty array applies
+            no EURES flag filter.
+          items:
+            $ref: '#/components/schemas/EuresFlagCode'
+          example: []
+        otherBenefitsCodes:
+          type: array
+          description: |
+            Filter by additional employer benefit codes. Values are numeric codes
+            represented as strings. An empty array applies no benefits filter.
+          items:
+            type: string
+            description: Numeric benefit code as string
+          example: []
+        requiredLanguages:
+          type: array
+          description: |
+            Filter by required language proficiency. Each entry is a string in the
+            format `<isoCode>(<cefrLevel>)`, e.g. `de(C2)` for German at C2 level,
+            `en(B1)` for English at B1 level.
+          items:
+            type: string
+            description: Language proficiency requirement in format "<isoCode>(<cefrLevel>)"
+            pattern: "^[a-z]{2}\\([A-C][1-2]\\)$"
+          example: []
+        minNumberPost:
+          type:
+            - integer
+            - "null"
+          description: |
+            Minimum number of open positions required for a vacancy to be included in
+            results. Pass `null` to apply no minimum.
+          example: null
+        sessionId:
+          type: string
+          description: |
+            Client-generated session identifier string. Used by the EURES backend for
+            session tracking. Does not require authentication for public endpoints.
+          example: session-abc123
+        userPreferredLanguage:
+          type:
+            - string
+            - "null"
+          description: |
+            ISO 639-1 language code expressing the user's preferred language for content
+            retrieval. Pass `null` if no preference is set.
+          example: null
+        requestLanguage:
+          type: string
+          description: |
+            ISO 639-1 language code controlling the language of returned text content
+            such as job titles and descriptions. Must match a language code supported
+            by the /reference/languages endpoint.
+          example: en
+
+    KeywordEntry:
+      type: object
+      required:
+        - keyword
+        - specificSearchCode
+      properties:
+        keyword:
+          type: string
+          description: The search term or phrase to match against job vacancies.
+          example: software engineer
+        specificSearchCode:
+          type: string
+          description: |
+            Controls which fields the keyword is matched against. Values correspond
+            to the advanced search form fields on the EURES portal.
+          enum:
+            - EVERYWHERE
+            - TITLE
+            - DESCRIPTION
+            - EMPLOYER
+            - LEGAL_ID
+            - JOB_VACANCY_ID
+          example: EVERYWHERE
+
+    # -------------------------------------------------------------------------
+    # Response schemas
+    # -------------------------------------------------------------------------
+
+    JobSearchResponse:
+      type: object
+      required:
+        - numberRecords
+        - jvs
+        - facets
+      properties:
+        numberRecords:
+          type: integer
+          description: Total number of job vacancies matching the search criteria across all pages.
+          example: 1787657
+        jvs:
+          type: array
+          description: Page of job vacancy objects matching the search criteria.
+          items:
+            $ref: '#/components/schemas/JobVacancy'
+        facets:
+          $ref: '#/components/schemas/FacetMap'
+
+    JobVacancy:
+      type: object
+      required:
+        - title
+        - description
+        - id
+        - creationDate
+        - lastModificationDate
+        - numberOfPosts
+        - locationMap
+        - euresFlag
+        - jobCategoriesCodes
+        - positionScheduleCodes
+        - positionOfferingCode
+        - employer
+        - availableLanguages
+        - translationType
+        - translations
+      properties:
+        title:
+          type: string
+          description: Job vacancy title in the language determined by `requestLanguage`.
+          example: Software Engineer
+        description:
+          type: string
+          description: |
+            Full job description in the language determined by `requestLanguage`.
+            Content is HTML-formatted and may contain tags such as `<p>`, `<ul>`, `<li>`.
+          example: <p>We are looking for a Software Engineer...</p>
+        id:
+          type: string
+          description: |
+            Opaque vacancy identifier. Observed values are base64-encoded strings.
+            Use this value for deduplication and potential detail lookups.
+          example: MTAwMDEtMTAwMTEzOTMxMS1TIDE
+        creationDate:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds (epoch ms) when the vacancy was created.
+          example: 1739403609768
+        lastModificationDate:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds (epoch ms) of the last modification.
+          example: 1768605849756
+        numberOfPosts:
+          type: integer
+          minimum: 1
+          description: Number of open positions available for this vacancy.
+          example: 1
+        locationMap:
+          type: object
+          description: |
+            Maps ISO 3166-1 alpha-2 uppercase country codes to arrays of NUTS region
+            codes indicating where the vacancy is located. A vacancy may span multiple
+            countries and regions.
+          additionalProperties:
+            type: array
+            items:
+              type:
+                - string
+                - "null"
+              description: NUTS region code (uppercase), or null when not specified.
+          example:
+            DE:
+              - DE12B
+        euresFlag:
+          type: boolean
+          description: |
+            Indicates whether the vacancy is flagged as a EURES vacancy, meaning it is
+            cross-border in nature and promoted through the EURES network.
+          example: false
+        jobCategoriesCodes:
+          type: array
+          description: |
+            List of ESCO URIs classifying the occupation(s) associated with this vacancy.
+            May include both occupation-level URIs and ISCO classification URIs.
+          items:
+            type: string
+            format: uri
+            description: ESCO occupation or ISCO classification URI
+          example:
+            - http://data.europa.eu/esco/occupation/f2b15a0e-e65a-438a-affb-29b9d50b77d1
+            - http://data.europa.eu/esco/isco/C5243
+        positionScheduleCodes:
+          type: array
+          description: Working time arrangements offered for this vacancy.
+          items:
+            $ref: '#/components/schemas/PositionScheduleCode'
+          example:
+            - fulltime
+        positionOfferingCode:
+          $ref: '#/components/schemas/PositionOfferingCode'
+          description: |
+            Type of employment offering for this vacancy. Note: this field is singular
+            (a single string value) unlike `positionScheduleCodes` which is an array.
+        employer:
+          $ref: '#/components/schemas/Employer'
+        availableLanguages:
+          type: array
+          description: |
+            ISO 639-1 language codes for which translations are available in the
+            `translations` map.
+          items:
+            type: string
+            description: ISO 639-1 language code
+          example:
+            - de
+        score:
+          type:
+            - number
+            - "null"
+          x-note: |
+            Observed to always be null in API responses, including when sortSearch is
+            BEST_MATCH. It is unclear whether this field is populated under specific
+            conditions (e.g. authenticated sessions).
+          description: |
+            Relevance score for the vacancy relative to the search query. May be
+            populated when `sortSearch` is set to `BEST_MATCH`, but has been observed
+            as `null` in all captured responses.
+          example: null
+        translationType:
+          type: string
+          description: |
+            Indicates how the vacancy content was translated or sourced. Observed
+            value is `FIRST_LANGUAGE`, indicating content is in the vacancy's
+            original language.
+          example: FIRST_LANGUAGE
+        translations:
+          type: object
+          description: |
+            Map of ISO 639-1 language codes to translated vacancy content. Keys
+            correspond to codes listed in `availableLanguages`.
+          additionalProperties:
+            $ref: '#/components/schemas/VacancyTranslation'
+          example:
+            de:
+              title: Software Engineer Safety (m/w/d)
+              description: <p>...</p>
+
+    VacancyTranslation:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          description: Translated vacancy title.
+          example: Software Engineer Safety (m/w/d)
+        description:
+          type: string
+          description: Translated vacancy description in HTML format.
+          example: <p>Wir suchen einen Software Engineer...</p>
+
+    Employer:
+      type: object
+      required:
+        - name
+        - sectorCodes
+      properties:
+        name:
+          type: string
+          description: Legal or trading name of the employer.
+          example: SUSS MicroTec Solutions GmbH & Co. KG
+        legalID:
+          type:
+            - string
+            - "null"
+          description: |
+            Legal identifier of the employer (e.g. company registration number).
+            Frequently null in observed responses.
+          example: null
+        organisationSizeCode:
+          type:
+            - string
+            - "null"
+          description: |
+            Code representing the size of the employer organisation. Frequently null
+            in observed responses.
+          example: null
+        organisationOwnershipTypeCode:
+          type:
+            - string
+            - "null"
+          description: |
+            Code representing the ownership type of the organisation (e.g. public,
+            private). Frequently null in observed responses.
+          example: null
+        website:
+          type:
+            - string
+            - "null"
+          description: |
+            Employer website URL or domain. May be a bare domain without protocol
+            (e.g. "www.example.com") rather than a fully-qualified URL.
+          example: www.suss.com
+        sectorCodes:
+          type: array
+          description: |
+            NACE sector codes associated with the employer. Frequently an empty array
+            in observed responses.
+          items:
+            type: string
+          example: []
+        description:
+          type:
+            - string
+            - "null"
+          description: |
+            Free-text description of the employer. Frequently null in observed responses.
+          example: null
+
+    FacetMap:
+      type: object
+      description: |
+        Aggregated facet counts grouped by filter category. Each key is a facet category
+        name and maps to a facet result containing a list of entries with codes and counts.
+        Facet categories observed in responses are listed as properties; additional
+        categories may appear.
+      properties:
+        LANGUAGE_SKILLS:
+          $ref: '#/components/schemas/FacetResult'
+          description: Facet counts for language skill requirements.
+        REQUIRED_EXPERIENCE:
+          $ref: '#/components/schemas/FacetResult'
+          description: Facet counts for required experience levels.
+        POSITION_LOCATION:
+          $ref: '#/components/schemas/FacetResult'
+          description: |
+            Hierarchical facet counts for geographic location. Top-level entries are
+            country codes; `childrenList` contains NUTS sub-region entries.
+        NACE_CODE:
+          $ref: '#/components/schemas/FacetResult'
+          description: Facet counts for NACE economic sector codes.
+        CONNECTION_POINT_ID:
+          $ref: '#/components/schemas/FacetResult'
+          description: |
+            Facet counts by connection point (data provider / job board source).
+            Codes are numeric strings.
+        EURES_FLAG:
+          $ref: '#/components/schemas/FacetResult'
+          description: Facet counts for EURES flag status.
+        POSITION_SCHEDULE:
+          $ref: '#/components/schemas/FacetResult'
+          description: Facet counts for working time arrangements.
+        POSITION_OFFERING:
+          $ref: '#/components/schemas/FacetResult'
+          description: Facet counts for employment offering types.
+        EDUCATION_AND_QUALIFICATION_LEVEL:
+          $ref: '#/components/schemas/FacetResult'
+          description: |
+            Hierarchical facet counts for education and qualification levels. May include
+            EQF (European Qualifications Framework) level sub-entries in `childrenList`.
+        EXTRA_BENEFIT:
+          $ref: '#/components/schemas/FacetResult'
+          description: |
+            Facet counts for additional employer benefits. Codes are numeric strings.
+      additionalProperties:
+        $ref: '#/components/schemas/FacetResult'
+
+    FacetResult:
+      type: object
+      required:
+        - facetEntriesList
+      properties:
+        facetEntriesList:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+
+    FacetEntry:
+      type: object
+      required:
+        - code
+        - count
+        - childrenList
+      properties:
+        code:
+          type: string
+          description: |
+            The filter code value for this facet entry. Meaning depends on the parent
+            facet category (e.g. a language code, a NUTS code, or a numeric string).
+          example: en
+        count:
+          type: integer
+          description: Number of matching job vacancies for this facet value.
+          example: 68096
+        childrenList:
+          type: array
+          description: |
+            Nested child facet entries for hierarchical facets (e.g. NUTS sub-regions
+            under a country, or EQF levels under an education level). Empty array when
+            the facet is not hierarchical or has no children.
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+
+    # -------------------------------------------------------------------------
+    # Reference data schemas
+    # -------------------------------------------------------------------------
+
+    Language:
+      type: object
+      required:
+        - id
+        - isoCode
+        - label
+      properties:
+        id:
+          type: integer
+          description: Internal numeric language identifier used by the EURES system.
+          example: 6
+        isoCode:
+          type: string
+          description: ISO 639-1 two-letter language code (lowercase).
+          pattern: "^[a-z]{2}$"
+          example: en
+        label:
+          type: string
+          description: Language name in its native script.
+          example: English
+
+    NaceEntry:
+      type: object
+      required:
+        - id
+        - code
+        - level
+        - revision
+      properties:
+        id:
+          type: integer
+          description: Internal numeric identifier for the NACE entry.
+          example: 1
+        code:
+          type: string
+          description: |
+            NACE division code in uppercase (e.g. `A` for Agriculture, Forestry and
+            Fishing). When used as a filter value in `sectorCodes`, this code must be
+            passed as lowercase (e.g. `a`).
+          pattern: "^[A-U]$"
+          example: A
+        level:
+          type: integer
+          description: Hierarchy level of the NACE entry. All returned entries are at level 1.
+          example: 1
+        revision:
+          type: string
+          description: NACE revision version string.
+          example: "2.0"
+
+    IsoLanguage:
+      type: object
+      required:
+        - id
+        - isoCode
+        - label
+        - euresSupported
+      properties:
+        id:
+          type: integer
+          description: Internal numeric language identifier.
+          example: 6
+        isoCode:
+          type: string
+          description: ISO 639-1 two-letter language code (lowercase).
+          pattern: "^[a-z]{2}$"
+          example: en
+        label:
+          type: string
+          description: Language name in English.
+          example: English
+        euresSupported:
+          type: boolean
+          description: Whether this language is fully supported by the EURES portal.
+          example: true
+
+    OccupationTreeNode:
+      type: object
+      required:
+        - uri
+        - childNodes
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: |
+            ESCO or ISCO classification URI. Top-level nodes use ISCO major group URIs
+            (e.g. `http://data.europa.eu/esco/isco/C0`), leaf nodes use ESCO occupation URIs.
+          example: "http://data.europa.eu/esco/isco/C2"
+        childNodes:
+          type: array
+          description: Child classification nodes. Empty array for leaf occupations.
+          items:
+            $ref: '#/components/schemas/OccupationTreeNode'
+
+    JobVacancyDetail:
+      type: object
+      required:
+        - id
+        - reference
+        - documentId
+        - connectionPointId
+        - source
+        - creationDate
+        - preferredLanguage
+        - jvProfiles
+        - translationType
+      description: |
+        Full detail of a single job vacancy. Contains all language profiles, employer
+        information, location data, application instructions, and translation metadata.
+      properties:
+        id:
+          type: string
+          description: Base64-encoded vacancy identifier.
+          example: MTAwMDEtMTAwMTEzOTMxMS1TIDE
+        reference:
+          type: string
+          description: Numeric reference string for the vacancy.
+          example: "100113931"
+        documentId:
+          type: string
+          description: |
+            Document identifier string. May be a numeric string (e.g. `30871838`)
+            or include a prefix (e.g. `ID-17102704`).
+          example: "30871838"
+        connectionPointId:
+          type: integer
+          description: Numeric identifier for the data source (connection point / job board).
+          example: 1001
+        source:
+          type: string
+          description: Source system identifier string.
+          example: PES-SWEDEN
+        creationDate:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds when the vacancy was created.
+          example: 1739403609768
+        lastModificationDate:
+          type:
+            - integer
+            - "null"
+          format: int64
+          description: Unix timestamp in milliseconds of the last modification, or null.
+        preferredLanguage:
+          type: string
+          description: ISO 639-1 code of the vacancy's primary language.
+          example: sv
+        jvProfiles:
+          type: object
+          description: |
+            Map of ISO 639-1 language codes to the full vacancy profile in that language.
+          additionalProperties:
+            $ref: '#/components/schemas/JobVacancyProfile'
+        translationType:
+          type: string
+          description: Indicates the source of the vacancy language content.
+          example: FIRST_LANGUAGE
+        translation:
+          type:
+            - object
+            - "null"
+          description: Machine translation metadata, or null when no translation is applied.
+
+    JobVacancyProfile:
+      type: object
+      description: A language-specific profile of a job vacancy.
+      properties:
+        languageVersion:
+          type: string
+          description: ISO 639-1 code identifying the language of this profile.
+          example: sv
+        title:
+          type: string
+          description: Vacancy title in this language profile.
+        numberOfPosts:
+          type: integer
+          description: Number of open positions.
+          example: 1
+        euresFlag:
+          type: boolean
+        jobCategoriesCodes:
+          type: array
+          items:
+            type: string
+            format: uri
+        positionOfferingCode:
+          $ref: '#/components/schemas/PositionOfferingCode'
+        positionScheduleCodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PositionScheduleCode'
+        description:
+          type: string
+          description: Full vacancy description in HTML format.
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+        employer:
+          $ref: '#/components/schemas/Employer'
+        applicationInstructions:
+          type: array
+          description: Instructions for applying, may contain HTML.
+          items:
+            type: string
+        lastApplicationDate:
+          type:
+            - string
+            - "null"
+          description: Application deadline as ISO 8601 date, or null.
+          example: "2025-06-30"
+        employmentPeriod:
+          oneOf:
+            - $ref: '#/components/schemas/EmploymentPeriod'
+            - type: "null"
+          description: Employment period details including start/end dates, or null.
+        immediateStartIndicator:
+          type: boolean
+          description: Whether the position is available for immediate start.
+          example: false
+        offeredRemunerationPackage:
+          oneOf:
+            - $ref: '#/components/schemas/OfferedRemunerationPackage'
+            - type: "null"
+          description: Remuneration and benefits details, or null.
+        personContacts:
+          type: array
+          description: Contact persons for the vacancy. Frequently an empty array.
+          items:
+            $ref: '#/components/schemas/PersonContact'
+        positionLanguages:
+          type: array
+          description: |
+            Language requirements specific to the position. Each entry specifies a
+            language code with optional required/desired CEFR skill levels and
+            associated ESCO skill URIs. Frequently an empty array.
+          items:
+            $ref: '#/components/schemas/PositionLanguage'
+        requiredDrivingLicenses:
+          type: array
+          description: Driving license categories required for the position.
+          items:
+            type: string
+        requiredEducationLevelCode:
+          type:
+            - string
+            - "null"
+          description: Required education level code, or null if not specified.
+        requiredExperiences:
+          type: array
+          description: Required professional experiences with ESCO occupation categories and duration.
+          items:
+            $ref: '#/components/schemas/RequiredExperience'
+        requiredQualificationLevelCode:
+          type:
+            - string
+            - "null"
+          description: |
+            Required qualification level as a numeric code string (e.g. "3").
+            Corresponds to EQF levels. Null if not specified.
+          example: "3"
+        requiredSkills:
+          type: array
+          description: ESCO skill URIs required for the position.
+          items:
+            type: string
+            format: uri
+        requiredYearsOfExperience:
+          type:
+            - number
+            - "null"
+          description: Minimum years of experience required, or null.
+        travelPreference:
+          oneOf:
+            - $ref: '#/components/schemas/TravelPreference'
+            - type: "null"
+          description: Travel requirement details, or null.
+        workingLanguageCodes:
+          type: array
+          description: ISO 639-1 codes of languages used in the workplace.
+          items:
+            type: string
+            description: ISO 639-1 language code
+          example:
+            - de
+
+    EmploymentPeriod:
+      type: object
+      description: Employment period details for a job vacancy.
+      properties:
+        startDate:
+          type:
+            - integer
+            - "null"
+          format: int64
+          description: Start date as Unix timestamp in milliseconds, or null.
+          example: 1770076800000
+        startDateText:
+          type: string
+          description: Human-readable start date string.
+          example: "03 February  2026"
+        endDate:
+          type:
+            - integer
+            - "null"
+          format: int64
+          description: End date as Unix timestamp in milliseconds, or null for open-ended.
+        endDateText:
+          type: string
+          description: Human-readable end date string, or empty string.
+        periodDescription:
+          type: string
+          description: Free-text description of the employment period, or empty string.
+
+    OfferedRemunerationPackage:
+      type: object
+      description: Compensation and benefits offered for the position.
+      properties:
+        description:
+          type: string
+          description: Free-text description of the remuneration package.
+        remunerationBasisCode:
+          type: string
+          description: |
+            Code indicating the basis of remuneration (e.g. `salaried`).
+          example: salaried
+        benefitsSummaries:
+          type: array
+          description: List of additional benefits descriptions.
+          items:
+            type: string
+        salaries:
+          type: array
+          description: Salary details for the position.
+          items:
+            $ref: '#/components/schemas/Salary'
+
+    Salary:
+      type: object
+      description: Salary details for a position.
+      properties:
+        minimumSalary:
+          type:
+            - number
+            - "null"
+          description: Minimum salary amount, or null.
+        maximumSalary:
+          type:
+            - number
+            - "null"
+          description: Maximum salary amount, or null.
+        referenceSalary:
+          type:
+            - number
+            - "null"
+          description: Reference salary amount, or null.
+        currencyCode:
+          type:
+            - string
+            - "null"
+          description: ISO 4217 currency code (e.g. `EUR`), or null.
+        payingIntervalCode:
+          type:
+            - string
+            - "null"
+          description: |
+            Pay interval code, or null. Observed values include `month`.
+          example: month
+        remunerationTypeCode:
+          type:
+            - string
+            - "null"
+          description: |
+            Type of remuneration. Observed values include `basepay` and `commission`.
+          example: basepay
+
+    RequiredExperience:
+      type: object
+      description: Required professional experience entry.
+      properties:
+        categoryCode:
+          type: string
+          format: uri
+          description: ESCO occupation URI classifying the required experience.
+          example: "http://data.europa.eu/esco/occupation/36494988-69d2-4420-9db4-eb56605ac983"
+        measure:
+          type: object
+          description: Duration of required experience.
+          properties:
+            value:
+              type: number
+              description: Numeric duration value.
+              example: 0
+            unitCode:
+              type: string
+              description: Unit of the duration (e.g. `year`).
+              example: year
+        description:
+          type: string
+          description: Free-text description of the required experience.
+
+    PersonContact:
+      type: object
+      description: Contact person for a job vacancy.
+      properties:
+        givenName:
+          type: string
+          description: First name of the contact person. May be empty string.
+          example: Erika
+        familyName:
+          type: string
+          description: Last name of the contact person.
+          example: Krüger
+        communications:
+          $ref: '#/components/schemas/Communications'
+
+    Communications:
+      type: object
+      description: Communication channels for a contact person.
+      properties:
+        addresses:
+          type: array
+          description: Postal addresses.
+          items:
+            $ref: '#/components/schemas/Location'
+        telephoneNumbers:
+          type: array
+          description: Landline telephone numbers.
+          items:
+            $ref: '#/components/schemas/TelephoneNumber'
+        mobileTelephoneNumbers:
+          type: array
+          description: Mobile telephone numbers.
+          items:
+            $ref: '#/components/schemas/TelephoneNumber'
+        faxNumbers:
+          type: array
+          description: Fax numbers.
+          items:
+            $ref: '#/components/schemas/TelephoneNumber'
+        telephoneInstantMessages:
+          type: array
+          description: Telephone-based instant messaging identifiers.
+          items:
+            type: object
+        webInstantMessages:
+          type: array
+          description: Web-based instant messaging identifiers.
+          items:
+            type: object
+        emails:
+          type: array
+          description: Email addresses.
+          items:
+            $ref: '#/components/schemas/EmailAddress'
+        webProfiles:
+          type: array
+          description: Web profile URLs.
+          items:
+            type: object
+
+    TelephoneNumber:
+      type: object
+      description: Telephone number with optional dialing codes.
+      properties:
+        areaDialing:
+          type:
+            - string
+            - "null"
+          description: Area dialing code, or null.
+        countryDialing:
+          type:
+            - string
+            - "null"
+          description: Country dialing code, or null.
+        dialNumber:
+          type: string
+          description: The telephone number.
+          example: "0621624288"
+
+    EmailAddress:
+      type: object
+      description: Email address entry.
+      properties:
+        uri:
+          type: string
+          format: email
+          description: Email address.
+          example: contact@example.com
+
+    PositionLanguage:
+      type: object
+      description: Language requirement for a position with optional CEFR proficiency levels.
+      properties:
+        requiredSkillLevel:
+          type:
+            - string
+            - "null"
+          description: |
+            Required CEFR proficiency level (lowercase, e.g. `a1`, `b1`, `c2`),
+            or null if no required level is specified.
+          example: b1
+        desiredSkillLevel:
+          type:
+            - string
+            - "null"
+          description: |
+            Desired CEFR proficiency level (lowercase), or null if no desired
+            level is specified.
+        languageCode:
+          type: string
+          description: ISO 639-1 language code.
+          example: en
+        competencies:
+          type: array
+          description: Additional competency descriptors. Frequently empty.
+          items:
+            type: object
+        skillsEscoUri:
+          type: array
+          description: ESCO skill URIs associated with this language requirement.
+          items:
+            type: string
+            format: uri
+
+    TravelPreference:
+      type: object
+      description: Travel requirement details for a position.
+      properties:
+        willingToTravelIndicator:
+          type:
+            - boolean
+            - "null"
+          description: Whether travel willingness is required, or null if unknown.
+          example: true
+        travelPercentage:
+          type:
+            - number
+            - "null"
+          description: Expected travel percentage, or null.
+        description:
+          type: string
+          description: |
+            Free-text description of travel requirements. Values observed include
+            `UNKNOWN`, empty string, or localized text (e.g. `Nicht erforderlich`,
+            `Uneingeschränkt`).
+          example: ""
+
+    BuildingAddress:
+      type: object
+      description: Structured building address detail within a location.
+      properties:
+        buildingNumber:
+          type:
+            - string
+            - "null"
+          description: Building or house number.
+          example: "2"
+        streetName:
+          type:
+            - string
+            - "null"
+          description: Street name.
+          example: Uiverweg
+        unit:
+          type:
+            - string
+            - "null"
+          description: Unit, suite, or apartment number, or null.
+
+    Location:
+      type: object
+      description: Geographic location associated with a job vacancy.
+      properties:
+        countryCode:
+          type: string
+          description: ISO 3166-1 alpha-2 country code (lowercase).
+          example: se
+        region:
+          type:
+            - string
+            - "null"
+          description: NUTS region code, or null when not specified.
+          example: SE110
+        cityName:
+          type:
+            - string
+            - "null"
+          description: City or municipality name, or null.
+          example: Stockholm
+        postalCode:
+          type:
+            - string
+            - "null"
+          description: Postal code, or null.
+          example: "11428"
+        addressLines:
+          type: array
+          items:
+            type: string
+        buildingAddress:
+          oneOf:
+            - $ref: '#/components/schemas/BuildingAddress'
+            - type: "null"
+          description: Structured building address detail, or null.
+
+    OccupationAutocompleteResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          description: Occupation suggestions ranked by vacancy frequency.
+          items:
+            $ref: '#/components/schemas/OccupationSuggestion'
+
+    OccupationSuggestion:
+      type: object
+      properties:
+        frequency:
+          type: integer
+          description: Number of active vacancies matching this suggestion.
+          example: 4821
+        language:
+          type: string
+          description: ISO 639-1 code of the suggestion language.
+          example: de
+        suggest:
+          type: string
+          description: Suggested occupation name.
+          example: Softwareentwickler/in
+
+    JobCountResponse:
+      type: object
+      properties:
+        numberOfJobs:
+          type: integer
+          description: Total count of active job vacancies.
+          example: 2539302
+
+    StatEntry:
+      type: object
+      description: Base structure for statistical breakdown entries.
+      properties:
+        label:
+          type:
+            - string
+            - "null"
+          description: Human-readable name, or null.
+        code:
+          type: string
+          description: Classification code (context-dependent).
+        jobs:
+          type: integer
+          description: Number of job vacancies.
+        posts:
+          type:
+            - integer
+            - "null"
+          description: Number of positions, or null.
+        date:
+          type: integer
+          format: int64
+          description: Timestamp when this statistic was computed.
+
+    CountryStatEntry:
+      allOf:
+        - $ref: '#/components/schemas/StatEntry'
+        - type: object
+          properties:
+            children:
+              type: array
+              description: NUTS region sub-entries.
+              items:
+                $ref: '#/components/schemas/RegionStatEntry'
+
+    RegionStatEntry:
+      allOf:
+        - $ref: '#/components/schemas/StatEntry'
+        - type: object
+          properties:
+            children:
+              type: array
+              items: {}
+
+    SectorStatEntry:
+      allOf:
+        - $ref: '#/components/schemas/StatEntry'
+        - type: object
+          properties:
+            children:
+              type: array
+              items: {}
+
+    OccupationStatEntry:
+      allOf:
+        - $ref: '#/components/schemas/StatEntry'
+        - type: object
+          properties:
+            children:
+              type: array
+              items: {}
+
+    UserProfile:
+      type: object
+      description: Profile of the currently authenticated user. All fields null for anonymous users.
+      properties:
+        userId:
+          type:
+            - string
+            - "null"
+        euLoginId:
+          type:
+            - string
+            - "null"
+        firstname:
+          type:
+            - string
+            - "null"
+        lastname:
+          type:
+            - string
+            - "null"
+        mainEmail:
+          type:
+            - string
+            - "null"
+        preferredLanguage:
+          type:
+            - string
+            - "null"
+        lastModificationDate:
+          type:
+            - string
+            - "null"
+        status:
+          type:
+            - string
+            - "null"
+        mainRole:
+          type:
+            - string
+            - "null"
+        userRanking:
+          type:
+            - string
+            - "null"
+          description: User ranking level, or null for anonymous/unranked users.
+        rights:
+          type: array
+          items:
+            type: string
+
+    MenuEntry:
+      type: object
+      description: Navigation menu entry for a portal section.
+      properties:
+        labelKey:
+          type: string
+          description: i18n key for the display label.
+          example: menu.jobseekers.find_a_job
+        url:
+          type: string
+          description: Relative or absolute URL.
+          example: /portal/jv-se/home
+        applicationName:
+          type: string
+          description: Application module identifier.
+          example: PORTAL_WEB
+        pageCode:
+          type: string
+          description: Internal page code.
+          example: find_a_job
+
+    # -------------------------------------------------------------------------
+    # Enum schemas (shared across request and response)
+    # -------------------------------------------------------------------------
+
+    SortOrder:
+      type: string
+      enum:
+        - BEST_MATCH
+        - MOST_RECENT
+      description: |
+        Sort order for returned job vacancies.
+        - `BEST_MATCH`: Sort by relevance score relative to the search keywords.
+        - `MOST_RECENT`: Sort by publication/creation date, newest first.
+      example: BEST_MATCH
+
+    ExperienceCode:
+      type: string
+      enum:
+        - none_required
+        - up_to_1_year
+        - between_1_and_2_years
+        - between_2_and_5_years
+        - more_than_5_years
+        - NS
+      description: |
+        Required work experience level code. `NS` means "not specified".
+      example: between_2_and_5_years
+
+    PositionScheduleCode:
+      type: string
+      enum:
+        - fulltime
+        - parttime
+        - flextime
+        - NS
+      description: |
+        Working time arrangement code. `NS` means "not specified".
+      example: fulltime
+
+    SectorCode:
+      type: string
+      enum:
+        - a
+        - b
+        - c
+        - d
+        - e
+        - f
+        - g
+        - h
+        - i
+        - j
+        - k
+        - l
+        - m
+        - "n"
+        - o
+        - p
+        - q
+        - r
+        - s
+        - t
+        - u
+        - NS
+      description: |
+        NACE economic sector code (lowercase single letter corresponding to NACE divisions
+        A through U). `NS` means "not specified".
+      example: q
+
+    EducationLevelCode:
+      type: string
+      enum:
+        - basic
+        - medium
+        - bachelor
+        - master
+        - tertiary
+        - doctoral
+        - NS
+      description: |
+        Required education or qualification level code. `NS` means "not specified".
+        Facet responses may include more granular EQF sub-codes (e.g. `eqf_8`) in
+        `childrenList`, but these are not used as filter values in search requests.
+      example: bachelor
+
+    PositionOfferingCode:
+      type: string
+      enum:
+        - apprenticeship
+        - contract
+        - contracttohire
+        - directhire
+        - internship
+        - oncall
+        - recruitmentreserve
+        - seasonal
+        - selfemployed
+        - temporary
+        - temporarytohire
+        - volunteer
+        - NS
+      description: |
+        Type of employment offering. `NS` means "not specified".
+      example: directhire
+
+    EuresFlagCode:
+      type: string
+      enum:
+        - WITH
+        - WITHOUT
+      description: |
+        EURES flag filter value.
+        - `WITH`: Vacancy is flagged as a EURES cross-border vacancy.
+        - `WITHOUT`: Vacancy is not flagged as a EURES vacancy.
+      example: WITH
