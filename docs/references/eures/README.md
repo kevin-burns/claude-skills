@@ -40,6 +40,32 @@ Spanish-language DevOps posting.
 drives EURES with Selenium and manages XSRF tokens — that is browser automation, it is
 off-limits for this skill, and our probe shows it is also unnecessary.
 
+## It throttles, and it expresses throttling as HTTP 500
+
+**Read this before writing a client.** Roughly eight requests over five minutes on
+2026-08-06 were enough to make the service return `500 Internal Server Error` to
+*everything* — including `getNumberOfJobs`, the cheapest GET on the list, which had
+returned `200 {"numberOfJobs":2865233}` four minutes earlier from the same machine and the
+same honest User-Agent.
+
+The 500 carries **no `Retry-After` header and no rate-limit headers of any kind.** That is
+materially worse than a 429, because:
+
+- A naive client reads 500 as a transient server fault and **retries**, which deepens the
+  block. This is precisely the loop `job-feeds`' SKILL.md warns about for Arbeitnow.
+- `job-feeds`' existing `RateLimiter` classifies 429 and 503 as `throttled` and everything
+  else as `failed`. A 500 would therefore be reported as a broken source rather than a
+  self-inflicted rate limit — the operator would go looking for schema drift.
+- There is no signal to pace against. Arbeitnow at least publishes
+  `x-ratelimit-limit`; here there is nothing.
+
+So any EURES integration needs: a conservative fixed pace decided up front, treatment of
+500 as *back off*, not *retry*, and a long cool-off. Do not tune this by experiment against
+the live service — that is what caused it.
+
+Whether this is a rate limit or a coincident outage is **not established**. Both readings
+fit the evidence; the timing points at us. Re-probe once, after hours, before concluding.
+
 ## Why this matters more than "another source"
 
 **It filters by location server-side.** That is the exact capability `claude-skills-atj`
@@ -99,9 +125,47 @@ decision the other eight sources never forced.
 | `GET /jv-searchengine/public/jv/id/{id}` | Single vacancy detail |
 | `GET /jv-searchengine/public/statistics/getNumberOfJobs` | Cheapest liveness probe |
 | `GET /jv-searchengine/public/statistics/getCountryStats` | Coverage by country |
-| `GET /shared-data-rest-api/public/reference/countries` | Valid `locationCodes` |
+| `GET /shared-data-rest-api/public/reference/countries` | Valid `locationCodes` — see below |
 | `GET /shared-data-rest-api/public/esco/occupation/tree` | ESCO occupation hierarchy |
 | `GET /autocomplete-repository-rest-api/public/v2.0/occupations` | Occupation autocomplete |
+
+## Permissible `locationCodes` — partially captured, finish this first
+
+`GET /shared-data-rest-api/public/reference/countries` returned **HTTP 200 and a flat array
+of 31 ISO 3166-1 alpha-2 strings** on 2026-08-06. Verified from the response: the array
+length is `31`, and its first two entries are `"AT"` and `"BE"`.
+
+**The full enumeration was not captured before the service began returning 500s, and it is
+deliberately not written out here from memory.** Thirty-one is exactly the size of EU-27
+plus Iceland, Liechtenstein and Norway plus Switzerland, which is EURES' stated coverage —
+so that is very likely the set. *Likely is not verified*, and a country list that is quietly
+wrong is the kind of detail nobody re-checks. Run this once the service recovers and paste
+the result in:
+
+```bash
+curl -s -H 'User-Agent: job-feeds/0.1 (job-search feed aggregator)' \
+  https://europa.eu/eures/api/shared-data-rest-api/public/reference/countries
+```
+
+Two further things to capture in the same pass, since each is one request:
+
+- **Labels.** The endpoint returns bare codes, no names. Check whether
+  `/shared-data-rest-api/public/reference/countries` accepts a language parameter, or
+  whether labels come from `/shared-data-rest-api/public/esco/label/{lang}`.
+- **Volume per country.** `getCountryStats` is listed in the unofficial spec but returned
+  **HTTP 500 on the very first call**, before any throttling — so treat that endpoint as
+  documented-but-broken. Per-country counts may instead come from the `facets` block of a
+  search response.
+
+### Two schema claims that did not survive contact
+
+Recorded because the unofficial spec asserts both:
+
+- `keywords: []` is documented as "performs an unfiltered search across all vacancies". It
+  returned **500**. Whether that is the empty array or the throttling is unresolved — the
+  first empty-keyword call failed before other symptoms appeared, so it is probably real.
+- Every array field is marked `required`, so none can be omitted even when empty. That part
+  held: the working search sent all of them.
 
 ## Before adopting — the actual gate
 
