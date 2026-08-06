@@ -332,6 +332,12 @@ feeds have no server-side boolean search, so matching is entirely local.
 
 Verified 2026-08-05. Re-check before trusting any of it in six months.
 
+**This table is operational** — rate limits, pagination, payload quirks, the things that
+explain a thin or failing fetch. `README.md` has a shorter table about what each source is
+*good for*; that one is for choosing, this one is for diagnosing. A new-user test read both
+back to back and gained little from the second, so do not send someone here for
+orientation.
+
 | Source | Notes |
 |---|---|
 | Arbeitnow | Largest share of our German rows — 84 of 98 matches on a real run. **Share is not coverage:** it is an independent free job board built by one developer, carrying a sample of the market rather than the market. Roles seen on the Bundesagentur within the last week (NTT Data forward-deployed engineer, observed 2026-08-06) were absent here. Paginates; board is **~7 days deep, 40 pages**, `links.last` always null. Publishes `x-ratelimit-limit: 50` and is **burst-sensitive**: ten uncached pages in a second is enough to earn a 429. Pages are paced 1s apart and capped at 10 by default for exactly this reason. |

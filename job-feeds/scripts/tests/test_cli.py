@@ -669,3 +669,125 @@ class TestSeenAgeIsComputedNotInvented(ConfigCase):
         rows = [{"first_seen": "2026-08-09T12:00:00Z"}]
         attach_seen_age(rows, NOW)
         self.assertEqual(rows[0]["seen_days"], 0)
+
+
+class TestFirstRunFriction(ConfigCase):
+    """claude-skills-302. Friction found by the fresh-install test -- none of
+    these were wrong output, which is why they survived the four defects
+    fixed in 2b36f72. They were output that told the truth and still left a
+    new user with the wrong idea.
+    """
+
+    def run_cli(self, *argv, **kwargs):
+        out, err = io.StringIO(), io.StringIO()
+        code = main(list(argv), out=out, err=err, now=NOW, **kwargs)
+        return code, out.getvalue(), err.getvalue()
+
+    def seed(self, db, count, source="arbeitnow", dated=True, title="Platform Engineer"):
+        """Its own seeder: the ones above hardcode a posted_at and a single
+        source, and these tests turn exactly those two things on and off."""
+        store = Store(db)
+        store.upsert([{"title": title, "company": f"Co{i}",
+                       "location": "Berlin", "remote": True,
+                       "posted_at": "2026-08-04T00:00:00Z" if dated else None,
+                       "url": f"https://x/{source}/{i}",
+                       "description": "", "tags": [], "salary": None,
+                       "source": source}
+                      for i in range(count)], NOW)
+
+    # --- the digest line names what it drew from -------------------------
+
+    def test_the_digest_line_gives_the_row_denominator(self):
+        """'2 row(s)' cannot distinguish 'my lanes are too narrow' from
+        'I have only polled one feed'. The denominator is the difference."""
+        db = self.tmp / "j.db"
+        self.seed(db, 2, title="Platform Engineer")
+        self.seed(db, 18, title="Pastry Chef")
+        _, _, err = self.run_cli("digest", "--config", str(self.write(GOOD_CONFIG)),
+                                 "--db", str(db))
+        self.assertIn("2 of 20 row(s)", err)
+
+    def test_the_digest_line_gives_the_source_denominator(self):
+        """The tester's corpus came from one source of eight and nothing
+        said so, which is what made two rows look like a broken tool."""
+        db = self.tmp / "j.db"
+        self.seed(db, 3)
+        _, _, err = self.run_cli("digest", "--config", str(self.write(GOOD_CONFIG)),
+                                 "--db", str(db))
+        self.assertIn(f"1 of {len(SOURCES)} sources", err)
+
+    def test_the_source_denominator_counts_distinct_sources_not_rows(self):
+        """A guard against len(selected) sneaking into the numerator: with
+        two sources the count must be 2, not the row total."""
+        db = self.tmp / "j.db"
+        self.seed(db, 3, source="arbeitnow")
+        self.seed(db, 4, source="jobicy")
+        _, _, err = self.run_cli("digest", "--config", str(self.write(GOOD_CONFIG)),
+                                 "--db", str(db))
+        self.assertIn(f"2 of {len(SOURCES)} sources", err)
+
+    # --- undated rows are explained, not disclaimed ----------------------
+
+    def test_locations_counts_undated_rows_and_names_the_cause(self):
+        """An all-undated corpus made the tester think date parsing had
+        broken. Saying how many and why is the fix."""
+        db = self.tmp / "j.db"
+        self.seed(db, 3, dated=False)
+        _, out, _ = self.run_cli("locations", "--config", str(self.write(GOOD_CONFIG)),
+                                 "--db", str(db))
+        self.assertIn("3 carry no date", out)
+        self.assertIn("publish none", out,
+                      "must name the cause, or it reads as a disclaimer about a bug")
+
+    def test_locations_is_silent_about_dates_when_every_row_has_one(self):
+        """The old text was constant, so it warned about a condition that
+        was not present -- which is how a note becomes noise."""
+        db = self.tmp / "j.db"
+        self.seed(db, 3, dated=True)
+        _, out, _ = self.run_cli("locations", "--config", str(self.write(GOOD_CONFIG)),
+                                 "--db", str(db))
+        self.assertNotIn("carry no date", out)
+
+    # --- doctor's starter config is real -------------------------------
+
+    def test_doctor_offers_a_config_that_is_itself_valid(self):
+        """The strongest guard here. doctor's help text is only worth
+        anything if what it prints actually loads -- so this parses the JSON
+        out of the printed heredoc, writes it, and runs doctor on it."""
+        missing = self.tmp / "absent.json"
+        _, _, err = self.run_cli("doctor", "--config", str(missing),
+                                 "--db", str(self.tmp / "j.db"))
+        body = err.split("<<'JSON'", 1)[1].split("\nJSON", 1)[0]
+        parsed = json.loads(body)
+        real = self.tmp / "made.json"
+        real.write_text(json.dumps(parsed), encoding="utf-8")
+        code, out, _ = self.run_cli("doctor", "--config", str(real),
+                                    "--db", str(self.tmp / "j.db"))
+        self.assertEqual(code, 0, "the config doctor prints must load")
+        self.assertIn("1 lane", out)
+
+    def test_the_starter_lane_regex_is_narrow_enough_to_teach_the_point(self):
+        """A starter matching everything would teach the opposite of the
+        docs' own advice that lanes should start narrow."""
+        missing = self.tmp / "absent.json"
+        _, _, err = self.run_cli("doctor", "--config", str(missing),
+                                 "--db", str(self.tmp / "j.db"))
+        body = err.split("<<'JSON'", 1)[1].split("\nJSON", 1)[0]
+        config = load_config_from_dict(json.loads(body), self.tmp)
+        self.assertTrue(lanes_for({"title": "Platform Engineer"}, config))
+        self.assertFalse(lanes_for({"title": "Pastry Chef"}, config),
+                         "a starter lane that matches anything is not a starter")
+
+    def test_doctor_still_recommends_claude_first(self):
+        """The starter must not displace the recommended path -- lanes are
+        regexes and Claude writing them is still the better route."""
+        _, _, err = self.run_cli("doctor", "--config", str(self.tmp / "absent.json"),
+                                 "--db", str(self.tmp / "j.db"))
+        self.assertLess(err.lower().index("ask claude"), err.index("<<'JSON'"),
+                        "Claude must be offered before the manual fallback")
+
+
+def load_config_from_dict(data, tmp):
+    path = tmp / "_tmp_starter.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return load_config(path)

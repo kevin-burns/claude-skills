@@ -27,6 +27,10 @@ signal.
 
 Coverage is uneven by design — these are not interchangeable. Verified 2026-08-05.
 
+**This table is about choosing.** The one in [`SKILL.md`](./SKILL.md) covers the same eight
+sources operationally — exact rate limits, pagination depth, payload quirks — and is worth
+reading only when something looks wrong. You do not need both to get started.
+
 | Source | Good for | Worth knowing |
 |---|---|---|
 | [Arbeitnow](https://www.arbeitnow.com) | **Germany** — most of our German rows | An independent free board, not an official aggregator: it holds a sample, not the market. Only ~7 days deep, so a 14-day window can't get 14 days from it. Burst-sensitive: pages are capped and paced |
@@ -41,8 +45,37 @@ Coverage is uneven by design — these are not interchangeable. Verified 2026-08
 [`SKILL.md`](./SKILL.md) carries the rest: exact endpoints, pagination behaviour, rate-limit
 details and how to read `jfeeds sources` when something looks thin.
 
-`jfeeds` is a shell function you define once per terminal — there is nothing to install
-on your PATH. Re-declare it in each new shell:
+## Install
+
+Three commands from a clone to your first results. Nothing lands on your PATH, and
+nothing is installed system-wide.
+
+```bash
+# 1. Link the skill (from your claude-skills clone)
+ln -s "$(pwd)/job-feeds" ~/.claude/skills/job-feeds
+
+# 2. Define the shell function — once per terminal, since shell state does not persist
+jfeeds() { python3 "$HOME/.claude/skills/job-feeds/scripts/job_feeds.py" "$@"; }
+
+# 3. Find out what you still need
+jfeeds doctor
+```
+
+`doctor` makes no network calls. Until a config exists it exits 2 and prints a complete,
+valid starter config you can paste — so step 3 tells you exactly what to do next rather
+than failing at you. **Asking Claude to write the config is the better path**, because the
+lanes are regexes and they are the part people get wrong; the starter exists for when you
+are working alone at a shell.
+
+Python 3.9+ and standard library only, so `python3` works. If you prefer `uv`, or need it
+resolved when it is off PATH, [`SKILL.md`](./SKILL.md) has that variant — use one or the
+other, not both.
+
+It is called `jfeeds`, **not `jobs`** — `jobs` is a shell builtin.
+
+## Everyday use
+
+Re-declare the function in each new shell, then:
 
 ```bash
 jfeeds() { python3 "$HOME/.claude/skills/job-feeds/scripts/job_feeds.py" "$@"; }
@@ -54,8 +87,6 @@ jfeeds sources                  # every source, its status, and why
 jfeeds locations                # where the fetched rows actually are
 jfeeds report --out jobs.html   # self-contained page, opens with no network
 ```
-
-It is called `jfeeds`, **not `jobs`** — `jobs` is a shell builtin.
 
 ## How to use it well
 

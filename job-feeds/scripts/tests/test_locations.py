@@ -248,7 +248,11 @@ class TestTheDigestOneLiner(LocationCase):
                        ("Reykjavik", "Chief Financial Officer")])
         _, _, err = self.run_cli("digest", "--config", str(self.write()),
                                  "--db", str(db))
-        self.assertIn("1 row(s) — where: Berlin (1)", err)
+        # claude-skills-302 added the denominators. The numerator is still
+        # the shown-row count, which is what this test exists to hold: "1 of
+        # 2" must not drift into "2 of 2" by counting the corpus twice.
+        self.assertIn("1 of 2 row(s)", err)
+        self.assertIn("where: Berlin (1)", err)
         self.assertNotIn("Reykjavik", err)
 
     def test_an_empty_digest_points_at_the_breakdown_instead_of_dead_ending(self):

@@ -43,6 +43,30 @@ def ratelimit_path_for(db_path):
 
 STAMP = "%Y-%m-%dT%H:%M:%SZ"
 
+# Printed by `doctor` when no config exists. Deliberately ONE lane with a
+# deliberately narrow regex: the docs' own position is that lanes are what
+# people get wrong, and a starter matching half the corpus would teach the
+# opposite lesson. It is a complete, valid config -- a fresh install must
+# have a path that works without Claude, because config.example.json
+# encodes one person's career and is the wrong thing to copy unedited.
+# Kept flush left so the heredoc in the help text pastes verbatim.
+STARTER_CONFIG = """\
+{
+  "defaults": {
+    "window": 14,
+    "exclude_company": [],
+    "exclude_title": []
+  },
+  "lanes": [
+    {
+      "name": "platform",
+      "label": "Platform",
+      "match": "\\\\b(platform|infrastructure|devops|sre)\\\\b",
+      "match_in": "title"
+    }
+  ]
+}"""
+
 
 class ConfigError(Exception):
     """Unusable input. Reported to stderr, exits 2."""
@@ -1004,13 +1028,23 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
             log("  career track. Nothing is shown unless it matches one, so the lanes")
             log("  are the whole of the tool's judgement and they have to be yours.")
             log("")
-            log("  Ask Claude to set it up: describe the roles you want and it will")
-            log("  write the file. Or copy the example and edit it by hand:")
-            log(f"    mkdir -p {Path(args.config).parent}")
-            log(f"    cp <skill>/scripts/config.example.json {args.config}")
+            log("  Ask Claude to set it up: describe the roles you want and it")
+            log("  will write the file. That is the best path -- the lanes are")
+            log("  regexes, and they are the part people get wrong.")
             log("")
-            log("  The example encodes one person's career (platform, EM, forward")
-            log("  deployed, AI). Used unedited it will match the wrong jobs.")
+            log("  Working alone at a shell? This is a complete, valid config.")
+            log("  Edit the one regex to name the roles you actually want.")
+            log("  Copy from the line below to JSON -- it is flush left so it")
+            log("  pastes as-is; an indented heredoc terminator would not work:")
+            log("")
+            log(f"mkdir -p {Path(args.config).parent}")
+            log(f"cat > {args.config} <<'JSON'")
+            log(STARTER_CONFIG)
+            log("JSON")
+            log("")
+            log("  Then run 'jfeeds doctor' again. config.example.json beside")
+            log("  this script is a fuller reference, but it encodes one")
+            log("  person's career and unedited it will match the wrong jobs.")
             return 2
 
         config = load_config(args.config)
@@ -1084,9 +1118,17 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                     [{"location": None if label == "(none)" else label,
                       "rows": count} for label, count in counts], indent=2), file=out)
                 return 0
+            # "Undated rows included." was constant and unexplained, which
+            # read as a disclaimer about a bug. State it only when it is
+            # true, count it, and name the cause -- the fresh-install tester
+            # saw an all-undated corpus and concluded date parsing had
+            # broken, when three sources simply publish no dates.
+            undated = sum(1 for row in selected if not row.get("posted_at"))
+            note = ("" if not undated else
+                    f" {undated} carry no date -- some feeds publish none, "
+                    f"so those are counted here, not dropped.")
             print(f"{len(selected)} row(s) in the {window}-day window, "
-                  f"{len(counts)} distinct location(s). Undated rows included.",
-                  file=out)
+                  f"{len(counts)} distinct location(s).{note}", file=out)
             print("", file=out)
             width = max(len(label) for label, _ in counts[:LOC_LIMIT])
             for label, count in counts[:LOC_LIMIT]:
@@ -1164,7 +1206,14 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
             # see happen to be. stderr, so `digest --json | jq` is
             # unaffected -- and it fires on the --json path too, which today
             # carries no aggregate at all.
-            log(f"job-feeds: {len(rows)} row(s) — where: {where_line(rows)}")
+            # "2 row(s)" alone reads as a broken tool. What the fresh-install
+            # tester could not tell was whether 2 was 2-of-20-from-one-source
+            # or 2-of-everything: the denominators are the difference between
+            # "my lanes are too narrow" and "I have only polled one feed".
+            # `selected` is the in-window corpus before exclusions and lanes.
+            drew = len({row.get("source") or "?" for row in selected})
+            log(f"job-feeds: {len(rows)} of {len(selected)} row(s), "
+                f"{drew} of {len(SOURCES)} sources — where: {where_line(rows)}")
 
         if args.command == "digest":
             if args.as_json:
