@@ -172,8 +172,13 @@ rows are, so a wrong-country result announces itself instead of looking like a q
 `~/.config/job-feeds/config.json`. **The easiest way to create it is to ask Claude** —
 describe the roles you want, where, and anything to rule out, and it writes the file. That
 is the intended path: the lanes are regexes, and hand-writing them is the part most people
-get wrong. `scripts/config.example.json` is there if you would rather edit JSON, but note
-it encodes one person's career and matches the wrong jobs unedited.
+get wrong.
+
+Working without Claude? Run `jfeeds doctor`. With no config it exits 2 and prints a
+complete, valid one-lane starter as a paste-ready command — edit the single regex and you
+have a working setup. `scripts/config.example.json` is a fuller reference with several
+lanes, but it encodes one person's career and matches the wrong jobs unedited, so start
+from the starter rather than that file.
 
 Nothing is excluded by default. `exclude_company` and `exclude_title` both ship empty on
 purpose — a first run should show you what the feeds actually contain before it hides any
@@ -182,7 +187,11 @@ digest` then reports how many rows each rule removed, so an over-broad entry is 
 rather than silently eating half your results. `SKILL.md` carries a reference list of
 common staffing intermediaries for when you want it.
 
-`jfeeds doctor` tells you if the config is missing or malformed before you fetch anything.
+`jfeeds doctor` validates the config before you fetch anything, and distinguishes the two
+failure modes rather than lumping them: a *missing* config gets the starter above, a
+*malformed* one gets told what is wrong with the file it already has. It also names any
+config key it does not recognise — those are silently ignored, so anything you expected
+them to do is not happening.
 
 See [`SKILL.md`](./SKILL.md) for the full field reference, the rules for writing lanes that
 do not misfire, and the per-source notes (pagination depth, rate limits, and which feeds
