@@ -1,0 +1,70 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Job feeds</title><style>
+:root{--bg:#f6f7f9;--fg:#212529;--mut:#6c757d;--line:#dee2e6;--card:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#16181c;--fg:#e9ecef;--mut:#9aa0a6;
+ --line:#343a40;--card:#1f2226}}
+*{box-sizing:border-box}
+body{margin:0;padding:1.5rem;background:var(--bg);color:var(--fg);
+ font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+h1{font-size:1.5rem;margin:0 0 .25rem}h2{font-size:1rem;margin:2rem 0 .5rem}
+.sub{color:var(--mut);font-size:.85rem;margin-bottom:1rem}
+.kpis{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:.5rem;
+ padding:.5rem .9rem;min-width:6.5rem}
+.kpi b{display:block;font-size:1.5rem;font-weight:600}
+.kpi span{font-size:.68rem;text-transform:uppercase;color:var(--mut)}
+.controls{position:sticky;top:0;background:var(--bg);padding:.6rem 0;display:flex;
+ flex-wrap:wrap;gap:.5rem;align-items:center;border-bottom:1px solid var(--line);z-index:5}
+input,select{background:var(--card);color:var(--fg);border:1px solid var(--line);
+ border-radius:.375rem;padding:.3rem .5rem;font-size:.85rem}
+input[type=text]{min-width:16rem}
+label{font-size:.8rem;color:var(--mut);display:inline-flex;gap:.25rem;align-items:center}
+#count{margin-left:auto;font-size:.8rem;color:var(--mut)}
+/* No overflow:hidden here. It was added for rounded corners and silently
+   disabled position:sticky on the header inside, which is what made the
+   header overlap the first rows instead of pinning above them. */
+table{width:100%;border-collapse:collapse;background:var(--card);
+ border:1px solid var(--line);border-radius:.5rem}
+th,td{padding:.35rem .6rem;text-align:left;font-size:.82rem;
+ border-bottom:1px solid var(--line);vertical-align:top}
+/* The offset cannot be a constant: the controls bar is taller than 3rem
+   and WRAPS on narrow screens. The page measures it and sets
+   --controls-h; the fallback only applies if the script never runs. */
+th{position:sticky;top:var(--controls-h, 3.5rem);background:var(--card);
+ font-size:.72rem;text-transform:uppercase;color:var(--mut);z-index:4;
+ box-shadow:inset 0 -1px 0 var(--line)}
+tr.hide{display:none}
+tr:hover td{background:rgba(127,127,127,.07)}
+.lane{display:inline-block;background:var(--fg);color:var(--bg);border-radius:.25rem;
+ padding:0 .3rem;font-size:.66rem;margin-right:.15rem}
+.dim{color:var(--mut);font-size:.75rem}
+a{color:inherit}
+footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);
+ font-size:.75rem;color:var(--mut)}
+@media print{.controls{display:none}}
+</style></head><body><h1>Job feeds</h1><div class='sub'>Generated 2026-08-05T12:00:00Z &middot; 14-day window &middot; 1 matching role(s)</div><div class='kpis'><div class='kpi'><span>Roles</span><b>1</b></div><div class='kpi'><span>Remote</span><b>1</b></div><div class='kpi'><span>Starred</span><b>0</b></div><div class='kpi'><span>Employers</span><b>1</b></div><div class='kpi'><span>Lanes</span><b>1</b></div></div><div class='controls'><input type='text' id='q' placeholder='Filter role, company, location…'><select id='lane'><option value=''>All lanes</option><option>Platform</option></select><label><input type='checkbox' id='star'>&#9733; only</label><label><input type='checkbox' id='rem'>Remote only</label><span id='count'></span></div><table id='t'><thead><tr><th>Posted</th><th>Lanes</th><th>Company</th><th>Role</th><th>Where</th><th>Also on</th><th>Link</th></tr></thead><tbody><tr data-lanes='Platform' data-star='0' data-remote='1' data-text='platform engineer acme berlin'><td>2026-08-04</td><td><span class='lane'>Platform</span></td><td>Acme</td><td>Platform Engineer</td><td>Berlin</td><td class='dim'></td><td><a href='https://x/1' target='_blank' rel='noopener'>view</a></td></tr></tbody></table><footer>Data from <a href='https://www.arbeitnow.com' target='_blank'>Arbeitnow</a>. Aggregated for personal use from each publisher's documented API or feed &mdash; not scraped, not redistributed.<br>Lanes: platform, em. Excluded: randstad.<br>Recruiter contact details are stripped at ingest. Undated roles come from feeds that publish no date &mdash; shown as &mdash; rather than guessed.<br>Self-contained: inline CSS/JS, no CDN, opens with no network.</footer><script>
+const rows=[...document.querySelectorAll('#t tbody tr')];
+const el=i=>document.getElementById(i);
+function apply(){
+  const q=el('q').value.trim().toLowerCase(),l=el('lane').value;
+  let n=0;
+  for(const r of rows){
+    const ok=(!q||r.dataset.text.includes(q))
+      &&(!l||r.dataset.lanes.split(',').includes(l))
+      &&(!el('star').checked||r.dataset.star==='1')
+      &&(!el('rem').checked||r.dataset.remote==='1');
+    r.classList.toggle('hide',!ok); if(ok)n++;
+  }
+  el('count').textContent=n+' of '+rows.length;
+}
+['q','lane','star','rem'].forEach(i=>el(i).addEventListener('input',apply));
+apply();
+
+// The sticky column header sits directly beneath the filter bar. That bar
+// wraps at narrow widths, so its height is only knowable at runtime --
+// a hardcoded offset left the header overlapping the first rows.
+const bar=document.querySelector('.controls');
+const fit=()=>document.documentElement.style.setProperty(
+  '--controls-h', bar.getBoundingClientRect().height+'px');
+fit();
+addEventListener('resize',fit);
+</script></body></html>

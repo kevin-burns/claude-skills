@@ -209,3 +209,22 @@ carry no dates).
 Data lives in `~/.config/job-feeds/jobs.db`. Rate-limit state is kept separately in
 `ratelimit.json`, deliberately: deleting the database must never make the tool forget it
 already polled a source.
+
+### Where reports land
+
+`jfeeds report --out jobs.html` resolves a relative name against the working directory,
+which means the same command drops its output somewhere different depending on where you
+ran it. Set `defaults.report_dir` and they collect in one place instead:
+
+```json
+{ "defaults": { "report_dir": "~/job-search" } }
+```
+
+An **absolute** `--out` always wins — if you typed a full path you meant it. The directory
+is created if it does not exist, and `report` prints the absolute path it wrote, so the
+file is never something you have to go looking for. Leave `report_dir` unset and behaviour
+is exactly as before.
+
+If you also run a LinkedIn tool, point both at the same folder. These boards lean remote
+and contract while LinkedIn carries more permanent roles, so the two are worth reading
+side by side — which is easier when they are not in different directories.

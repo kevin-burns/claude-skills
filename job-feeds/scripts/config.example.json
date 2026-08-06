@@ -1,6 +1,7 @@
 {
   "defaults": {
     "window": 14,
+    "report_dir": "~/job-search",
     "contact": "",
     "exclude_company": [],
     "exclude_title": []

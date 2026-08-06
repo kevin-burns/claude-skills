@@ -2,6 +2,7 @@
 
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -791,3 +792,103 @@ def load_config_from_dict(data, tmp):
     path = tmp / "_tmp_starter.json"
     path.write_text(json.dumps(data), encoding="utf-8")
     return load_config(path)
+
+
+class TestReportLocation(ConfigCase):
+    """Where the report lands. Both job-search tools resolved a relative
+    --out against the working directory, so the same command put its output
+    in a project folder one day and $HOME the next. That is not a default,
+    it is an accident, and the user has to hunt for the file either way.
+    """
+
+    def run_cli(self, *argv, **kwargs):
+        out, err = io.StringIO(), io.StringIO()
+        code = main(list(argv), out=out, err=err, now=NOW, **kwargs)
+        return code, out.getvalue(), err.getvalue()
+
+    def seed(self, db):
+        Store(db).upsert([{"title": "Platform Engineer", "company": "Acme",
+                           "location": "Berlin", "remote": True,
+                           "posted_at": "2026-08-04T00:00:00Z", "url": "https://x/1",
+                           "description": "", "tags": [], "salary": None,
+                           "source": "arbeitnow"}], NOW)
+
+    def config_with(self, report_dir=None):
+        data = json.loads(json.dumps(GOOD_CONFIG))
+        if report_dir is not None:
+            data["defaults"]["report_dir"] = str(report_dir)
+        return str(self.write(data))
+
+    def test_a_relative_out_lands_in_the_configured_report_dir(self):
+        db = self.tmp / "j.db"
+        self.seed(db)
+        dest = self.tmp / "job-search"
+        self.run_cli("report", "--out", "jobs.html", "--db", str(db),
+                     "--config", self.config_with(dest))
+        self.assertTrue((dest / "jobs.html").exists(),
+                        "a bare name must land in report_dir, not the cwd")
+
+    def test_an_absolute_out_always_wins(self):
+        """Someone who typed a full path meant it. Relocating it would be
+        worse than any tidiness gained."""
+        db = self.tmp / "j.db"
+        self.seed(db)
+        elsewhere = self.tmp / "explicit.html"
+        self.run_cli("report", "--out", str(elsewhere), "--db", str(db),
+                     "--config", self.config_with(self.tmp / "job-search"))
+        self.assertTrue(elsewhere.exists())
+        self.assertFalse((self.tmp / "job-search" / "explicit.html").exists())
+
+    def test_without_report_dir_a_relative_name_still_lands_in_the_cwd(self):
+        """Existing installs configure nothing, so nothing may change.
+
+        This MUST use a relative --out. An earlier version passed an
+        absolute path, which returns before report_dir is ever consulted --
+        so it exercised none of the branch it claimed to guard and could not
+        fail when that branch was broken.
+        """
+        db = self.tmp / "j.db"
+        self.seed(db)
+        workdir = self.tmp / "cwd"
+        workdir.mkdir()
+        here = os.getcwd()
+        os.chdir(workdir)
+        try:
+            code, _, _ = self.run_cli("report", "--out", "plain.html", "--db", str(db),
+                                      "--config", self.config_with(None))
+        finally:
+            os.chdir(here)
+        self.assertEqual(code, 0)
+        self.assertTrue((workdir / "plain.html").exists(),
+                        "with no report_dir the cwd must still be the target")
+
+    def test_a_missing_report_dir_is_created_not_an_error(self):
+        """Otherwise the first run after configuring it fails, which is the
+        one run where the user is least able to diagnose it."""
+        db = self.tmp / "j.db"
+        self.seed(db)
+        dest = self.tmp / "does" / "not" / "exist"
+        code, _, _ = self.run_cli("report", "--out", "jobs.html", "--db", str(db),
+                                  "--config", self.config_with(dest))
+        self.assertEqual(code, 0)
+        self.assertTrue((dest / "jobs.html").exists())
+
+    def test_the_written_path_is_reported_absolute(self):
+        """'wrote jobs.html' leaves the reader hunting. The report is the
+        deliverable; say where it is."""
+        db = self.tmp / "j.db"
+        self.seed(db)
+        dest = self.tmp / "job-search"
+        _, _, err = self.run_cli("report", "--out", "jobs.html", "--db", str(db),
+                                 "--config", self.config_with(dest))
+        self.assertIn(str(dest / "jobs.html"), err)
+
+    def test_report_dir_is_a_recognised_key(self):
+        """It must not show up in doctor's unknown-key report -- that list
+        exists to catch options nothing reads, and a false entry there
+        teaches users to ignore it."""
+        code, out, err = self.run_cli("doctor", "--config",
+                                      self.config_with(self.tmp / "job-search"),
+                                      "--db", str(self.tmp / "j.db"))
+        self.assertEqual(code, 0)
+        self.assertNotIn("report_dir", out + err)

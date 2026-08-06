@@ -106,6 +106,32 @@ Then write `~/.config/job-feeds/config.json`, run `jfeeds doctor` to confirm it 
 `jfeeds fetch && jfeeds digest` to show them real output. Tune the lanes against what comes
 back rather than in the abstract — a lane is only judgeable once you see what it catches.
 
+### Finish at the report, not at the table
+
+**After a full `fetch`, produce the HTML report and show it — do not wait to be asked.**
+The terminal table is a preview; the report is the deliverable, and it is the artefact the
+user actually works from: it filters by lane, star, remote and free text without re-running
+anything. Ending at the table stops one step short and costs the user a second prompt for
+something they were always going to want.
+
+```bash
+jfeeds fetch && jfeeds digest && jfeeds report --out jobs.html
+```
+
+Two conditions on that, both learned the hard way:
+
+- **Only after a full fetch.** After the smoke test the report would show python.org's
+  twenty US-skewed rows and hand the user precisely the false impression the smoke-test
+  section above warns about.
+- **Say where you put it.** `report` now prints the absolute path; pass that on rather than
+  saying "the report is ready". A file the user cannot find is not a deliverable.
+
+Set `defaults.report_dir` so reports collect in one place instead of landing wherever the
+shell happened to be. If the user also runs `li-assist`, point both at the **same folder** —
+the two tools cover different segments of one search (these boards lean remote and
+contract; LinkedIn carries more permanent roles), so the comparison is the point, and it
+only works if the two reports sit side by side.
+
 ### Writing lanes that work
 
 Three rules, each learned from a lane that misfired on live data:
@@ -150,7 +176,7 @@ having.
 `sources` may be left empty — every source is enabled unless explicitly disabled.
 
 **Only these keys are read.** Top level: `defaults`, `lanes`, `highlight`, `sources`.
-Inside `defaults`: `window`, `contact`, `exclude_company`, `exclude_title`. Inside a lane:
+Inside `defaults`: `window`, `contact`, `exclude_company`, `exclude_title`, `report_dir`. Inside a lane:
 `name`, `label`, `match`, `match_in`. Anything else is ignored — `jfeeds doctor` lists
 unrecognised keys so a typo or an invented field is visible rather than silently dropped.
 

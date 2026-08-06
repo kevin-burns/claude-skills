@@ -698,11 +698,13 @@ import sys  # noqa: E402
 Lane = namedtuple("Lane", "name label pattern title_only")
 Config = namedtuple(
     "Config",
-    "lanes highlight exclude_companies exclude_titles window sources contact")
+    "lanes highlight exclude_companies exclude_titles window sources contact "
+    "report_dir")
 
 
 KNOWN_TOP_LEVEL = {"defaults", "lanes", "highlight", "sources"}
-KNOWN_DEFAULTS = {"window", "contact", "exclude_company", "exclude_title"}
+KNOWN_DEFAULTS = {"window", "contact", "exclude_company", "exclude_title",
+                  "report_dir"}
 KNOWN_LANE = {"name", "label", "match", "match_in"}
 
 
@@ -733,6 +735,32 @@ def unknown_keys(path):
         if isinstance(lane, dict):
             found += [f"lanes[{index}]: {k}" for k in lane if k not in KNOWN_LANE]
     return sorted(found)
+
+
+def resolve_report_path(out, report_dir):
+    """Where `--out` actually lands.
+
+    An ABSOLUTE --out always wins: someone who typed a full path meant it,
+    and silently relocating it would be worse than any tidiness gained.
+    The `is_absolute()` test is deliberately explicit rather than
+    load-bearing -- `Path("/reports") / Path("/tmp/x.html")` already yields
+    `/tmp/x.html`, because joining an absolute right-hand side discards the
+    left. Stating the rule beats relying on that, but do not mistake the
+    line for the thing that enforces it: deleting it changes no behaviour,
+    which is exactly why the guard for it mutates the join instead.
+    A bare or relative name resolves against `defaults.report_dir` when one
+    is configured, and against the working directory otherwise -- which is
+    the behaviour every existing install already has, so setting nothing
+    changes nothing.
+
+    This exists because both job-search tools defaulted to "wherever you
+    happened to be", which is not a location so much as an accident: one
+    run put its report in a project folder and the next in $HOME.
+    """
+    target = Path(out).expanduser()
+    if target.is_absolute() or not report_dir:
+        return target
+    return Path(report_dir).expanduser() / target
 
 
 def load_config(path):
@@ -801,7 +829,8 @@ def load_config(path):
                              if isinstance(t, str)),
         window=window,
         sources=raw.get("sources") or {},
-        contact=defaults.get("contact"))
+        contact=defaults.get("contact"),
+        report_dir=defaults.get("report_dir"))
 
 
 def _haystack(job, title_only=False):
@@ -1237,8 +1266,15 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
             stamp = (now or datetime.now(timezone.utc)).strftime(STAMP)
             document = render_html(rows, config, window, store.source_states(), stamp)
             if args.out:
-                Path(args.out).write_text(document, encoding="utf-8")
-                log(f"job-feeds: wrote {args.out} ({len(rows)} row(s))")
+                target = resolve_report_path(args.out, config.report_dir)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(document, encoding="utf-8")
+                # The absolute path, always. The report is the deliverable,
+                # and a relative name leaves the reader hunting for it --
+                # a report written to $HOME because that happened to be the
+                # working directory is how the two job-search tools ended up
+                # scattering their output across different folders.
+                log(f"job-feeds: wrote {target} ({len(rows)} row(s))")
             else:
                 print(document, file=out)
             return 0
