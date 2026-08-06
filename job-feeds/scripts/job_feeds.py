@@ -17,6 +17,7 @@ third-party packages, so `python3` is a supported runner alongside `uv`.
 from __future__ import annotations
 
 import json
+import os
 import re
 import threading
 import time
@@ -211,7 +212,33 @@ class RateLimiter:
                 state[source.name] = ({"at": stamp, "backoff": 0,
                                        "strikes": previous} if previous else stamp)
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(json.dumps(state, indent=1), encoding="utf-8")
+            self._write_atomic(json.dumps(state, indent=1))
+
+    def _write_atomic(self, text):
+        """Temp file in the same directory, then os.replace.
+
+        write_text() opens with 'w', which TRUNCATES before writing. An
+        interrupted write, or a second jfeeds process, leaves a truncated
+        file -- and the limiter then classifies it as unreadable and refuses
+        every poll. That fails in the safe direction, but it also discards
+        any recorded backoff and looks identical to a real problem.
+
+        os.replace is atomic on POSIX when source and destination are on the
+        same filesystem, hence the temp file sitting beside the target
+        rather than in /tmp. Same temp->rename pattern the azadvertizer
+        skill uses for its cache.
+        """
+        tmp = self.path.with_name(self.path.name + f".{os.getpid()}.tmp")
+        try:
+            tmp.write_text(text, encoding="utf-8")
+            os.replace(tmp, self.path)
+        finally:
+            # A crash between write and replace must not litter the config
+            # directory with fragments that look like real state.
+            try:
+                tmp.unlink()
+            except FileNotFoundError:
+                pass
 
 
 # --------------------------------------------------------------------------

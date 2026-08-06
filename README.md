@@ -83,6 +83,7 @@ Symlinking (rather than copying) keeps this repo the single source of truth — 
 ### Requirements per skill
 
 - **c7search** — the `c7search` binary (`go install github.com/kevin-burns/c7search@latest`). A `CONTEXT7_API_KEY` is optional.
+- **job-feeds** — **nothing.** Python 3.9+ standard library only, so `python3` works as a runner alongside `uv`. No API keys, no accounts, no authentication — every source is a public feed. macOS, Linux, or WSL.
 - **markdown-converter** — `uv` (uses `uvx markitdown`, no install needed).
 - **nano-banana-pro-json** — `uv` and a `GEMINI_API_KEY` environment variable. No key is bundled.
 - **convert-to-webp** — `cwebp` (`brew install webp`) or macOS `sips`. No install needed on macOS.

@@ -122,7 +122,7 @@ rows are, so a wrong-country result announces itself instead of looking like a q
 
 - Python 3.9 or newer. Standard library only — no third-party packages, so `python3`
   works as a runner alongside `uv`.
-- macOS or Linux.
+- macOS, Linux, or **WSL** — WSL is Linux as far as this is concerned, and the code is pure standard library with no shell-outs and no platform-specific paths. Config and database live under `~/.config/job-feeds/`, which on WSL means your WSL home, not `C:\Users\...`.
 - No API keys, no accounts, no authentication of any kind. Every source is public.
 
 ## Configuration

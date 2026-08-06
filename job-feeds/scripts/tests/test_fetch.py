@@ -752,3 +752,71 @@ class TestStoreMigration(unittest.TestCase):
                          "the old etag: prefix is cleared, not left as prose")
         self.assertIsNone(state["etag"],
                           "a legacy etag has no recorded URL, so it is not carried over")
+
+
+class TestRateLimitStateIsWrittenAtomically(unittest.TestCase):
+    """write_text() opens with 'w', which truncates before writing. An
+    interrupted write — or a second jfeeds process — left a truncated file,
+    and the limiter then classified it unreadable and refused every poll.
+    That fails safe, but it also discards any recorded backoff and looks
+    exactly like a real problem.
+
+    Matters more with several people running this than it did with one.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.tmp = Path(self._tmp.name)
+        self.limiter = RateLimiter(self.tmp / "ratelimit.json")
+        self.source = SOURCES["jobicy"]          # declares a standing limit
+
+    def partial_write(self):
+        """Patch Path.write_text to truncate-and-die, which is exactly what a
+        full disk or a killed process does.
+
+        The failure must land INSIDE the write, not before it. An earlier
+        version of this test raised from json.dumps — evaluated as an
+        argument, so it fired before the file was ever opened, and passed
+        whether the write was atomic or not.
+        """
+        real = Path.write_text
+
+        def die_halfway(self_path, data, **kwargs):
+            real(self_path, data[: len(data) // 2], **kwargs)   # truncated
+            raise RuntimeError("disk full")
+
+        Path.write_text = die_halfway
+        self.addCleanup(lambda: setattr(Path, "write_text", real))
+
+    def test_a_crash_mid_write_leaves_the_previous_state_intact(self):
+        self.limiter.record(self.source, NOW)
+        before = self.limiter.path.read_text(encoding="utf-8")
+
+        self.partial_write()
+        with self.assertRaises(RuntimeError):
+            self.limiter.record(self.source, NOW + timedelta(hours=2))
+        Path.write_text = Path.write_text.__wrapped__ if hasattr(
+            Path.write_text, "__wrapped__") else Path.write_text
+
+        self.assertEqual(self.limiter.path.read_text(encoding="utf-8"), before,
+                         "a half-written file must not land on the real state")
+        self.assertIsNone(self.limiter._load()[1], "and it must still parse")
+
+    def test_no_temp_fragments_survive_a_failed_write(self):
+        """Checked after a FAILURE, not a success: os.replace consumes the
+        temp file on the happy path, so a success-path assertion cannot fail
+        and proves nothing."""
+        self.limiter.record(self.source, NOW)
+        self.partial_write()
+        with self.assertRaises(RuntimeError):
+            self.limiter.record(self.source, NOW + timedelta(hours=2))
+        leftovers = [q.name for q in self.tmp.iterdir() if ".tmp" in q.name]
+        self.assertEqual(leftovers, [],
+                         "a crashed write must not litter the config directory")
+
+    def test_the_written_state_is_still_correct(self):
+        """Guards the guard: atomicity is worthless if the payload changed."""
+        self.limiter.record(self.source, NOW)
+        state = json.loads(self.limiter.path.read_text(encoding="utf-8"))
+        self.assertIn("jobicy", state)
