@@ -1,7 +1,10 @@
 # EURES API — local reference snapshot
 
-**Status: REFERENCE ONLY. EURES is not an adopted `job-feeds` source.** The blocker is
-terms of use, not capability. Tracking: `claude-skills-ffp`.
+**Status: REFERENCE ONLY — REJECTED 2026-08-06. EURES is not, and is not becoming, a
+`job-feeds` source.** Capability was never the blocker; provenance is. The terms were read
+and the reasoning is at the end of this file under *Terms of use*. Kept because the findings
+are expensive to re-derive and the service is a recurring "why not just use EURES?"
+suggestion. Tracking: `claude-skills-ffp`.
 
 Read `openapi.yaml` beside this file rather than re-fetching from GitHub. It is pinned to
 commit `6e5dd81cfb5ad744e6a52814739baef2fe5c5091` (2026-04-08), snapshotted 2026-08-06,
@@ -192,13 +195,82 @@ Recorded because the unofficial spec asserts both:
 - Every array field is marked `required`, so none can be omitted even when empty. That part
   held: the working search sent all of them.
 
-## Before adopting — the actual gate
+## Terms of use — read 2026-08-06. Outcome: DO NOT ADOPT
 
-1. Read europa.eu's terms of use and any EURES-specific reuse or API terms. The EU's
-   general reuse policy (Decision 2011/833/EU) is permissive, but that must be **read, not
-   assumed** — this is the whole reason EURES is not yet a source.
-2. Check `robots.txt` again at adoption time. A prior spike found no `Disallow` for
-   `/eures/`, but that was recorded on 2026-08-05 and is not a licence.
-3. Decide the language question: store the original, the English translation, or both.
-4. Re-verify the endpoints against this snapshot. It is pinned to April 2026 upstream and
+This was the gate. It has now been walked, and EURES **is not being adopted as a
+`job-feeds` source**. What follows separates what was read first-party from what was not.
+
+### Read first-party, verbatim
+
+**European Commission legal notice** (<https://commission.europa.eu/legal-notice_en>):
+
+> © European Union, 1995-2026
+
+EU-owned content is licensed **CC BY 4.0** *"unless otherwise indicated"*, under Commission
+Decision **2011/833/EU**. Two carve-outs matter here: *"Third-party content requires direct
+permission from rightholders"*, and industrial property (logos, trademarks, names) is
+excluded.
+
+**EURES / ELA legal notice** (<https://eures.europa.eu/eures-legal-notice_en>) — this is the
+notice the search portal's own footer links to (bundle key `url.eures.legal.notice`):
+
+> Copyright © for the entire content of this website unless otherwise stated: European
+> Labour Authority (ELA).
+
+> Re-use is authorised, provided that ELA is acknowledged as the source of the material.
+
+> For individual documents, the general principle of re-use outlined above may be subject to
+> specific conditions as indicated in individual copyright notices contained therein.
+
+### NOT read first-party — and this is the one to resolve if EURES is ever revisited
+
+Two independent web searches both report that the **"Find a job" service** carries its own
+terms, distinct from the legal notice above, prohibiting *"screen scraping" or any other
+automated or manual system to extract job vacancy data in order to further process or
+re-publish the information*, and barring *unreasonable or disproportionately large load on
+the website*.
+
+**That wording is a search-engine summary, not a source, and it is recorded here as
+unverified.** It could not be retrieved: `/eures/portal/jv-se/legal-notice` is an Angular
+SPA that returns a 69 KB shell to any non-JS client, and the text is in none of the shell,
+the ten preloaded chunks, or the i18n bundles. The Wayback Machine returned no usable
+snapshot. Reading it would need a browser, which is off-limits for this skill.
+
+### Why the outcome is the same either way
+
+The unread clause is **not load-bearing**, which is why chasing it further was dropped:
+
+1. **The vacancies are not ELA's content to license.** The ELA grant covers *"the content of
+   this website"*; the vacancies are supplied by national public employment services. Both
+   notices carve out third-party rights — *"unless otherwise stated"*, *"individual copyright
+   notices"*, *"direct permission from rightholders"*. A blanket CC BY reading of two million
+   third-party postings is an assumption, and assuming was the thing this gate existed to
+   prevent.
+2. **It fails the source rule on its own.** `job-feeds` admits *a documented JSON API or RSS
+   feed the publisher offers*. EURES publishes no API documentation at all; the only spec is
+   reverse-engineered and disclaims affiliation. That was true before any terms were read.
+3. **There is no sanctioned alternative channel.** `data.europa.eu` was queried directly:
+   EURES appears there only as **statistics** (placement counts, mostly Romanian national
+   uploads). There is no vacancy dataset and no open-licensed feed.
+4. **Republication risk is unchanged.** The *sui generis* database right (§§ 87a–87e UrhG,
+   from Directive 96/9/EC) attaches to a substantial extract regardless of the licence on any
+   individual posting.
+
+So: capability was never the problem, and the server-side `locationCodes` filter remains
+genuinely attractive. Provenance is the problem. **Do not adopt.**
+
+### What would actually reopen this
+
+Not a better probe — a better *channel*. Any one of: EURES publishing an official API with
+terms; the vacancy data appearing on `data.europa.eu` under a named licence; or ELA
+confirming in writing that reuse extends to vacancy data. Absent one of those, re-probing
+the endpoint answers a question that was never the blocker.
+
+### Still open, if the channel question is ever settled
+
+1. Check `robots.txt` again at that point. A prior spike found no `Disallow` for `/eures/`
+   (re-confirmed 2026-08-06: the only global rules are `/cgi-bin/`, `/eur-lex/`, `/archives/`
+   plus `Crawl-delay: 10`). Absence of a `Disallow` is not a licence.
+2. Decide the language question: store the original, the English translation, or both.
+3. Re-verify the endpoints against this snapshot. It is pinned to April 2026 upstream and
    the service can move without the unofficial docs following.
