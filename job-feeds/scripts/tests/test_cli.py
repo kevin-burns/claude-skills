@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sources import SOURCES  # noqa: E402
 from job_feeds import (  # noqa: E402
-    ConfigError, Store, is_excluded, is_highlighted, lanes_for, load_config, main)
+    ConfigError, Store, attach_seen_age, is_excluded, is_highlighted,
+    lanes_for, load_config, main)
 
 NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
 
@@ -638,3 +639,33 @@ class TestSourcesShowsEverySource(ConfigCase):
                                    "--db", str(db))
         self.assertIn("never polled", out)
         self.assertIn("nothing fetched yet", err, "the hint is still useful")
+
+
+class TestSeenAgeIsComputedNotInvented(ConfigCase):
+    """attach_seen_age lives in the CLI, not in report.py, because
+    render_html is a pure function of its inputs and a tripwire test blocks
+    any clock access inside it. So the age has to arrive pre-computed."""
+
+    def test_whole_days_since_first_seen(self):
+        rows = [{"first_seen": "2026-08-03T12:00:00Z"}]
+        attach_seen_age(rows, NOW)          # NOW is 2026-08-05T12:00:00Z
+        self.assertEqual(rows[0]["seen_days"], 2)
+
+    def test_a_missing_first_seen_yields_None_not_a_guess(self):
+        rows = [{"first_seen": None}, {}]
+        attach_seen_age(rows, NOW)
+        self.assertEqual([r["seen_days"] for r in rows], [None, None])
+
+    def test_an_unparseable_stamp_yields_None_rather_than_crashing(self):
+        """A store written by an older version, or a corrupted value, must
+        not take down a report that would otherwise be fine."""
+        rows = [{"first_seen": "not-a-date"}]
+        attach_seen_age(rows, NOW)
+        self.assertIsNone(rows[0]["seen_days"])
+
+    def test_a_future_first_seen_clamps_to_zero_rather_than_going_negative(self):
+        """Clock skew between machines, or a hand-edited store. 'seen -1d'
+        is nonsense a reader would rightly distrust."""
+        rows = [{"first_seen": "2026-08-09T12:00:00Z"}]
+        attach_seen_age(rows, NOW)
+        self.assertEqual(rows[0]["seen_days"], 0)

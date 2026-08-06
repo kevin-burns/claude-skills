@@ -88,6 +88,17 @@ def render_html(rows, config, window, source_states, generated_at):
                "<tbody>")
     for row in rows:
         posted = (row.get("posted_at") or "")[:10]
+        # An undated row is not a stale row -- python.org publishes no dates
+        # at all. Show when WE first saw it, labelled so it can never be
+        # mistaken for a publication date.
+        seen = row.get("seen_days")
+        if posted:
+            date_cell = _esc(posted)
+        elif seen is not None:
+            ago = "today" if seen == 0 else f"{seen}d"
+            date_cell = f"&mdash; <span class='dim'>seen {ago}</span>"
+        else:
+            date_cell = "&mdash;"
         lane_list = row.get("lanes") or []
         searchable = " ".join(str(row.get(f) or "")
                               for f in ("title", "company", "location")).lower()
@@ -101,7 +112,7 @@ def render_html(rows, config, window, source_states, generated_at):
             f" data-star='{1 if row.get('highlight') else 0}'"
             f" data-remote='{1 if row.get('remote') else 0}'"
             f" data-text='{_esc(searchable)}'>"
-            f"<td>{_esc(posted) or '&mdash;'}</td>"
+            f"<td>{date_cell}</td>"
             f"<td>{lane_cell}</td>"
             f"<td>{_esc(row.get('company'))}</td>"
             f"<td>{star}{_esc(row.get('title'))}</td>"

@@ -116,7 +116,9 @@ rows are, so a wrong-country result announces itself instead of looking like a q
   condition of API access; the report carries it, and removing it breaks your side of
   that arrangement.
 - **It does not invent data.** A posting with no date renders as `—`, not as today. Three
-  sources publish no dates at all.
+  sources publish no dates at all — for those rows the report adds *when we first saw it*
+  (`— seen 2d`), clearly labelled, because that is a fact about this tool and not a
+  publication date.
 - **It does not rank, score, or judge fit.** It matches your regexes and shows you what
   matched. Deciding what is worth applying to is yours.
 - **It does not see the whole market.** These are eight free job boards, not an index of

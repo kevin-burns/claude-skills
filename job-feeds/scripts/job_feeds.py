@@ -849,6 +849,34 @@ def location_counts(rows):
     return out
 
 
+def attach_seen_age(rows, now):
+    """Set row['seen_days'] = whole days since we FIRST saw the posting.
+
+    Three sources publish no dates at all, so those rows render as a bare
+    em-dash forever and a reader cannot tell a fresh one from a stale one.
+    first_seen answers it -- it is the reason SQLite is in this project --
+    and it was simply never surfaced.
+
+    Computed here rather than in report.py on purpose: render_html is a pure
+    function of its inputs and a test tripwires any clock access inside it,
+    so the age has to arrive already calculated.
+
+    Never presented as a posting date. "Seen 2 days ago" is a fact about
+    US; claiming it as a publication date would be inventing data.
+    """
+    for row in rows:
+        row["seen_days"] = None
+        stamp = row.get("first_seen")
+        if not stamp:
+            continue
+        try:
+            seen = datetime.strptime(stamp, STAMP).replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            continue
+        row["seen_days"] = max(0, (now - seen).days)
+    return rows
+
+
 def where_line(rows, limit=5):
     """The one-line 'where are these actually' summary for digest/report.
 
@@ -1113,6 +1141,7 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
         for row in selected:
             reason = exclusion_reason(row, config)
             (dropped if reason else rows).append(reason or row)
+        attach_seen_age(rows, now or datetime.now(timezone.utc))
         for row in rows:
             row["lanes"] = lanes_for(row, config)
             row["highlight"] = is_highlighted(row, config)

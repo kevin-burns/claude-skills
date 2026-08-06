@@ -289,3 +289,49 @@ class TestStickyHeaderLayout(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestUndatedRowsShowWhenWeFirstSawThem(unittest.TestCase):
+    """Three sources publish no dates at all, so those rows rendered as a
+    bare em-dash forever and a reader could not tell a fresh posting from a
+    stale one. first_seen answers it — it is the reason SQLite is in this
+    project — and it was simply never surfaced.
+
+    It must never be presented AS a posting date. "Seen 2 days ago" is a
+    fact about us; claiming it as a publication date would be inventing
+    data, which this project refuses elsewhere.
+    """
+
+    def render(self, **overrides):
+        return report.render_html([hostile_row(**overrides)], CONFIG, 14, [], "x")
+
+    def test_an_undated_row_shows_how_long_ago_we_first_saw_it(self):
+        doc = self.render(posted_at=None, seen_days=2)
+        self.assertIn("seen 2d", doc)
+
+    def test_it_is_labelled_seen_not_posted(self):
+        """The whole safety of this feature is the label. Without it the
+        column silently mixes two different facts."""
+        doc = self.render(posted_at=None, seen_days=2)
+        self.assertIn("seen", doc)
+        self.assertIn("&mdash;", doc, "the empty posting date must still show as a dash")
+
+    def test_today_reads_as_today_not_zero_days(self):
+        doc = self.render(posted_at=None, seen_days=0)
+        self.assertIn("seen today", doc)
+        self.assertNotIn("seen 0d", doc)
+
+    def test_a_dated_row_is_unaffected(self):
+        """The age is a fallback, not a replacement. A row with a real
+        publication date must not gain a second, competing date."""
+        doc = self.render(posted_at="2026-08-01T00:00:00Z", seen_days=9)
+        self.assertIn("2026-08-01", doc)
+        self.assertNotIn("seen 9d", doc)
+
+    def test_an_undated_row_with_no_first_seen_still_renders_a_dash(self):
+        """Belt and braces: a row from before this field existed, or one
+        whose first_seen failed to parse, must not crash or print None."""
+        doc = self.render(posted_at=None, seen_days=None)
+        self.assertIn("&mdash;", doc)
+        self.assertNotIn("None", doc)
+        self.assertNotIn("seen", doc.split("<tbody>")[1].split("</tbody>")[0])
