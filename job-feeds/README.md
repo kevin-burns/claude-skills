@@ -212,12 +212,12 @@ already polled a source.
 
 ### Running it daily
 
-`examples/daily-sweep.sh` fetches, writes the report, and posts a macOS notification;
-`examples/daily-sweep.plist` schedules it weekdays at 07:30. Install:
+`examples/job-feeds-sweep.sh` fetches, writes the report, and posts a macOS notification;
+`examples/job-feeds-sweep.plist` schedules it weekdays at 07:30. Install:
 
 ```bash
 mkdir -p ~/Library/LaunchAgents ~/job-search
-sed "s|__HOME__|$HOME|g" ~/.claude/skills/job-feeds/examples/daily-sweep.plist \
+sed "s|__HOME__|$HOME|g" ~/.claude/skills/job-feeds/examples/job-feeds-sweep.plist \
   > ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
 launchctl load ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
 launchctl start com.jobfeeds.dailysweep      # run once now, without waiting

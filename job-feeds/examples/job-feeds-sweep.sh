@@ -1,7 +1,7 @@
 #!/bin/bash
 # Daily job sweep — job-feeds, plus LinkedIn via li-assist when it is available.
 #
-# Designed to be driven by launchd (see daily-sweep.plist beside this file).
+# Designed to be driven by launchd (see job-feeds-sweep.plist beside this file).
 # On macOS use launchd, not cron: `man launchd.plist` states that "unlike cron
 # which skips job invocations when the computer is asleep, launchd will start
 # the job the next time the computer wakes up". On a laptop that is the whole

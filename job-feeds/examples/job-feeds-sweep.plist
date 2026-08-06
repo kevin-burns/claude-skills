@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  launchd agent for daily-sweep.sh — weekdays at 07:30.
+  launchd agent for job-feeds-sweep.sh — weekdays at 07:30.
 
   Install:
     mkdir -p ~/Library/LaunchAgents ~/job-search
     sed "s|__HOME__|$HOME|g" \
-      ~/.claude/skills/job-feeds/examples/daily-sweep.plist \
+      ~/.claude/skills/job-feeds/examples/job-feeds-sweep.plist \
       > ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
     launchctl unload ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist 2>/dev/null
     launchctl load  ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
@@ -33,10 +33,15 @@
     <key>Label</key>
     <string>com.jobfeeds.dailysweep</string>
 
+    <!-- The script is exec'd DIRECTLY, via its own shebang, rather than as
+         an argument to /bin/bash. With "/bin/bash" first, argv[0] is bash and
+         that is all Activity Monitor shows — one anonymous `bash` among any
+         others running. Exec'd directly, argv[0] is the script itself and the
+         process is identifiable. This requires the executable bit, which is
+         committed as mode 100755. -->
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>__HOME__/.claude/skills/job-feeds/examples/daily-sweep.sh</string>
+        <string>__HOME__/.claude/skills/job-feeds/examples/job-feeds-sweep.sh</string>
     </array>
 
     <key>EnvironmentVariables</key>

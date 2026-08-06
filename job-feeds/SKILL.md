@@ -134,8 +134,8 @@ only works if the two reports sit side by side.
 
 ### Scheduling a daily sweep
 
-If the user asks for this to run automatically, `examples/daily-sweep.sh` and
-`examples/daily-sweep.plist` are ready to install — the plist header carries the exact
+If the user asks for this to run automatically, `examples/job-feeds-sweep.sh` and
+`examples/job-feeds-sweep.plist` are ready to install — the plist header carries the exact
 commands. **Recommend launchd over cron on macOS**, and give the reason rather than the
 instruction: `man launchd.plist` states that cron *"skips job invocations when the computer
 is asleep"* while launchd *"will start the job the next time the computer wakes up"*. On a
