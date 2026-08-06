@@ -1,6 +1,8 @@
 """Fetch layer. Every request goes through a fake opener -- no network."""
 
+import io
 import json
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -10,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from job_feeds import (  # noqa: E402
-    BACKOFF_CEILING_SECONDS, RateLimiter, Store, fetch_all)
+    BACKOFF_CEILING_SECONDS, RateLimiter, Store, fetch_all, main)
 from sources import SOURCES  # noqa: E402
 
 NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
@@ -51,7 +53,8 @@ class FetchCase(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
-        tmp = Path(self._tmp.name)
+        self.tmp = Path(self._tmp.name)
+        tmp = self.tmp
         self.store = Store(tmp / "jobs.db")
         self.limiter = RateLimiter(tmp / "ratelimit.json")
 
@@ -167,7 +170,8 @@ class TestConditionalGet(FetchCase):
         self.assertEqual(result.jobs, [])
 
     def test_a_stored_validator_is_sent_back(self):
-        self.store.record_source("arbeitnow", "ok", 'etag:W/"abc"', 1, 1, NOW)
+        self.store.record_source("arbeitnow", "ok", "", 1, 1, NOW,
+                                 etag='W/"abc"', etag_url=ARB)
         _, opener = self.run_one("arbeitnow", {ARB: (304, b"", {})})
         self.assertEqual(opener.calls[0][1].get("If-None-Match"), 'W/"abc"')
 
@@ -178,7 +182,8 @@ class TestConditionalGet(FetchCase):
     def test_the_validator_is_only_sent_on_the_first_page(self):
         """Page 2 is a different resource; a page-1 ETag would wrongly 304
         it and silently truncate the crawl."""
-        self.store.record_source("arbeitnow", "ok", 'etag:W/"abc"', 1, 1, NOW)
+        self.store.record_source("arbeitnow", "ok", "", 1, 1, NOW,
+                                 etag='W/"abc"', etag_url=ARB)
         _, opener = self.run_one("arbeitnow", {
             ARB: (200, arb_payload([arb_row(1)], ARB + "?page=2"), {}),
             ARB + "?page=2": (200, arb_payload([arb_row(2)], None), {})})
@@ -607,3 +612,143 @@ class TestBackoffEscalates(FetchCase):
         written on top would outlive the corruption."""
         self.limiter.path.write_text("{not json", encoding="utf-8")
         self.assertEqual(self.limiter.next_backoff(SOURCES["arbeitnow"]), 3600)
+
+
+class TestTheValidatorSurvivesFailure(FetchCase):
+    """The ETag used to share the `reason` column with human prose, so any
+    fetch that returned no validator overwrote it — a 429, a 500, a socket
+    error, a schema drift. The next run then re-downloaded everything.
+
+    Worst exactly when it hurts most: a hiccup is when a conditional request
+    is most valuable, and Arbeitnow is ~1MB per full crawl.
+    """
+
+    def stored(self, name="arbeitnow"):
+        return {s["name"]: s for s in self.store.source_states()}.get(name, {})
+
+    def fetch_via_cli(self, responses, name="arbeitnow"):
+        """Run the real `fetch` command against a fake opener, then read the
+        row back. This is the only path that exercises record_source."""
+        config = self.tmp / "config.json"
+        config.write_text(json.dumps({
+            "defaults": {"window": 14},
+            "lanes": [{"name": "l", "label": "L", "match": "engineer"}],
+            "highlight": [], "sources": {name: {"enabled": True}}}), encoding="utf-8")
+        main(["fetch", "--only", name, "--config", str(config),
+              "--db", str(self.store.path)],
+             out=io.StringIO(), err=io.StringIO(), now=NOW,
+             opener=FakeOpener(responses))
+        return self.stored(name)
+
+    def seed_validator(self, url=ARB):
+        self.store.record_source("arbeitnow", "ok", "", 1, 1, NOW,
+                                 etag='W/"keep-me"', etag_url=url)
+
+    def test_a_throttled_fetch_does_not_discard_the_validator(self):
+        self.seed_validator()
+        self.store.record_source("arbeitnow", "throttled", "HTTP 429 — backing off",
+                                 0, 0, NOW)
+        self.assertEqual(self.stored()["etag"], 'W/"keep-me"')
+
+    def test_a_failed_fetch_does_not_discard_the_validator(self):
+        self.seed_validator()
+        self.store.record_source("arbeitnow", "failed", "OSError: connection reset",
+                                 0, 0, NOW)
+        self.assertEqual(self.stored()["etag"], 'W/"keep-me"')
+
+    def test_a_schema_drift_does_not_discard_the_validator(self):
+        self.seed_validator()
+        self.store.record_source("arbeitnow", "degraded",
+                                 "schema-drift: missing created_at", 0, 0, NOW)
+        self.assertEqual(self.stored()["etag"], 'W/"keep-me"')
+
+    def test_reason_is_prose_again_not_a_cache_key(self):
+        """Drives `jfeeds fetch` itself, because record_source is called from
+        the CLI and not from fetch_all -- a Store-level assertion here would
+        only prove that record_source stores what it is handed, which is
+        trivially true and was never the bug."""
+        state = self.fetch_via_cli({ARB: (200, arb_payload([arb_row(1)]),
+                                          {"ETag": 'W/"abc"'})})
+        self.assertNotIn("etag:", state["reason"] or "",
+                         "the validator must not be smuggled into the prose column")
+        self.assertEqual(state["etag"], 'W/"abc"')
+        self.assertEqual(state["etag_url"], ARB,
+                         "the URL must be recorded or the validator can never be used")
+
+    def test_a_new_validator_still_replaces_the_old_one(self):
+        """Preservation must not become stickiness — COALESCE keeps the old
+        value only when the new one is absent."""
+        self.seed_validator()
+        self.store.record_source("arbeitnow", "ok", "", 1, 1, NOW,
+                                 etag='W/"fresh"', etag_url=ARB)
+        self.assertEqual(self.stored()["etag"], 'W/"fresh"')
+
+    def test_the_validator_survives_a_failure_end_to_end(self):
+        """The unit tests above prove the SQL. This proves fetch_all actually
+        routes it that way, and that the surviving etag is still sent."""
+        self.fetch_via_cli({ARB: (200, arb_payload([arb_row(1)]),
+                                  {"ETag": 'W/"keep-me"'})})
+        self.assertEqual(self.stored()["etag"], 'W/"keep-me"')
+        self.fetch_via_cli({ARB: (500, b"", {})})       # a failure, mid-life
+        self.assertEqual(self.stored()["etag"], 'W/"keep-me"',
+                         "a 500 must not cost us the validator")
+        _, opener = self.run_one("arbeitnow", {ARB: (304, b"", {})})
+        self.assertEqual(opener.calls[0][1].get("If-None-Match"), 'W/"keep-me"',
+                         "and the surviving validator must still be sent")
+
+
+class TestTheValidatorIsBoundToItsUrl(FetchCase):
+    """An ETag validates ONE resource. Replaying it against a changed URL can
+    return 304 with zero rows while `jfeeds sources` reports `unchanged` —
+    silent, and it looks like it worked. Found while spiking a per-source geo
+    parameter for jobicy."""
+
+    def test_a_validator_captured_from_a_different_url_is_not_replayed(self):
+        self.store.record_source("arbeitnow", "ok", "", 1, 1, NOW,
+                                 etag='W/"old"', etag_url=ARB + "?geo=europe")
+        _, opener = self.run_one("arbeitnow", {ARB: (200, arb_payload([arb_row(1)]), {})})
+        self.assertNotIn("If-None-Match", opener.calls[0][1],
+                         "changing a source URL must drop the stale validator")
+
+    def test_a_validator_captured_from_the_same_url_is_replayed(self):
+        """The paired half: without it, the test above passes trivially if
+        the validator is never sent at all."""
+        self.store.record_source("arbeitnow", "ok", "", 1, 1, NOW,
+                                 etag='W/"same"', etag_url=ARB)
+        _, opener = self.run_one("arbeitnow", {ARB: (304, b"", {})})
+        self.assertEqual(opener.calls[0][1].get("If-None-Match"), 'W/"same"')
+
+    def test_a_stored_etag_with_no_url_is_not_replayed(self):
+        """The pre-migration shape. Nothing recorded which URL it came from,
+        so it cannot be shown safe and must not be used."""
+        self.store.record_source("arbeitnow", "ok", "", 1, 1, NOW)
+        self.store.conn.execute("UPDATE sources SET etag='W/\"orphan\"' WHERE name=?",
+                                ("arbeitnow",))
+        self.store.conn.commit()
+        _, opener = self.run_one("arbeitnow", {ARB: (200, arb_payload([arb_row(1)]), {})})
+        self.assertNotIn("If-None-Match", opener.calls[0][1])
+
+
+class TestStoreMigration(unittest.TestCase):
+    """CREATE TABLE IF NOT EXISTS does nothing to a table that already
+    exists, so a store built before the etag columns must be upgraded or
+    every query against it breaks."""
+
+    def test_an_old_store_gains_the_columns_and_keeps_its_rows(self):
+        tmp = Path(tempfile.mkdtemp()) / "old.db"
+        conn = sqlite3.connect(str(tmp))
+        conn.execute("CREATE TABLE sources (name TEXT PRIMARY KEY, last_fetch TEXT,"
+                     " status TEXT, reason TEXT, row_count INTEGER, pages INTEGER)")
+        conn.execute("INSERT INTO sources VALUES ('arbeitnow','2026-08-05T10:00:00Z',"
+                     "'ok','etag:W/\"legacy\"',5,1)")
+        conn.commit()
+        conn.close()
+
+        store = Store(tmp)                      # must not raise
+        state = {s["name"]: s for s in store.source_states()}["arbeitnow"]
+        self.assertIn("etag", state)
+        self.assertEqual(state["row_count"], 5, "existing rows must survive")
+        self.assertEqual(state["reason"], "",
+                         "the old etag: prefix is cleared, not left as prose")
+        self.assertIsNone(state["etag"],
+                          "a legacy etag has no recorded URL, so it is not carried over")

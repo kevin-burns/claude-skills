@@ -229,7 +229,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   tags TEXT, salary TEXT, first_seen TEXT, last_seen TEXT, also_seen_on TEXT);
 CREATE TABLE IF NOT EXISTS sources (
   name TEXT PRIMARY KEY, last_fetch TEXT, status TEXT, reason TEXT,
-  row_count INTEGER, pages INTEGER);
+  row_count INTEGER, pages INTEGER, etag TEXT, etag_url TEXT);
 CREATE INDEX IF NOT EXISTS jobs_posted_at ON jobs(posted_at);
 """
 
@@ -249,6 +249,24 @@ class Store:
         self.conn = sqlite3.connect(str(self.path))
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self):
+        """CREATE TABLE IF NOT EXISTS silently does nothing to a table that
+        already exists, so a new column has to be added explicitly or every
+        store built before this version breaks on the first query.
+
+        The etag used to live inside `reason` with an 'etag:' prefix. Those
+        are cleared rather than migrated: the validator is only safe to
+        replay against the URL it came from, and the old form never recorded
+        one. Costs a single full re-fetch per source, once.
+        """
+        columns = {row[1] for row in self.conn.execute("PRAGMA table_info(sources)")}
+        for column in ("etag", "etag_url"):
+            if column not in columns:
+                self.conn.execute(f"ALTER TABLE sources ADD COLUMN {column} TEXT")
+        self.conn.execute("UPDATE sources SET reason='' WHERE reason LIKE 'etag:%'")
+        self.conn.commit()
 
     def upsert(self, jobs, now=None):
         """Insert unseen jobs, refresh last_seen on known ones. -> (new, seen).
@@ -312,14 +330,30 @@ class Store:
     def known_sources(self):
         return {row["name"] for row in self.conn.execute("SELECT name FROM sources")}
 
-    def record_source(self, name, status, reason, row_count, pages, now=None):
+    def record_source(self, name, status, reason, row_count, pages, now=None,
+                      etag=None, etag_url=None):
+        """COALESCE on the etag is the whole point: a fetch that returns no
+        validator -- a 429, a 500, a socket error, a schema drift -- must
+        LEAVE the stored one alone. It used to share the `reason` column, so
+        any failure overwrote it with prose and the next run re-downloaded
+        everything. Worst exactly when it hurts most, since a hiccup is when
+        a conditional request is most valuable.
+
+        etag_url is stored alongside so the validator can be checked against
+        the URL it came from. Replaying one against a changed URL can return
+        304 with zero rows while `jfeeds sources` reports `unchanged`.
+        """
         stamp = (now or datetime.now(timezone.utc)).strftime(STAMP)
         self.conn.execute(
-            "INSERT INTO sources (name, last_fetch, status, reason, row_count, pages)"
-            " VALUES (?,?,?,?,?,?) ON CONFLICT(name) DO UPDATE SET"
+            "INSERT INTO sources"
+            " (name, last_fetch, status, reason, row_count, pages, etag, etag_url)"
+            " VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(name) DO UPDATE SET"
             " last_fetch=excluded.last_fetch, status=excluded.status,"
-            " reason=excluded.reason, row_count=excluded.row_count, pages=excluded.pages",
-            (name, stamp, status, reason, row_count, pages))
+            " reason=excluded.reason, row_count=excluded.row_count,"
+            " pages=excluded.pages,"
+            " etag=COALESCE(excluded.etag, sources.etag),"
+            " etag_url=COALESCE(excluded.etag_url, sources.etag_url)",
+            (name, stamp, status, reason, row_count, pages, etag, etag_url))
         self.conn.commit()
 
     def source_states(self):
@@ -474,7 +508,7 @@ def _oldest_on_page(rows):
 
 
 def _fetch_one(source, opener, limiter, now, max_pages, window_days,
-               seen_before=False, stored_reason="", user_agent=DEFAULT_USER_AGENT,
+               seen_before=False, stored_etag="", user_agent=DEFAULT_USER_AGENT,
                sleep=time.sleep):
     """Fetch one source. Takes plain values, never a Store.
 
@@ -488,8 +522,9 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
         return FetchResult(source.name, "throttled", refusal, [], 0, None)
 
     headers = {"User-Agent": user_agent, "Accept-Encoding": "identity"}
-    if stored_reason.startswith("etag:"):
-        headers["If-None-Match"] = stored_reason[len("etag:"):]
+    if stored_etag:
+        # Already checked against the URL it came from -- see fetch_all.
+        headers["If-None-Match"] = stored_etag
 
     cutoff = (now - timedelta(days=window_days)).strftime(STAMP)
     url, pages, raw_rows, etag = source.url, 0, [], None
@@ -580,10 +615,23 @@ def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
     # Read everything the workers need HERE, on the main thread -- sqlite3
     # connections cannot cross threads.
     known = store.known_sources()
-    reasons = {state["name"]: (state["reason"] or "") for state in store.source_states()}
+    stored = {state["name"]: state for state in store.source_states()}
+
+    def validator_for(source):
+        """The etag ONLY if it was captured from this exact URL.
+
+        An etag is a validator for one resource. Replaying it against a
+        changed URL can yield 304 with zero rows while `jfeeds sources`
+        cheerfully reports `unchanged` -- silent, and it looks like it
+        worked. So a URL change simply drops the validator and re-fetches.
+        """
+        state = stored.get(source.name) or {}
+        etag = state.get("etag") or ""
+        return etag if etag and state.get("etag_url") == source.url else ""
+
     with ThreadPoolExecutor(max_workers=min(8, len(sources))) as pool:
         futures = [pool.submit(_fetch_one, s, opener, limiter, now, max_pages,
-                               window_days, s.name in known, reasons.get(s.name, ""),
+                               window_days, s.name in known, validator_for(s),
                                user_agent, sleep)
                    for s in sources]
         return [f.result() for f in futures]
@@ -1002,10 +1050,14 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                                 window, build_user_agent(config.contact))
             failed = []
             for result in results:
+                # reason is prose again; the validator has its own column,
+                # so a failure no longer discards it.
+                source = SOURCES.get(result.name)
                 store.record_source(
-                    result.name, result.status,
-                    f"etag:{result.etag}" if result.etag else result.reason,
-                    len(result.jobs), result.pages, now)
+                    result.name, result.status, result.reason,
+                    len(result.jobs), result.pages, now,
+                    etag=result.etag,
+                    etag_url=source.url if (result.etag and source) else None)
                 if result.jobs:
                     store.upsert(result.jobs, now)
                 if result.status in ("failed", "degraded"):
