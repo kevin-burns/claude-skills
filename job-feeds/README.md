@@ -29,7 +29,7 @@ Coverage is uneven by design — these are not interchangeable. Verified 2026-08
 
 | Source | Good for | Worth knowing |
 |---|---|---|
-| [Arbeitnow](https://www.arbeitnow.com) | **Germany.** 84 of 98 matches on a real run | Board is only ~7 days deep, so a 14-day window can't get 14 days from it. Burst-sensitive: pages are capped and paced |
+| [Arbeitnow](https://www.arbeitnow.com) | **Germany** — most of our German rows | An independent free board, not an official aggregator: it holds a sample, not the market. Only ~7 days deep, so a 14-day window can't get 14 days from it. Burst-sensitive: pages are capped and paced |
 | [Jobicy](https://jobicy.com) | Europe-weighted remote | Documents 1 poll/hour fair use, which the tool enforces |
 | [Remotive](https://remotive.com) | Remote, broad | Ignores its own `limit` parameter |
 | [Remote OK](https://remoteok.com) | Volume — 100 rows/fetch | Requires a dofollow backlink; the report carries it. Some listings are low quality |
@@ -69,7 +69,14 @@ a 429, or an upstream that renamed a field — rather than leaving you to guess 
 quiet day is real.
 
 **Expect Arbeitnow to dominate the German results** and Python.org to be tiny but high
-signal. Coverage is uneven by design; the sources are not interchangeable. Run
+signal. Coverage is uneven by design; the sources are not interchangeable.
+
+**Dominating our results is not the same as covering the market.** Every source here is a
+free job board, most run by small teams or one person, each carrying whatever employers
+chose to post there. A role can be live on a national employment service and absent from
+all eight — observed 2026-08-06, when forward-deployed engineer roles posted to the
+Bundesagentur für Arbeit within the previous week did not appear in Arbeitnow. So read a
+quiet week as "quiet on these boards", never as "quiet in the market". Run
 `jfeeds locations` to see the split on your own fetch rather than taking that on trust —
 on one real 1,323-row fetch, thirteen of the top twenty locations were German and Arbeitnow
 alone was 78% of the corpus. Every `digest` also prints a one-line summary of where its
@@ -103,6 +110,9 @@ rows are, so a wrong-country result announces itself instead of looking like a q
   sources publish no dates at all.
 - **It does not rank, score, or judge fit.** It matches your regexes and shows you what
   matched. Deciding what is worth applying to is yours.
+- **It does not see the whole market.** These are eight free job boards, not an index of
+  every vacancy. Employers post where they choose, and national employment services carry
+  roles that never reach a free board. Absence here is not evidence a job does not exist.
 
 ## Requirements
 

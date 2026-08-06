@@ -314,7 +314,7 @@ Verified 2026-08-05. Re-check before trusting any of it in six months.
 
 | Source | Notes |
 |---|---|
-| Arbeitnow | Best single source for Germany — 84 of 98 matches on a real run. Paginates; board is **~7 days deep, 40 pages**, `links.last` always null. Publishes `x-ratelimit-limit: 50` and is **burst-sensitive**: ten uncached pages in a second is enough to earn a 429. Pages are paced 1s apart and capped at 10 by default for exactly this reason. |
+| Arbeitnow | Largest share of our German rows — 84 of 98 matches on a real run. **Share is not coverage:** it is an independent free job board built by one developer, carrying a sample of the market rather than the market. Roles seen on the Bundesagentur within the last week (NTT Data forward-deployed engineer, observed 2026-08-06) were absent here. Paginates; board is **~7 days deep, 40 pages**, `links.last` always null. Publishes `x-ratelimit-limit: 50` and is **burst-sensitive**: ten uncached pages in a second is enough to earn a 429. Pages are paced 1s apart and capped at 10 by default for exactly this reason. |
 | Jobicy | Documents **1 poll/hour fair use** — enforced; a second poll inside the hour is refused without a request. |
 | Remotive | **Ignores `limit`.** Ships a legal notice in the payload. |
 | Remote OK | First array element is a ToS object, not a job. Requires the backlink. |
