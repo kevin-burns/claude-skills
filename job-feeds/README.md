@@ -160,6 +160,15 @@ rows are, so a wrong-country result announces itself instead of looking like a q
   the EU's EURES portal does not mirror them either. Use a national employment service
   directly alongside this tool — it is not a substitute for one.
 
+- **It leans toward remote and contract work, and that is structural.** Five of the eight
+  sources are remote-only job boards — not a bias we inferred, but what they are. On a real
+  1,279-row corpus, rows that state an employment type ran roughly **3:1 contract or
+  freelance over permanent**; treat that as directional only, since **78% of rows state
+  neither** and most permanent roles never use the word. The practical consequence is that a
+  search which looks thin here may simply be a search for permanent roles, which sit more
+  often on LinkedIn and on national employment services. Those carry a different mix — we
+  have not measured it, because none of their data is in this database.
+
 ## Requirements
 
 - Python 3.9 or newer. Standard library only — no third-party packages, so `python3`
