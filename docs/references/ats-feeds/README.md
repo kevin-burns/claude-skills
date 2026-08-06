@@ -1,7 +1,31 @@
 # Employer ATS feeds — terms read, endpoints measured
 
-**Status: CLEARED ON TERMS 2026-08-06 for Greenhouse, SmartRecruiters and Personio.** Not
-yet implemented. Tracking: `claude-skills-3do`.
+**Status: RESEARCHED AND PARKED 2026-08-06.** Terms are cleared for Greenhouse,
+SmartRecruiters and Personio, and the capability is real — but this is **not being built**,
+and the reason is neither terms nor capability. Tracking: `claude-skills-3do`.
+
+> **Why it is parked — read this before picking it up.** Watching one employer requires two
+> facts a jobseeker does not have and should not have to learn: *which ATS vendor* the
+> employer runs, and *their slug on it*. `Watch Zalando` is not pollable; `("greenhouse",
+> "zalando")` is. That asks the user to understand applicant-tracking vendors — a concept
+> from our side of the fence, not theirs — and `job-feeds` promises that you install it and
+> it searches for jobs.
+>
+> Two measurements make it worse. **Slug guessing is unreliable:** probing SmartRecruiters,
+> three of four guesses (`Siemens`, `DeutscheTelekom`, `Zalando`) returned nothing; only
+> `BoschGroup` worked — and that was with the documentation open. **And on SmartRecruiters a
+> wrong slug is undetectable:** `zzznotacompany` and `Siemens` both return a byte-identical
+> `200 {"totalFound":0,"content":[]}`. A typo does not error; it silently reports that an
+> employer you care about never has openings. Greenhouse (`404`) and Personio (`307`) fail
+> loudly — the vendor with the best data is the one that cannot warn you.
+>
+> **The complexity is the thing to solve first, not the client.** The most promising route
+> measured so far is at the bottom of this file: a careers-page URL carries both facts
+> deterministically, so *"paste the link to their jobs page"* could replace *"name the vendor
+> and slug"* entirely, without ever fetching that URL. That is a shape, not a plan.
+
+Everything below stands as measured. It is kept so that a later attempt starts from evidence
+rather than from scratch.
 
 This is the *watchlist* route: instead of asking a job board what is on the market, ask the
 employers you care about what they are hiring for, using the same endpoint their own careers
@@ -140,11 +164,39 @@ interval chosen up front. Polling is naturally low-volume (one request per emplo
 watchlist of 50 employers is still 50 requests, so the fan-out needs pacing, not just the
 per-source interval.
 
-## Open questions before implementing
+## Slug behaviour — measured, and the reason this is parked
 
-- **How does a user build the watchlist?** Employer → ATS slug is exactly the mapping Claude
-  is good at, and it fits the "ask Claude to write your config" story already in the README.
-  Slugs fail cleanly (404), so discovery is cheap and safe.
+```
+greenhouse       zzznotacompany  -> 404  {"status":404,"error":"Job not found"}
+smartrecruiters  zzznotacompany  -> 200  {"totalFound":0,"content":[]}
+smartrecruiters  Siemens         -> 200  {"totalFound":0,"content":[]}   <- identical
+personio         zzznotacompany  -> 307  (redirect; detectable if not followed)
+```
+
+Correction to an earlier note in this file's history: slugs do **not** all "fail cleanly".
+Greenhouse and Personio do. SmartRecruiters does not, and it is the one with the structured
+location data.
+
+Any future attempt therefore needs two rules: never accept a slug that was guessed rather
+than derived, and treat a watchlist entry that has *never once* returned a posting as
+*possibly misconfigured* rather than reporting it as "not hiring".
+
+## The route a future attempt should take
+
+A careers-page URL carries both required facts deterministically — hostname gives the vendor,
+path gives the slug:
+
+```
+job-boards.greenhouse.io/gitlab/...      -> greenhouse      / gitlab
+jobs.smartrecruiters.com/BoschGroup/...  -> smartrecruiters / BoschGroup
+{company}.jobs.personio.de               -> personio        / {company}
+```
+
+So *"paste the link to their jobs page"* replaces *"name the vendor and slug"*, with the URL
+parsed as a query expression and **never fetched** — the same idea already attached to
+`claude-skills-cbl`. This is recorded as a shape, not a commitment.
+
+## Other open questions, if it is ever revisited
 - **Which vendors first?** Greenhouse + SmartRecruiters + Personio gives breadth, the best
   location data, and the German angle. Ashby/Lever/Workable can follow once their terms are
   read.
