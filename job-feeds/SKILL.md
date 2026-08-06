@@ -161,6 +161,12 @@ these feeds need nothing at all. A shared script must never let a stale cookie c
 the eight public boards, and must **report** a skipped LinkedIn sweep rather than passing
 over it quietly.
 
+Check that the other tool's **report** is regenerated, not just its cache. `li-assist jobs
+sweep` updates the cache and writes no HTML; `li-report` is a separate binary and was not
+even symlinked onto PATH on a machine where `li-digest` was. The failure mode is quiet and
+nasty: `jobs.html` refreshes every morning while `prospects.html` sits days old beside it,
+and nothing in the log says so.
+
 ### Writing lanes that work
 
 Three rules, each learned from a lane that misfired on live data:

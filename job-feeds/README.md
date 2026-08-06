@@ -237,7 +237,9 @@ your database already has it.
 
 If you also run a LinkedIn tool, the script calls it **only when its session is valid** and
 reports a stale one rather than skipping it silently — a sweep that quietly stops covering
-a source is indistinguishable from a quiet week.
+a source is indistinguishable from a quiet week. It also **renders that tool's report in the
+same run**: a sweep that refreshes a cache but not the HTML leaves a stale report sitting
+next to a fresh one, which is worse than no report at all because nothing says it is old.
 
 ### Where reports land
 

@@ -80,12 +80,32 @@ if command -v li-assist >/dev/null 2>&1; then
         # Deliberately NOT --enrich: enrichment is the expensive half (a
         # detail fetch plus a model call per job) and belongs in an
         # interactive session where you can see what it costs.
+        #
+        # stderr here is the AUDIT LINE ("sweep: 6 new / 19 seen / ..."), not
+        # an error, so it goes to a .log and not a .err. Naming it .err once
+        # made a perfectly good run look like a failure.
         if li-assist jobs sweep "${JOB_SWEEP_QUERY:-platform engineer OR sre}" \
-             >/dev/null 2>"$OUTDIR/.li.err"; then
-            li_line="ok"
+             >/dev/null 2>"$OUTDIR/.li.log"; then
+            li_line="$(sed -n 's/^sweep: //p' "$OUTDIR/.li.log" | tail -1)"
+            li_line="${li_line:-ok}"
+            # `jobs sweep` only updates the cache. Without this the LinkedIn
+            # report never regenerates and silently goes stale while
+            # jobs.html refreshes daily beside it -- which is exactly what
+            # happened: prospects.html sat a day old next to a fresh
+            # jobs.html, and nothing in the log said so.
+            if command -v li-report >/dev/null 2>&1; then
+                if ! li-report --out "$OUTDIR/prospects.html" \
+                     >/dev/null 2>>"$OUTDIR/.li.log"; then
+                    li_line="$li_line (report FAILED)"
+                    li_warn="LinkedIn report failed — see $OUTDIR/.li.log"
+                fi
+            else
+                li_line="$li_line (no li-report)"
+                li_warn="li-report is not on PATH — the LinkedIn report is not being written"
+            fi
         else
             li_line="failed"
-            li_warn="LinkedIn sweep failed — see $OUTDIR/.li.err"
+            li_warn="LinkedIn sweep failed — see $OUTDIR/.li.log"
         fi
     fi
 fi
