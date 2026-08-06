@@ -9,7 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from job_feeds import RateLimiter, Store, fetch_all  # noqa: E402
+from job_feeds import (  # noqa: E402
+    BACKOFF_CEILING_SECONDS, RateLimiter, Store, fetch_all)
 from sources import SOURCES  # noqa: E402
 
 NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
@@ -501,3 +502,108 @@ class TestPagePacing(FetchCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBackoffEscalates(FetchCase):
+    """A flat backoff means a persistently unhappy source gets poked once an
+    hour, forever. That is politer than retrying immediately and less polite
+    than it should be — and Arbeitnow's live 429 on 2026-08-05 was our own
+    doing, so the escalation is a guard against ourselves.
+
+    These read and write the state file directly rather than driving eight
+    real fetches, because the property under test is the curve, not the HTTP.
+    """
+
+    def strikes_of(self, name):
+        """0 when the key is absent: a recovered source with no standing
+        limit has its entry dropped entirely, returning the file to the
+        shape a fresh install has."""
+        state = json.loads(self.limiter.path.read_text(encoding="utf-8"))
+        entry = state.get(name)
+        return entry.get("strikes", 0) if isinstance(entry, dict) else 0
+
+    def throttle(self, name, retry_after=None):
+        source = SOURCES[name]
+        backoff = self.limiter.next_backoff(source, retry_after)
+        self.limiter.record(source, NOW, force=True, backoff_seconds=backoff)
+        return backoff
+
+    def test_consecutive_throttles_double_the_wait(self):
+        self.assertEqual(self.throttle("arbeitnow"), 3600)
+        self.assertEqual(self.throttle("arbeitnow"), 7200)
+        self.assertEqual(self.throttle("arbeitnow"), 14400)
+
+    def test_escalation_stops_at_the_ceiling(self):
+        """Unbounded doubling parks a source for years after a bad week."""
+        for _ in range(12):
+            applied = self.throttle("arbeitnow")
+        self.assertEqual(applied, BACKOFF_CEILING_SECONDS)
+
+    def test_a_clean_poll_clears_the_history(self):
+        """One bad afternoon must not keep punishing a source for days."""
+        self.throttle("arbeitnow")
+        self.throttle("arbeitnow")
+        self.assertEqual(self.strikes_of("arbeitnow"), 2)
+        self.limiter.record(SOURCES["arbeitnow"], NOW, force=True, healthy=True)
+        self.assertEqual(self.strikes_of("arbeitnow"), 0)
+        self.assertEqual(self.throttle("arbeitnow"), 3600,
+                         "after a healthy poll the curve restarts at the bottom")
+
+    def test_a_successful_fetch_clears_the_history_end_to_end(self):
+        """The unit above proves the limiter resets; this proves fetch_all
+        actually calls it that way. Without the healthy=True at the success
+        site, a source that recovers keeps its strikes and the next hiccup
+        jumps straight to hours."""
+        self.throttle("arbeitnow")
+        self.throttle("arbeitnow")
+        # Past the 7200s backoff the second throttle just wrote — inside it,
+        # allows() correctly refuses and the fetch never happens, so this
+        # would assert on a poll that was never made.
+        later = NOW + timedelta(seconds=7201)
+        self.run_one("arbeitnow", {ARB: (200, arb_payload([arb_row(1)]), {})},
+                     now=later)
+        self.assertEqual(self.strikes_of("arbeitnow"), 0)
+
+    def test_a_network_error_does_NOT_clear_the_history(self):
+        """A socket timeout says nothing about whether the source has stopped
+        throttling us. Treating it as recovery would let a flapping source
+        reset the curve every other run and never escalate at all."""
+        self.throttle("arbeitnow")
+        self.throttle("arbeitnow")
+
+        def boom(_url, _headers):
+            raise OSError("connection reset")
+
+        # Past the backoff, or allows() refuses and the error path never
+        # runs -- which made an earlier version of this test pass whether
+        # or not a network error cleared the strikes.
+        later = NOW + timedelta(seconds=7201)
+        fetch_all([SOURCES["arbeitnow"]], boom, self.limiter, self.store, later,
+                  sleep=lambda _s: None)
+        self.assertEqual(self.strikes_of("arbeitnow"), 2)
+
+    def test_retry_after_beats_the_escalation_in_both_directions(self):
+        """The server stating its own terms outranks our curve — including
+        when its number is SMALLER than where we had escalated to. Second-
+        guessing that would be the opposite of the politeness this is for."""
+        for _ in range(4):
+            self.throttle("arbeitnow")          # escalated well past an hour
+        self.assertEqual(self.limiter.next_backoff(SOURCES["arbeitnow"], "120"), 120)
+        self.assertEqual(self.limiter.next_backoff(SOURCES["arbeitnow"], "99999"),
+                         BACKOFF_CEILING_SECONDS, "a hostile value is still clamped")
+        self.assertEqual(self.limiter.next_backoff(SOURCES["arbeitnow"], "5"), 60,
+                         "and an absurdly small one is floored")
+
+    def test_a_legacy_state_file_starts_the_curve_from_the_bottom(self):
+        """Upgrading must not crash on the old flat-timestamp form, and must
+        not invent a strike history that was never recorded."""
+        self.limiter.path.write_text(json.dumps({"arbeitnow": "2026-08-05T10:00:00Z"}),
+                                     encoding="utf-8")
+        self.assertEqual(self.limiter.next_backoff(SOURCES["arbeitnow"]), 3600)
+
+    def test_an_unreadable_state_file_does_not_escalate_wildly(self):
+        """Failing closed is about refusing to POLL. It must not also produce
+        a garbage backoff — allows() already blocks, and a nonsense number
+        written on top would outlive the corruption."""
+        self.limiter.path.write_text("{not json", encoding="utf-8")
+        self.assertEqual(self.limiter.next_backoff(SOURCES["arbeitnow"]), 3600)

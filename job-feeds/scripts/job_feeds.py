@@ -98,7 +98,7 @@ class RateLimiter:
         entry = state.get(source.name)
         if not entry:
             return True, ""
-        when, backoff = self._entry(entry)
+        when, backoff, _ = self._entry(entry)
         if when is None:
             return False, (f"unparseable last-poll time for {source.name} "
                            f"({entry!r}) — refusing to poll")
@@ -121,17 +121,57 @@ class RateLimiter:
 
     @staticmethod
     def _entry(value):
-        """(when, backoff_seconds). Accepts the legacy flat timestamp as well
-        as the {'at': ..., 'backoff': N} form, because a state file written
-        by an older version must not crash or silently unblock everything."""
-        raw, backoff = (value, 0) if isinstance(value, str) else (
-            (value or {}).get("at"), (value or {}).get("backoff") or 0)
+        """(when, backoff_seconds, strikes). Accepts the legacy flat timestamp
+        and the {'at': ..., 'backoff': N} form as well as the current
+        {'at': ..., 'backoff': N, 'strikes': K}, because a state file written
+        by an older version must not crash or silently unblock everything.
+        A missing 'strikes' reads as 0, so an upgrade starts the escalation
+        from the bottom rather than inventing a history."""
+        if isinstance(value, str):
+            raw, backoff, strikes = value, 0, 0
+        else:
+            value = value or {}
+            raw = value.get("at")
+            backoff = value.get("backoff") or 0
+            strikes = value.get("strikes") or 0
         try:
-            return datetime.strptime(raw, STAMP).replace(tzinfo=timezone.utc), int(backoff)
+            return (datetime.strptime(raw, STAMP).replace(tzinfo=timezone.utc),
+                    int(backoff), int(strikes))
         except (TypeError, ValueError):
-            return None, 0
+            return None, 0, 0
 
-    def record(self, source, now=None, force=False, backoff_seconds=0):
+    def _strikes(self, source):
+        state, problem = self._load()
+        if problem:
+            return 0
+        return self._entry(state.get(source.name))[2]
+
+    def next_backoff(self, source, retry_after=None, now=None):
+        """Seconds to wait after being throttled, WITHOUT recording anything.
+
+        Separated from record() so the escalation is testable on its own and
+        so a caller can see what it is about to apply.
+
+        A server-supplied Retry-After always wins: it is the source telling
+        us its actual terms, and second-guessing that with our own curve
+        would be the opposite of the politeness this exists for. It is still
+        clamped, because a hostile or broken value should not park a source
+        for a year.
+
+        Absent that, escalate on CONSECUTIVE throttles: 1h, 2h, 4h... up to a
+        day. A flat hour means a persistently unhappy source gets poked once
+        an hour forever, which is politer than retrying immediately and less
+        polite than it should be.
+        """
+        try:
+            return max(60, min(int(retry_after), BACKOFF_CEILING_SECONDS))
+        except (TypeError, ValueError):
+            pass  # absent, or a date-form Retry-After we do not parse
+        strikes = self._strikes(source)
+        return min(DEFAULT_BACKOFF_SECONDS * (2 ** strikes), BACKOFF_CEILING_SECONDS)
+
+    def record(self, source, now=None, force=False, backoff_seconds=0,
+               healthy=False):
         """No-op for sources with no declared limit, so a fresh install
         does not accumulate empty state files.
 
@@ -140,13 +180,36 @@ class RateLimiter:
         retries immediately.
         """
         if not source.rate_limit_seconds and not force:
-            return
+            # ...but a recovered source must still have its strike count
+            # cleared, or escalation ratchets up forever for the seven
+            # sources that declare no standing limit. Caught by test:
+            # two throttles then a clean fetch left strikes at 2.
+            if not (healthy and self._strikes(source)):
+                return
         now = now or datetime.now(timezone.utc)
         with self._lock:
             state, _ = self._load()
             stamp = now.strftime(STAMP)
-            state[source.name] = ({"at": stamp, "backoff": int(backoff_seconds)}
-                                  if backoff_seconds else stamp)
+            previous = self._entry(state.get(source.name))[2]
+            if backoff_seconds:
+                # A throttle. Count it, so the NEXT one waits longer.
+                state[source.name] = {"at": stamp, "backoff": int(backoff_seconds),
+                                      "strikes": previous + 1}
+            elif healthy:
+                # A clean poll clears the history. Without this, one bad
+                # afternoon would keep escalating a source for days.
+                if source.rate_limit_seconds:
+                    state[source.name] = stamp   # standing limit: remember the poll
+                else:
+                    # Nothing left worth remembering, and dropping the key
+                    # returns the file to the shape a fresh install has.
+                    state.pop(source.name, None)
+            else:
+                # Neither throttled nor confirmed healthy -- a network error,
+                # say. Record the poll but KEEP the strike count: a socket
+                # timeout is not evidence the source is well again.
+                state[source.name] = ({"at": stamp, "backoff": 0,
+                                       "strikes": previous} if previous else stamp)
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self.path.write_text(json.dumps(state, indent=1), encoding="utf-8")
 
@@ -324,6 +387,9 @@ RSS_SOURCES = ("wwr", "pythonorg")
 
 # Applied when a 429/503 arrives without a parseable Retry-After.
 DEFAULT_BACKOFF_SECONDS = 3600
+# A day. Also the clamp on a server-supplied Retry-After: a hostile or
+# broken value must not park a source for a year.
+BACKOFF_CEILING_SECONDS = 86400
 
 # Stop paginating while this much of a published budget is left.
 # Arbeitnow advertises x-ratelimit-limit: 50 and we used to walk up
@@ -435,7 +501,7 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
                 sleep(PAGE_DELAY_SECONDS)   # never before the first request
             status, body, response_headers = opener(url, headers)
             if status == 304:
-                limiter.record(source, now)
+                limiter.record(source, now, healthy=True)
                 return FetchResult(source.name, "unchanged",
                                    "not modified since last fetch", [], pages,
                                    headers.get("If-None-Match"))
@@ -445,13 +511,9 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
                 # 2026-08-05 when this project's own pagination probing
                 # tripped Arbeitnow's limiter.
                 retry_after = response_headers.get("Retry-After")
-                try:
-                    backoff = max(60, min(int(retry_after), 86400))
-                except (TypeError, ValueError):
-                    # No Retry-After, or a date-form one we do not parse.
-                    # An hour is the conservative default: too short pokes
-                    # the same wall repeatedly, too long loses a whole day.
-                    backoff = DEFAULT_BACKOFF_SECONDS
+                # The limiter owns the curve: Retry-After wins if present,
+                # otherwise 1h doubling per CONSECUTIVE throttle up to a day.
+                backoff = limiter.next_backoff(source, retry_after)
                 limiter.record(source, now, force=True, backoff_seconds=backoff)
                 detail = f", Retry-After {retry_after}s" if retry_after else ""
                 return FetchResult(source.name, "throttled",
@@ -481,11 +543,13 @@ def _fetch_one(source, opener, limiter, now, max_pages, window_days,
                     budget_note = (f"stopped early: {remaining} of the source's "
                                    f"published request budget left")
     except (OSError, ValueError, ET.ParseError) as exc:
+        # healthy stays False: a socket timeout says nothing about whether
+        # the source has stopped throttling us, so the strike count holds.
         limiter.record(source, now)
         return FetchResult(source.name, "failed", f"{type(exc).__name__}: {exc}",
                            [], pages, None)
 
-    limiter.record(source, now)
+    limiter.record(source, now, healthy=True)
     accepted, drift = validate_schema(source, raw_rows)
     if drift:
         return FetchResult(source.name, "degraded", drift, [], pages, etag)

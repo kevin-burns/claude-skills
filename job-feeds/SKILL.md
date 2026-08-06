@@ -340,7 +340,11 @@ remotive    degraded   2026-08-05T14:24:30Z   0 rows  schema-drift: missing publ
   which looks like a quiet day rather than a broken source. Fix the key set in
   `scripts/sources.py`.
 - **`throttled`** — either a documented limit (Jobicy) or a 429/503. Wait; do not retry
-  in a loop.
+  in a loop. The wait **escalates on consecutive throttles** — one hour, then two, then
+  four, up to a day — and resets the moment a poll succeeds. A server-sent `Retry-After`
+  always wins over that curve, clamped to between a minute and a day. So a source that
+  stays unhappy is left alone for progressively longer rather than being poked hourly
+  forever.
 - **`failed`** — network or parse error. The other sources still ran.
 
 If `fetch` reports nothing at all, check `doctor` first: an empty `lanes` list or a
