@@ -113,6 +113,10 @@ rows are, so a wrong-country result announces itself instead of looking like a q
 - **It does not see the whole market.** These are eight free job boards, not an index of
   every vacancy. Employers post where they choose, and national employment services carry
   roles that never reach a free board. Absence here is not evidence a job does not exist.
+  This gap is real and currently has no fix available to us: the roles in question sit
+  behind interfaces built for their operators' own front-ends, and checked 2026-08-06,
+  the EU's EURES portal does not mirror them either. Use a national employment service
+  directly alongside this tool — it is not a substitute for one.
 
 ## Requirements
 
