@@ -1189,6 +1189,7 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                                 now or datetime.now(timezone.utc), args.max_pages,
                                 window, build_user_agent(config.contact))
             failed = []
+            fresh = 0
             for result in results:
                 # reason is prose again; the validator has its own column,
                 # so a failure no longer discards it.
@@ -1199,12 +1200,19 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                     etag=result.etag,
                     etag_url=source.url if (result.etag and source) else None)
                 if result.jobs:
-                    store.upsert(result.jobs, now)
+                    # upsert has always returned (new, seen) and this loop has
+                    # always thrown it away, so `fetch` could report volume but
+                    # not novelty -- on a scheduled daily sweep that is the only
+                    # number anyone wants. Every feed hands back its whole
+                    # rolling window each time, so "1370 row(s)" says nothing
+                    # about whether anything changed.
+                    added, _ = store.upsert(result.jobs, now)
+                    fresh += added
                 if result.status in ("failed", "degraded"):
                     failed.append(result.name)
                     log(f"job-feeds: {result.name}: {result.reason}")
             log(f"job-feeds: {sum(len(r.jobs) for r in results)} row(s) "
-                f"from {len(results)} source(s)")
+                f"from {len(results)} source(s), {fresh} new")
             return 1 if failed else 0
 
         selected = store.select(window, now, args.remote)

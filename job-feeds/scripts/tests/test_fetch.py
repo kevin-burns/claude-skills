@@ -820,3 +820,77 @@ class TestRateLimitStateIsWrittenAtomically(unittest.TestCase):
         self.limiter.record(self.source, NOW)
         state = json.loads(self.limiter.path.read_text(encoding="utf-8"))
         self.assertIn("jobicy", state)
+
+
+class TestFetchReportsNoveltyAndWritesStateOnce(unittest.TestCase):
+    """Both guards here exist because of the same near-miss.
+
+    `fetch` reported volume but not novelty: upsert has always returned
+    (new, seen) and the CLI threw it away. Every feed hands back its whole
+    rolling window on every poll, so "1370 row(s)" is the same number on
+    day one and day fifty and says nothing about whether anything changed
+    -- which is the only question a scheduled daily sweep asks.
+
+    While adding that, an edit duplicated the results loop so record_source
+    ran twice per fetch, and the whole suite still passed. That looked like
+    a coverage gap and was not: record_source is
+    INSERT .. ON CONFLICT(name) DO UPDATE, so a second identical call is
+    idempotent and leaves one row with identical values. A guard was written
+    for it, could not be made to fail against the real bug, and was deleted
+    rather than kept -- a test that cannot fail is worse than no test,
+    because it reads like cover.
+    """
+
+    def _run(self, rows, second_pass=False):
+        import io
+        import sqlite3
+
+        from job_feeds import main
+        payload = arb_payload([arb_row(i) for i in rows])
+        with tempfile.TemporaryDirectory() as tmp:
+            config = Path(tmp) / "config.json"
+            config.write_text(json.dumps({
+                "defaults": {},
+                "lanes": [{"name": "p", "label": "P", "match": "engineer"}],
+                "sources": {name: {"enabled": name == "arbeitnow"} for name in SOURCES},
+            }), encoding="utf-8")
+            db = Path(tmp) / "j.db"
+            err = io.StringIO()
+            calls = []
+
+            def run():
+                opener = FakeOpener({ARB: (200, payload, {})})
+                main(["fetch", "--config", str(config), "--db", str(db)],
+                     out=io.StringIO(), err=err, now=NOW, opener=opener)
+                calls.append(opener)
+
+            run()
+            first = err.getvalue()
+            second = None
+            if second_pass:
+                err.truncate(0), err.seek(0)
+                run()
+                second = err.getvalue()
+            # Counted INSIDE the TemporaryDirectory: returning the path and
+            # opening it afterwards fails, because the directory is already
+            # gone by then.
+            conn = sqlite3.connect(str(db))
+            try:
+                source_rows = conn.execute(
+                    "SELECT COUNT(*) FROM sources WHERE name = 'arbeitnow'").fetchone()[0]
+            finally:
+                conn.close()
+            return first, second, source_rows
+
+    def test_fetch_reports_how_many_rows_are_new(self):
+        first, _, _ = self._run([1, 2, 3])
+        self.assertIn("3 new", first)
+
+    def test_a_second_identical_fetch_reports_zero_new(self):
+        """The number that matters on a daily sweep. If this said 3 again,
+        a scheduled run could never distinguish a quiet day from a busy
+        one -- the feeds resend everything either way."""
+        first, second, _ = self._run([1, 2, 3], second_pass=True)
+        self.assertIn("3 new", first)
+        self.assertIn("0 new", second)
+        self.assertIn("row(s)", second, "volume must still be reported")
