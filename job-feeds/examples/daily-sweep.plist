@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent for daily-sweep.sh — weekdays at 07:30.
+
+  Install:
+    mkdir -p ~/Library/LaunchAgents ~/job-search
+    sed "s|__HOME__|$HOME|g" \
+      ~/.claude/skills/job-feeds/examples/daily-sweep.plist \
+      > ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
+    launchctl unload ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist 2>/dev/null
+    launchctl load  ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
+
+  Run it now without waiting for 07:30:
+    launchctl start com.jobfeeds.dailysweep
+
+  Check it is registered (second column is the last exit code):
+    launchctl list | grep dailysweep
+
+  Remove:
+    launchctl unload ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
+    rm ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
+
+  Weekday 1 is Monday. Asleep at 07:30 is fine — `man launchd.plist`: "unlike
+  cron which skips job invocations when the computer is asleep, launchd will
+  start the job the next time the computer wakes up."
+
+  PATH is set explicitly. A launchd job does NOT inherit your shell profile,
+  so `li-assist` on ~/.local/bin or /opt/homebrew/bin would be invisible and
+  the sweep would silently report LinkedIn as not-installed forever.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.jobfeeds.dailysweep</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__HOME__/.claude/skills/job-feeds/examples/daily-sweep.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>__HOME__</string>
+        <key>JOB_SWEEP_OUTDIR</key>
+        <string>__HOME__/job-search</string>
+    </dict>
+
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
+    </array>
+
+    <!-- Not RunAtLoad: loading the agent should not trigger an unexpected
+         sweep of eight public feeds. Use `launchctl start` to run on demand. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/job-search/sweep.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/job-search/sweep.err.log</string>
+</dict>
+</plist>

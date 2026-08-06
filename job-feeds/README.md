@@ -210,6 +210,35 @@ Data lives in `~/.config/job-feeds/jobs.db`. Rate-limit state is kept separately
 `ratelimit.json`, deliberately: deleting the database must never make the tool forget it
 already polled a source.
 
+### Running it daily
+
+`examples/daily-sweep.sh` fetches, writes the report, and posts a macOS notification;
+`examples/daily-sweep.plist` schedules it weekdays at 07:30. Install:
+
+```bash
+mkdir -p ~/Library/LaunchAgents ~/job-search
+sed "s|__HOME__|$HOME|g" ~/.claude/skills/job-feeds/examples/daily-sweep.plist \
+  > ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
+launchctl load ~/Library/LaunchAgents/com.jobfeeds.dailysweep.plist
+launchctl start com.jobfeeds.dailysweep      # run once now, without waiting
+```
+
+**Use launchd, not cron.** `man launchd.plist` is explicit: *"unlike cron which skips job
+invocations when the computer is asleep, launchd will start the job the next time the
+computer wakes up."* On a laptop that is the difference between a daily report and a report
+on the days you happened to be awake at half seven.
+
+Daily polling does **not** save API calls — no feed here accepts a `since` or `after`
+parameter, so every run re-downloads the whole rolling window and duplicates are collapsed
+locally. What it buys you is a history the feeds do not keep: `fetch` reports how many rows
+were genuinely new (`1371 row(s) from 8 source(s), 107 new`), and Arbeitnow is only about
+seven days deep, so a posting that scrolls off before you next look is gone for good unless
+your database already has it.
+
+If you also run a LinkedIn tool, the script calls it **only when its session is valid** and
+reports a stale one rather than skipping it silently — a sweep that quietly stops covering
+a source is indistinguishable from a quiet week.
+
 ### Where reports land
 
 `jfeeds report --out jobs.html` resolves a relative name against the working directory,

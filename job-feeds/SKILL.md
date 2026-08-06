@@ -132,6 +132,35 @@ the two tools cover different segments of one search (these boards lean remote a
 contract; LinkedIn carries more permanent roles), so the comparison is the point, and it
 only works if the two reports sit side by side.
 
+### Scheduling a daily sweep
+
+If the user asks for this to run automatically, `examples/daily-sweep.sh` and
+`examples/daily-sweep.plist` are ready to install — the plist header carries the exact
+commands. **Recommend launchd over cron on macOS**, and give the reason rather than the
+instruction: `man launchd.plist` states that cron *"skips job invocations when the computer
+is asleep"* while launchd *"will start the job the next time the computer wakes up"*. On a
+laptop that decides whether the thing works at all.
+
+Two things to tell them honestly when they ask, because both are counter-intuitive:
+
+- **Polling daily does not reduce API calls.** No source here accepts a `since` or `after`
+  parameter — check `sources.py` if in doubt, the URLs carry no date arguments. Every run
+  re-downloads the full rolling window and dedupes locally on
+  `dedupe_key(company, title, location)`. `first_seen` is never overwritten, so the value
+  of the history is knowing what is NEW, which the feeds themselves cannot tell you.
+- **It is the only way to catch short-lived postings.** Arbeitnow holds roughly seven days.
+  A posting that appears and scrolls off between two runs is gone with no record.
+
+`fetch` now reports novelty directly — `1371 row(s) from 8 source(s), 107 new` — so a
+scheduled run has a number worth putting in a notification. A second identical run reports
+`0 new`, which is the honest answer and the point.
+
+If the user also runs a LinkedIn tool, keep the two **decoupled**: LinkedIn needs a session
+that expires (li-assist re-auths every 14 days and `auth login` opens a browser), while
+these feeds need nothing at all. A shared script must never let a stale cookie cost the user
+the eight public boards, and must **report** a skipped LinkedIn sweep rather than passing
+over it quietly.
+
 ### Writing lanes that work
 
 Three rules, each learned from a lane that misfired on live data:
