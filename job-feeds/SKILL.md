@@ -37,13 +37,21 @@ The script is stdlib-only, so `python3` works as well as `uv`. Define the functi
 **start of each command block** — shell state does not persist between calls, and a
 relative path will not resolve from another repo:
 
+**Pick ONE of these.** They are alternatives, not a sequence — a new-user test found
+that pasting them together silently gave the second one, because the later definition
+overwrites the first.
+
+Simplest, and fully supported since the script is stdlib-only:
+
 ```bash
-# uv preferred; resolve it even when it is off PATH:
+jfeeds() { python3 "$HOME/.claude/skills/job-feeds/scripts/job_feeds.py" "$@"; }
+```
+
+Or under `uv`, resolving it even when it is off PATH:
+
+```bash
 UV="$(command -v uv || ls "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv 2>/dev/null | head -1)"
 jfeeds() { "$UV" run python "$HOME/.claude/skills/job-feeds/scripts/job_feeds.py" "$@"; }
-
-# stdlib-only, so this fallback is fully supported:
-jfeeds() { python3 "$HOME/.claude/skills/job-feeds/scripts/job_feeds.py" "$@"; }
 ```
 
 The function is named `jfeeds`, **not `jobs`** — `jobs` is a shell builtin.
@@ -185,6 +193,18 @@ jfeeds report --out /tmp/jobs.html                   # zero network calls
 ```
 
 `python.org` is the lightest source — 20 items, no pagination, no documented limit.
+
+**Say plainly that this is a pipeline check, not a preview of the corpus.** A new-user
+test walked exactly this path and came away believing the tool was US-weighted, because
+python.org's twenty rows skew that way — the precise opposite of the truth, and the one
+source that is *not* German-weighted. Their words: they could only have discovered the
+German weighting by doing the full fetch the docs told them not to do.
+
+So after the smoke test, tell them what they have just seen and what they have not:
+`jfeeds sources` now lists all eight with `never polled` against the seven that were
+skipped, which is the honest picture. Only after a full `jfeeds fetch` does
+`jfeeds locations` describe the corpus they will actually be working with — that is the
+run the geography advice in *First run* refers to, and it comes second, not instead.
 
 **If a source starts returning 429, look at your own request volume first.** During
 development Arbeitnow throttled us repeatedly, and the cause was ours every time: the page

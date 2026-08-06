@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from sources import SOURCES  # noqa: E402
 from job_feeds import (  # noqa: E402
     ConfigError, Store, is_excluded, is_highlighted, lanes_for, load_config, main)
 
@@ -571,3 +572,69 @@ class TestExclusionsAreVisible(ConfigCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSourcesShowsEverySource(ConfigCase):
+    """A fresh-install test caught this. After the documented smoke test
+    (`fetch --only pythonorg`), `doctor` reported "8 enabled of 8" while
+    `sources` printed one green ok line — seven eighths of the corpus
+    missing, with nothing saying so.
+
+    The tester's conclusion is the point: the results looked like a quiet
+    fortnight for their field rather than "you have barely fetched
+    anything", and the ONE command documented to stop you guessing whether
+    a quiet day is real went silent exactly when it mattered.
+    """
+
+    def run_cli(self, *argv, **kwargs):
+        out, err = io.StringIO(), io.StringIO()
+        code = main(list(argv), out=out, err=err, now=NOW, **kwargs)
+        return code, out.getvalue(), err.getvalue()
+
+    def seeded(self, config=None):
+        db = self.tmp / "j.db"
+        store = Store(db)
+        store.record_source("pythonorg", "ok", "", 20, 1, NOW)
+        _, out, err = self.run_cli("sources", "--config",
+                                   str(self.write(config or GOOD_CONFIG)),
+                                   "--db", str(db))
+        return out, err
+
+    def test_a_source_that_was_never_polled_is_listed(self):
+        out, _ = self.seeded()
+        self.assertIn("arbeitnow", out,
+                      "an unpolled source must not be invisible — that is the bug")
+        self.assertIn("never polled", out)
+
+    def test_the_polled_source_still_shows_its_real_state(self):
+        out, _ = self.seeded()
+        self.assertIn("pythonorg", out)
+        self.assertIn("20 rows", out)
+
+    def test_every_configured_source_appears_exactly_once(self):
+        """Reconciles with doctor, which counts enabled sources. The two
+        disagreeing (8 vs 1) was how the omission stayed invisible."""
+        out, _ = self.seeded()
+        for name in SOURCES:
+            self.assertEqual(out.count(f"\n{name} ") + out.startswith(f"{name} "), 1,
+                             f"{name} should appear on exactly one line")
+
+    def test_a_source_disabled_in_config_says_so_rather_than_vanishing(self):
+        """Absence is ambiguous: a reader cannot tell 'you turned this off'
+        from 'this silently failed'."""
+        config = json.loads(json.dumps(GOOD_CONFIG))
+        config["sources"] = {"arbeitnow": {"enabled": False}}
+        out, _ = self.seeded(config)
+        self.assertIn("disabled", out)
+        line = [ln for ln in out.splitlines() if ln.startswith("arbeitnow")][0]
+        self.assertIn("disabled", line)
+
+    def test_an_empty_store_still_lists_the_sources_it_would_poll(self):
+        """The old code returned early with only a hint, so a user who had
+        not fetched saw nothing at all about what they were about to get."""
+        db = self.tmp / "j.db"
+        Store(db)
+        _, out, err = self.run_cli("sources", "--config", str(self.write(GOOD_CONFIG)),
+                                   "--db", str(db))
+        self.assertIn("never polled", out)
+        self.assertIn("nothing fetched yet", err, "the hint is still useful")

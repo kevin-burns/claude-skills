@@ -41,12 +41,21 @@ Coverage is uneven by design — these are not interchangeable. Verified 2026-08
 [`SKILL.md`](./SKILL.md) carries the rest: exact endpoints, pagination behaviour, rate-limit
 details and how to read `jfeeds sources` when something looks thin.
 
+`jfeeds` is a shell function you define once per terminal — there is nothing to install
+on your PATH. Re-declare it in each new shell:
+
 ```bash
+jfeeds() { python3 "$HOME/.claude/skills/job-feeds/scripts/job_feeds.py" "$@"; }
+
+jfeeds doctor                   # config + counts, zero network calls
 jfeeds fetch                    # poll the sources
 jfeeds digest --window 7        # what matched, as a table
+jfeeds sources                  # every source, its status, and why
+jfeeds locations                # where the fetched rows actually are
 jfeeds report --out jobs.html   # self-contained page, opens with no network
-jfeeds sources                  # per-source status and why
 ```
+
+It is called `jfeeds`, **not `jobs`** — `jobs` is a shell builtin.
 
 ## How to use it well
 

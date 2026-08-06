@@ -1009,14 +1009,28 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
         store = Store(args.db)
 
         if args.command == "sources":
-            states = store.source_states()
+            # EVERY source, not only the ones that have been polled. A
+            # new-user test caught this: after the documented smoke test
+            # (--only pythonorg) `doctor` said "8 enabled of 8" while
+            # `sources` printed a single green ok line, so seven eighths of
+            # the corpus was missing with nothing to say so. The one command
+            # whose documented job is "don't guess whether a quiet day is
+            # real" went silent exactly when the results were thin.
+            states = {state["name"]: state for state in store.source_states()}
+            for name in SOURCES:
+                state = states.get(name)
+                if state:
+                    status, when = state["status"], state["last_fetch"] or ""
+                    rows, reason = state["row_count"] or 0, state["reason"] or ""
+                elif source_enabled(name, config):
+                    status, when, rows = "never polled", "", 0
+                    reason = "run 'jfeeds fetch' to include it"
+                else:
+                    status, when, rows, reason = "disabled", "", 0, "off in config"
+                print(f"{name:<12}{status:<13}{when:<22}{rows:>6} rows  "
+                      f"{reason}".rstrip(), file=out)
             if not states:
                 log("job-feeds: nothing fetched yet — run 'jfeeds fetch'")
-                return 0
-            for state in states:
-                print(f"{state['name']:<12}{state['status']:<11}"
-                      f"{state['last_fetch'] or '':<22}{state['row_count'] or 0:>6} rows  "
-                      f"{state['reason'] or ''}".rstrip(), file=out)
             return 0
 
         if args.command == "locations":
