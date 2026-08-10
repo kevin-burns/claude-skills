@@ -29,6 +29,13 @@ def _frontmatter(path: Path) -> str:
     return path.read_text().split("---")[1]
 
 
+# Claude Code truncates the combined `description` and `when_to_use` text at
+# this many characters in the skill listing, to reduce context usage. See
+# https://code.claude.com/docs/en/skills.md. Text past it is written but never
+# read, so a routing phrase that lands beyond it does nothing.
+LISTING_CAP = 1536
+
+
 def _description(path: Path) -> str:
     """The description field, whitespace-normalised (it is a folded YAML block)."""
     match = re.search(
@@ -37,6 +44,15 @@ def _description(path: Path) -> str:
         re.S | re.M,
     )
     return " ".join(match.group(2 if match.lastindex and match.lastindex >= 2 else 1).split())
+
+
+def _visible_description(path: Path) -> str:
+    """Only the part of the description the skill listing actually shows.
+
+    Routing assertions belong here rather than on `_description`: a phrase can
+    be present in the file and still invisible to the router.
+    """
+    return _description(path)[:LISTING_CAP]
 
 
 # --- the skill still claims the LinkedIn capability ------------------------
@@ -93,17 +109,44 @@ def test_neighbouring_skill_still_routes_profile_work_here(skill_name, required)
 # OPERATION lands here; an open POSITIONING question lands on cv-evidence-base.
 
 
+def test_description_fits_the_skill_listing_cap():
+    """Anything past the cap is written but never read.
+
+    The docs state that the combined `description` and `when_to_use` text is
+    "truncated at 1,536 characters in the skill listing to reduce context
+    usage" (https://code.claude.com/docs/en/skills.md). Truncation, not an
+    error, so nothing fails loudly — this description sat 280 characters over
+    with the cv-evidence-base fork in the discarded tail, and every routing
+    assertion below still passed because they read the file rather than the
+    listing.
+    """
+    description = _description(SKILL_MD)
+    assert len(description) <= LISTING_CAP, (
+        f"description is {len(description)} chars, {len(description) - LISTING_CAP} "
+        f"past the {LISTING_CAP}-char listing cap. Everything after the cap is "
+        f"invisible to routing. Truncated tail: {description[LISTING_CAP:]!r}"
+    )
+
+
 def test_description_hands_open_positioning_questions_to_the_sibling():
     """Without this carve-out, 'here's my CV, does this look OK' is claimed by
     both skills. It routed correctly even before the carve-out existed, but the
-    ambiguity is real in the text and one router change could expose it."""
-    description = _description(SKILL_MD).lower()
+    ambiguity is real in the text and one router change could expose it.
+
+    Asserted against the TRUNCATED description on purpose. Checking the whole
+    file is the bug this test used to have: the carve-out was present, this
+    passed, and the router never saw it.
+    """
+    description = _visible_description(SKILL_MD).lower()
     assert "cv-evidence-base" in description, (
         "cv-and-human no longer routes open positioning questions to "
-        "cv-evidence-base — re-run docs/superpowers/specs/linkedin-router-harness/v3_check.py"
+        "cv-evidence-base within the first "
+        f"{LISTING_CAP} characters — re-run "
+        "docs/superpowers/specs/linkedin-router-harness/v3_check.py"
     )
     assert "no target role" in description, (
-        "the fork's discriminator ('no target role in mind') is gone from the description"
+        "the fork's discriminator ('no target role in mind') is gone from the "
+        "visible part of the description"
     )
 
 
