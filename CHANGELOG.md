@@ -11,6 +11,46 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-08-10
+
+### Fixed — `cv-and-human`'s description was truncated past 1,536 characters
+
+**What was wrong:** Claude Code truncates the combined `description` and `when_to_use`
+text at **1,536 characters** in the skill listing. This description ran to **1,816**, so
+its last 280 characters were written and never read. What sat in them was the carve-out
+routing open positioning questions to `cv-evidence-base` — half of the fork measured at
+**84/84** across 3 reps on 2026-07-29 and recorded two entries below. It had been
+invisible to the router ever since.
+
+Now **1,446 characters**, with 90 to spare. `cv-evidence-base` moved from 79 characters
+past the cap to 205 inside it.
+
+**Why nothing caught it:** truncation is not an error, so no run failed. And the contract
+test asserting `cv-evidence-base` appears in the description passed throughout, because
+it read the file rather than the listing. It now reads a `_visible_description()` cut at
+the cap, and a second test asserts the cap directly. Both are falsified by mutation.
+
+**One near miss worth recording.** The first trim removed three phrases that no test
+asserts, and all 31 tests still passed. The router harness targets all three: `"Punch up
+the experience bullets on my LinkedIn profile"`, `"Help me with my personal brand
+positioning on LinkedIn"`, `"Am I pigeonholed as a DevOps engineer?"`. The last one was
+the risk. `pigeonholed` sits inside the **Do NOT use** clause, so deleting it takes away
+a barrier rather than a trigger, and this skill would have started absorbing work that
+belongs to `cv-evidence-base` — the fork the change existed to protect. All three are
+back, paid for out of capability prose that does no routing work.
+
+**On where boundaries go:** the displaced "not for a blank-page CV or generic career
+advice" line moved into the body's *What this skill will NOT do*, not into `references/`.
+Reference files bind only when a workflow step points at them, so a scope statement there
+would not bind at all. The description is capped and carries routing; the body carries
+what has to hold on every run; `references/` carries depth a step fetches.
+
+**Verified by** re-running the router harness: 168 live calls over 28 utterances × 3 reps
+× 2 arms. Baseline **84/84**, proposed **84/84**, zero regressions per utterance against
+the 2026-07-29 run.
+
+---
+
 ## 2026-08-05
 
 ### Added — `job-feeds`

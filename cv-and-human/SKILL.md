@@ -2,28 +2,23 @@
 name: cv-and-human
 description: >
   Tailor and polish a CV/resume - or a LinkedIn profile - to maximise its score in
-  applicant tracking systems (ATS) and LinkedIn recruiter search, covering both
-  keyword/JD-matching screeners and modern LLM-rubric scorers (which often take no job
-  description at all). Use this whenever the user wants to optimise, tailor, rewrite, or
-  "ATS-proof" a CV or resume, asks why their resume isn't getting past the ATS or
-  automated screening,
-  wants a keyword/gap analysis against a job description, wants to remove AI-generated
-  texture from / de-slop / humanize a CV, resume or LinkedIn profile (a CV is its own
-  channel with its own de-slop rules), or wants to check whether a CV parses cleanly.
-  ALSO use for the LinkedIn PROFILE as a career document: "optimise my LinkedIn
-  profile", "rewrite my LinkedIn headline", "my LinkedIn About section", "the experience
-  bullets on my LinkedIn profile", "why am I not showing up in recruiter searches",
-  "make my LinkedIn match my CV", "LinkedIn keywords", "personal brand positioning on my
-  LinkedIn profile". Trigger even if there is no job description, as long as the user names
-  something to be DONE to the document - tailored, ATS-proofed, parse-checked, de-slopped,
-  or a specific LinkedIn field rewritten. Do NOT use for writing a LinkedIn POST or other
-  social content - that is hook-and-human (persuasive) or clear-and-human (neutral). Do NOT
-  use when the user has no target role in mind and is asking an open question about
-  themselves - what roles they are credible for, what evidence they are missing, whether
-  they are pigeonholed, or "does this look OK" over a bare CV - that is cv-evidence-base,
-  which recovers the material this skill then tailors. Do NOT use for writing a CV from a
-  blank page with no material to work from, or for generic career advice unrelated to a
-  document.
+  applicant tracking systems (ATS) and LinkedIn recruiter search, for both JD-matching
+  and JD-less screeners. Use this whenever the user wants to optimise, tailor, rewrite,
+  or "ATS-proof" a CV or resume, asks why their resume isn't getting past automated
+  screening, wants a keyword/gap analysis against a job description, wants to remove
+  AI-generated texture from / de-slop / humanize a CV or LinkedIn profile, or wants to
+  check whether a CV parses cleanly. ALSO use for the LinkedIn PROFILE as a career
+  document: "optimise my LinkedIn profile", "rewrite my LinkedIn headline", "my
+  LinkedIn About section", "the experience bullets on my LinkedIn profile", "why am I
+  not showing up in recruiter searches", "make my LinkedIn match my CV", "personal
+  brand positioning". Trigger even with no job description, as long as the user names
+  something to be DONE to the document - tailored, ATS-proofed, parse-checked,
+  de-slopped. Do NOT use when the user has no target role in mind and is asking an open
+  question about themselves - what roles they are credible for, what evidence they are
+  missing, whether they are pigeonholed, or "does this look OK" over a bare CV - that
+  is cv-evidence-base, which recovers the material this skill then tailors. Do NOT use
+  for writing a LinkedIn POST or other social content - that is hook-and-human
+  (persuasive) or clear-and-human (neutral).
 ---
 
 # CV and Human
@@ -301,6 +296,11 @@ ALWAYS use this structure for the report:
 - Promise a specific ATS score or a guaranteed pass.
 - Refuse when there's no job description — JD-less LLM-rubric tools are supported
   via the Family-B rubric levers.
+- Write a CV from a blank page with no material to work from, or answer generic
+  career advice unrelated to a document. This lived in the `description` until
+  2026-08-10, where it sat past the 1,536-character listing cap and so was never
+  read. Scope statements that must hold on every run belong in the body; the
+  description is capped, and `references/` only binds when a step points at it.
 
 ## Reference files
 
