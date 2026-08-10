@@ -40,3 +40,6 @@ docs/superpowers/
 
 # Local beads issue tracker (kept private, not published)
 .beads/
+
+# Personal voice profile — the blank template lives in clear-and-human/
+/WRITING_CONTEXT.md
