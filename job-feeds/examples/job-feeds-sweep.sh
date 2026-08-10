@@ -81,13 +81,112 @@ if command -v li-assist >/dev/null 2>&1; then
         # detail fetch plus a model call per job) and belongs in an
         # interactive session where you can see what it costs.
         #
-        # stderr here is the AUDIT LINE ("sweep: 6 new / 19 seen / ..."), not
-        # an error, so it goes to a .log and not a .err. Naming it .err once
-        # made a perfectly good run look like a failure.
-        if li-assist jobs sweep "${JOB_SWEEP_QUERY:-platform engineer OR sre}" \
-             >/dev/null 2>"$OUTDIR/.li.log"; then
-            li_line="$(sed -n 's/^sweep: //p' "$OUTDIR/.li.log" | tail -1)"
-            li_line="${li_line:-ok}"
+        # USE li-digest, NOT `li-assist jobs sweep`. This ran for days as a
+        # single hand-written `platform engineer OR sre` at li-assist's
+        # default --limit 25, and it looked healthy the whole time: "ok"
+        # every morning, ~6 new rows. LinkedIn ranks by relevance rather
+        # than date, so the same top-25 came back each day and genuinely new
+        # postings never cracked it. Measured 2026-08-10: raising that one
+        # query to --limit 100 returned 61 new in a single extra call.
+        #
+        # But depth was only half of it. `li-assist jobs sweep <string>`
+        # takes a raw keyword, so any caller has to invent its own queries --
+        # and li-assist's SKILL.md already names query/match drift as this
+        # project's top risk: a query that fetches roles the archetype regex
+        # will not label. Hand-writing four queries here reproduced exactly
+        # that, 62 unlabelled rows out of 582, and silently missed the
+        # `architect` archetype altogether.
+        #
+        # li-digest is the tool that already solves this. It sweeps EVERY
+        # archetype in ~/.config/li-assist/archetypes.json, each using the
+        # `query` that was written alongside its `match`, and honours the
+        # file's exclude_title / exclude_company / limit defaults. One call
+        # per archetype, paced 3-6s apart by the limiter, against a 100/day
+        # cap -- five archetypes is five calls.
+        #
+        # Exit contract (li_digest.main): 0 clean, 1 at least one archetype
+        # failed, 2 config or auth error. It deliberately does NOT advance
+        # its last-run marker on a partial failure, so a lane that failed
+        # today still reports its postings as new tomorrow.
+        #
+        # stderr here is the AUDIT TRAIL ("li-digest: sweeping platform…"),
+        # not an error, so it goes to a .log and not a .err. Naming it .err
+        # once made a perfectly good run look like a failure.
+        # `li_hard_failed` is the control flag, NOT the text of li_line. An
+        # earlier version tested whether li_line started with the word
+        # "failed", which worked only because the partial-failure message
+        # happens to start with a digit. That coupled control flow to
+        # wording invisibly: rephrasing a message could have silently
+        # stopped the report being written.
+        li_hard_failed=0
+
+        # `warn` appends rather than assigns. A partial archetype failure
+        # and a failed render can both happen in one run, and the earlier
+        # version let the second overwrite the first -- so the notification,
+        # which is the whole point of the "reported, never silently skipped"
+        # rule at the top of this file, dropped the archetype detail.
+        warn() { li_warn="${li_warn:+$li_warn; }$1"; }
+
+        if command -v li-digest >/dev/null 2>&1; then
+            li-digest --json >"$OUTDIR/.li.json" 2>"$OUTDIR/.li.log"
+            rc=$?
+
+            # One parse, and a PARSE_ERROR sentinel rather than a silent 0.
+            # `except: print(0)` with stderr discarded made a truncated or
+            # half-written .li.json indistinguishable from a genuinely empty
+            # result: it rendered "0 fresh / 0 in window" with no warning,
+            # which is precisely the reports-success-while-doing-nothing
+            # class this file's header calls the worst bug here. Python's
+            # stderr goes to .li.log so the decode error is readable.
+            counts="$(python3 -c "import json,sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception as exc:
+    print('li-digest: could not parse .li.json: %s' % exc, file=sys.stderr)
+    print('PARSE_ERROR')
+else:
+    print(len(d), sum(1 for r in d if r.get('bucket') == 'fresh'))
+" "$OUTDIR/.li.json" 2>>"$OUTDIR/.li.log")" || counts="PARSE_ERROR"
+
+            if [ "$counts" = "PARSE_ERROR" ] || [ -z "$counts" ]; then
+                rows="?"; fresh="?"
+                warn "LinkedIn: could not read li-digest output — see $OUTDIR/.li.log"
+            else
+                rows="${counts%% *}"
+                fresh="${counts##* }"
+            fi
+
+            case "$rc" in
+                0) li_line="$fresh fresh / $rows in window" ;;
+                1) li_line="$fresh fresh / $rows in window — ARCHETYPE(S) FAILED"
+                   detail="$(sed -n 's/^li-digest: \([0-9]* archetype(s) failed.*\)/\1/p' \
+                             "$OUTDIR/.li.log" | tail -1)"
+                   warn "LinkedIn: ${detail:-an archetype failed — see $OUTDIR/.li.log}" ;;
+                *) li_line="failed (exit $rc)"
+                   li_hard_failed=1
+                   warn "LinkedIn sweep failed — see $OUTDIR/.li.log" ;;
+            esac
+        else
+            # Fallback only. This path cannot use archetypes, so say so
+            # rather than let a keyword search pass for a lane sweep.
+            li-assist jobs sweep "${JOB_SWEEP_QUERY:-platform engineer OR sre}" \
+                --limit "${JOB_SWEEP_LIMIT:-100}" \
+                >/dev/null 2>"$OUTDIR/.li.log"
+            rc=$?
+            if [ "$rc" -eq 0 ]; then
+                li_line="$(sed -n 's/^sweep: //p' "$OUTDIR/.li.log" | tail -1)"
+                li_line="${li_line:-ok} (single query — li-digest not installed)"
+                warn "li-digest is not on PATH, so only one hand-written query ran and your archetypes were not swept"
+            else
+                li_line="failed"
+                li_hard_failed=1
+                warn "LinkedIn sweep failed — see $OUTDIR/.li.log"
+            fi
+        fi
+
+        if [ "$li_hard_failed" -eq 1 ]; then
+            : # the sweep itself failed; do not render on top of it
+        else
             # `jobs sweep` only updates the cache. Without this the LinkedIn
             # report never regenerates and silently goes stale while
             # jobs.html refreshes daily beside it -- which is exactly what
@@ -97,15 +196,12 @@ if command -v li-assist >/dev/null 2>&1; then
                 if ! li-report --out "$OUTDIR/prospects.html" \
                      >/dev/null 2>>"$OUTDIR/.li.log"; then
                     li_line="$li_line (report FAILED)"
-                    li_warn="LinkedIn report failed — see $OUTDIR/.li.log"
+                    warn "LinkedIn report failed — see $OUTDIR/.li.log"
                 fi
             else
                 li_line="$li_line (no li-report)"
-                li_warn="li-report is not on PATH — the LinkedIn report is not being written"
+                warn "li-report is not on PATH — the LinkedIn report is not being written"
             fi
-        else
-            li_line="failed"
-            li_warn="LinkedIn sweep failed — see $OUTDIR/.li.log"
         fi
     fi
 fi
