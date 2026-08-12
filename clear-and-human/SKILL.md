@@ -52,13 +52,17 @@ For the **technical** voice (default for docs): explain mechanics, show how it w
 
 ## Layer 2 — Detect, score, report (review mode)
 
-### Step A — Detect content type
+### Step A — Detect content type, then ask the stance
 
 Classify as one of: **docs** (README, runbook, ADR, PR/commit, API reference, technical explanation), **blog**, **youtube-script** (spoken explainer/tutorial narration), **linkedin**, **email**, **slack**. Detection cues and per-channel rules live in `references/channels.md`. State the detected type at the top of the report. If ambiguous, default to **docs** for technical input and **blog** otherwise, and say so.
+
+Channel is not the whole story: a personal account and a product write-up can be the same channel and want opposite stances. Ask which one this is, or take it from `WRITING_CONTEXT.md` — never infer it, because a stiff impersonal draft and a correct impersonal draft look identical on person density. See the Stance section of `references/channels.md`. Person is context; stiffness is what you flag.
 
 ### Step B — Scan for AI patterns
 
 Apply the universal pattern list in `references/ai-patterns.md` to all content, then the channel-specific markers from `references/channels.md`. Flag every instance with the exact quote and a concrete fix. Don't paraphrase the flag — quote what's actually there.
+
+Optionally run `scripts/register_report.py <draft>` to get measured rates for the stiffness features instead of judging them by eye — it prints the citation behind each one and no verdict. Useful when a draft reads as formal but you can't say which feature is doing it.
 
 ### Step C — Score (1–10, four dimensions)
 
@@ -109,14 +113,16 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 3. Use simple constructions (is/are/has) instead of "serves as / stands as / boasts".
 4. Cut em-dashes, decorative emoji, mechanical boldface, curly quotes, title-case headings.
 5. **Add voice, carefully.** Opinions, mild uncertainty, first person where it fits, the occasional aside. In `technical` mode keep this conservative — a runbook doesn't need a personality, it needs to be right and unambiguous.
-6. Apply the channel rewrite rules from `references/channels.md`.
-7. Honor the no-invention rule: if texture requires a fact you don't have, leave a placeholder.
+6. Restore contractions the draft expanded ("it's", "don't", "can't") — see the expanded-contractions entry in `references/ai-patterns.md`.
+7. Apply the channel rewrite rules from `references/channels.md`.
+8. Honor the no-invention rule: if texture requires a fact you don't have, leave a placeholder.
 
 ### Self-audit (the blader pass — run before presenting the final rewrite)
 
 1. Ask yourself: "What still makes this read as AI-generated?" Answer in 2–4 honest bullets (rhythm too even? placeholder-ish specifics? slogan-y closer?).
 2. Then revise once more to fix exactly those tells.
-3. Present the final version. Optionally list the changes made.
+3. Run `scripts/fidelity_check.py <original> <rewrite>`. It reports any number, quote, URL or code span that appeared, vanished or changed. A number present in the rewrite but not the original is a fabrication — core rule 1 says never invent specifics, and this is the only check that catches a breach mechanically rather than by memory.
+4. Present the final version. Optionally list the changes made.
 
 ---
 
@@ -137,4 +143,23 @@ Merged and adapted (all MIT / public domain):
 - `blader/humanizer` (MIT) — soul/voice section and the self-audit loop.
 - `softaworks/agent-toolkit/writing-clearly-and-concisely` (MIT; orig. @joshuadavidthomas) — Strunk layer.
 - *The Elements of Style*, Strunk 1918 (public domain).
+
+The two scripts under `scripts/` measure rather than judge — they print a rate and the source
+behind it, never a score or a threshold to write toward. Their features come from the
+authorship and register literature, not from AI-detection tooling:
+
+- Biber, D. (1988), *Variation Across Speech and Writing*, Cambridge University Press — the
+  involved/informational dimension, from which contractions (.90), second person (.86),
+  negation (.78), demonstratives (.76), first person (.74), word length (−.58) and
+  type/token ratio (−.54) are taken.
+- Herbold, Hautli-Janisz, Heuer, Kikteva & Trautsch (2023), *Scientific Reports* 13:18617 —
+  nominalisation, counted by suffix rather than parsed, as they did.
+- Pavlick & Tetreault (2016), *TACL* 4, 61–74 — contraction expansion measured as a discrete
+  formalising edit.
+
+Deliberately excluded, and it matters that they are: any AI-detector score (Liang et al.,
+*Patterns* 4(7):100779, measured a 61.22% false-positive rate against non-native English
+writers across seven detectors), burstiness (no grounding found; GPTZero dropped it in
+autumn 2023), and readability indices (validated on schoolchildren and Navy trainees, not on
+whether prose sounds like a person). This skill is not a detector and not a grammar checker.
 - `ognjengt/founder-skills` (MIT) — the shared-context-file pattern (`FOUNDER_CONTEXT.md`), adopted here as `WRITING_CONTEXT.md`.

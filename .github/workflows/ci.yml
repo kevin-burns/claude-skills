@@ -42,12 +42,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 3.9 is the floor several skills document, and it is not
-        # decoration: it has already caught two real defects that never
-        # appeared on a newer interpreter — datetime.fromisoformat
+        # 3.12 is the floor (raised from 3.9 on 2026-08-13). 3.9 went
+        # end-of-life on 2025-10-31, and every PEP 723 script in this repo
+        # already pinned >= 3.10 or >= 3.12, so the old floor only ever
+        # applied to the stdlib-only subset.
+        #
+        # What we give up, stated plainly: the 3.9 leg had caught two real
+        # defects that newer interpreters hide — datetime.fromisoformat
         # rejecting a 'Z' suffix, and backslashes being illegal inside
-        # f-string expressions before 3.12.
-        python: ['3.9', '3.13']
+        # f-string expressions before 3.12. Both are fixed; we lose the
+        # tripwire for the next one of that shape.
+        #
+        # What it costs users: macOS ships 3.9.6 as /usr/bin/python3, so the
+        # documented python3 fallback no longer works on a stock Mac.
+        # CONTRIBUTING.md's decision rule says so explicitly.
+        python: ['3.12', '3.13']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6

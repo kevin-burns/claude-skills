@@ -2,6 +2,16 @@
 
 Detect the type, then apply these on top of the universal patterns in `ai-patterns.md`.
 
+## Stance — declare it, don't infer it
+
+Every channel below can be written in either stance, and both are correct: a product write-up in third person and a personal account in first person are not different qualities of prose, they're different jobs. PERSON (first- and second-person density) is a stance the author chooses per piece. Report it as context, never as a flag or a score deduction.
+
+STIFFNESS (contractions, nominalization, analytic negation, demonstratives, word length, lexical diversity) is the axis that gets flagged, and none of it requires first person. A piece written entirely in the third person can still use "doesn't" instead of "does not". Flag stiffness features exactly as usual, regardless of the declared stance.
+
+These features say a draft reads as formal. They do not say who or what wrote it, and lexical diversity in particular is a register indicator only — never treat it as evidence of AI origin.
+
+Before scoring or rewriting, ask which stance this piece needs, or use the stance already declared in `WRITING_CONTEXT.md` or the brief. Do not infer it from the draft: a stiff impersonal draft and a correctly impersonal draft read identically on person density, so guessing from the text alone throws away the one thing that tells them apart.
+
 ## docs (technical) — DEFAULT for technical input
 
 **Detect if:** code fences, file paths, CLI commands, headings like Prerequisites/Setup/Usage/Rollback, API/endpoint references, commit/PR phrasing, or it's clearly a README/runbook/ADR/design doc.

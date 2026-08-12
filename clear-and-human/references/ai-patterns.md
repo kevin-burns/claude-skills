@@ -41,6 +41,9 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
 - **Fragmented header:** a heading followed by a one-line restatement of the heading. Delete the restatement.
 - **Signposting:** "Let's dive in", "Here's what you need to know", "Now let's look at". Do the thing instead of announcing it.
 - **Reading-complexity creep:** 3+ three-syllable words or 2+ nested clauses in one sentence. Shorten.
+- **Expanded contractions:** spelling out "do not / is not / cannot" through an otherwise casual draft is a surface formalizing move, not a change of register. The rest of the sentence can stay just as warm. Contractions carry the highest loading (.90) of any single feature on Biber's (1988) involved/informational dimension, ahead of second-person pronouns and negation. Pavlick & Tetreault (2016) found contraction expansion in 16% of the edits annotators made when asked to sound more formal. A long draft with short words and casual asides but zero contractions has been through a find-and-replace, not written that way.
+- Before: "It is not something we would recommend, and we cannot support it in production."
+- After: "It's not something we'd recommend, and we can't support it in production."
 
 ## Formatting / mechanics
 
