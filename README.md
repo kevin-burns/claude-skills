@@ -10,7 +10,7 @@ New here, or checking what changed? [`CHANGELOG.md`](./CHANGELOG.md) lists each 
 
 | Skill | What it does | Wraps |
 |---|---|---|
-| [clear-and-human](./clear-and-human) | Construct, review, score, and rewrite prose so it reads human, not AI | — |
+| [clear-and-human](./clear-and-human) | Construct, review, score, and rewrite prose so it reads human, not AI — with two optional stdlib scripts that measure register and check a rewrite invented nothing | — |
 | [hook-and-human](./hook-and-human) | Write, punch up, and review persuasive marketing copy without fabricating | — |
 | [cv-and-human](./cv-and-human) | Tailor a CV — or a LinkedIn profile (job-seeker lens) — to pass automated HR/ATS screening and Recruiter search while staying truthful and human — keyword/JD matching, parseability, de-slop, optional red-team | — |
 | [cv-evidence-base](./cv-evidence-base) | Interrogate a CV to recover the evidence that never made it onto the page, and grade which roles you are genuinely credible for — including the ones you are not. Runs *before* `cv-and-human`, when there is no target role yet | — |
@@ -83,7 +83,8 @@ Symlinking (rather than copying) keeps this repo the single source of truth — 
 ### Requirements per skill
 
 - **c7search** — the `c7search` binary (`go install github.com/kevin-burns/c7search@latest`). A `CONTEXT7_API_KEY` is optional.
-- **job-feeds** — **nothing.** Python 3.9+ standard library only, so `python3` works as a runner alongside `uv`. No API keys, no accounts, no authentication — every source is a public feed. macOS, Linux, or WSL.
+- **clear-and-human** — **nothing** for the writing itself; the skill is prose all the way down. Two optional scripts add measurement: `scripts/register_report.py` reports where a draft sits on the person and stiffness axes (each feature printed with the paper behind it, no score and no verdict), and `scripts/fidelity_check.py` diffs a draft against its rewrite and flags any number, quote, URL or code span that appeared, vanished or changed — a number present only in the rewrite is the shape of a fabricated statistic. Both are standard library only: `uv run` or `python3`.
+- **job-feeds** — **nothing.** Standard library only, so `python3` works as a runner alongside `uv`. Verified running on Python 3.9 as recently as 2026-08-13, though CI now tests 3.12 and 3.13 only, so treat older interpreters as working-but-unwatched. No API keys, no accounts, no authentication — every source is a public feed. macOS, Linux, or WSL.
 - **markdown-converter** — `uv` (uses `uvx markitdown`, no install needed).
 - **nano-banana-pro-json** — `uv` and a `GEMINI_API_KEY` environment variable. No key is bundled.
 - **convert-to-webp** — `cwebp` (`brew install webp`) or macOS `sips`. No install needed on macOS.

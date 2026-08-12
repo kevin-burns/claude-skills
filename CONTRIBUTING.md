@@ -55,15 +55,32 @@ myskill status   # confirms the runner + path resolve before doing real work
 For a script **without** PEP 723 inline metadata, use `"$UV" run python "<path>"` (the explicit
 `python` form runs reliably regardless of metadata).
 
+### Python floor: 3.12
+
+Scripts in this repo may use any syntax available in **Python 3.12**. CI runs the skill test
+suites on 3.12 and 3.13.
+
+The floor moved up from 3.9 on 2026-08-13. 3.9 reached end-of-life on 2025-10-31, and every
+PEP 723 script here already pinned `>=3.10` or `>=3.12`, so the old floor only ever governed
+the stdlib-only scripts.
+
+**This has a real cost, and it falls on macOS.** `/usr/bin/python3` on macOS is 3.9.6, so a
+user with no uv, Homebrew or pyenv can no longer run a stdlib-only script with plain
+`python3` — it will fail at import on any 3.10+ syntax, often before printing `--help`. Say
+so in `SKILL.md` where you offer the fallback, rather than letting them find out from a
+`TypeError`.
+
 ### uv vs python3 — the decision rule
 
 | Script | How to tell | Runner in `SKILL.md` |
 |---|---|---|
-| **stdlib-only** | no PEP 723 `# dependencies = [...]` block; imports only the standard library | `uv run` **or** `python3` — document python3 as the fallback |
+| **stdlib-only** | no PEP 723 `# dependencies = [...]` block; imports only the standard library | `uv run` **or** `python3` **if it is 3.12+** — check with `python3 -V` before offering it |
 | **has third-party deps** | declares `dependencies` in a PEP 723 `# /// script` block (e.g. `jinja2`, `google-genai`) | **uv required** — keep uv resolvable, but do *not* offer a python3 fallback (it would fail on the missing package) |
 
-uv is preferred either way (it pins `requires-python` from the inline metadata). python3 is only
-a safety net for the stdlib-only case.
+uv is preferred either way: it pins `requires-python` from the inline metadata and fetches a
+matching interpreter, which is what makes it work on a stock Mac when the system `python3`
+does not. Treat python3 as a convenience for people who already run a current one, not as a
+guarantee.
 
 ### Worked examples in this repo
 

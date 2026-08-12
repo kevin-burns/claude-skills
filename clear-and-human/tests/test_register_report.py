@@ -1,0 +1,389 @@
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+# No pyproject.toml pytest config exists for this skill (only the named files
+# for this task were touched), so resolve the import path here rather than
+# relying on repo-wide pytest configuration.
+SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+from register_report import (
+    count_nominalisations,
+    NOT_NOMINALISATIONS,  # noqa: E402
+    CONTRACTION,
+    MIN_WORDS,
+    NOMINALISATION,
+    collect_baseline,
+    format_report,
+    profile,
+    strip_noise,
+    to_json,
+)
+
+SCRIPT = SCRIPTS_DIR / "register_report.py"
+
+
+def _pad(core: str, min_words: int = MIN_WORDS) -> str:
+    """Pad a short sample up to MIN_WORDS with neutral filler words.
+
+    Filler uses none of the tracked features (no pronouns, no contractions,
+    no negation, no demonstratives, no nominalisation suffixes) so the
+    padding cannot change the measured rates, only dilute them predictably.
+    """
+    words = core.split()
+    filler_needed = max(0, min_words - len(words))
+    filler = (["banana"] * filler_needed) if filler_needed else []
+    return " ".join(words + filler)
+
+
+# --- contraction regex: the possessive trap -------------------------------
+
+def test_contraction_regex_does_not_count_possessive_s():
+    # "the skill's job" has no contraction in it -- 's here is possessive.
+    # A naive \w+'s pattern would match it and silently inflate warmth.
+    assert CONTRACTION.findall("the skill's job") == []
+
+
+def test_contraction_regex_counts_genuine_apostrophe_s_contractions():
+    # "it's", "that's" etc. ARE contractions (it is / that is) even though
+    # they share the same "'s" spelling as a possessive.
+    assert CONTRACTION.findall("it's raining and that's fine") == ["it's", "that's"]
+
+
+def test_contraction_regex_counts_nt_re_ve_ll_m():
+    text = "doesn't won't we're they've I'll I'm"
+    found = CONTRACTION.findall(text)
+    assert len(found) == 6
+
+
+def test_contraction_regex_ignores_ordinary_possessive_on_a_name():
+    # A common real-world case: a person's or product's possessive should
+    # never register as a contraction.
+    assert CONTRACTION.findall("Kevin's post and the team's plan") == []
+
+
+# --- nominalisation regex: the stem-length undercount ----------------------
+
+def test_nominalisation_matches_short_common_nominalisations():
+    # The ported prototype's \w{4,} required a 4-character stem before the
+    # suffix, so it silently missed short-but-real nominalisations like
+    # these (total length 6-7). This is the fix documented in the script's
+    # NOMINALISATION comment -- guard it so it can't regress.
+    for word in ("action", "nation", "station", "options"):
+        assert NOMINALISATION.search(word), f"{word!r} should match as a nominalisation"
+
+
+def test_nominalisation_still_excludes_ordinary_short_words():
+    assert NOMINALISATION.findall("the cat sat on it") == []
+
+
+def test_nominalisation_excludes_ordinary_words_ending_in_those_letters():
+    """The real false positives, which "the cat sat on it" never exercised.
+
+    A stem floor alone cannot separate "nation" from "stance" -- both have a
+    two-character stem -- so these depend on NOT_NOMINALISATIONS. Six of
+    these fire repeatedly in this skill's own reference files, "stance" most
+    of all, which is how the defect was found.
+    """
+    prose = (
+        "The stance had a chance in France. A dance by the fence in the city, "
+        "hence a moment of comment in one sentence, for balance."
+    )
+    leaked = [
+        w for w in NOMINALISATION.findall(prose)
+        if w.lower() not in NOT_NOMINALISATIONS
+    ]
+    assert count_nominalisations(prose) == 0, f"false positives: {leaked}"
+
+
+def test_exclusion_list_only_contains_words_the_matcher_actually_matches():
+    """A dead entry means someone guessed instead of checking.
+
+    Every word in NOT_NOMINALISATIONS must be something the pattern would
+    otherwise catch -- otherwise the list grows with words that were never
+    a problem and nobody can tell which entries are load-bearing.
+    """
+    dead = [w for w in NOT_NOMINALISATIONS if not NOMINALISATION.fullmatch(w)]
+    assert dead == [], f"entries the pattern never matches anyway: {sorted(dead)}"
+
+
+def test_nominalisation_matches_longer_forms_too():
+    assert NOMINALISATION.findall("information and management") == ["information", "management"]
+
+
+# --- strip_noise -------------------------------------------------------
+
+def test_strip_noise_removes_fenced_code_block():
+    text = "Some prose.\n```\n$ curl -s http://example.com | jq .\n```\nMore prose."
+    cleaned = strip_noise(text)
+    assert "curl" not in cleaned
+    assert "Some prose." in cleaned
+    assert "More prose." in cleaned
+
+
+def test_strip_noise_removes_front_matter():
+    text = "---\ntitle: Test\ndate: 2026-01-01\n---\nActual content here."
+    cleaned = strip_noise(text)
+    assert "title:" not in cleaned
+    assert "Actual content here." in cleaned
+
+
+def test_strip_noise_removes_table_rows():
+    text = "Prose before.\n| a | b |\n| - | - |\n| 1 | 2 |\nProse after."
+    cleaned = strip_noise(text)
+    assert "|" not in cleaned
+    assert "Prose before." in cleaned
+    assert "Prose after." in cleaned
+
+
+def test_strip_noise_keeps_link_label_but_drops_url():
+    text = "See [the docs](https://example.com/docs) for more."
+    cleaned = strip_noise(text)
+    assert "the docs" in cleaned
+    assert "https://example.com" not in cleaned
+
+
+# --- the minimum-length gate --------------------------------------------
+
+def test_profile_refuses_below_minimum_words():
+    short_text = "This is short. " * 5  # well under MIN_WORDS
+    try:
+        profile(short_text)
+        assert False, "profile() should have raised ValueError on a short document"
+    except ValueError as exc:
+        assert str(MIN_WORDS) in str(exc)
+
+
+def test_profile_succeeds_at_exactly_the_minimum():
+    text = _pad("This is a plain sentence with no tracked features in it.", MIN_WORDS)
+    result = profile(text)
+    assert result["n_words"] == MIN_WORDS
+
+
+def test_profile_reports_zero_contractions_on_prose_with_only_possessives():
+    # Direct regression guard for the bug the evidence brief describes: a
+    # naive regex would report nonzero contractions here.
+    core = "The skill's job and the team's plan and the project's scope."
+    text = _pad(core)
+    result = profile(text)
+    assert result["features"]["contraction"] == 0.0
+
+
+# --- axis independence ---------------------------------------------------
+
+def test_person_and_stiffness_features_are_disjoint_keys():
+    from register_report import PERSON_META, STIFFNESS_META
+    person_keys = {k for k, *_ in PERSON_META}
+    stiffness_keys = {k for k, *_ in STIFFNESS_META}
+    assert person_keys.isdisjoint(stiffness_keys)
+
+
+def test_stiffness_features_do_not_require_first_person():
+    # A purely third-person, contraction-heavy passage should still register
+    # a nonzero (warm) contraction rate on the STIFFNESS axis, with zero
+    # first/second person on the PERSON axis -- proving the axes don't leak
+    # into each other.
+    core = (
+        "The system doesn't retry silently. It won't hide a failure, and "
+        "the team's on-call rotation isn't optional. That's the whole point."
+    )
+    text = _pad(core)
+    result = profile(text)
+    assert result["features"]["first_person"] == 0.0
+    assert result["features"]["second_person"] == 0.0
+    assert result["features"]["contraction"] > 0.0
+
+
+# --- baseline aggregation ---------------------------------------------------
+
+def test_collect_baseline_averages_across_documents(tmp_path):
+    doc_a = _pad("I like this and I think that helps me and my team.")
+    doc_b = _pad("I like this and I think that helps me and my team.")
+    (tmp_path / "a.md").write_text(doc_a, encoding="utf-8")
+    (tmp_path / "b.md").write_text(doc_b, encoding="utf-8")
+    result = collect_baseline(tmp_path)
+    assert result is not None
+    assert result["n_docs"] == 2
+    assert result["n_skipped"] == 0
+
+
+def test_collect_baseline_skips_short_files_without_failing(tmp_path, capsys):
+    (tmp_path / "long.md").write_text(_pad("Plenty of words here to pass the gate."), encoding="utf-8")
+    (tmp_path / "short.md").write_text("Too short.", encoding="utf-8")
+    result = collect_baseline(tmp_path)
+    assert result is not None
+    assert result["n_docs"] == 1
+    assert result["n_skipped"] == 1
+    err = capsys.readouterr().err
+    assert "short.md" in err
+
+
+def test_collect_baseline_returns_none_when_no_files_qualify(tmp_path, capsys):
+    (tmp_path / "short.md").write_text("Too short.", encoding="utf-8")
+    result = collect_baseline(tmp_path)
+    assert result is None
+
+
+def test_collect_baseline_returns_none_on_empty_directory(tmp_path):
+    assert collect_baseline(tmp_path) is None
+
+
+# --- report formatting: axes stay labelled and separate ---------------------
+
+def test_format_report_labels_person_as_context_never_a_fault():
+    text = _pad("I write about my own work and I like it.")
+    result = profile(text)
+    report = format_report(result, "personal", None, "draft.md")
+    assert "PERSON" in report
+    assert "context" in report.lower()
+    assert "never a fault" in report.lower()
+
+
+def test_format_report_labels_stiffness_as_the_axis_worth_scrutiny():
+    text = _pad("The service doesn't fail silently and that's intentional.")
+    result = profile(text)
+    report = format_report(result, "unset", None, "draft.md")
+    assert "STIFFNESS" in report
+    assert "scrutiny" in report.lower()
+
+
+def test_format_report_notes_ttr_is_not_an_ai_likeness_signal():
+    text = _pad("The service doesn't fail silently and that's intentional.")
+    result = profile(text)
+    report = format_report(result, "unset", None, "draft.md")
+    assert "ai-likeness" in report.lower()
+
+
+def test_format_report_declared_stance_is_printed_verbatim_not_inferred():
+    # A high first-person text with --stance impersonal should still print
+    # "impersonal" -- the flag is never overridden by the measured numbers.
+    text = _pad("I write about my own work constantly, and I like it.")
+    result = profile(text)
+    report = format_report(result, "impersonal", None, "draft.md")
+    assert "declared stance: impersonal" in report
+
+
+def test_format_report_without_baseline_says_it_stands_alone():
+    text = _pad("Plain prose with nothing special in it at all today.")
+    result = profile(text)
+    report = format_report(result, "unset", None, "draft.md")
+    assert "no --baseline supplied" in report
+
+
+def test_format_report_with_baseline_shows_a_comparison_column():
+    text = _pad("Plain prose with nothing special in it at all today.")
+    result = profile(text)
+    baseline = {"n_docs": 3, "n_skipped": 0, "features": dict(result["features"])}
+    report = format_report(result, "unset", baseline, "draft.md")
+    assert "baseline" in report.lower()
+    assert "3 document(s)" in report
+
+
+def test_no_verdict_language_anywhere_in_the_report():
+    # The hard requirement: advisory only, no score/grade/pass-fail. Matched
+    # as whole words -- a substring check would false-positive on ordinary
+    # prose like "wasn't passed" (contains "pass").
+    text = _pad("Plain prose with nothing special in it at all today.")
+    result = profile(text)
+    report = format_report(result, "unset", None, "draft.md")
+    lowered = report.lower()
+    for banned in (r"\bpass\b", r"\bfail\b", r"\bgrade\b", r"\bscore\b", r"\bverdict\b"):
+        assert not re.search(banned, lowered), banned
+
+
+def test_to_json_includes_citations_and_ttr_caveat():
+    text = _pad("Plain prose with nothing special in it at all today.")
+    result = profile(text)
+    payload = to_json(result, "unset", None, "draft.md")
+    assert "citations" in payload
+    assert payload["stiffness"]["ttr_caveat"]
+    assert "contraction" in payload["citations"]
+    assert "Biber" in payload["citations"]["contraction"]
+
+
+# --- CLI behaviour (subprocess, matches li_profile_check's test style) -----
+
+def _run_cli(args, cwd=None, input_text=None):
+    env = dict(os.environ, LC_ALL="C", LANG="C")
+    cmd = [sys.executable, str(SCRIPT), *args]
+    return subprocess.run(
+        cmd, capture_output=True, text=True, env=env, cwd=cwd, input=input_text,
+    )
+
+
+def test_cli_help_exits_zero():
+    result = _run_cli(["--help"])
+    assert result.returncode == 0
+    assert "PERSON" in result.stdout or "register" in result.stdout.lower()
+
+
+def test_cli_refuses_short_draft_with_nonzero_exit(tmp_path):
+    draft = tmp_path / "draft.md"
+    draft.write_text("Too short.", encoding="utf-8")
+    result = _run_cli([str(draft)])
+    assert result.returncode == 2
+    assert "REFUSING TO REPORT" in result.stderr
+
+
+def test_cli_reports_zero_on_a_sufficient_draft(tmp_path):
+    draft = tmp_path / "draft.md"
+    draft.write_text(_pad("The service doesn't fail silently and that's intentional."), encoding="utf-8")
+    result = _run_cli([str(draft)])
+    assert result.returncode == 0
+    assert "AXIS 1" in result.stdout
+    assert "AXIS 2" in result.stdout
+
+
+def test_cli_json_output_is_valid_json(tmp_path):
+    draft = tmp_path / "draft.md"
+    draft.write_text(_pad("The service doesn't fail silently and that's intentional."), encoding="utf-8")
+    result = _run_cli([str(draft), "--json"])
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["person"]["stance"] == "unset"
+    assert "stiffness" in payload
+
+
+def test_cli_stance_flag_is_echoed_not_computed(tmp_path):
+    draft = tmp_path / "draft.md"
+    draft.write_text(_pad("No first person pronouns appear in this text at all."), encoding="utf-8")
+    result = _run_cli([str(draft), "--stance", "personal", "--json"])
+    payload = json.loads(result.stdout)
+    # Zero measured first-person density, but the declared stance still
+    # prints exactly what was passed -- never overridden by the numbers.
+    assert payload["person"]["stance"] == "personal"
+    assert payload["person"]["features"]["first_person"] == 0.0
+
+
+def test_cli_missing_draft_file_is_a_usage_error(tmp_path):
+    result = _run_cli([str(tmp_path / "nope.md")])
+    assert result.returncode == 2
+
+
+def test_cli_reads_stdin_when_no_positional_arg_given():
+    text = _pad("Plain prose with nothing special in it at all today.")
+    result = _run_cli([], input_text=text)
+    assert result.returncode == 0
+    assert "<stdin>" in result.stdout
+
+
+def test_cli_baseline_dir_that_does_not_exist_is_a_usage_error(tmp_path):
+    draft = tmp_path / "draft.md"
+    draft.write_text(_pad("Plain prose with nothing special in it at all today."), encoding="utf-8")
+    result = _run_cli([str(draft), "--baseline", str(tmp_path / "nope")])
+    assert result.returncode == 2
+
+
+def test_cli_with_baseline_adds_comparison_column(tmp_path):
+    baseline_dir = tmp_path / "baseline"
+    baseline_dir.mkdir()
+    (baseline_dir / "one.md").write_text(_pad("I like writing about my own work and I enjoy it."), encoding="utf-8")
+    draft = tmp_path / "draft.md"
+    draft.write_text(_pad("The service doesn't fail silently and that's intentional."), encoding="utf-8")
+    result = _run_cli([str(draft), "--baseline", str(baseline_dir)])
+    assert result.returncode == 0
+    assert "baseline: 1 document(s)" in result.stdout
