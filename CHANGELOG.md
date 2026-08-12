@@ -11,6 +11,68 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-08-12
+
+### Added — `clear-and-human` measures register instead of judging it by eye
+
+**What:** two standard-library scripts, and the rule that measuring the skill's own output
+turned up. `scripts/register_report.py` reports where a draft sits on two independent axes,
+printing the source behind each feature and no score. `scripts/fidelity_check.py` diffs a
+draft against its rewrite and flags any number, quote, URL or code span that appeared,
+vanished or changed. Neither needs a corpus or any configuration, so both work on a first
+run for anyone who installs the skill.
+
+**The rule that was missing:** the skill had nothing to say about contractions, in a file
+whose whole job is making prose sound like a person. Contractions carry the highest loading
+of any single feature, .90, on Biber's involved/informational dimension. Measuring eight of
+Kevin's published posts found one at **zero contractions across 1,375 words** while otherwise
+reading warm: the shortest words in the corpus at 4.61 characters, low nominalisation, and
+the highest analytic negation of anything he has published. Five of six stiffness features
+said warm. Only contractions said stiff. That is a find-and-replace applied over warm prose,
+not a formal register, which is what Pavlick & Tetreault (2016) measured when they found
+contraction expansion in 16% of human formalising rewrites.
+
+**When to reach for the scripts:** when a draft reads as formal and you cannot say which
+feature is doing it, or when you need to prove a rewrite invented nothing. A number present
+in the rewrite but absent from the original is the shape of a fabricated statistic, and that
+is the one thing a model cannot reliably check about its own output.
+
+**Person and stiffness are separate axes,** and `references/channels.md` now says so. A
+product write-up legitimately has no "I". Person density is reported as context and never
+flagged; stiffness is flagged regardless of stance, because none of its features require
+first person. Stance is declared or asked for, never inferred, since a stiff impersonal
+draft and a correct impersonal draft are identical on person density.
+
+**What it deliberately won't do:**
+
+- **Detect AI.** Liang et al. (*Patterns* 4(7):100779) measured a **61.22%** average
+  false-positive rate across seven detectors on 91 essays by non-native English writers,
+  with 19.78% flagged by all seven. A skill published under an MIT licence should not ship
+  that failure mode to strangers.
+- **Score burstiness.** No academic grounding was located for it, and GPTZero dropped
+  perplexity and burstiness in autumn 2023. The numeric thresholds circulating online trace
+  to marketing copy.
+- **Compute a readability index.** Flesch (1948), Kincaid et al. (1975) and Coleman & Liau
+  (1975) were validated on schoolchildren's textbooks and Navy trainees, not on whether prose
+  sounds like a person. Optimising toward one is grammar-checker work, which this is not.
+- **Give a verdict.** No score, no grade, no pass/fail, no threshold to write toward. Both
+  scripts print rates and citations. `register_report.py` refuses below 200 words rather than
+  emit a rate that is mostly noise.
+- **Guess at proper nouns by default.** Without a POS tagger the heuristic returns 88
+  "proper nouns" on this skill's own reference file, including *Apply*, *Cut* and *Delete*.
+  It sits behind `--names`.
+
+**Also raises the repo's Python floor to 3.12.** 3.9 reached end-of-life on 2025-10-31 and
+every PEP 723 script here already pinned `>=3.10` or `>=3.12`. The cost is real and recorded
+in `CONTRIBUTING.md`: macOS ships 3.9.6 as `/usr/bin/python3`, so the documented plain-python3
+path no longer works on a stock Mac, and CI loses the 3.9 leg that had caught two defects
+newer interpreters hide. `job-feeds` keeps its 3.9+ claim, checked rather than assumed, marked
+as working but no longer CI-watched.
+
+72 tests on 3.12 and 3.13. PR #5.
+
+---
+
 ## 2026-08-10
 
 ### Fixed — `cv-and-human`'s description was truncated past 1,536 characters
