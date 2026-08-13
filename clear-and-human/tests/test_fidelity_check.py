@@ -12,6 +12,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 SCRIPT = SCRIPTS_DIR / "fidelity_check.py"
 
 from fidelity_check import (  # noqa: E402
+    _format_report,
     check_fidelity,
     diff_multiset,
     extract_numbers,
@@ -341,15 +342,29 @@ def test_cli_exit_code_is_always_zero_even_with_findings(tmp_path):
 
 
 def test_cli_no_differences_prints_a_clean_message(tmp_path):
+    """Identical files WITH tracked spans get the clean message."""
     original = tmp_path / "original.md"
     rewrite = tmp_path / "rewrite.md"
-    text = "Plain prose with no numbers, names, quotes, urls, or code."
+    text = "We cut deploys from 40 minutes to 6, per the v2.1 release notes."
     original.write_text(text)
     rewrite.write_text(text)
 
     result = _run_cli([str(original), str(rewrite)])
     assert result.returncode == 0, result.stderr
     assert "No tracked differences" in result.stdout
+
+
+def test_cli_prose_with_nothing_to_track_says_so_instead(tmp_path):
+    """This fixture used to assert a clean pass. It was the vacuous case."""
+    original = tmp_path / "original.md"
+    rewrite = tmp_path / "rewrite.md"
+    original.write_text("Plain prose with no numbers, names, quotes, urls, or code.")
+    rewrite.write_text("Plain prose with no numbers, names, quotes, urls, or code.")
+
+    result = _run_cli([str(original), str(rewrite)])
+    assert result.returncode == 0, result.stderr
+    assert "NOTHING TO CHECK" in result.stdout
+    assert "No tracked differences" not in result.stdout
 
 
 def test_cli_names_flag_is_actually_wired_through(tmp_path):
@@ -371,3 +386,39 @@ def test_cli_names_flag_is_actually_wired_through(tmp_path):
     assert "proper_nouns" in json.loads(with_names.stdout), (
         "--names parsed but had no effect on the output"
     )
+
+
+# --- the vacuous pass, found by a graded eval ---------------------------
+
+def test_clean_result_over_nothing_is_reported_as_nothing_to_check():
+    """A pass over an empty set is not evidence, and read identically to one.
+
+    Eval case 9 asked whether a rewrite kept all five claims. The input had
+    no numbers, quotes, URLs or code spans, so this script returned "No
+    tracked differences" -- and would return it for a rewrite that dropped
+    every claim. The grader called the pass worthless, correctly.
+    """
+    original = "Our service reduces costs, improves reliability, and shortens onboarding."
+    gutted = "Our service reduces costs."
+    report = _format_report(check_fidelity(original, gutted))
+    assert "NOTHING TO CHECK" in report
+    assert "This is not a pass." in report
+    assert "No tracked differences" not in report
+
+
+def test_clean_result_over_real_spans_still_reports_a_pass():
+    """The warning must not swallow the genuine case."""
+    original = "We cut deploys from 40 minutes to 6."
+    faithful = "Deploys went from 40 minutes to 6."
+    report = _format_report(check_fidelity(original, faithful))
+    assert "No tracked differences" in report
+    assert "NOTHING TO CHECK" not in report
+    assert "2 tracked span(s)" in report
+
+
+def test_tracked_count_is_not_mistaken_for_a_category():
+    """_tracked_in_original is bookkeeping; it must not render as a section."""
+    results = check_fidelity("We saw 40 things.", "We saw 41 things.")
+    assert "_tracked_in_original" in results
+    report = _format_report(results)
+    assert "_tracked" not in report

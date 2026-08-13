@@ -10,6 +10,8 @@ STIFFNESS (contractions, nominalization, analytic negation, demonstratives, word
 
 These features say a draft reads as formal. They do not say who or what wrote it, and lexical diversity in particular is a register indicator only — never treat it as evidence of AI origin.
 
+**Why person is reported and not flagged**, since the reason matters more than the rule. Not because it is statistically unrelated to the stiffness features — most of them sit on the same dimension in Biber (1988), and establishing independence would need roughly a hundred same-channel documents by one author, which nobody has. The reason is that first-person density is a rhetorical choice rather than a defect: Thonney (2013, *Across the Disciplines*) reports experts using first person to project confidence and authority, at around four times the rate of students, and its prevalence varying by discipline, within disciplines, and within genres. A tool that treats low first person as a fault pushes every document toward chatty and takes away the writer's ability to be impersonal on purpose. Flag stiffness; report person.
+
 Before scoring or rewriting, ask which stance this piece needs, or use the stance already declared in `WRITING_CONTEXT.md` or the brief. Do not infer it from the draft: a stiff impersonal draft and a correctly impersonal draft read identically on person density, so guessing from the text alone throws away the one thing that tells them apart.
 
 ## docs (technical) — DEFAULT for technical input

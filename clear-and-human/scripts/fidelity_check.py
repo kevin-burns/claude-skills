@@ -360,6 +360,16 @@ def check_fidelity(original: str, rewrite: str, names: bool = False) -> dict:
             extract_proper_nouns(orig_spans["clean"]),
             extract_proper_nouns(rewrite_spans["clean"]),
         )
+
+    # How much there was to check at all. Without this the report cannot tell
+    # "nothing changed" apart from "there was nothing here to change", and
+    # those mean opposite things. See _format_report's vacuity warning.
+    results["_tracked_in_original"] = (
+        len(extract_numbers(orig_spans["clean"]))
+        + len(extract_quotes(original))
+        + len(orig_spans["urls"])
+        + len(orig_spans["code"])
+    )
     return results
 
 
@@ -410,10 +420,28 @@ def _format_report(results: dict) -> str:
         # Name only the categories this run actually compared. Claiming to
         # have checked proper nouns when --names was not passed would be a
         # false all-clear, in a tool whose whole job is catching those.
-        checked = ", ".join(CATEGORY_LABELS[c].lower() for c in CATEGORY_LABELS if c in results)
+        checked = ", ".join(
+            CATEGORY_LABELS[c].lower() for c in CATEGORY_LABELS if c in results
+        )
+        # A clean result over an original that contained nothing to track is
+        # not evidence of fidelity -- it is the absence of evidence, and the
+        # two read identically unless this says so. Found by a graded eval:
+        # a rewrite that dropped two of three claims from a numberless
+        # sentence returned "No tracked differences", and the grader
+        # correctly called the pass worthless.
+        if not results.get("_tracked_in_original"):
+            return (
+                "NOTHING TO CHECK. The original contains no numbers, quoted spans, "
+                "URLs or code spans, so this script can tell you nothing about "
+                "whether the rewrite is faithful. It would report a clean result "
+                "for a rewrite that dropped every claim in the text.\n"
+                "Verify the claims by reading. This is not a pass."
+            )
         return (
-            f"No tracked differences: every span in the original ({checked}) is "
-            "present, unchanged, at the same count, in the rewrite."
+            f"No tracked differences: all {results['_tracked_in_original']} tracked "
+            f"span(s) in the original ({checked}) are present, unchanged, at the "
+            "same count, in the rewrite. Claims carrying no number, quote, URL or "
+            "code span are outside what this checks -- read for those."
         )
     return "\n".join(lines).rstrip()
 
@@ -440,7 +468,13 @@ def main() -> int:
         rewrite = sys.stdin.buffer.read().decode("utf-8")
 
     results = check_fidelity(original, rewrite, names=args.names)
-    print(json.dumps(results, indent=2) if args.json else _format_report(results))
+    if args.json:
+        # Keys prefixed with _ are internal bookkeeping for the report text
+        # (see _tracked_in_original). They are not part of the JSON contract.
+        print(json.dumps({k: v for k, v in results.items()
+                          if not k.startswith("_")}, indent=2))
+    else:
+        print(_format_report(results))
 
     # Advisory tool, by design: there is no threshold to clear, so there is
     # no verdict to compute. Exit 0 means the run completed, not that the

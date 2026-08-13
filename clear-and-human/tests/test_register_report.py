@@ -12,6 +12,7 @@ SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from register_report import (
+    DEMONSTRATIVE,
     count_nominalisations,
     NOT_NOMINALISATIONS,  # noqa: E402
     CONTRACTION,
@@ -251,6 +252,27 @@ def test_format_report_labels_stiffness_as_the_axis_worth_scrutiny():
     assert "scrutiny" in report.lower()
 
 
+def test_report_does_not_claim_the_axes_are_independent():
+    """The claim was removed on 2026-08-13 and must not creep back.
+
+    Establishing independence needs ~95-100 same-channel documents by one
+    author; at N=30 the confidence interval does not even exclude the
+    correlation Biber's own loadings imply. The separation is justified by
+    Biber (1988:107) reading Dimension 1 as two parameters, and by Thonney
+    (2013) on first person as a rhetorical choice -- neither of which needs
+    the features to be uncorrelated. An earlier version of this file asserted
+    independence in the report header, the JSON payload and the docstring.
+    """
+    text = _pad("The service doesn't fail silently and that's intentional.")
+    result = profile(text)
+    report = format_report(result, "unset", None, "draft.md").lower()
+    payload = json.dumps(to_json(result, "unset", None, "draft.md")).lower()
+    for surface, name in ((report, "human report"), (payload, "json output")):
+        assert "independent of person" not in surface, (
+            f"the independence claim is back in the {name}"
+        )
+
+
 def test_format_report_notes_ttr_is_not_an_ai_likeness_signal():
     text = _pad("The service doesn't fail silently and that's intentional.")
     result = profile(text)
@@ -387,3 +409,43 @@ def test_cli_with_baseline_adds_comparison_column(tmp_path):
     result = _run_cli([str(draft), "--baseline", str(baseline_dir)])
     assert result.returncode == 0
     assert "baseline: 1 document(s)" in result.stdout
+
+
+# --- demonstratives: the citation must describe the measurement ------------
+
+def test_demonstrative_counts_clause_initial_pronouns():
+    """Biber's .76 is on demonstrative PRONOUNS. These are the real ones."""
+    for text in ("That is the point.", "This means the rule changed.",
+                 "Those were the rules.", "These are the eight."):
+        assert len(DEMONSTRATIVE.findall(text)) == 1, f"missed a pronoun in {text!r}"
+
+
+def test_demonstrative_excludes_complementiser_relativiser_and_determiner():
+    """The bug this replaced: a bare this/that/these/those match counted all
+    three of these as demonstrative pronouns, putting Biber's pronoun loading
+    next to a number measuring something else entirely."""
+    for text, why in [("I said that he left.", "complementiser"),
+                      ("It shows that costs are rising.", "complementiser"),
+                      ("the thing that matters most", "relativiser"),
+                      ("That afternoon was long.", "determiner")]:
+        assert DEMONSTRATIVE.findall(text) == [], f"{why} counted as a pronoun: {text!r}"
+
+
+# --- the overlap the negation citation now documents -----------------------
+
+def test_expanding_contractions_moves_contraction_rate_not_negation():
+    """Documents the coupling rather than pretending it away.
+
+    Rewriting "doesn't" as "does not" is the formalising edit this whole
+    skill cares about. It shows up in the contraction row and is invisible
+    in the negation row, because analytic negation counts both forms. A
+    reader who expects negation to catch it will misread every report.
+    """
+    warm = _pad("It doesn't matter and it isn't ready and we don't agree.")
+    cold = _pad("It does not matter and it is not ready and we do not agree.")
+    w, c = profile(warm)["features"], profile(cold)["features"]
+    assert w["contraction"] > 0 and c["contraction"] == 0, "contractions must move"
+    assert abs(w["negation"] - c["negation"]) < 1e-9, (
+        "negation rate changed under contraction expansion -- if this ever "
+        "becomes true, the citation block claiming it does not must be updated"
+    )
