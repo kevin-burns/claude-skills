@@ -80,9 +80,13 @@ to choose and why rather than listing both neutrally: a plugin install is a snap
 
 Also documented: **these skills work outside Claude Code**, since a skill is a directory with a
 `SKILL.md` and nothing more. OpenCode reads `~/.claude/skills/` directly, so a symlink already made
-for Claude Code needs no second install; Codex reads `~/.agents/skills/`. Neither has a
-plugin/marketplace format — the wrapper is Claude Code's packaging, not a requirement. The
+for Claude Code needs no second install; Codex reads `~/.agents/skills/`. The
 subagents are the part that doesn't travel: `agents/*.md` uses Claude Code's frontmatter.
+
+> **Correction, 2026-08-13:** this entry originally said neither had a plugin/marketplace format.
+> That is wrong. Codex has `.codex-plugin/plugin.json` with marketplaces at
+> `.agents/plugins/marketplace.json`, plus a public directory shared with ChatGPT. Tracked as
+> `claude-skills-8y4`.
 
 ### Added — `clear-and-human` finally has a README, and it answers the obvious question
 
