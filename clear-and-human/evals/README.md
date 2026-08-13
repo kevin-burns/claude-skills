@@ -1,12 +1,18 @@
 # Running these evals
 
-Ten behavioural cases, 40 assertions. They test the **skill** — whether the prose
+Eleven behavioural cases, 47 assertions. They test the **skill** — whether the prose
 instructions produce good output. The `pytest` suite under `../tests/` tests the
 **scripts**, which is a different thing. Both are needed; neither substitutes.
 
-First run: **2026-08-13**, against commit `d74b2d1`. Result **35/40**. Before that they
-had never been executed, against any version, since the file was written on 2026-06-06.
-Two reasons, both fixed:
+Two runs so far, both on **2026-08-13**:
+
+| Run | Set | Against | Result |
+|---|---|---|---|
+| 1 | 10 cases, 40 assertions | commit `d74b2d1` | **35/40** |
+| 2 | 11 cases, 47 assertions (the current file) | after PR #7 | **41/47** |
+
+Before run 1 they had never been executed, against any version, since the file was written
+on 2026-06-06. Two reasons, both fixed:
 
 - `evals.json` sat at the skill root. The schema wants `<skill>/evals/evals.json`, which
   is where `cv-and-human` and `business-plan` keep theirs.
@@ -63,22 +69,33 @@ It also caught `fidelity_check.py` returning a confident clean pass on case 9, w
 input contained nothing it tracks — so it would have passed a rewrite that dropped every
 claim. It now prints `NOTHING TO CHECK` instead.
 
-## Known weaknesses in these assertions
+## The weak assertions, and what replaced them
 
-Recorded because a passing grade on a weak assertion is worse than no assertion. See
-`grader.md`, which is explicit that critiquing the eval set is half the grader's job.
+Run 1 exposed five assertions that a wrong output could pass, which is worse than having no
+assertion at all — see `grader.md`, which is explicit that critiquing the eval set is half
+the grader's job. All five were rewritten before run 2:
 
-- **1.2** is a substring test over the whole output, so an output that merely quotes the
-  input back scores full marks. It needs scoping to the flags section.
-- **3.2** requires the phrase be flagged "as a permission/gravity phrase". Neither term
-  appears anywhere in the skill, so a correct output can fail on vocabulary.
-- **5.1**'s second disjunct is broad enough that any competent review passes.
-- **7.2**'s wording invites a digits-only reading, which is precisely how the fabrication
-  in that case escaped.
-- **8.3** polices three named strings and passed a rewrite that kept "This tool is a
-  revolution".
+| Was | Now |
+|---|---|
+| **1.2** a substring test over the whole output, so quoting the input back scored full marks | scoped to *"the report's own flags/findings section — not merely by quoting the input back"* |
+| **3.2** required the phrase be flagged *"as a permission/gravity phrase"*; neither term appears anywhere in the skill, so a correct output failed on vocabulary | that wording is gone from the file |
+| **5.1**'s second disjunct passed any competent review | now requires the output either name the clean-but-hollow reading or argue against it and name which tells it found instead |
+| **7.2** invited a digits-only reading, which is how the fabrication in that case escaped | names the numberless kinds explicitly: *"This explicitly includes claims containing NO DIGIT"* |
+| **8.3** policed three named strings and passed a rewrite that kept *"This tool is a revolution"* | extended to *"retains no unqualified superlative resting on nothing"* |
 
-Nothing at all checks: placeholder density (seven of ten outputs ended in
-`[ADD SPECIFIC EXAMPLE]`, and a skill that replaced every draft with one placeholder would
-score near-perfect), whether a narrated script run actually happened, invented authorial
-stance, or self-audit placement.
+Two of the four things nothing checked are now checked: **8.4** bounds placeholder density
+(*"placeholders such as `[ADD SPECIFIC EXAMPLE]` do not outnumber the substantive sentences
+retained"*), and **8.2** requires the revised version to *follow* the self-audit rather than
+the audit being a postscript.
+
+## Still not checked, after both runs
+
+Tracked as `claude-skills-een`. These survived run 2 and no assertion covers them:
+
+- **Inflation survives paraphrase.** *"This tool is a revolution"* became *"a genuine shift
+  in what's possible"* — the skill strips lexical markers reliably and the rhetorical move
+  unreliably.
+- **The self-audit still occasionally invents a word count**, which is core rule 1 breached
+  by the very pass that exists to catch it.
+- **Nothing checks whether an output's claims about files on disk are true**, or whether a
+  narrated script run actually happened.

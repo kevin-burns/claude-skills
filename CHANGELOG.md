@@ -150,8 +150,12 @@ nothing checks whether an output's claims about files on disk are true.
 
 ### Added — `clear-and-human` measures register instead of judging it by eye
 
+> **Correction, 2026-08-13:** this entry called the two axes *independent*. That claim was
+> withdrawn the next day — see the 2026-08-13 entry above. It is struck rather than
+> rewritten, because what shipped on 2026-08-12 did assert it.
+
 **What:** two standard-library scripts, and the rule that measuring the skill's own output
-turned up. `scripts/register_report.py` reports where a draft sits on two independent axes,
+turned up. `scripts/register_report.py` reports where a draft sits on two ~~independent~~ axes,
 printing the source behind each feature and no score. `scripts/fidelity_check.py` diffs a
 draft against its rewrite and flags any number, quote, URL or code span that appeared,
 vanished or changed. Neither needs a corpus or any configuration, so both work on a first
