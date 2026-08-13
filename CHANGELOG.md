@@ -13,6 +13,82 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-13
 
+### Added — the repo installs as a Claude Code plugin
+
+`.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` make the whole set installable
+in two commands:
+
+```
+/plugin marketplace add kevin-burns/claude-skills
+/plugin install claude-skills@kevin-burns
+```
+
+No directories moved. The 21 skills sit at the repo root rather than under `skills/`, and the
+manifest's `skills` field points at them in place.
+
+**One plugin, not twenty-one, and the repo settles it.** Twelve of the 21 skills name a sibling
+inside their description — `cv-and-human` points at `cv-evidence-base`, `report-builder` at
+`c7search`, `dev-fleet` at `source-snapshot`. Split them and every one of those pointers is a dead
+end for anyone who installed half the set, including the `cv-and-human` ↔ `cv-evidence-base` fork
+tuned at 84/84.
+
+**What it costs, measured rather than estimated.** `claude plugin details` reports **~5.9k tokens
+always-on** for the full set — every skill's description is loaded in every session so Claude can
+decide when to reach for one, before any skill fires. That figure is now in the README next to the
+install command, because someone who wants two of these skills should symlink two of them.
+
+**Two findings from testing the install, both recorded rather than papered over.** The manifest's
+`agents` field — documented as replacing the default `agents/` scan — loaded **zero** agents on
+Claude Code 2.1.231 when given the file paths the reference prescribes, and rejected directory
+paths outright with `agents: Invalid input`. The default scan works, so the field is omitted; the
+consequence is that `agents/commit-style.md`, a playbook `commit-pr` reads rather than an agent,
+loads as a ninth agent with empty metadata. Separately, `agents/coherence-checker.md` had a
+description YAML could not parse — an unquoted `advisory: it reports` — so at runtime it loaded
+with **every frontmatter field silently dropped**, including its `tools` and `model`. That one
+predates the plugin work and affected the existing install path too; packaging is just what
+surfaced it.
+
+Symlinking is still the right path for anyone editing these skills, and the README now says which
+to choose and why rather than listing both neutrally: a plugin install is a snapshot in
+`~/.claude/plugins/cache/`, a symlink keeps this repo the source of truth.
+
+Also documented: **these skills work outside Claude Code**, since a skill is a directory with a
+`SKILL.md` and nothing more. OpenCode reads `~/.claude/skills/` directly, so a symlink already made
+for Claude Code needs no second install; Codex reads `~/.agents/skills/`. Neither has a
+plugin/marketplace format — the wrapper is Claude Code's packaging, not a requirement. The
+subagents are the part that doesn't travel: `agents/*.md` uses Claude Code's frontmatter.
+
+### Added — `clear-and-human` finally has a README, and it answers the obvious question
+
+Fifteen of the 21 skills shipped the per-skill "what it does / what it *doesn't* do" README that
+`CONTRIBUTING.md` requires. The flagship did not. It does now, and `check_conventions.py` no
+longer grandfathers it.
+
+The section that earns its place is **"Isn't this just humanizer?"**, because that is the first
+reaction a reader has, and [`blader/humanizer`](https://github.com/blader/humanizer) is genuinely
+one of this skill's sources — the self-audit here *is* its audit loop. The answer is four
+differences, each checked against its `SKILL.md` rather than described from memory:
+
+- **No register axis.** In its 412 lines, "contraction" appears **zero** times, "Biber" zero,
+  "measure" zero. It is a catalogue of phrase-level and typographic tells and it does that job
+  well. But the failure that prompted the measurement layer here — 1,375 words, zero
+  contractions, warm on five stiffness features out of six — is invisible to a pattern list. It
+  only shows up if you count.
+- **Three rules blunter than the evidence supports**, all three of which this skill shipped too
+  until a red-team pass corrected them: em-dashes as a hard constraint, curly quotes as a flat
+  ChatGPT tell, and hedging listed as an AI pattern when two peer-reviewed studies put hedges on
+  the *human* side.
+- **Its checks on the prose are the model grading its own output.** The repository's only script
+  is `scripts/validate-package.py`, a packaging validator. Its no-fabrication rule is strong — but
+  run 1 of these evals caught an output that **certified in writing that it had invented
+  nothing**, having invented a claim about the user's CI pipeline. That is why
+  `fidelity_check.py` exists.
+- **No stated position on detectors** — "detector" and "GPTZero" appear zero times.
+
+Stated plainly in the README, because it is the honest reading: humanizer is a better *pattern
+catalogue* than the list here, and this skill inherited a chunk of it. What it does not do is
+measure, or check its own output mechanically.
+
 ### Changed — `clear-and-human` withdraws a claim it could not defend, and sources its wordlist
 
 Two PRs (#7, #8) from a red-team pass, two research agents, and the first two runs of
@@ -105,8 +181,12 @@ nothing checks whether an output's claims about files on disk are true.
 
 ### Added — `clear-and-human` measures register instead of judging it by eye
 
+> **Correction, 2026-08-13:** this entry called the two axes *independent*. That claim was
+> withdrawn the next day — see the 2026-08-13 entry above. It is struck rather than
+> rewritten, because what shipped on 2026-08-12 did assert it.
+
 **What:** two standard-library scripts, and the rule that measuring the skill's own output
-turned up. `scripts/register_report.py` reports where a draft sits on two independent axes,
+turned up. `scripts/register_report.py` reports where a draft sits on two ~~independent~~ axes,
 printing the source behind each feature and no score. `scripts/fidelity_check.py` diffs a
 draft against its rewrite and flags any number, quote, URL or code span that appeared,
 vanished or changed. Neither needs a corpus or any configuration, so both work on a first
