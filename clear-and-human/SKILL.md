@@ -117,9 +117,9 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 ## Layer 3 — Rewrite and restore (rewrite mode)
 
 1. Replace every flagged pattern with natural language (see `references/ai-patterns.md` for before/after).
-2. Vary sentence rhythm — short lines mixed with longer ones. Uniform length is the loudest AI tell.
+2. Vary sentence rhythm — short lines mixed with longer ones. Uneven length reads as human; treat it as one signal among several, not a ranking (see `references/ai-patterns.md`, which records that the "loudest tell" claim had no source).
 3. Use simple constructions (is/are/has) instead of "serves as / stands as / boasts".
-4. Cut em-dashes, decorative emoji, mechanical boldface, curly quotes, title-case headings.
+4. Cut decorative emoji, mechanical boldface, and title-case headings. **Em-dashes and curly quotes are not on this list** — they are author-relative and model-specific, and `references/ai-patterns.md` holds the current rule with its evidence. Follow the reference, not a blanket cut. A graded eval caught this file and that one giving opposite instructions, and the reference was the better-reasoned of the two.
 5. **Add voice, carefully.** Opinions, mild uncertainty, first person where it fits, the occasional aside. In `technical` mode keep this conservative — a runbook doesn't need a personality, it needs to be right and unambiguous.
 6. Restore contractions the draft expanded ("it's", "don't", "can't") — see the expanded-contractions entry in `references/ai-patterns.md`.
 7. Apply the channel rewrite rules from `references/channels.md`.
@@ -171,6 +171,26 @@ authorship and register literature, not from AI-detection tooling:
   nominalisation, counted by suffix rather than parsed, as they did.
 - Pavlick & Tetreault (2016), *TACL* 4, 61–74 — contraction expansion measured as a discrete
   formalising edit.
+
+Two later studies test Biber's framework on LLM output directly, and both bear on this
+skill's design:
+
+- Milička, J., Marklová, A., & Cvrček, V. (2025), "Benchmark of stylistic variation in
+  LLM-generated texts", arXiv:2509.10179 — Biber's multidimensional analysis over
+  **AI-Brown**, a corpus built to parallel BE-21 contemporary British English, across many
+  models including Claude and Gemini, replicated in Czech. LLMs shift on **Dimension 1**,
+  toward the informational pole, and the shift varies a lot by model. Independent
+  confirmation, on general prose rather than academic abstracts, that Dimension 1 is where
+  the difference sits — which is what the stiffness axis is built on.
+- Dawkins, H., Fraser, K. C., & Kiritchenko, S. (2025), "When Detection Fails", arXiv:2506.09975
+  — the same Biber features over 505,159 social-media posts, finding systematic differences
+  but **different ones**, because genre changes which features move. That is the argument
+  for per-channel rules, with evidence.
+
+Reinhart, A. (maintained), *LLM writing styles*, <https://www.refsmmat.com/notebooks/llm-style.html>
+— an annotated bibliography kept by an author of the PNAS study on the same question,
+spanning fiction, social media, student writing and code. Useful as a maintained secondary
+source; check it before commissioning new research.
 
 Deliberately excluded, and it matters that they are: any AI-detector score (Liang et al.,
 *Patterns* 4(7):100779, measured a 61.22% false-positive rate against non-native English

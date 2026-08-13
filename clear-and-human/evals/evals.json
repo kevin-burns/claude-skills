@@ -7,7 +7,7 @@
       "expected_output": "Detects content as docs/technical, flags the AI-vocabulary and copula avoidance, produces a scored report, and does not invent product details.",
       "expectations": [
         "The output classifies the content as docs or technical",
-        "The output flags at least six of: cutting-edge, leverages, robust, seamless, transformative, comprehensive, empowers, streamline, unlock",
+        "In the report's own flags/findings section -- not merely by quoting the input back -- the output names at least six of: cutting-edge, leverages, robust, seamless, transformative, comprehensive, empowers, streamline, unlock. A substring match anywhere in the output does not satisfy this.",
         "The output flags 'serves as' as copula avoidance or suggests replacing it with 'is'",
         "The output includes a scores table containing an AI-Likeness dimension",
         "The output does not invent any specific product name, version number, metric, or customer not present in the input"
@@ -20,19 +20,20 @@
       "expectations": [
         "The output removes or rewrites the 'In today's fast-paced world' filler opener",
         "The output does not invent any specific number, percentage, company name, or case study absent from the input",
-        "The output either leaves a placeholder such as [ADD SPECIFIC EXAMPLE] or explicitly flags that concrete specifics are missing"
+        "The output either leaves a placeholder such as [ADD SPECIFIC EXAMPLE] or explicitly flags that concrete specifics are missing",
+        "The rewrite makes no first-person experiential claim absent from the input -- 'I've seen', 'I've watched', 'in my experience'. An invented eyewitness stance is a fabricated specific even though it contains no number, and it publishes under the user's name."
       ]
     },
     {
       "id": 3,
-      "prompt": "Does this LinkedIn post sound like AI? Rewrite it if so:\n\n\"Most people get this wrong. Read that again.\n\nSuccess isn't about talent → it's about consistency → it's about showing up.\n\nAgree? Drop a comment below 👇\"",
+      "prompt": "Does this LinkedIn post sound like AI? Rewrite it if so:\n\n\"Most people get this wrong. Read that again.\n\nSuccess isn't about talent \u2192 it's about consistency \u2192 it's about showing up.\n\nAgree? Drop a comment below \ud83d\udc47\"",
       "expected_output": "Detects LinkedIn, flags the permission phrase, arrow chain, and engagement-bait closer, and removes all three in the rewrite.",
       "expectations": [
         "The output classifies the content as linkedin",
-        "The output flags 'Read that again.' as a permission/gravity phrase",
-        "The output flags the arrow chain (→) and converts it to prose in the rewrite",
+        "The output flags the phrase 'Read that again.' as a marker to cut. Any wording is acceptable; the assertion is that the phrase is named. Do not require the terms 'permission' or 'gravity' -- neither appears anywhere in the skill.",
+        "The output flags the arrow chain (\u2192) and converts it to prose in the rewrite",
         "The output flags the engagement-bait closer 'Agree? Drop a comment'",
-        "The rewrite contains no arrow characters (→) and no 'drop a comment' style closer"
+        "The rewrite contains no arrow characters (\u2192) and no 'drop a comment' style closer"
       ]
     },
     {
@@ -50,7 +51,7 @@
       "prompt": "Review this for AI texture: \"The quarterly report was completed. The team worked on several initiatives. Progress was made in multiple areas. The results were positive. The outlook is good.\"",
       "expected_output": "Recognizes the text is free of obvious AI vocabulary but is hollow: uniform rhythm, no specifics, no voice. Flags clean-but-hollow and scores value/credibility low.",
       "expectations": [
-        "The output explicitly identifies the text as clean but hollow, or notes that it lacks specifics and voice despite having few AI buzzwords",
+        "The output either identifies the text as clean but hollow, or argues explicitly against that reading and names which AI tells it did find instead. A review that neither flags hollowness nor justifies rejecting the label fails. 'Notes that it lacks specifics' alone is too broad to discriminate.",
         "The output flags the uniform sentence length or rhythm",
         "The scores table gives a low score (<=4) to a value or credibility style dimension"
       ]
@@ -72,7 +73,7 @@
       "expected_output": "Honors the context file: avoids the banned words, may cite the approved 40->6 minute fact, and invents no other metrics.",
       "expectations": [
         "The output does not use the words 'leverage' or 'synergy'",
-        "The output invents no specific metric other than the approved 40-to-6-minute figure",
+        "The output invents no fact about the user's environment beyond the approved 40-to-6-minute figure. This explicitly includes claims containing NO DIGIT: test coverage, team size, tool or product names, dates, timelines, or any statement about what did or did not change. A digits-only scan does not satisfy this -- the first run passed this assertion while the post asserted 'test coverage stayed the same', which the context file never approved.",
         "The output is a short LinkedIn-style post, not a long article"
       ]
     },
@@ -82,8 +83,9 @@
       "expected_output": "Runs the self-audit pass: presents a rewrite, then an honest assessment of remaining AI tells, then a revised final version.",
       "expectations": [
         "The output flags the negative parallelism 'It's not just X, it's Y'",
-        "The output includes a self-audit step that names what still reads as AI-generated before giving a final version",
-        "The rewrite removes 'Furthermore', 'In conclusion', and the generic positive conclusion 'the future is bright'"
+        "The output includes a self-audit naming what still reads as AI-generated, AND a revised final version FOLLOWS that audit. An audit that ends the output is a postscript, not a self-audit.",
+        "The rewrite removes 'Furthermore', 'In conclusion', and the generic positive conclusion 'the future is bright' -- AND retains no unqualified superlative resting on nothing, such as 'This tool is a revolution'. The first run passed the string checks while keeping exactly that claim.",
+        "The deliverable is usable: placeholders such as [ADD SPECIFIC EXAMPLE] do not outnumber the substantive sentences retained. Leaving a placeholder is correct under the no-invention rule; replacing the draft with placeholders is not a rewrite."
       ]
     },
     {
@@ -97,7 +99,8 @@
         "The rewrite still mentions integration with existing tools",
         "The rewrite still mentions no code changes",
         "The rewrite introduces no new product claim not present in the input",
-        "The rewrite varies sentence structure and rhythm rather than reproducing the input's flat parallel list of clauses"
+        "The rewrite varies sentence structure and rhythm rather than reproducing the input's flat parallel list of clauses",
+        "If the output states that scripts/fidelity_check.py or register_report.py was run, it includes that script's actual output. Narrating a run without showing its result fails: the reader takes it as verification. Note that fidelity_check prints NOTHING TO CHECK on input with no numbers, quotes, URLs or code spans -- an output claiming a clean pass on such input is reporting something the script does not say."
       ]
     },
     {
@@ -107,8 +110,19 @@
       "expectations": [
         "The output is structured as ordered steps using imperative instructions",
         "The output does not present any invented file path, certificate name, or version number as if it were the user's actual environment",
-        "Environment-specific values (paths, domain names, certificate filenames) are explicitly marked as placeholders to replace (e.g. angle-bracketed or with a 'replace with your…' note), not stated as concrete fact",
+        "Environment-specific values (paths, domain names, certificate filenames) are explicitly marked as placeholders to replace (e.g. angle-bracketed or with a 'replace with your\u2026' note), not stated as concrete fact",
         "The voice is plain and instructional rather than promotional or personality-driven"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Humanize this, and tell me what you'd need from me to do it better:\n\n\"Our platform delivers robust, scalable solutions that empower teams to streamline their workflows and unlock new efficiencies.\"",
+      "expected_output": "A rewrite plus an explicit note that no WRITING_CONTEXT.md was found and what supplying one would improve.",
+      "expectations": [
+        "The output states that no WRITING_CONTEXT.md (or FOUNDER_CONTEXT.md) was found, or asks for a writing sample, rather than silently proceeding as if calibrated.",
+        "The output still produces a rewrite -- the missing context degrades the result, it does not block it.",
+        "The rewrite invents no customer, metric, product name or outcome, and leaves a placeholder where a specific would help.",
+        "The output does not read any file outside the supplied prompt and the skill's own directory. This case exists because six of ten first-run executors silently read a gitignored personal context file, making that run unreproducible by anyone else."
       ]
     }
   ]
