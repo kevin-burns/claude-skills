@@ -55,6 +55,8 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
 
 **Excessive hedging:** "could potentially possibly", "might have some effect". → "may affect".
 
+Also these, which soften a claim without qualifying it: "arguably", "to some extent", "broadly speaking", "generally speaking". Either commit to the claim or say what the actual limit is. *Added 2026-08-13 from Grammarly's common-AI-words list, which is unsourced vendor content — taken because these are checkable against your own drafts, not because that page is evidence. Note the tension flagged at the top of this file: Wikipedia lists simple hedges (very, perhaps, tends to) as signs of HUMAN writing, so treat a hedge as a wordiness problem rather than a machine tell.*
+
 **Filler-to-tight rewrites:** "in order to" → "to"; "due to the fact that" → "because"; "at this point in time" → "now"; "has the ability to" → "can"; "in the event that" → "if".
 
 > **Tighten these as a Strunk edit, not as an AI tell.** Checked 2026-08-13: Wikipedia's "Signs of AI writing" lists *"as a result of, in order to, all of the, a part of, or the fact that"* under signs of **human** writing, reporting them as *"empirically observed, over 25 years of Wikipedia writing, to be more common in Wikipedia articles written by humans than in AI-generated text"*. So the direction of evidence is against reading these as machine output. They are still wordy, and "omit needless words" stands on its own authority (`elements-of-style.md`) — but do not cite them as evidence a draft was AI-written, and do not count them toward an AI-likeness score. The same source lists simple hedges (*very, perhaps, tends to*) as human tells too, which sits awkwardly beside the excessive-hedging entry below.
