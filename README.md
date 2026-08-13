@@ -110,9 +110,8 @@ with a `SKILL.md`. The plugin wrapper is Claude Code's packaging, not a requirem
 
 ### Other agents
 
-There is no plugin/marketplace format outside Claude Code — for everything else a skill is just a
-directory that gets put where the agent looks. Both of these read `SKILL.md` unchanged, so nothing
-here needs converting.
+Both of these read `SKILL.md` unchanged, so nothing here needs converting — a skill is a
+directory, and the plugin manifest is packaging on top of it.
 
 **[OpenCode](https://opencode.ai/docs/skills/)** scans `.opencode/skills/`, `.claude/skills/` and
 `.agents/skills/` in the project, and `~/.config/opencode/skills/`, `~/.claude/skills/` and
@@ -128,6 +127,10 @@ repo — for these, symlink:
 mkdir -p ~/.agents/skills
 ln -s "$(pwd)/clear-and-human" ~/.agents/skills/clear-and-human
 ```
+
+Codex also has [its own plugin format](https://developers.openai.com/plugins/build/plugins) —
+`.codex-plugin/plugin.json`, with repo or personal marketplaces at
+`.agents/plugins/marketplace.json`. This repo doesn't ship one yet.
 
 Subagents are the part that doesn't port. `agents/*.md` uses Claude Code's frontmatter
 (`tools`, `model`), and neither OpenCode nor Codex reads it — the skills travel, the fleet doesn't.
