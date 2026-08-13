@@ -13,6 +13,35 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-13
 
+### Added — the repo installs on Codex too
+
+`.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json`, alongside the Claude pair
+added the same day:
+
+```
+codex plugin marketplace add https://github.com/kevin-burns/claude-skills
+codex plugin add claude-skills@kevin-burns
+```
+
+Verified on `codex-cli 0.147.0` — installs, and all **21 skills load**, namespaced
+`claude-skills:<name>` exactly as Claude Code namespaces them.
+
+**The field that decided this was worth doing was undocumented, so it got tested.** OpenAI's
+reference says only that `skills` "points to bundled components relative to the plugin root" —
+no type. Every one of **23 real-world manifests** found by code search uses a *string*, always
+`"./skills/"`, which would have meant moving all 21 skill directories and breaking every symlink,
+the packaged `.skill` files and `register_report.py --baseline` paths. So a throwaway plugin was
+built with `"skills": ["./alpha", "./beta"]` — two skill directories at the root, no `skills/`
+folder, our exact shape — installed, and Codex asked to enumerate. Both loaded. **The array form
+works and no restructure was needed.**
+
+One trap worth recording: the marketplace entry's `source` is an **object**,
+`{"source": "local", "path": "./"}`, not the bare string Claude's marketplace uses. Get it wrong
+and the marketplace registers with **no error** and lists zero plugins.
+
+Not included: submission to OpenAI's public plugin directory. That is a separate decision about
+publishing under a personal name, not a packaging detail.
+
 ### Changed — `excalidraw-diagram` can now decline to draw
 
 One sentence, added as the **Necessity Test** ahead of the two tests that were already there:

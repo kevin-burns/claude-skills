@@ -128,9 +128,16 @@ mkdir -p ~/.agents/skills
 ln -s "$(pwd)/clear-and-human" ~/.agents/skills/clear-and-human
 ```
 
-Codex also has [its own plugin format](https://developers.openai.com/plugins/build/plugins) —
-`.codex-plugin/plugin.json`, with repo or personal marketplaces at
-`.agents/plugins/marketplace.json`. This repo doesn't ship one yet.
+Codex also has [its own plugin format](https://developers.openai.com/plugins/build/plugins), and
+this repo ships one — so you can install the whole set there too:
+
+```bash
+codex plugin marketplace add https://github.com/kevin-burns/claude-skills
+codex plugin add claude-skills@kevin-burns
+```
+
+Same trade as the Claude plugin: a versioned copy rather than a live link, and all 21 skills
+rather than the one you wanted. Skills arrive namespaced `claude-skills:<name>`.
 
 Subagents are the part that doesn't port. `agents/*.md` uses Claude Code's frontmatter
 (`tools`, `model`), and neither OpenCode nor Codex reads it — the skills travel, the fleet doesn't.

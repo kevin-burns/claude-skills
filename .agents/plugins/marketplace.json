@@ -1,0 +1,19 @@
+{
+  "name": "kevin-burns",
+  "interface": {
+    "displayName": "Kevin Burns' Skills"
+  },
+  "plugins": [
+    {
+      "name": "claude-skills",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
