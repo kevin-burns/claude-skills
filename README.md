@@ -1,10 +1,71 @@
 # claude-skills
 
-A collection of [Claude Code](https://claude.com/claude-code) skills and subagents I build and maintain, kept here so they can be versioned and shared openly. Each skill lives in its own directory with a `SKILL.md`; subagents live under [`agents/`](./agents); some bundle scripts, evals, or reference files.
+Twenty-one [Agent Skills](https://agentskills.io) and eight subagents I build and maintain,
+kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
+some bundle scripts, evals or reference files. Subagents live under [`agents/`](./agents).
 
-All skills here are MIT licensed (see [`LICENSE`](./LICENSE)). Skills that wrap an external tool or service carry a **Provenance** note in their `SKILL.md` crediting the upstream project and its license — the MIT license covers the skill content, not the wrapped tools.
+The name says Claude because that is where they started and where the subagents run. **The
+skills themselves are the open Agent Skills format** and load unchanged in Claude Code, Codex
+and OpenCode — this repo ships a plugin manifest for the first two.
 
-New here, or checking what changed? [`CHANGELOG.md`](./CHANGELOG.md) lists each addition with what it does, when to reach for it, and what it deliberately won't do.
+All MIT (see [`LICENSE`](./LICENSE)). Skills wrapping an external tool carry a **Provenance**
+note crediting the upstream project and its licence — MIT covers the skill content, not the
+wrapped tools. [`CHANGELOG.md`](./CHANGELOG.md) records each addition: what it does, when to
+reach for it, and what it deliberately won't do.
+
+## Install
+
+Three ways in. Pick by whether you want **all of them or one**, and **a snapshot or a live link**.
+
+| | you get | updates |
+|---|---|---|
+| **Claude Code plugin** | all 21 skills + 8 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 21 skills | `codex plugin marketplace update`, deliberate |
+| **Symlink** | whichever you pick | instant — it is a live link to this repo |
+
+### Claude Code — the whole set
+
+```bash
+/plugin marketplace add kevin-burns/claude-skills
+/plugin install claude-skills@kevin-burns
+```
+
+Skills arrive namespaced `claude-skills:<name>`.
+
+### Codex — the whole set
+
+```bash
+codex plugin marketplace add https://github.com/kevin-burns/claude-skills
+codex plugin add claude-skills@kevin-burns
+```
+
+Same namespacing. Subagents are the part that doesn't port: `agents/*.md` uses Claude Code's
+frontmatter (`tools`, `model`), which Codex doesn't read. The skills travel, the fleet doesn't.
+
+### Symlink — one at a time, live
+
+```bash
+ln -s "$(pwd)/clear-and-human" ~/.claude/skills/clear-and-human     # Claude Code, OpenCode
+ln -s "$(pwd)/clear-and-human" ~/.agents/skills/clear-and-human     # Codex, OpenCode
+ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
+```
+
+Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
+Take this path if you're editing the skills as well as using them, or if you want two of them
+rather than twenty-one.
+
+[OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
+`~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
+picked up with no second install.
+
+### Two things worth knowing before installing the plugin
+
+- **It copies.** A plugin install is a snapshot in the harness's cache, not a live link.
+  Editing this repo afterwards changes nothing until you update.
+- **It costs context.** Every skill's description loads in every session so the model can
+  decide when to reach for one — about **5.9k tokens always-on** for the full set, before any
+  skill fires. `claude plugin details claude-skills` prints the per-skill breakdown. If you
+  want two or three of these, symlink those instead.
 
 ## Skills
 
@@ -36,7 +97,7 @@ New here, or checking what changed? [`CHANGELOG.md`](./CHANGELOG.md) lists each 
 
 Every skill directory has its own **`README.md`** — a plain-English guide to **what it does, how to use it well, and, just as importantly, what it does _not_ do.** Read that first; a skill's boundaries matter as much as its capabilities, and knowing what a skill deliberately refuses (invent a price, book a trip, predict a fare) is what keeps its output trustworthy.
 
-In Claude Code and claude.ai a skill triggers **automatically** when your request matches its description — you don't call it by name, you just describe the task. Install one by symlinking its directory (see [Install](#install)) or by adding its packaged `.skill` file. This "what it does / what it doesn't do" README is the standard shape for every skill here — new skills ship one too (see [`CONTRIBUTING.md`](./CONTRIBUTING.md)).
+A skill triggers **automatically** when your request matches its description — in Claude Code, claude.ai, Codex and OpenCode alike. You don't call it by name, you describe the task. Take the whole set or one directory (see [Install](#install)). This "what it does / what it doesn't do" README is the standard shape for every skill here — new skills ship one too (see [`CONTRIBUTING.md`](./CONTRIBUTING.md)).
 
 ## Agents
 
@@ -58,91 +119,7 @@ Several agents ship a deterministic behavioral eval under `agents/<name>/evals/`
 
 `fact-verifier` and `cv-and-human`'s red-team Truth lens share one [portable verifier contract](./docs/verifier-contract.md) — never-assert-from-memory, cite/refute/return-the-lookup, read-only — with a per-domain *source profile*. Write a profile to get a verifier for a new domain without re-deriving the discipline.
 
-## Contributing
-
-Authoring or editing a skill? See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — in particular the
-**absolute-path + uv convention** for invoking a skill's bundled scripts, so they work from any
-working directory rather than only this repo's root.
-
-## Install
-
-Two ways in, and they suit different people.
-
-### As a plugin — the whole set, versioned
-
-```bash
-/plugin marketplace add kevin-burns/claude-skills
-/plugin install claude-skills@kevin-burns
-```
-
-That installs all 21 skills and the subagents in one go, namespaced `claude-skills:<name>`.
-Updates are a deliberate act (`/plugin marketplace update kevin-burns`) rather than something
-that happens silently underneath you, which is the main reason to prefer it.
-
-Two things worth knowing before you do:
-
-- **It copies.** A plugin install is a snapshot in `~/.claude/plugins/cache/`, not a live link.
-  Editing this repo afterwards changes nothing until you update.
-- **It costs context.** Every skill's description is loaded in every session so Claude can decide
-  when to reach for one — about **5.9k tokens always-on** for the full set, before any skill
-  fires. `claude plugin details claude-skills` prints the current per-skill breakdown. If you
-  only want two or three of these, symlink those instead.
-
-### By symlink — one skill at a time, live
-
-```bash
-ln -s "$(pwd)/clear-and-human" ~/.claude/skills/clear-and-human
-```
-
-Subagents install the same way, into `~/.claude/agents/`:
-
-```bash
-ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
-```
-
-Symlinking (rather than copying) keeps this repo the single source of truth — edits here are
-picked up immediately. Take this path if you're editing the skills as well as using them, or if
-you want a handful rather than all 21.
-
-**Not using Claude Code?** These are plain [Agent Skills](https://agentskills.io) — a directory
-with a `SKILL.md`. The plugin wrapper is Claude Code's packaging, not a requirement. See
-[Other agents](#other-agents) below.
-
-### Other agents
-
-Both of these read `SKILL.md` unchanged, so nothing here needs converting — a skill is a
-directory, and the plugin manifest is packaging on top of it.
-
-**[OpenCode](https://opencode.ai/docs/skills/)** scans `.opencode/skills/`, `.claude/skills/` and
-`.agents/skills/` in the project, and `~/.config/opencode/skills/`, `~/.claude/skills/` and
-`~/.agents/skills/` globally. So if you already symlinked into `~/.claude/skills/` for Claude Code,
-OpenCode picks the same skills up with no second install.
-
-**[Codex](https://learn.chatgpt.com/docs/build-skills)** scans `$CWD/.agents/skills`,
-`$REPO_ROOT/.agents/skills`, `$HOME/.agents/skills` and `/etc/codex/skills`. It has a
-`$skill-installer` command, but that installs from OpenAI's curated set, not from an arbitrary
-repo — for these, symlink:
-
-```bash
-mkdir -p ~/.agents/skills
-ln -s "$(pwd)/clear-and-human" ~/.agents/skills/clear-and-human
-```
-
-Codex also has [its own plugin format](https://developers.openai.com/plugins/build/plugins), and
-this repo ships one — so you can install the whole set there too:
-
-```bash
-codex plugin marketplace add https://github.com/kevin-burns/claude-skills
-codex plugin add claude-skills@kevin-burns
-```
-
-Same trade as the Claude plugin: a versioned copy rather than a live link, and all 21 skills
-rather than the one you wanted. Skills arrive namespaced `claude-skills:<name>`.
-
-Subagents are the part that doesn't port. `agents/*.md` uses Claude Code's frontmatter
-(`tools`, `model`), and neither OpenCode nor Codex reads it — the skills travel, the fleet doesn't.
-
-### Requirements per skill
+## Requirements
 
 - **c7search** — the `c7search` binary (`go install github.com/kevin-burns/c7search@latest`). A `CONTEXT7_API_KEY` is optional.
 - **clear-and-human** — **nothing** for the writing itself; the skill is prose all the way down. Two optional scripts add measurement: `scripts/register_report.py` reports where a draft sits on the person and stiffness axes (each feature printed with the paper behind it, no score and no verdict), and `scripts/fidelity_check.py` diffs a draft against its rewrite and flags any number, quote, URL or code span that appeared, vanished or changed — a number present only in the rewrite is the shape of a fabricated statistic. Both are standard library only: `uv run` or `python3`.
@@ -163,3 +140,9 @@ Subagents are the part that doesn't port. `agents/*.md` uses Claude Code's front
 - **azadvertizer** — `uv` (stdlib-only script via `uv run`); network only for the one-time `fetch`. Caches to `$XDG_CACHE_HOME/azadvertizer`; all queries run offline. Data © Julian Hayward / [AzAdvertizer](https://www.azadvertizer.net) — cache, don't hammer; not republished here.
 - **travel-planning** — none to plan (pure instructions). Uses web search, if available, to ground cost estimates in typical/seasonal prices; degrades to a labeled estimate if a lookup fails. Optional: `report-builder` for an HTML version. It never books or reads live fares — see its [README](./travel-planning/README.md).
 - **business-plan** — `uv` for the stdlib financials helper (`scripts/financials.py`, no runtime deps, run via `uv run`). Uses web search, if available, to research and cite market/competitor facts; where research fails it falls back to labeled placeholders rather than inventing. Optional: `report-builder` for an HTML version. It never invents a market size, competitor price, or revenue figure — see its [README](./business-plan/README.md).
+
+## Contributing
+
+Authoring or editing a skill? See [`CONTRIBUTING.md`](./CONTRIBUTING.md) — in particular the
+**absolute-path + uv convention** for invoking a skill's bundled scripts, so they work from any
+working directory rather than only this repo's root.
