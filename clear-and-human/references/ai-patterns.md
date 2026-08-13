@@ -31,6 +31,29 @@ on that date are noted; the rest are inherited and unverified.
 **AI vocabulary (cut or replace with the specific thing):**
 delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultivate, facilitate, streamline, optimize, unlock, empower, elevate, enhance, garner, showcase, underscore (verb), highlight (verb), align with, transformative, groundbreaking, seamless, robust, holistic, dynamic, agile, synergy, scalable, disruptive, paradigm, landscape (abstract), realm, tapestry (abstract), multifaceted, nuanced, comprehensive, intricate, crucial, vital, pivotal, essential, key (adj), enduring, vibrant, testament, interplay, albeit, whilst, essentially, certainly, absolutely (opener), overall (filler), typically, various (vague pluralizer), actually, additionally.
 
+> **Which of these have evidence, and which are inherited.** Checked 2026-08-13 against
+> Kobak, D., González-Márquez, R., Horvát, E-Á., & Lause, J. (2025), "Delving into
+> LLM-assisted writing in biomedical publications through excess vocabulary",
+> *Science Advances* 11(27), eadt3813, DOI 10.1126/sciadv.adt3813. Their method is
+> excess-frequency: extrapolate a word's 2021–22 trend, measure the gap, over 15
+> million-plus PubMed abstracts. The resulting 900 words, annotated `style` vs `content`,
+> are published at **github.com/berenslab/llm-excess-vocab** (`results/excess_words.csv`,
+> MIT). 407 are style words, 268 of them verbs.
+>
+> **32 of the 56 words above appear in that style set:** delve, leverage, harness, utilize, foster, facilitate, streamline, unlock, empower, elevate, enhance, garner, showcase, underscore, highlight, align with, transformative, groundbreaking, seamless, realm, multifaceted, nuanced, comprehensive, intricate, crucial, pivotal, essential, enduring, interplay, typically, various, additionally.
+>
+> **24 do not:** navigate, cultivate, optimize, robust, holistic, dynamic, agile, synergy, scalable, disruptive, paradigm, landscape, tapestry, vital, key, vibrant, testament, albeit, whilst, essentially, certainly, absolutely, overall, actually. That is not proof they are wrong — the
+> corpus is biomedical abstracts, so tech-register words like *synergy*, *scalable*, *agile*
+> and *paradigm* would not surface there whatever their LLM overuse. It is the honest
+> partition: two-thirds sourced, one-third inherited from intermediaries with nothing behind
+> it. Weight a hit accordingly.
+>
+> **We deliberately do not import the other 407.** They describe excess vocabulary in
+> academic abstracts, and pulling them in wholesale would drag that register into blog and
+> product writing. Cite the dataset when a word needs backing; do not mirror it. It is
+> maintained upstream — the repo carries a July 2025 recompute at monthly resolution — and a
+> copy here goes stale.
+
 **Filler openers / hedges:** "In today's [noun]", "In the ever-evolving landscape", "When it comes to", "At the end of the day", "It's worth noting that", "It's important to note that", "One might argue", "It goes without saying", "The truth is", "Here's a breakdown", "Below is/Below:" before a list. Cut and start with the substance.
 
 > **Two of these are dated.** Checked 2026-08-13: Wikipedia now files "It's important to
@@ -53,9 +76,11 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
 
 **Persuasive-authority tropes:** "The real question is", "At its core", "What really matters", "Fundamentally", "The deeper issue". Usually precede an ordinary point dressed up. Just make the point.
 
-**Excessive hedging:** "could potentially possibly", "might have some effect". → "may affect".
+**Wordy hedging — a tightening edit, NOT an AI tell.** "could potentially possibly" → "may affect"; "might have some effect" → say which effect. Also: "arguably", "to some extent", "broadly speaking", "generally speaking". Either commit to the claim or name the actual limit.
 
-Also these, which soften a claim without qualifying it: "arguably", "to some extent", "broadly speaking", "generally speaking". Either commit to the claim or say what the actual limit is. *Added 2026-08-13 from Grammarly's common-AI-words list, which is unsourced vendor content — taken because these are checkable against your own drafts, not because that page is evidence. Note the tension flagged at the top of this file: Wikipedia lists simple hedges (very, perhaps, tends to) as signs of HUMAN writing, so treat a hedge as a wordiness problem rather than a machine tell.*
+> **The evidence runs the other way, so do not count these toward AI-likeness.** Corrected 2026-08-13. Three independent sources put hedges on the HUMAN side. Jiang & Hyland (2025, *English for Specific Purposes* 79) found ChatGPT essays show *"a significantly lower frequency of interactional metadiscourse, such as hedges, boosters, and attitude markers, leading to a more impersonal and expository tone"*. Mizumoto, Yasuda & Tamura (2024, *Applied Corpus Linguistics* 4(3)) found *"human-written essays exhibited higher usage of modals, epistemic markers, and discourse markers"*. Wikipedia's "Signs of AI writing" lists simple hedges (*very, perhaps, tends to*) under signs of human writing.
+>
+> Against that: one vendor blog — Grammarly's common-AI-words page, from a company selling both an AI Detector and an AI Humanizer — which is where the four phrases above came from, and which appears to have the direction wrong. They are kept because they are still wordy, and because "omit needless words" needs no evidence about machines. Belongs with the filler-to-tight rewrites below, for the same reason.
 
 **Filler-to-tight rewrites:** "in order to" → "to"; "due to the fact that" → "because"; "at this point in time" → "now"; "has the ability to" → "can"; "in the event that" → "if".
 
