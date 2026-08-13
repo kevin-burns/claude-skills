@@ -31,7 +31,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 # README earns its keep. What remains is small, self-evident, or personal
 # tooling. See claude-skills-xrs.
 README_GRANDFATHERED = {
-    "clear-and-human", "convert-to-webp", "dev-fleet", "hook-and-human",
+    "convert-to-webp", "dev-fleet", "hook-and-human",
     "markdown-converter", "social-image-prep", "use-linearis",
 }
 

@@ -58,6 +58,37 @@ for Claude Code needs no second install; Codex reads `~/.agents/skills/`. Neithe
 plugin/marketplace format — the wrapper is Claude Code's packaging, not a requirement. The
 subagents are the part that doesn't travel: `agents/*.md` uses Claude Code's frontmatter.
 
+### Added — `clear-and-human` finally has a README, and it answers the obvious question
+
+Fifteen of the 21 skills shipped the per-skill "what it does / what it *doesn't* do" README that
+`CONTRIBUTING.md` requires. The flagship did not. It does now, and `check_conventions.py` no
+longer grandfathers it.
+
+The section that earns its place is **"Isn't this just humanizer?"**, because that is the first
+reaction a reader has, and [`blader/humanizer`](https://github.com/blader/humanizer) is genuinely
+one of this skill's sources — the self-audit here *is* its audit loop. The answer is four
+differences, each checked against its `SKILL.md` rather than described from memory:
+
+- **No register axis.** In its 412 lines, "contraction" appears **zero** times, "Biber" zero,
+  "measure" zero. It is a catalogue of phrase-level and typographic tells and it does that job
+  well. But the failure that prompted the measurement layer here — 1,375 words, zero
+  contractions, warm on five stiffness features out of six — is invisible to a pattern list. It
+  only shows up if you count.
+- **Three rules blunter than the evidence supports**, all three of which this skill shipped too
+  until a red-team pass corrected them: em-dashes as a hard constraint, curly quotes as a flat
+  ChatGPT tell, and hedging listed as an AI pattern when two peer-reviewed studies put hedges on
+  the *human* side.
+- **Its checks on the prose are the model grading its own output.** The repository's only script
+  is `scripts/validate-package.py`, a packaging validator. Its no-fabrication rule is strong — but
+  run 1 of these evals caught an output that **certified in writing that it had invented
+  nothing**, having invented a claim about the user's CI pipeline. That is why
+  `fidelity_check.py` exists.
+- **No stated position on detectors** — "detector" and "GPTZero" appear zero times.
+
+Stated plainly in the README, because it is the honest reading: humanizer is a better *pattern
+catalogue* than the list here, and this skill inherited a chunk of it. What it does not do is
+measure, or check its own output mechanically.
+
 ### Changed — `clear-and-human` withdraws a claim it could not defend, and sources its wordlist
 
 Two PRs (#7, #8) from a red-team pass, two research agents, and the first two runs of
