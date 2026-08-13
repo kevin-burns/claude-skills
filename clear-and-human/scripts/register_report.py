@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-"""Report where a draft sits on two independent register axes: PERSON and STIFFNESS.
+"""Report where a draft sits on two register axes: PERSON and STIFFNESS.
 
 This exists so the model editing a draft can see the numbers rather than judge
 "does this sound stiff" by eye. It is advisory only: it prints feature rates
 and the citation behind each one, never a score, a grade, a pass/fail, or a
 threshold to write toward. There is no "ok" field anywhere in its output.
-
-The two-axis design (both from Biber, D. (1988), Variation Across Speech and
-Writing, Cambridge University Press -- Dimension 1, "involved vs
-informational production"):
 
   PERSON     -- first/second-person density. A stance the author CHOOSES per
                 piece (a product write-up legitimately has no "I"). Reported
@@ -16,14 +12,52 @@ informational production"):
                 text -- pass --stance to label it, or it prints as "unset".
 
   STIFFNESS  -- contractions, analytic negation, demonstratives, word length,
-                type/token ratio, nominalisation. None of these require first
-                person: a draft can be entirely third-person and still be
-                warm ("doesn't") or stiff ("does not"). This is the axis
-                worth an editor's scrutiny.
+                type/token ratio, nominalisation. This is the axis worth an
+                editor's scrutiny.
 
-Conflating the two is the design error this script exists to avoid: a stiff
-impersonal draft and a correctly impersonal draft look identical on PERSON
-alone.
+WHY THEY ARE SPLIT, and what is NOT being claimed.
+
+An earlier version of this file said the two axes are "independent". That was
+a falsifiable empirical claim, and it should not have been made: establishing
+it needs roughly 95-100 same-channel documents by one author (the 95% CI
+half-width around rho=0 is +-0.36 at N=30, which does not even exclude the
+correlation Biber's own loadings imply). It has been removed rather than
+caveated. Nothing here depends on the two axes being uncorrelated.
+
+Two things are claimed instead, and both are defensible without any statistics:
+
+  1. Biber himself reads Dimension 1 as TWO parameters, not one. Biber (1988:
+     107) names "the primary purpose of the writer/speaker: informational
+     versus interactive, affective, and involved" AND "the production
+     circumstances: those circumstances characterized by careful editing
+     possibilities ... versus circumstances dictated by real-time constraints".
+     Heylighen & Dewaele (1999) read the same page the same way, and object
+     that Biber has "some difficulty fitting the empirically derived factor
+     into a single theoretical construct". Since the features co-occur partly
+     BECAUSE of production circumstances, holding those constant -- edited
+     prose, one author, no real-time pressure -- weakens the reason to expect
+     them to move together here.
+
+  2. First-person density is a rhetorical choice, not a defect. Thonney (2013,
+     Across the Disciplines, DOI 10.37514/ATD-J.2013.10.1.03) reports that
+     experts use first person to "promote an impression of confidence and
+     authority" and are roughly four times more likely than students to do so
+     (citing Hyland 2002a/2002b), and that its prevalence varies by discipline,
+     WITHIN disciplines, and WITHIN genres. That is what licenses "report
+     PERSON, never flag it" -- an authorial choice, not a fault.
+
+Known evidence on the other side, recorded rather than buried: Heylighen &
+Dewaele (1999) factor-analysed a single held-constant situation and still
+recovered an explicitness factor explaining over 50% of variance, with
+pronouns loading strongly -- calling them "the only ones moving monotonically
+with formality". Their measure treats pronouns as a CONSTITUENT of formality
+rather than a separate axis. It is unrefereed, at word-class rather than
+person level, and across speakers rather than within one author, but it is the
+closest direct test that exists and it does not support the split.
+
+The practical case for reporting them separately survives all of that: a draft
+can be highly personal and still have zero contractions, so a single blended
+score would pass it. That observation never needed the axes to be uncorrelated.
 
 Deliberately absent, per the evidence brief's rejected list: any AI-detector
 score or "AI-likeness" percentage, burstiness (no academic grounding located;
@@ -128,7 +162,29 @@ def count_nominalisations(text: str) -> int:
 #   demonstratives .76 | 1st person .74 | word length -.58 | TTR -.54
 FIRST_PERSON = re.compile(r"\b(?:i|me|my|mine|we|us|our|ours)\b", re.I)
 SECOND_PERSON = re.compile(r"\b(?:you|your|yours|yourself)\b", re.I)
-DEMONSTRATIVE = re.compile(r"\b(?:this|that|these|those)\b", re.I)
+# Biber's .76 loading is on demonstrative PRONOUNS. A bare
+# \b(this|that|these|those)\b does not measure that: it also counts the
+# determiner ("that afternoon"), the complementiser ("I said that he left")
+# and the relativiser ("the thing that matters"). Those belong to different
+# Biber features entirely, so the old pattern printed a citation next to a
+# number the citation did not describe.
+#
+# No POS tagger is available here, so this is deliberately CONSERVATIVE:
+# it counts a demonstrative only in clause-initial subject position followed
+# by a verb form -- "That is the point.", "This means X", "Those were the
+# rules". Every match is near-certainly a pronoun; many real pronouns are
+# missed (object position, "because of that", "I like these"). It undercounts
+# rather than mislabels, which is the right direction for a feature whose
+# whole purpose is to carry a citation honestly.
+_DEMO_VERB = (r"(?:is|are|was|were|isn['’]t|aren['’]t|wasn['’]t|weren['’]t|has|have|had|"
+              r"does|do|did|doesn['’]t|don['’]t|didn['’]t|will|would|can|could|should|"
+              r"might|may|must|means|meant|gives|gave|makes|made|leaves|left|"
+              r"seems|seemed|becomes|became|turns|turned|matters|mattered|"
+              r"tends|tended|looks|looked|feels|felt|reads|read|works|worked)")
+DEMONSTRATIVE = re.compile(
+    r"(?:^|[.!?;:]\s+|\n\s*)(?:this|that|these|those)\s+" + _DEMO_VERB + r"\b",
+    re.I | re.M,
+)
 NEGATION = re.compile(r"\bnot\b|\w+n['’]t\b", re.I)
 
 
@@ -277,9 +333,27 @@ STIFFNESS_META = [
     ]),
     ("negation", "analytic negation (not / n't)", "rate", [
         "Biber (1988) Dim. 1: analytic negation loading .78 (involved pole).",
+        "OVERLAPS WITH CONTRACTIONS BY DESIGN: \"doesn't\" counts once here and",
+        "once there, because Biber treats them as separate features and a word",
+        "can serve both. Two consequences worth knowing. First, this feature",
+        "does NOT detect contraction expansion -- rewriting every \"doesn't\" as",
+        "\"does not\" leaves this rate exactly unchanged; that move shows up in",
+        "the contraction row, which is where to look for it. Second, the shared",
+        "tokens mechanically couple the two rows, so do not correlate them",
+        "against each other and read the result as a finding.",
+        "Unverified: whether Biber's own definition of analytic negation",
+        "includes n't or only not. Treat the .78 as indicative here.",
     ]),
-    ("demonstrative", "demonstratives (this/that/these/those)", "rate", [
-        "Biber (1988) Dim. 1: demonstrative pronoun loading .76 (involved pole).",
+    ("demonstrative", "demonstrative pronouns, clause-initial (that is/this means...)", "rate", [
+        "Biber (1988) Dim. 1: demonstrative PRONOUN loading .76 (involved pole).",
+        "Counted conservatively: only clause-initial demonstratives followed by",
+        "a verb form, so the determiner (\"that afternoon\"), the complementiser",
+        "(\"said that he left\") and the relativiser (\"the thing that matters\")",
+        "are excluded -- those are different Biber features and counting them",
+        "here would put this citation next to a number it does not describe.",
+        "The cost is undercounting: object-position pronouns are missed. Rates",
+        "are therefore NOT comparable to any figure from a bare",
+        "this/that/these/those match, including this script before 2026-08-13.",
     ]),
     ("nominalisation", "nominalisation (-tion/-sion/-ment/-ness/-ity/-ance/-ence)", "rate", [
         "Herbold, Hautli-Janisz, Heuer, Kikteva & Trautsch (2023), Scientific",
@@ -339,10 +413,12 @@ def format_report(draft: dict, stance: str, baseline: dict | None, label: str) -
 
     lines.append("=" * 78)
     lines.append("AXIS 2 -- STIFFNESS")
-    lines.append("Independent of PERSON: none of these require first person. A draft can")
-    lines.append("be entirely third-person and still be warm (\"doesn't\") or stiff (\"does")
-    lines.append("not\"). This is the axis worth an editor's scrutiny -- this script only")
-    lines.append("reports the numbers, it does not judge them.")
+    lines.append("None of these require first person: a draft can be entirely")
+    lines.append("third-person and still be warm (\"doesn't\") or stiff (\"does not\").")
+    lines.append("This is the axis worth an editor's scrutiny. It is reported apart")
+    lines.append("from PERSON because person is an authorial choice (Thonney 2013),")
+    lines.append("not because the two are uncorrelated -- see the module docstring.")
+    lines.append("This script reports the numbers; it does not judge them.")
     lines.append("=" * 78)
     lines.extend(_feature_block(STIFFNESS_META, draft["features"], baseline["features"] if baseline else None))
 
@@ -368,7 +444,7 @@ def to_json(draft: dict, stance: str, baseline: dict | None, label: str) -> dict
             "features": {k: draft["features"][k] for k, *_ in PERSON_META},
         },
         "stiffness": {
-            "note": "independent of PERSON; the axis worth an editor's scrutiny",
+            "note": "reported separately from PERSON because person is an authorial choice, not because the axes are uncorrelated -- no independence is claimed",
             "features": {k: draft["features"][k] for k, *_ in STIFFNESS_META},
             "ttr_caveat": "type/token ratio is a register indicator only, never an AI-likeness signal",
         },
