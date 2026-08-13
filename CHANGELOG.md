@@ -13,6 +13,32 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-13
 
+### Fixed — the zero-contraction rule was falsifiable by the author's own pre-LLM writing
+
+`ai-patterns.md` ended its expanded-contractions entry with a flat assertion: *"A long draft
+with short words and casual asides but zero contractions has been through a find-and-replace,
+not written that way."* No threshold, no hedge, and in a file whose own opening says a match is
+a reason to look rather than a verdict.
+
+**Two dead blogs, recovered from the Internet Archive, falsify it as written.** Fifteen
+documents from 2008–2012 — a decade before any model could have touched them — average **3.7
+contractions per 1,000 words**, and **6 of the 15 sit at exactly zero**. They are warm on every
+other measure: 27.6 first person, 25.2 second person, nominalisation 17.6.
+
+The rule survives with two qualifiers it should always have carried:
+
+- **Length carries the signal.** Those six average 313 words, where 11 per 1,000 predicts about
+  three contractions — so zero means nothing. At 1,800 words it predicts twenty, and zero means
+  something. **Roughly 800 words is the floor** below which the observation is too weak to raise.
+- **Channel beats length.** The same author's technical blog runs 11–29 per 1,000; his product
+  blog ran 3.7. One fifth the rate, same person, no LLM in sight, because it is a different job.
+  Compare against the author's own corpus with `register_report.py --baseline <dir>` rather than
+  a global range. The eight-document range published on 2026-08-12 is a range for one channel.
+
+"has been through a find-and-replace" is now "is worth asking about", which is what the rest of
+the file already claims a pattern match means.
+
+
 ### Added — the repo installs as a Claude Code plugin
 
 `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` make the whole set installable

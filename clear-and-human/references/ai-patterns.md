@@ -108,7 +108,13 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
 - **Fragmented header:** a heading followed by a one-line restatement of the heading. Delete the restatement.
 - **Signposting:** "Let's dive in", "Here's what you need to know", "Now let's look at". Do the thing instead of announcing it.
 - **Reading-complexity creep:** 3+ three-syllable words or 2+ nested clauses in one sentence. Shorten.
-- **Expanded contractions:** spelling out "do not / is not / cannot" through an otherwise casual draft is a surface formalizing move, not a change of register. The rest of the sentence can stay just as warm. Contractions carry the highest loading (.90) of any single feature on Biber's (1988) involved/informational dimension, ahead of second-person pronouns and negation. Pavlick & Tetreault (2016) found contraction expansion in 16% of the edits annotators made when asked to sound more formal. A long draft with short words and casual asides but zero contractions has been through a find-and-replace, not written that way.
+- **Expanded contractions:** spelling out "do not / is not / cannot" through an otherwise casual draft is a surface formalizing move, not a change of register. The rest of the sentence can stay just as warm. Contractions carry the highest loading (.90) of any single feature on Biber's (1988) involved/informational dimension, ahead of second-person pronouns and negation. Pavlick & Tetreault (2016) found contraction expansion in 16% of the edits annotators made when asked to sound more formal.
+
+  A long draft with short words and casual asides but zero contractions is **worth asking about** — not a finding on its own. Two qualifiers, because without them the observation is falsifiable by ordinary human writing:
+
+  **Length carries the whole signal.** Contraction opportunities scale with the draft, so zero means nothing in a short one. At 11 per 1,000 words — the low end of one author's eight-document sample — a 300-word post expects about three and a 1,800-word post expects twenty. Roughly **800 words is the floor** below which this is too weak to raise at all.
+
+  **Compare against the author's rate for that channel, not a global range.** Fifteen documents from one author's 2008–2012 product blog average **3.7** contractions per 1,000 words against **11–29** for the same author's technical blog — and **6 of the 15 sit at exactly zero**, every one written a decade before any LLM existed. Same person, same measure, one fifth the rate, because it is a different job. `scripts/register_report.py --baseline <dir>` makes that comparison against the author's own corpus.
 - Before: "It is not something we would recommend, and we cannot support it in production."
 - After: "It's not something we'd recommend, and we can't support it in production."
 
