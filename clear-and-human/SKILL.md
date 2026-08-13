@@ -21,6 +21,14 @@ If unclear, default to **Review** and offer the rewrite at the end.
 ## Core rules (all modes, non-negotiable)
 
 1. **Never invent specifics to add texture.** No fabricated numbers, names, quotes, dates, or citations. If a draft is vague and a concrete example would help, flag it and leave a `[ADD SPECIFIC EXAMPLE]` placeholder. Sounding human never outranks being correct — this matters most in technical docs.
+
+   **A specific does not have to contain a digit.** A graded eval found both generate-mode failures were numberless, which is why they got past every check. Treat all of these as fabrication:
+   - **A claim about state.** "Test coverage stayed the same" — invented, in a post whose context file approved exactly one fact.
+   - **A file path, directory or filename.** `/etc/nginx/ssl/` is not an nginx, Debian or certbot default. It was put in a rollback command, where following it verbatim mid-outage restores nothing.
+   - **An authorial stance.** "I've watched this approach turn into growth that holds up" — an eyewitness claim, published under the user's name, invented to add warmth.
+   - **A measurement of the text you are reviewing.** Two reviews stated a word count and a sentence-length range that were both wrong. Count it with `scripts/register_report.py`, quote the figure it prints, or say nothing.
+
+   **Placeholders are all-or-nothing.** If any environment-specific value is bracketed, bracket every one. Half-marking is worse than none: a bracketed `<domain>` beside a bare path tells the reader the path is real.
 2. **Preserve meaning.** Change delivery, not substance. Never add or drop an argument during a rewrite.
 3. **Match the intended voice**, not a generic "good writing" voice. Use the user's sample if provided (see Voice calibration). Absent a sample, default to neutral-factual, not marketing-operator.
 4. **Clean is not enough.** Text with zero AI tells but no opinion, no specifics, and uniform rhythm is still slop. Flag "clean but hollow" explicitly.
@@ -120,9 +128,16 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 ### Self-audit (the blader pass — run before presenting the final rewrite)
 
 1. Ask yourself: "What still makes this read as AI-generated?" Answer in 2–4 honest bullets (rhythm too even? placeholder-ish specifics? slogan-y closer?).
-2. Then revise once more to fix exactly those tells.
-3. Run `scripts/fidelity_check.py <original> <rewrite>`. It reports any number, quote, URL or code span that appeared, vanished or changed. A number present in the rewrite but not the original is a fabrication — core rule 1 says never invent specifics, and this is the only check that catches a breach mechanically rather than by memory.
+2. Then revise once more to fix exactly those tells. **A revised version must follow the audit.** If the audit names nothing worth fixing, say that explicitly — but an audit that ends the output is not a self-audit, it is a postscript.
+3. Run `scripts/fidelity_check.py <original> <rewrite>`. It reports any number, quote, URL or code span that appeared, vanished or changed. A number present in the rewrite but not the original is a fabrication.
 4. Present the final version. Optionally list the changes made.
+
+**Never certify what you did not check.** This is the rule the eval caught being broken, and it is the most damaging failure in the set because the reader trusts this line specifically. Two constraints:
+
+- **Do not claim to have run a script unless you ran it and are pasting its real output.** Six of ten graded outputs narrated running `fidelity_check.py`; one pasted anything. A narrated check is worse than no check, because it reads as verification.
+- **Do not assert that nothing was invented.** Say what you checked and how. "No number in the rewrite is absent from the original — fidelity_check reports 0 appeared" is a claim you can stand behind. "Nothing was invented" is not, and one output made exactly that claim in the same breath as inventing a metric about the user's CI pipeline.
+
+`fidelity_check.py` will tell you when it cannot help: on text with no numbers, quotes, URLs or code spans it prints **NOTHING TO CHECK** rather than a clean result, because a pass over an empty set is not evidence. When you see that, the claims have to be verified by reading, and the audit must say so.
 
 ---
 
