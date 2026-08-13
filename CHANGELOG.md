@@ -11,6 +11,96 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-08-13
+
+### Changed — `clear-and-human` withdraws a claim it could not defend, and sources its wordlist
+
+Two PRs (#7, #8) from a red-team pass, two research agents, and the first two runs of
+behavioural evals that had never been executed since the file was written. Most of what
+follows is a retraction. That is the point of recording it.
+
+**Withdrawn: the two register axes are no longer called "independent."** That was a
+falsifiable empirical claim resting on four documents. Establishing it needs roughly
+95–100 same-channel documents by one author — the 95% CI half-width around ρ=0 is ±0.36
+at N=30, which does not even exclude the correlation Biber's own loadings imply. Running
+the test on the nine documents available returned nothing significant either way: the
+largest of fifteen correlations was −0.61 against a critical value of 0.666.
+
+Two justifications replace it, neither needing statistics. Biber reads Dimension 1 as
+**two parameters himself** at 1988:107 — purpose, and production circumstances — and
+Heylighen & Dewaele (1999) read the same page the same way while objecting that he has
+*"some difficulty fitting the empirically derived factor into a single theoretical
+construct."* Separately, Thonney (2013) reports first person as a rhetorical choice
+varying by discipline and within genre, which is what licenses reporting person and never
+flagging it. The contrary evidence is recorded in the docstring rather than omitted:
+Heylighen & Dewaele factor-analysed a single held-constant situation and still recovered
+pronouns loading on one explicitness factor.
+
+**Three features did not measure what their citations described.** Demonstratives counted
+complementiser and relativiser *that* — "I said that he left", "the thing that matters" —
+so Biber's demonstrative *pronoun* loading of .76 sat beside a number measuring something
+else. Now matched conservatively in clause-initial position, verified 8/8 on discriminating
+cases. Rates fell from 10–29 per 1000 words to 0–3, which is the right order of magnitude
+and also makes the feature a candidate for deletion. Analytic negation overlaps
+contractions by design and is now documented as such, including the consequence: expanding
+every contraction leaves the negation rate exactly unchanged.
+
+**`fidelity_check.py` was returning a confident pass over an empty set.** On an input with
+no numbers, quotes, URLs or code spans it printed "No tracked differences" — and would have
+printed it for a rewrite that dropped every claim. It now prints **NOTHING TO CHECK** and
+says so plainly: *"It would report a clean result for a rewrite that dropped every claim in
+the text. This is not a pass."*
+
+**The vocabulary list is now two-thirds sourced, having never been sourced at all.** Kobak
+et al. (2025, *Science Advances* 11(27):eadt3813) derived 900 excess words from 15
+million-plus PubMed abstracts by extrapolating each word's 2021–22 trend and measuring the
+gap; the annotated list is published under MIT at `berenslab/llm-excess-vocab`. **32 of our
+56 appear in its 407 style words. 24 do not**, and both lists are written out. The 24 are
+not thereby wrong — the corpus is biomedical, so *synergy*, *scalable* and *paradigm* would
+not surface there — but the file now states the partition instead of presenting 56
+assertions as one list.
+
+**What it deliberately won't do:**
+
+- **Import the other 407 style words.** They describe an academic-abstract register, and
+  pulling them into a skill used for blogs and product writing would drag that register
+  with them. The list is maintained upstream; a copy here goes stale. Cite it, don't mirror
+  it.
+- **Mirror Wikipedia's pattern list.** Same reason, more sharply: that page has 1,986
+  revisions and was edited the day before this entry. It also carries an editorial rule
+  requiring a reliable non-pop-science source per word, which our inherited entries do not
+  meet.
+- **Treat wordiness as evidence of a machine.** "in order to" and its relatives are listed
+  upstream under signs of *human* writing, observed over 25 years. Hedges likewise: Jiang &
+  Hyland (2025) found ChatGPT essays carry *"a significantly lower frequency of
+  interactional metadiscourse, such as hedges, boosters, and attitude markers"*, and
+  Mizumoto et al. (2024) found human essays higher in modals and epistemic markers. Both
+  classes are now tightening edits, explicitly barred from counting toward AI-likeness.
+- **Apply typographic rules model-agnostically.** A July 2026 study cited upstream found
+  only Claude using em dashes more than professional writers, with ChatGPT using fewer, and
+  GPT-5.1 changed to suppress them. Curly quotes fire on ordinary macOS and Word output and
+  miss two current model families. Both are now author-relative.
+- **Rank "uniform sentence length" as the loudest tell.** The ranking had no source, and the
+  upstream page does not discuss the topic at all.
+
+**The evals ran for the first time**, and the score was the least useful part. Run 1: 35/40,
+with both generate-mode failures *numberless* — an invented claim about the user's CI
+pipeline plus a false self-certification, and an invented filesystem path in a rollback
+command. Core rule 1 now states that a specific need not contain a digit and names the four
+kinds that got through; the self-audit may no longer certify what it did not check, nor
+claim a script was run without showing its output. Run 2: **41/47** on a harder set, with
+the grader's verdict *"generate mode is safe now"* and eleven quoted script invocations
+reproducing byte-for-byte.
+
+Known and unfixed: inflation survives paraphrase — "this tool is a revolution" became "a
+genuine shift in what's possible" — so the skill strips lexical markers reliably and the
+rhetorical move unreliably. The self-audit still occasionally invents a word count. And
+nothing checks whether an output's claims about files on disk are true.
+
+`evals/README.md` records how to run any of this, which nobody previously knew.
+
+---
+
 ## 2026-08-12
 
 ### Added — `clear-and-human` measures register instead of judging it by eye
