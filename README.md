@@ -66,7 +66,29 @@ working directory rather than only this repo's root.
 
 ## Install
 
-Symlink any skill into your personal skills directory:
+Two ways in, and they suit different people.
+
+### As a plugin — the whole set, versioned
+
+```bash
+/plugin marketplace add kevin-burns/claude-skills
+/plugin install claude-skills@kevin-burns
+```
+
+That installs all 21 skills and the subagents in one go, namespaced `claude-skills:<name>`.
+Updates are a deliberate act (`/plugin marketplace update kevin-burns`) rather than something
+that happens silently underneath you, which is the main reason to prefer it.
+
+Two things worth knowing before you do:
+
+- **It copies.** A plugin install is a snapshot in `~/.claude/plugins/cache/`, not a live link.
+  Editing this repo afterwards changes nothing until you update.
+- **It costs context.** Every skill's description is loaded in every session so Claude can decide
+  when to reach for one — about **5.9k tokens always-on** for the full set, before any skill
+  fires. `claude plugin details claude-skills` prints the current per-skill breakdown. If you
+  only want two or three of these, symlink those instead.
+
+### By symlink — one skill at a time, live
 
 ```bash
 ln -s "$(pwd)/clear-and-human" ~/.claude/skills/clear-and-human
@@ -78,7 +100,37 @@ Subagents install the same way, into `~/.claude/agents/`:
 ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 ```
 
-Symlinking (rather than copying) keeps this repo the single source of truth — edits here are picked up immediately.
+Symlinking (rather than copying) keeps this repo the single source of truth — edits here are
+picked up immediately. Take this path if you're editing the skills as well as using them, or if
+you want a handful rather than all 21.
+
+**Not using Claude Code?** These are plain [Agent Skills](https://agentskills.io) — a directory
+with a `SKILL.md`. The plugin wrapper is Claude Code's packaging, not a requirement. See
+[Other agents](#other-agents) below.
+
+### Other agents
+
+There is no plugin/marketplace format outside Claude Code — for everything else a skill is just a
+directory that gets put where the agent looks. Both of these read `SKILL.md` unchanged, so nothing
+here needs converting.
+
+**[OpenCode](https://opencode.ai/docs/skills/)** scans `.opencode/skills/`, `.claude/skills/` and
+`.agents/skills/` in the project, and `~/.config/opencode/skills/`, `~/.claude/skills/` and
+`~/.agents/skills/` globally. So if you already symlinked into `~/.claude/skills/` for Claude Code,
+OpenCode picks the same skills up with no second install.
+
+**[Codex](https://learn.chatgpt.com/docs/build-skills)** scans `$CWD/.agents/skills`,
+`$REPO_ROOT/.agents/skills`, `$HOME/.agents/skills` and `/etc/codex/skills`. It has a
+`$skill-installer` command, but that installs from OpenAI's curated set, not from an arbitrary
+repo — for these, symlink:
+
+```bash
+mkdir -p ~/.agents/skills
+ln -s "$(pwd)/clear-and-human" ~/.agents/skills/clear-and-human
+```
+
+Subagents are the part that doesn't port. `agents/*.md` uses Claude Code's frontmatter
+(`tools`, `model`), and neither OpenCode nor Codex reads it — the skills travel, the fleet doesn't.
 
 ### Requirements per skill
 

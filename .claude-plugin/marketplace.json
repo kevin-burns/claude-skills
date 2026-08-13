@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "kevin-burns",
+  "description": "Kevin Burns' openly-published Claude Code skills and subagents. One plugin, because the skills cross-reference each other by name.",
+  "owner": {
+    "name": "Kevin Burns",
+    "url": "https://github.com/kevin-burns"
+  },
+  "plugins": [
+    {
+      "name": "claude-skills",
+      "source": "./",
+      "description": "Twenty-one Claude Code skills and eight subagents for writing, CV work, cloud/IaC, docs, images, diagrams, reports and job search — each with its boundaries written down. MIT.",
+      "author": {
+        "name": "Kevin Burns",
+        "url": "https://github.com/kevin-burns"
+      },
+      "homepage": "https://github.com/kevin-burns/claude-skills",
+      "license": "MIT",
+      "category": "productivity"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "name": "claude-skills",
+  "version": "1.0.0",
+  "description": "Twenty-one Claude Code skills and eight subagents for writing, CV work, cloud/IaC, docs, images, diagrams, reports and job search \u2014 each with its boundaries written down. MIT.",
+  "author": {
+    "name": "Kevin Burns",
+    "url": "https://github.com/kevin-burns"
+  },
+  "homepage": "https://github.com/kevin-burns/claude-skills",
+  "repository": "https://github.com/kevin-burns/claude-skills",
+  "license": "MIT",
+  "keywords": [
+    "writing",
+    "cv",
+    "azure",
+    "terraform",
+    "terragrunt",
+    "documentation",
+    "images",
+    "diagrams",
+    "reports",
+    "job-search",
+    "agents"
+  ],
+  "skills": [
+    "./azadvertizer",
+    "./business-plan",
+    "./c7search",
+    "./clear-and-human",
+    "./convert-to-webp",
+    "./cv-and-human",
+    "./cv-evidence-base",
+    "./dev-fleet",
+    "./excalidraw-diagram",
+    "./hook-and-human",
+    "./job-feeds",
+    "./markdown-converter",
+    "./nano-banana-pro-json",
+    "./report-builder",
+    "./social-image-prep",
+    "./source-snapshot",
+    "./terraform-registry",
+    "./terragrunt-skill",
+    "./travel-planning",
+    "./use-linearis",
+    "./ux-audit"
+  ]
+}

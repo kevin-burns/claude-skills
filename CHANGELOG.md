@@ -13,6 +13,51 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-13
 
+### Added — the repo installs as a Claude Code plugin
+
+`.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` make the whole set installable
+in two commands:
+
+```
+/plugin marketplace add kevin-burns/claude-skills
+/plugin install claude-skills@kevin-burns
+```
+
+No directories moved. The 21 skills sit at the repo root rather than under `skills/`, and the
+manifest's `skills` field points at them in place.
+
+**One plugin, not twenty-one, and the repo settles it.** Twelve of the 21 skills name a sibling
+inside their description — `cv-and-human` points at `cv-evidence-base`, `report-builder` at
+`c7search`, `dev-fleet` at `source-snapshot`. Split them and every one of those pointers is a dead
+end for anyone who installed half the set, including the `cv-and-human` ↔ `cv-evidence-base` fork
+tuned at 84/84.
+
+**What it costs, measured rather than estimated.** `claude plugin details` reports **~5.9k tokens
+always-on** for the full set — every skill's description is loaded in every session so Claude can
+decide when to reach for one, before any skill fires. That figure is now in the README next to the
+install command, because someone who wants two of these skills should symlink two of them.
+
+**Two findings from testing the install, both recorded rather than papered over.** The manifest's
+`agents` field — documented as replacing the default `agents/` scan — loaded **zero** agents on
+Claude Code 2.1.231 when given the file paths the reference prescribes, and rejected directory
+paths outright with `agents: Invalid input`. The default scan works, so the field is omitted; the
+consequence is that `agents/commit-style.md`, a playbook `commit-pr` reads rather than an agent,
+loads as a ninth agent with empty metadata. Separately, `agents/coherence-checker.md` had a
+description YAML could not parse — an unquoted `advisory: it reports` — so at runtime it loaded
+with **every frontmatter field silently dropped**, including its `tools` and `model`. That one
+predates the plugin work and affected the existing install path too; packaging is just what
+surfaced it.
+
+Symlinking is still the right path for anyone editing these skills, and the README now says which
+to choose and why rather than listing both neutrally: a plugin install is a snapshot in
+`~/.claude/plugins/cache/`, a symlink keeps this repo the source of truth.
+
+Also documented: **these skills work outside Claude Code**, since a skill is a directory with a
+`SKILL.md` and nothing more. OpenCode reads `~/.claude/skills/` directly, so a symlink already made
+for Claude Code needs no second install; Codex reads `~/.agents/skills/`. Neither has a
+plugin/marketplace format — the wrapper is Claude Code's packaging, not a requirement. The
+subagents are the part that doesn't travel: `agents/*.md` uses Claude Code's frontmatter.
+
 ### Changed — `clear-and-human` withdraws a claim it could not defend, and sources its wordlist
 
 Two PRs (#7, #8) from a red-team pass, two research agents, and the first two runs of
