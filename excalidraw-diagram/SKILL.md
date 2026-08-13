@@ -25,6 +25,8 @@ To make this skill produce diagrams in your own brand style, edit `color-palette
 
 A diagram isn't formatted text. It's a visual argument that shows relationships, causality, and flow that words alone can't express. The shape should BE the meaning.
 
+**The Necessity Test** — ask this first, because it can end the job: **would a table or a paragraph do the same work?** If yes, write that instead and say why. A list of items with no relationships between them is a table. A sequence with no branching is a numbered list. Drawing those wastes the reader's attention on shapes that carry no argument, and it wastes yours. Declining to draw is a valid deliverable.
+
 **The Isomorphism Test**: If you removed all text, would the structure alone communicate the concept? If not, redesign.
 
 **The Education Test**: Could someone learn something concrete from this diagram, or does it just label boxes? A good diagram teaches—it shows actual formats, real event names, concrete examples.

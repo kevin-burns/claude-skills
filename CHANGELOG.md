@@ -13,6 +13,24 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-13
 
+### Changed — `excalidraw-diagram` can now decline to draw
+
+One sentence, added as the **Necessity Test** ahead of the two tests that were already there:
+*"Would a table or a paragraph do the same work? If yes, write that instead and say why…
+Declining to draw is a valid deliberation."*
+
+Borrowed openly from [`cathrynlavery/diagram-design`](https://github.com/cathrynlavery/diagram-design),
+whose pre-output checklist asks the same question and asks it first. It is the best idea in that
+skill and it costs a sentence.
+
+It belongs here more than the three feature gaps found alongside it. This skill exists to produce
+**branded diagrams for enterprise presentations** — it was forked from `coleam00`'s because that
+one was sluggish and gave no palette control, and palette control is the point. Measured against
+that job, a diagram that should have been a table is the common failure, not a missing Mermaid
+importer. Mermaid/draw.io import, an accessible-SVG contract and static geometry tests are now
+**P4** and stay there until somebody asks.
+
+
 ### Fixed — the zero-contraction rule was falsifiable by the author's own pre-LLM writing
 
 `ai-patterns.md` ended its expanded-contractions entry with a flat assertion: *"A long draft
