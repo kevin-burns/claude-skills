@@ -42,6 +42,23 @@ be. So `verify_post.py` compares the whole document in both directions.
 - **It doesn't parse all of YAML.** Flat `key: value` and inline lists only. Block lists,
   nested maps and multi-line scalars are reported as unparsed rather than guessed at.
 
+## If your blog is behind an IdP
+
+Cloudflare Access, Tailscale, Authelia, any SSO proxy — **`ghst` cannot authenticate through
+it, and neither can this skill.** Neither is at fault: the IdP is refusing an unauthenticated
+request, which is its entire purpose. Resolving it is the operator's side of the line.
+
+The skill documents two routes, and the usual answer costs **one request header and changes no
+security posture**: Ghost 301-redirects to its own configured `url` when it believes the
+connection is insecure, so an internal request bounces back out through the front door. Give it
+`X-Forwarded-Proto: https` in the reverse proxy that already fronts it and the internal path
+works, with the IdP left fully in place on the public one.
+
+What you should *not* do is punch a hole in the IdP before trying that. It was the first thing
+I reached for and it turned out to be unnecessary — and one variant of it, an allow-list on a
+dynamic residential IP, would have handed that bypass to a stranger the next time the address
+was reassigned.
+
 ## Requirements
 
 `ghst` installed separately and already authenticating:

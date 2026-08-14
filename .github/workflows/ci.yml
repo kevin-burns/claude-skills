@@ -36,6 +36,15 @@ jobs:
       - name: Structural checks
         run: python3 .github/scripts/check_conventions.py
 
+      # The skill-tests job globs */tests and */*/tests, and neither matches a
+      # dotted directory -- so the mirror builder's suite has to be named here
+      # or it silently never runs. It guards what strangers install from the
+      # standalone ghost-publish repo, which is the one tree nobody reviews.
+      - name: Mirror builder tests
+        run: |
+          python3 -m pip install --quiet pytest
+          python3 -m pytest .github/scripts/tests -q
+
   skill-tests:
     name: skill tests (python ${{ matrix.python }})
     runs-on: ubuntu-latest

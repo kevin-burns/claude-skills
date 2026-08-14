@@ -28,6 +28,13 @@ that apart from a skill problem.
 
 ## Connection
 
+> **If your blog sits behind an identity provider — Cloudflare Access, Tailscale, Authelia,
+> an SSO proxy — `ghst` cannot get past it, and neither can this skill.** That is not a defect
+> in either. The IdP is doing exactly its job: refusing an unauthenticated request. Resolving
+> it is the operator's side of the line, and this section says how. Do not report it as a skill
+> bug, and do not work around it by weakening the IdP until you have tried the routes below —
+> the usual answer costs one header and changes no security posture at all.
+
 **Assume nothing about auth. Test it first, in one call:**
 
 ```bash
