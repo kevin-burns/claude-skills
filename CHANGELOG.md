@@ -13,6 +13,32 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-13
 
+### Added — `ai-patterns.md` learns to spot a writer rating their own evidence
+
+One entry in the Structural section, for a family the list had no name for:
+
+> **Evidence-rating asides:** "which is the part I didn't expect", "and that's the interesting
+> bit", "works better than you'd expect", "which is where it gets strange".
+
+Signposting facing backwards. The list already covers the forward version — *"Let's dive in",
+"Here's what you need to know"* — announcing what is coming. These do the same job to what has
+just arrived: they tell the reader how to feel about evidence instead of presenting it.
+
+**Found by ear, not by rule.** Kevin flagged four of these across two days in a draft I had
+written, and each time the check was the same: measure it against his own published corpus.
+"cuts both ways", "the part I didn't expect", "than you'd expect", "than expected" — **zero
+occurrences across eight documents**. What he does instead is state the fact and let it carry:
+*"The real drift identity turned out to be a different app registration entirely."*
+
+Two notes ride along with the entry because both cost time to work out. The
+hedged-comparative form usually **also splits the verb from its complement**, so the repair is
+word order rather than vocabulary — an agent asked to make prose "more natural" will reach for
+a thesaurus and fail. And the entry says to check the author's own corpus before flagging,
+because a writer who genuinely uses these is not doing anything wrong. That is the standing
+rule for every item on the page, and it is worth restating on the one that is easiest to
+over-apply.
+
+
 ### Added — the repo installs on Codex too
 
 `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json`, alongside the Claude pair
