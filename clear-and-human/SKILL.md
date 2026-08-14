@@ -29,7 +29,7 @@ If unclear, default to **Review** and offer the rewrite at the end.
    - **A measurement of the text you are reviewing.** Two reviews stated a word count and a sentence-length range that were both wrong. Count it with `scripts/register_report.py`, quote the figure it prints, or say nothing.
 
    **Placeholders are all-or-nothing.** If any environment-specific value is bracketed, bracket every one. Half-marking is worse than none: a bracketed `<domain>` beside a bare path tells the reader the path is real.
-2. **Preserve meaning.** Change delivery, not substance. Never add or drop an argument during a rewrite.
+2. **Preserve meaning.** Change delivery, not substance. Never add or drop an argument during a rewrite. The trap is that several style rules remove information while appearing to remove only shape: cut the boldface off *"the **single most important** build"* and the ranking goes with it; tidy *"it is simultaneously A, B and C"* into a clean rule of three and the claim that they hold at once goes with it. The CLAIM WORDS section of `scripts/fidelity_check.py` lists the ranking, scope, comparison and requirement words a rewrite dropped, so this rule has something behind it other than your own attestation.
 3. **Match the intended voice**, not a generic "good writing" voice. Use the user's sample if provided (see Voice calibration). Absent a sample, default to neutral-factual, not marketing-operator.
 4. **Clean is not enough.** Text with zero AI tells but no opinion, no specifics, and uniform rhythm is still slop. Flag "clean but hollow" explicitly.
 
@@ -130,14 +130,15 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 1. Ask yourself: "What still makes this read as AI-generated?" Answer in 2–4 honest bullets (rhythm too even? placeholder-ish specifics? slogan-y closer?).
 2. Then revise once more to fix exactly those tells. **A revised version must follow the audit.** If the audit names nothing worth fixing, say that explicitly — but an audit that ends the output is not a self-audit, it is a postscript.
 3. Run `scripts/fidelity_check.py <original> <rewrite>`. It reports any number, quote, URL or code span that appeared, vanished or changed. A number present in the rewrite but not the original is a fabrication.
-4. Present the final version. Optionally list the changes made.
+4. Read the **CLAIM WORDS** section of that report before presenting anything. It lists the ranking, scope, comparison and requirement words the rewrite dropped or added — the loss that looks like style. A superlative that ranked its subject against everything else in the document, a "simultaneously" that said three things hold at once rather than in turn, a "must" softened to "should": each leaves with the shape it was carried in. **The script does not judge these; you have to.** For every row, go to the sentence it quotes and decide whether the claim survives without the word. If it doesn't, put the word back. Say which rows you checked and what you concluded — a row you did not open is a row you did not check.
+5. Present the final version. Optionally list the changes made.
 
 **Never certify what you did not check.** This is the rule the eval caught being broken, and it is the most damaging failure in the set because the reader trusts this line specifically. Two constraints:
 
 - **Do not claim to have run a script unless you ran it and are pasting its real output.** Six of ten graded outputs narrated running `fidelity_check.py`; one pasted anything. A narrated check is worse than no check, because it reads as verification.
 - **Do not assert that nothing was invented.** Say what you checked and how. "No number in the rewrite is absent from the original — fidelity_check reports 0 appeared" is a claim you can stand behind. "Nothing was invented" is not, and one output made exactly that claim in the same breath as inventing a metric about the user's CI pipeline.
 
-`fidelity_check.py` will tell you when it cannot help: on text with no numbers, quotes, URLs or code spans it prints **NOTHING TO CHECK** rather than a clean result, because a pass over an empty set is not evidence. When you see that, the claims have to be verified by reading, and the audit must say so.
+`fidelity_check.py` will tell you when it cannot help: on text with no numbers, quotes, URLs or code spans it prints **NOTHING TO CHECK** rather than a clean result, because a pass over an empty set is not evidence. When you see that, the claims have to be verified by reading, and the audit must say so. The same warning appears as a footer under a report built only from claim words — those catch the claim that ranks or scopes something, and nothing at all about the claim that doesn't.
 
 ---
 
@@ -171,6 +172,12 @@ authorship and register literature, not from AI-detection tooling:
   nominalisation, counted by suffix rather than parsed, as they did.
 - Pavlick & Tetreault (2016), *TACL* 4, 61–74 — contraction expansion measured as a discrete
   formalising edit.
+- Bradner, S. (1997), "Key words for use in RFCs to Indicate Requirement Levels", BCP 14,
+  RFC 2119 — the requirement group of `fidelity_check.py`'s claim-word list (must, shall,
+  should, may, required, recommended, optional). Borrowed as a word list only: RFC 8174
+  (Leiba, B., 2017) confines the defined meanings to the uppercase forms, and the script
+  matches case-insensitively over ordinary prose. The other three groups — ranking, scope
+  and relation — are assembled by judgement and say so in the source.
 
 Two later studies test Biber's framework on LLM output directly, and both bear on this
 skill's design:

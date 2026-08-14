@@ -11,6 +11,58 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-08-14
+
+### Added — `fidelity_check.py` can see the claim that leaves with the markup
+
+The script tracked numbers, quoted spans, URLs and code spans. It now also diffs a closed list
+of **claim words**: the words that rank, scope, compare or require. New section at the foot of
+the report, on by default, and each row quotes the sentence the word sat in so a finding is
+somewhere you can go rather than a count you have to grep for.
+
+**Why this was a hole and not a nice-to-have.** clear-and-human's second core rule is *"change
+delivery, not substance"*, and the script exists precisely because a rule the model grades
+itself against is not a check. But the rule's most common breach touched none of the four
+tracked span types. Take the boldface off *"the **single most important** new build"* and you
+have deleted a ranking against every other item in the document, in what looks exactly like
+markup cleanup. Tidy *"it is simultaneously A, B and C"* into a clean rule of three and you have
+deleted the claim that they hold at once. Neither rewrite moves a number, a quote, a URL or a
+code span. Both used to pass clean.
+
+**Both examples come from [`blader/humanizer`](https://github.com/blader/humanizer) issue
+[#212](https://github.com/blader/humanizer/issues/212)**, filed 9 August 2026 and still open and
+unanswered on 14 August. Their report names it better than we had: *"several style rules can
+remove information while appearing to only remove shape."* That is not a bug in their skill in
+particular — it is a property of the style rules both skills apply — and their two examples are
+now fixtures in our test suite.
+
+**What it deliberately does not do:**
+
+- **It does not judge.** Every row may be a correct cut, and plenty are — the report says so in
+  its own preamble. It names the word, quotes the sentence, and stops. Deciding whether the
+  claim survives the deletion needs a reader.
+- **It ignores intensifiers.** *Very, really, quite, extremely* assert nothing on their own;
+  "very large" and "large" make the same claim with different force, and cutting them is the
+  textbook omit-needless-words edit. A check that fires on every correct run is one nobody reads.
+- **It ignores bare `not` and `no`.** Strunk's *put statements in positive form* is Layer 1 of
+  this same skill, so correct rewrites delete these constantly. The emphatic negations a style
+  edit has no business touching — *never, none, neither, nor, cannot* — are kept.
+- **It does not silence the vacuity warning.** Claim words are near-ubiquitous in real prose, so
+  counting them toward "was there anything here to check" would suppress `NOTHING TO CHECK` on
+  exactly the numberless drafts it was added for. Two counters, and the warning still reports
+  only the four hard span types. A report built from claim words alone now carries that warning
+  as a footer.
+
+One group is not assembled by judgement: **requirement** is the RFC 2119 key-word list (Bradner,
+S., BCP 14, RFC 2119, March 1997), so downgrading a doc's *must* to a *should* shows up as one
+word vanishing and another appearing. Borrowed as a word list only — RFC 8174 (Leiba, B., May
+2017) confines the defined meanings to the uppercase forms, and this matches case-insensitively
+over ordinary prose. The other three groups say in the source that they are judgement calls.
+
+**Measured before shipping it on by default.** Run across two real prose edits from this repo's
+own history — a 2,360-word README restructure and a 2,065-word reference-file rewrite — it
+produced 8 rows and 3 rows. The first row of the first run was a deleted *"the main reason"*.
+
 ## 2026-08-13
 
 ### Added — `ai-patterns.md` learns to spot a writer rating their own evidence
