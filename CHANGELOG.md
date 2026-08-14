@@ -13,6 +13,50 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-14
 
+### Added — `ghost-publish` learns the two cards markdown cannot express
+
+`scripts/enrich_cards.py`. Ghost's markdown conversion already produces native cards for
+images, quotes, code blocks with their language, tables and horizontal rules — most of the
+surface needs nothing. Two shapes it never produces, because both are editor behaviours rather
+than markdown ones:
+
+- **Galleries.** Consecutive markdown images become separate image cards with a spacer
+  paragraph between each. Ghost's limit is **nine images, three to a row**.
+- **Embeds from a bare URL.** A video link on its own line becomes a clickable link. The editor
+  embeds on paste; the converter does not. Nothing is lost — nothing is embedded either.
+
+The script rewrites both on the document Ghost has already produced, then pushes it back with
+`ghst post update --lexical-file`. The author keeps writing plain markdown. Embed HTML comes
+from **Ghost's own `/oembed/` endpoint**, so nothing is fetched from a third party.
+
+**The node shapes are pinned against a post built by hand in Ghost's editor and read back**,
+not inferred from Ghost's TypeScript definitions — those give field names but not the
+serialised form, and this stack fails silently on a wrong structure. Two details would have
+been guessed incorrectly: a gallery row holds three images, and a gallery image's `fileName` is
+the original upload name while `src` may carry a `-1` deduplication suffix the filename does
+not.
+
+**What it refuses to do:**
+
+- **Build a gallery it cannot measure.** Image cards created from markdown carry `width: null`,
+  and Ghost lays a gallery out by aspect ratio. Rather than emit a null, the script declines
+  the merge and names the file — separate image cards look ordinary, a broken gallery does not.
+  Dimensions come from a stdlib header parse of the local files (PNG, GIF, JPEG, WebP).
+- **Touch a provider's own embed code.** A pasted Bandcamp `<iframe>` becomes an embed card
+  whose `html` is Bandcamp's markup, width and styling included. Ghost normalises the syntax
+  (`seamless` → `seamless=""`) and changes nothing else; this script changes nothing at all,
+  and a test pins it byte-for-byte.
+- **Guess which links want an iframe.** Embed hosts are a closed list. A link to someone's
+  article stays a link, and a link with its own words is prose rather than a URL.
+
+Also documented: an inline `![](url)` **splits its paragraph** into text, image card, text, so
+images belong on their own line. And `ghst api` rejects query strings in the path — pass them
+with repeated `--query` flags.
+
+**22 new tests**, 43 in the skill. Verified end to end against a live Ghost: a run of three
+images became one gallery at 2752×1536 with correct rows and filenames, and a bare YouTube URL
+became a `video` embed carrying the real iframe.
+
 ### Added — `ghost-publish`, the 22nd skill
 
 Moves a markdown file onto a Ghost blog with the official [`ghst`](https://github.com/TryGhost/ghst)
