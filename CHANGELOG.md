@@ -13,6 +13,56 @@ Dates are the date the work landed on `main`.
 
 ## 2026-08-14
 
+### Added — `ghost-publish`, the 22nd skill
+
+Moves a markdown file onto a Ghost blog with the official [`ghst`](https://github.com/TryGhost/ghst)
+CLI, then proves that what arrived is what was sent. Two stdlib scripts:
+`prepare_post.py` strips front matter and prints the `ghst` flags it implies;
+`verify_post.py` reads the post back and diffs it against the source.
+
+**Why a verifier rather than a wrapper.** `ghst post update` returns a clean JSON object
+whether or not the content arrived intact, so the CLI's own output is not evidence. On the
+first real run, a successful update left YAML front matter rendered as visible text above the
+first paragraph — and a check asserting sixteen expected strings reported **16/16** while it
+sat there. A verification that only asks *"is what I wanted present?"* cannot see what should
+not be. So the diff runs **both directions**: sentences in the source but missing from Ghost,
+and sentences in Ghost with no source.
+
+**The traps it exists to name**, each of which produced a convincing false result before it
+was understood:
+
+- `--markdown-file` sends bytes verbatim, and Ghost has no front-matter concept. Unlike Hugo,
+  a leading `---` block is prose.
+- `post update --markdown-file` converts markdown into native Lexical nodes, so the source is
+  **not** recoverable from Ghost afterwards, and a reader that looks only for markdown cards
+  reports zero words.
+- `post get` returns no `html` field at all — only `lexical` and `mobiledoc`. Asking for
+  `.posts[0].html` yields `null`, which reads as total content loss.
+- `ghst auth login` fails behind any authenticating proxy: the IdP's redirect is read as the
+  site's real origin. Its suggested fix points the CLI at a login page. Use environment
+  variables instead.
+- Ghost 301-redirects to its own configured `url` when it believes the connection is
+  insecure, so a direct internal request bounces back out to the public hostname. One header,
+  `X-Forwarded-Proto: https`, is the entire fix.
+
+**What it deliberately does not do:** write or edit prose (that is `clear-and-human`);
+publish or schedule unless told to in the moment — `status:` in front matter is *not*
+translated into a flag, because publishing is a state transition rather than a field in a
+file, and scheduling with a newsletter emails real subscribers with no second confirmation;
+configure Ghost, Docker, DNS or a reverse proxy; or parse all of YAML — flat `key: value` and
+inline lists only, with anything else reported as unparsed rather than guessed at.
+
+**21 tests**, two of them regressions found by running the verifier against a real 4,500-word
+post rather than fixtures: Lexical stores a formatted span as its own text node, so italics
+rejoined with a space before the following comma and reported 13 false "missing" and 12 false
+"extra" lines; and stripping `_` as an emphasis marker turned `fidelity_check.py` into a
+difference on the source side only.
+
+Also documented, because Ghost's own docs cover none of it: scheduling is core Ghost rather
+than a Ghost(Pro) feature, and a missed schedule **publishes late, not never** — the default
+scheduler detects a past-due job and forces it through, commenting the case as *"blog is
+down"*. What moves is the newsletter, which sends at the recovery time.
+
 ### Added — `fidelity_check.py` can see the claim that leaves with the markup
 
 The script tracked numbers, quoted spans, URLs and code spans. It now also diffs a closed list

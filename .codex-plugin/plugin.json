@@ -1,7 +1,7 @@
 {
   "name": "claude-skills",
   "version": "1.0.0",
-  "description": "Twenty-one Agent Skills for writing, CV work, cloud/IaC, docs, images, diagrams, reports and job search — each with its boundaries written down. MIT.",
+  "description": "Twenty-one Agent Skills for writing, CV work, cloud/IaC, docs, images, diagrams, reports and job search \u2014 each with its boundaries written down. MIT.",
   "author": {
     "name": "Kevin Burns",
     "url": "https://github.com/kevin-burns"
@@ -31,6 +31,7 @@
     "./cv-evidence-base",
     "./dev-fleet",
     "./excalidraw-diagram",
+    "./ghost-publish",
     "./hook-and-human",
     "./job-feeds",
     "./markdown-converter",
@@ -47,7 +48,7 @@
   "interface": {
     "displayName": "Kevin Burns' Skills",
     "shortDescription": "Twenty-one skills that each say what they will not do.",
-    "longDescription": "Writing and CV work (clear-and-human, hook-and-human, cv-and-human, cv-evidence-base), cloud and IaC (terragrunt-skill, terraform-registry, azadvertizer), docs and research (c7search, markdown-converter, source-snapshot), images and diagrams (nano-banana-pro-json, convert-to-webp, social-image-prep, excalidraw-diagram), reports and audits (report-builder, ux-audit), planning (travel-planning, business-plan), and job search (job-feeds). Every skill ships a stated boundary — what it refuses to do and why — because a tool that will invent a number to fill a gap is worse than one that stops. MIT licensed.",
+    "longDescription": "Writing and CV work (clear-and-human, hook-and-human, cv-and-human, cv-evidence-base), cloud and IaC (terragrunt-skill, terraform-registry, azadvertizer), docs and research (c7search, markdown-converter, source-snapshot), images and diagrams (nano-banana-pro-json, convert-to-webp, social-image-prep, excalidraw-diagram), reports and audits (report-builder, ux-audit), planning (travel-planning, business-plan), and job search (job-feeds). Every skill ships a stated boundary \u2014 what it refuses to do and why \u2014 because a tool that will invent a number to fill a gap is worse than one that stops. MIT licensed.",
     "developerName": "Kevin Burns",
     "category": "Productivity",
     "capabilities": [
