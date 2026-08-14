@@ -153,7 +153,7 @@ proper nouns, off by default because without a POS tagger it is noisy on reorder
 
 Two suites, testing different things — both are needed and neither substitutes.
 
-- **`tests/`** — 80 pytest tests over the two scripts, green on Python 3.12 and 3.13.
+- **`tests/`** — 92 pytest tests over the two scripts, green on Python 3.12 and 3.13.
 - **`evals/`** — 11 behavioural cases, 47 assertions, testing whether the *prose instructions*
   produce good output. See `evals/README.md` for how to run them, what two runs found, and the
   three defects that survived both.
