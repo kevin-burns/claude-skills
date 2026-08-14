@@ -23,6 +23,13 @@ be. So `verify_post.py` compares the whole document in both directions.
 - **Verifies both directions.** `verify_post.py` reports sentences in the source but missing
   from Ghost, *and* sentences in Ghost with no source — leaked front matter, editor edits, or
   an older draft still in place.
+- **Builds the two cards markdown can't express.** Ghost already makes image, quote, code,
+  table and horizontal-rule cards from markdown. It never makes a **gallery** (consecutive
+  images stay separate cards; the limit is nine, three to a row) or an **embed** from a bare
+  video URL (that stays a link — the editor embeds on paste, the converter doesn't).
+  `enrich_cards.py` rewrites both on the document Ghost produced, using Ghost's own `/oembed/`
+  endpoint so nothing is fetched from a third party. A provider's pasted `<iframe>` — Bandcamp
+  and friends — is left byte-for-byte alone, width and styling included.
 - **Names the traps** that make a first run fail confusingly: `auth login` breaking behind an
   authenticating proxy, Ghost 301-ing to its own `url` unless it sees `X-Forwarded-Proto`,
   `post get` having no `html` field, and `post update` converting markdown to Lexical so the
@@ -99,10 +106,16 @@ ghst post get <post-id> --json \
 cd ghost-publish && python3 -m pytest tests -q
 ```
 
-21 tests, including regressions for the two normalisation bugs found by running the verifier
-against a real 4,500-word post: Lexical splitting formatted spans into separate text nodes
-(which made every italic look like an edit), and `_` being stripped as an emphasis marker
-(which turned `fidelity_check.py` into a difference).
+43 tests. Two are regressions from running the verifier against a real 4,500-word post rather
+than fixtures: Lexical splits formatted spans into separate text nodes (which made every italic
+look like an edit), and `_` was stripped as an emphasis marker (which turned
+`fidelity_check.py` into a difference).
+
+The card shapes are pinned against a post **built by hand in Ghost's own editor** and read
+back, not inferred from Ghost's TypeScript definitions — those give field names but not the
+serialised form, and two details would have been guessed wrong: a gallery row holds three
+images, and a gallery image's `fileName` is the original upload name while `src` may carry a
+`-1` deduplication suffix that the filename does not.
 
 ## Provenance
 

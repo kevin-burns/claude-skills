@@ -116,6 +116,61 @@ because that is a behaviour, not a guarantee.
 the post is its own step. This is also the one capability the MCP server does not have, which
 is why this skill drives the CLI throughout.
 
+## Cards
+
+**Most of them need nothing.** Ghost's markdown conversion already produces native cards, so
+write ordinary markdown and check the result:
+
+| markdown | becomes |
+|---|---|
+| `![alt](url)` on its own line | `image` card |
+| `> quote` | `extended-quote` |
+| fenced code block | `codeblock`, language preserved |
+| a markdown table | `html` card holding the rendered `<table>` |
+| `---` | `horizontalrule` |
+| a pasted provider `<iframe>` | `embed` card, markup preserved |
+
+**Never put an image inline.** `![](url)` inside a sentence splits the paragraph into text,
+image card, text — so the sentence arrives in two pieces around a picture. Images go on their
+own line.
+
+Two shapes markdown cannot express, because both are editor behaviours:
+
+- **Galleries.** Consecutive images become separate image cards with a spacer paragraph
+  between each, never a gallery. Ghost's limit is **nine images**, laid out three to a row.
+- **Embeds from a bare URL.** A video link on its own line becomes a clickable link. The
+  editor embeds on paste; the markdown converter does not.
+
+`enrich_cards.py` rewrites both, on the document Ghost has already produced:
+
+```bash
+ghst post get <post-id> --json --jq '.posts[0].lexical' > /tmp/lexical.json
+
+# 1. which URLs would become embeds?
+uv run ~/.claude/skills/ghost-publish/scripts/enrich_cards.py /tmp/lexical.json --list-embeds
+
+# 2. fetch each from Ghost's own oEmbed endpoint -- no third-party call.
+#    Note `ghst api` rejects query strings in the path: use --query.
+ghst api /oembed/ --query "url=<the-url>" --query "type=embed" --json
+
+# 3. rewrite, then push the result back
+uv run ~/.claude/skills/ghost-publish/scripts/enrich_cards.py /tmp/lexical.json \
+  --images-dir ./images --oembed /tmp/oembed.json --out /tmp/enriched.json
+ghst post update <post-id> --lexical-file /tmp/enriched.json
+```
+
+`--oembed` takes a JSON object mapping each URL to its payload. `--images-dir` is where the
+local image files live, and it is **required for galleries**: image cards built from markdown
+carry `width: null`, Ghost lays a gallery out by aspect ratio, and rather than emit a null the
+script declines the merge and says which file it could not measure. Separate image cards look
+ordinary; a broken gallery does not.
+
+**A provider's own embed code is left exactly as pasted.** Bandcamp, and anything else you
+paste as a raw `<iframe>`, becomes an `embed` card whose `html` is the provider's markup —
+width, styling and all. Ghost normalises the HTML syntax (`seamless` becomes `seamless=""`)
+and changes nothing else: no width rewriting, no injected centering. This skill does not touch
+it either, and a test pins that.
+
 ## Verify — the step that earns this skill
 
 Run it every time, before publishing and again after. It has caught a stale draft, a
