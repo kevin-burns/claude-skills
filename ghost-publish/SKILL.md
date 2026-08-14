@@ -206,6 +206,26 @@ markdown rebuilds the card. Match the shape you actually have:
 Target the iframe rather than the card. Markdown tables also become `html` cards, so centring
 `.kg-html-card` itself would stop them filling the column.
 
+**An embed card cannot be edited in Ghost's editor** — you can change its caption, but not its
+URL. Changing what it points at means deleting the card and adding a new one. That is a real
+constraint of the editor, and it pushes people toward pasting raw HTML into a markdown or HTML
+card instead, which is how a player ends up off-centre.
+
+**It is not a constraint of the content.** Rewriting an embed's `url` and `html` through
+`--lexical-file` works, verified by changing one and reading it back. So on this skill's path
+the editor's limitation never applies: **the markdown file is the source, you edit it there and
+re-upload.** The embed being immutable in the UI costs nothing.
+
+That does imply one rule, and it is the important one: **pick a single source of truth.** If the
+file is authoritative, hand-edits made in the editor are overwritten by the next upload — not
+just the embed, the whole document. If you are authoring in the editor, do not re-upload from
+file. Mixing the two loses work in whichever direction you ran last.
+
+**Not every provider is an oEmbed provider.** Bandcamp is not: `/oembed/` answers
+`No provider found for supplied URL`. For those, paste the provider's own `<iframe>` into the
+markdown — Ghost still makes an `embed` card from it, with `embedType` empty and `metadata` `{}`,
+and the markup preserved.
+
 **A provider's own embed code is left exactly as pasted.** Bandcamp, and anything else you
 paste as a raw `<iframe>`, becomes an `embed` card whose `html` is the provider's markup —
 width, styling and all. Ghost normalises the HTML syntax (`seamless` becomes `seamless=""`)
