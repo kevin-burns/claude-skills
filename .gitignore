@@ -43,3 +43,9 @@ docs/superpowers/
 
 # Personal voice profile — the blank template lives in clear-and-human/
 /WRITING_CONTEXT.md
+
+# Wrangler local state. Carries the Cloudflare account id and email, and (when a
+# cf.json is present) the machine geolocation, ISP, ASN and TLS fingerprints. Created
+# here by running a wrangler command from this directory; not needed by this repo.
+.wrangler/
+.dev.vars
