@@ -32,7 +32,11 @@ Two optional scripts do the parts a model cannot do reliably by reading:
   quoted span, URL and code span that appeared, vanished or changed. A number in the rewrite
   that is not in the original is the signature of a fabricated statistic, so it gets its own
   banner. On input containing nothing it tracks it prints `NOTHING TO CHECK` and says plainly
-  that this isn't a pass.
+  that this isn't a pass. It also diffs a closed list of **claim words** — the words that rank,
+  scope, compare or require — and quotes the sentence each one sat in, because the way a rewrite
+  usually loses information is not by deleting a fact but by deleting the word that made the fact
+  a claim. Cut the boldface from *"the **single most important** build"* and the ranking leaves
+  with the markup.
 
 ## "Isn't this just humanizer?"
 
@@ -65,6 +69,15 @@ caught exactly that failing: an output that **certified in writing that it had i
 having invented a claim about the user's CI pipeline. `fidelity_check.py` exists because a rule
 the model grades itself against isn't a check.
 
+The clearest illustration is one their own users found. Issue
+[#212](https://github.com/blader/humanizer/issues/212), open and unanswered as of 14 August 2026,
+reports that *"several style rules can remove information while appearing to only remove shape"* —
+a superlative that ranked one item against every other in a document, deleted along with the
+boldface it sat in. That failure is not specific to their skill; the equivalent rule here reads
+*"change delivery, not substance"* and was, until this week, also model-attested. Both of the
+examples in that issue are now fixtures in `tests/test_fidelity_check.py`, and both are reported
+by the claim-word diff.
+
 **It states no position on detectors** — "detector" and "GPTZero" appear zero times. This skill
 states one, below, and cites the measurement behind it.
 
@@ -85,6 +98,9 @@ mechanically. That is the whole difference.
   will tell you which feature is doing it.
 - **Run `fidelity_check.py` on anything with numbers in it**, before publishing. It is the only
   mechanical check on the no-invention rule.
+- **Read its claim-word rows even when the number rows are clean.** They are where a rewrite
+  quietly stops ranking, scoping or requiring something. The script names the word and quotes
+  its sentence; deciding whether the claim survives without it is yours.
 - **Scope self-measurement.** A section reporting a document's own numbers is part of that
   document, so writing it moves them. Measure "everything above this heading" and say so.
 

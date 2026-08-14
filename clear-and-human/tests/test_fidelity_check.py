@@ -15,6 +15,7 @@ from fidelity_check import (  # noqa: E402
     _format_report,
     check_fidelity,
     diff_multiset,
+    extract_claim_words,
     extract_numbers,
     extract_proper_nouns,
     extract_quotes,
@@ -213,6 +214,131 @@ def test_check_fidelity_flags_an_edited_code_span():
 
 
 # ---------------------------------------------------------------------------
+# Claim words: the class of loss the four span types above cannot see. Both
+# positive fixtures are the verbatim examples from blader/humanizer issue
+# #212 (2026-08-09), which reported that "several style rules can remove
+# information while appearing to only remove shape". Before this section
+# both of these rewrites returned a clean report.
+# ---------------------------------------------------------------------------
+
+def test_deleted_ranking_superlative_is_flagged():
+    """humanizer #212, first example. The superlative ranked this build
+    against every other in the document; in a build-vs-buy recommendation
+    the ranking WAS the recommendation, and it left with the boldface."""
+    original = "The single most important new build is the Safe Completion compliance gate."
+    rewrite = "The important new build is the Safe Completion compliance gate."
+    vanished = [i["value"] for i in check_fidelity(original, rewrite)["claim_words"]["vanished"]]
+    assert "most" in vanished
+    assert "single" in vanished
+
+
+def test_deleted_simultaneity_adverb_is_flagged():
+    """humanizer #212, second example. Looks like rule-of-three cleanup.
+    "Simultaneously" was the claim: these hold at once, not in sequence."""
+    original = (
+        "It is simultaneously the product's main differentiator, its legal shield, "
+        "and the deciding argument for the voice architecture."
+    )
+    rewrite = (
+        "It is the product's main differentiator, its legal shield, "
+        "and the deciding argument for the voice architecture."
+    )
+    vanished = [i["value"] for i in check_fidelity(original, rewrite)["claim_words"]["vanished"]]
+    assert "simultaneously" in vanished
+
+
+def test_cut_intensifiers_are_not_flagged_as_claims():
+    """The negative case named on the bead. "very" and "really" carry force,
+    not content -- "very large" and "large" make the same claim. Cutting them
+    is the textbook omit-needless-words edit and must stay silent here, or
+    the section fires on every correct run and nobody reads it."""
+    original = "This is a very robust and really quite extremely useful gate."
+    rewrite = "This is a robust and useful gate."
+    section = check_fidelity(original, rewrite)["claim_words"]
+    assert section == {"appeared": [], "vanished": [], "changed": []}
+
+
+def test_negation_dropped_by_the_positive_form_rule_is_not_flagged():
+    """Deliberate omission, not an oversight: "put statements in positive
+    form" is Layer 1 of this skill, so bare "not"/"no" disappear on correct
+    rewrites constantly. The emphatic negations a style edit has no business
+    touching are still tracked -- see the next test."""
+    original = "The result is not unlike the previous run, and there is no penalty."
+    rewrite = "The result resembles the previous run, and there is a penalty."
+    section = check_fidelity(original, rewrite)["claim_words"]
+    assert section == {"appeared": [], "vanished": [], "changed": []}
+
+
+def test_emphatic_negation_is_still_tracked():
+    original = "The gate never fires twice and neither queue drains."
+    rewrite = "The gate fires twice and the queue drains."
+    vanished = [i["value"] for i in check_fidelity(original, rewrite)["claim_words"]["vanished"]]
+    assert "never" in vanished
+    assert "neither" in vanished
+
+
+def test_requirement_downgrade_shows_as_a_swap():
+    """RFC 2119's word list, borrowed for exactly this: turning a MUST into
+    a SHOULD is a change of requirement level wearing the clothes of a
+    softened sentence."""
+    section = check_fidelity(
+        "Callers must retry the request.", "Callers should retry the request."
+    )["claim_words"]
+    assert "must" in [i["value"] for i in section["vanished"]]
+    assert "should" in [i["value"] for i in section["appeared"]]
+
+
+def test_claim_words_inside_hyphenated_compounds_are_left_alone():
+    """"first-class" is not the ordinal, "all-in-one" is not the quantifier."""
+    assert extract_claim_words("A first-class all-in-one single-file build") == []
+    assert extract_claim_words("The first build") == ["first"]
+
+
+def test_claim_words_are_lowercased_and_counted_as_a_multiset():
+    words = extract_claim_words("Only the Only one. ALL of it.")
+    assert words == ["only", "only", "all"]
+
+
+def test_claim_words_ignore_identifiers_inside_code_spans():
+    """`all()` is a builtin, not a quantifier the prose is asserting."""
+    section = check_fidelity(
+        "Use `all(flags)` to combine them.", "Use `any(flags)` to combine them."
+    )["claim_words"]
+    assert section == {"appeared": [], "vanished": [], "changed": []}
+
+
+def test_claim_word_report_shows_the_sentence_the_word_sat_in():
+    """A bare count ("only: was x4, now x2") is not actionable -- the reader
+    has to go and grep for it. The context line is what makes the finding
+    locatable, so it is asserted rather than left as a nicety."""
+    original = "The gate is simultaneously a shield and a differentiator."
+    rewrite = "The gate is a shield and a differentiator."
+    report = _format_report(check_fidelity(original, rewrite), original, rewrite)
+    assert "simultaneously" in report
+    assert "[relation]" in report
+    assert "The gate is simultaneously a shield and a differentiator." in report
+
+
+def test_claim_word_report_survives_without_the_source_texts():
+    """_format_report's text arguments are optional; a caller that passes
+    only results gets the rows without contexts, not a crash."""
+    original = "It is simultaneously A and B."
+    report = _format_report(check_fidelity(original, "It is A and B."))
+    assert "simultaneously" in report
+
+
+def test_claim_words_do_not_suppress_the_nothing_to_check_warning():
+    """The vacuity warning is keyed to hard spans on purpose. Claim words
+    are near-ubiquitous, so counting them would silence that warning on
+    exactly the numberless drafts it was added for."""
+    original = "Our service reduces all costs, improves reliability, and shortens onboarding."
+    gutted = "Our service reduces all costs."
+    report = _format_report(check_fidelity(original, gutted), original, gutted)
+    assert "NOTHING TO CHECK" in report
+    assert "This is not a pass." in report
+
+
+# ---------------------------------------------------------------------------
 # The diff engine itself
 # ---------------------------------------------------------------------------
 
@@ -315,7 +441,7 @@ def test_cli_reads_rewrite_from_stdin_when_only_one_path_given(tmp_path):
     assert "25%" in result.stdout
 
 
-def test_cli_json_output_is_valid_json_with_the_five_tracked_categories(tmp_path):
+def test_cli_json_output_is_valid_json_with_the_default_categories(tmp_path):
     original = tmp_path / "original.md"
     rewrite = tmp_path / "rewrite.md"
     original.write_text('Kevin said "ship it" about the v1.0 release.')
@@ -324,7 +450,7 @@ def test_cli_json_output_is_valid_json_with_the_five_tracked_categories(tmp_path
     result = _run_cli([str(original), str(rewrite), "--json"])
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
-    assert set(payload.keys()) == {"numbers", "quotes", "urls", "code"}
+    assert set(payload.keys()) == {"numbers", "quotes", "urls", "code", "claim_words"}
     for section in payload.values():
         assert set(section.keys()) == {"appeared", "vanished", "changed"}
 
@@ -413,7 +539,7 @@ def test_clean_result_over_real_spans_still_reports_a_pass():
     report = _format_report(check_fidelity(original, faithful))
     assert "No tracked differences" in report
     assert "NOTHING TO CHECK" not in report
-    assert "2 tracked span(s)" in report
+    assert "2 tracked item(s)" in report
 
 
 def test_tracked_count_is_not_mistaken_for_a_category():

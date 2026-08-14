@@ -84,7 +84,7 @@
       "expectations": [
         "The output flags the negative parallelism 'It's not just X, it's Y'",
         "The output includes a self-audit naming what still reads as AI-generated, AND a revised final version FOLLOWS that audit. An audit that ends the output is a postscript, not a self-audit.",
-        "The rewrite removes 'Furthermore', 'In conclusion', and the generic positive conclusion 'the future is bright' -- AND retains no unqualified superlative resting on nothing, such as 'This tool is a revolution'. The first run passed the string checks while keeping exactly that claim.",
+        "The rewrite removes 'Furthermore', 'In conclusion', and the generic positive conclusion 'the future is bright' -- AND retains no unqualified superlative resting on nothing, such as 'This tool is a revolution'. The first run passed the string checks while keeping exactly that claim. 'Resting on nothing' is the load-bearing half: a superlative that ranks its subject against something the draft actually states is a claim, and deleting it is information loss rather than cleanup. This input contains no such superlative, so that distinction cannot be used to justify keeping 'unparalleled' here -- it is stated so an executor does not generalise this assertion into 'delete superlatives'.",
         "The deliverable is usable: placeholders such as [ADD SPECIFIC EXAMPLE] do not outnumber the substantive sentences retained. Leaving a placeholder is correct under the no-invention rule; replacing the draft with placeholders is not a rewrite."
       ]
     },

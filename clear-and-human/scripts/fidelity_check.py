@@ -19,6 +19,16 @@ script can produce -- it is the one deterministic signature of a rewrite
 inventing a statistic that was never in the source -- so it is surfaced in
 its own banner ahead of the full report, not buried in a list.
 
+It also diffs a sixth thing that is not a span at all: a closed list of
+CLAIM WORDS -- the words that rank, scope, compare or require. Those cover
+the failure the span types cannot see, where a style rule removes meaning
+while appearing to remove only shape. Deleting "single most" from "the
+single most important build" looks like boldface cleanup and takes a ranking
+with it; deleting "simultaneously" from "it is simultaneously A, B and C"
+looks like rule-of-three tightening and takes a claim of joint truth with
+it. Neither deletion touches a number, a quote, a URL or a code span, so
+before this section both passed clean.
+
 This is advisory, not a gate: it prints findings and stops. It does not
 compute or print a verdict, a grade, a pass/fail, or a score of any kind,
 and there is nothing here to optimise against -- see clear-and-human's
@@ -289,6 +299,104 @@ def extract_quotes(text: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Claim words: the closed class of words that assert something beyond the
+# proposition they sit in -- a rank, a scope, a comparison, a requirement.
+# Unlike everything above, these are not "specifics a reader would
+# fact-check"; they are the load-bearing function words a style edit can
+# delete without appearing to have changed a claim at all.
+#
+# The four groups, and where each list comes from:
+#
+#   ranking      superlatives and ordinals. Removing one stops the sentence
+#                placing its subject in an order.
+#   scope        universal quantifiers and emphatic negation. Removing one
+#                narrows or widens what the claim covers.
+#   relation     comparatives, the comparison marker "than", and the adverbs
+#                that assert things hold jointly rather than in sequence.
+#   requirement  the RFC 2119 key words (Bradner, S., "Key words for use in
+#                RFCs to Indicate Requirement Levels", BCP 14, RFC 2119,
+#                March 1997), which is the one group here taken from a
+#                normative source rather than assembled by judgement.
+#                Borrowed as a WORD LIST only, not with its semantics: RFC
+#                8174 (Leiba, B., "Ambiguity of Uppercase vs Lowercase in
+#                RFC 2119 Key Words", RFC 8174, May 2017) restricts the
+#                defined meanings to the uppercase forms, and this script
+#                matches case-insensitively across ordinary prose. Downgrade
+#                a doc's "must" to "should" and the diff shows one word
+#                vanishing and another appearing, which is the point.
+#
+# Two deliberate omissions, both because clear-and-human's own rules delete
+# them by design and a check that fires on every correct run is a check
+# nobody reads:
+#
+#   "not" and "no" -- Strunk's "put statements in positive form" is Layer 1
+#   of this skill (references/elements-of-style.md). A rewrite that turns
+#   "not unlike" into "like" is obeying the skill, and would be reported as
+#   losing negation on almost every document. The emphatic negations that a
+#   style edit has no business touching -- never, none, neither, nor,
+#   cannot -- are kept.
+#
+#   Intensifiers -- very, really, quite, extremely, truly. These are the
+#   textbook "omit needless words" cut and they assert nothing on their own:
+#   "very large" and "large" make the same claim with different force. They
+#   are absent from every group below, on purpose.
+# ---------------------------------------------------------------------------
+CLAIM_WORD_GROUPS: dict[str, frozenset[str]] = {
+    "ranking": frozenset({
+        "best", "worst", "most", "least", "greatest", "largest", "smallest",
+        "highest", "lowest", "first", "last", "foremost", "single", "sole",
+        "only", "primary", "principal", "chief", "main",
+    }),
+    "scope": frozenset({
+        "all", "every", "each", "any", "both", "none", "never", "always",
+        "neither", "nor", "entirely", "wholly", "completely", "fully",
+        "exclusively", "solely", "universally", "invariably",
+    }),
+    "relation": frozenset({
+        "than", "more", "less", "fewer", "better", "worse", "greater",
+        "higher", "lower", "faster", "slower", "simultaneously",
+        "concurrently", "respectively",
+    }),
+    "requirement": frozenset({
+        "must", "shall", "should", "may", "cannot", "required",
+        "recommended", "optional",
+    }),
+}
+
+CLAIM_WORD_OF_GROUP: dict[str, str] = {
+    word: group for group, words in CLAIM_WORD_GROUPS.items() for word in words
+}
+
+# (?<![\w-]) / (?![\w-]) rather than \b so that a hyphenated compound is left
+# alone: "first-class" is not the ordinal "first", "all-in-one" is not the
+# quantifier "all", and "single-file" is not the ranking "single".
+CLAIM_WORD_RE = re.compile(
+    r"(?<![\w-])(?:" + "|".join(sorted(CLAIM_WORD_OF_GROUP, key=len, reverse=True))
+    + r")(?![\w-])",
+    re.IGNORECASE,
+)
+
+
+def extract_claim_words(text: str) -> list[str]:
+    """Every claim-word occurrence, lowercased. Multiset, not a set: losing
+    three of five "only"s matters and a set would hide it.
+
+    Stated misses, since a closed list cannot help having them:
+    - Inflected superlatives outside the list ("fastest", "cleanest") are not
+      matched. A `-est` suffix rule would drag in interest, honest, request,
+      modest and two dozen others, and the style rules that cause this bug
+      target adverbs and determiners rather than inflected adjectives.
+    - Multi-word forms ("must not", "at once", "in every case") are matched
+      only through whichever single word they contain.
+    - Sense is not disambiguated. "a single file" is a count, not a ranking;
+      "may" can be permission or possibility. This reports the word and lets
+      a reader judge, which is the same bargain the proper-noun heuristic
+      makes.
+    """
+    return [m.group(0).lower() for m in CLAIM_WORD_RE.finditer(text)]
+
+
+# ---------------------------------------------------------------------------
 # The diff itself: a multiset (Counter) comparison per span type. No
 # alignment, no edit distance, no fuzzy matching -- a span either occurs the
 # same number of times in both texts, more in one, or not at all in one.
@@ -317,6 +425,10 @@ CATEGORY_LABELS = {
     "quotes": "QUOTED SPANS",
     "urls": "URLS",
     "code": "CODE SPANS",
+    # Last on purpose. It is the softest evidence in the report and the only
+    # section where a finding is routinely a correct edit, so it sits below
+    # the spans a reader should act on first.
+    "claim_words": "CLAIM WORDS (ranking, scope, relation, requirement)",
 }
 
 
@@ -353,6 +465,12 @@ def check_fidelity(original: str, rewrite: str, names: bool = False) -> dict:
             [normalize_code(c) for c in orig_spans["code"]],
             [normalize_code(c) for c in rewrite_spans["code"]],
         ),
+        # Read from the masked text like numbers are: `all()` in a code span
+        # is an identifier, not a quantifier the prose is asserting.
+        "claim_words": diff_multiset(
+            extract_claim_words(orig_spans["clean"]),
+            extract_claim_words(rewrite_spans["clean"]),
+        ),
     }
 
     if names:
@@ -364,11 +482,23 @@ def check_fidelity(original: str, rewrite: str, names: bool = False) -> dict:
     # How much there was to check at all. Without this the report cannot tell
     # "nothing changed" apart from "there was nothing here to change", and
     # those mean opposite things. See _format_report's vacuity warning.
-    results["_tracked_in_original"] = (
+    #
+    # Two counters, not one, and the split is load-bearing. Claim words are
+    # near-ubiquitous in real prose -- almost any paragraph carries an "all"
+    # or an "only" -- so counting them toward the vacuity test would suppress
+    # that warning on exactly the numberless, quoteless drafts it was added
+    # for. The warning stays keyed to the four hard span types; the headline
+    # count in the clean message includes claim words, because they were in
+    # fact compared and saying otherwise would understate the run.
+    results["_hard_spans_in_original"] = (
         len(extract_numbers(orig_spans["clean"]))
         + len(extract_quotes(original))
         + len(orig_spans["urls"])
         + len(orig_spans["code"])
+    )
+    results["_tracked_in_original"] = (
+        results["_hard_spans_in_original"]
+        + len(extract_claim_words(orig_spans["clean"]))
     )
     return results
 
@@ -378,7 +508,83 @@ def _format_item(item: dict, sign: str) -> str:
     return f"  {sign} {item['value']}{times}"
 
 
-def _format_report(results: dict) -> str:
+def _normalize_sentence(sentence: str) -> str:
+    return re.sub(r"\s+", " ", sentence.strip()).lower()
+
+
+def _snippet(sentence: str, pattern: re.Pattern, width: int = 96) -> str:
+    """A one-line window around the match, so a long paragraph doesn't push
+    the word itself off the end of the line."""
+    flat = re.sub(r"\s+", " ", sentence.strip())
+    if len(flat) <= width:
+        return flat
+    match = pattern.search(flat)
+    start = max(0, match.start() - width // 3) if match else 0
+    end = min(len(flat), start + width)
+    return ("..." if start else "") + flat[start:end] + ("..." if end < len(flat) else "")
+
+
+def _claim_contexts(word: str, source: str, other: str, limit: int = 2) -> list[str]:
+    """Sentences in `source` containing `word` that `other` does not carry
+    verbatim.
+
+    The verbatim filter is the cheap half of the job: a sentence the rewrite
+    kept untouched cannot be where the word went, so dropping those leaves a
+    shorter list of real candidates. It does not attempt alignment -- there
+    is no way to say which occurrence "is" which without guessing, and this
+    script's whole contract is that it never guesses.
+    """
+    pattern = re.compile(rf"(?<![\w-]){re.escape(word)}(?![\w-])", re.I)
+    kept = {_normalize_sentence(s) for s in _sentences(other)}
+    out: list[str] = []
+    for sentence in _sentences(source):
+        if not pattern.search(sentence) or _normalize_sentence(sentence) in kept:
+            continue
+        out.append(_snippet(sentence, pattern))
+        if len(out) == limit:
+            break
+    return out
+
+
+CLAIM_WORDS_PREAMBLE = (
+    "  Each of these asserts something the sentence stops asserting without it.\n"
+    "  A vanished one may still be a correct cut -- this says where to look, not\n"
+    "  what to do. Contexts are from the text the word is missing from."
+)
+
+
+def _format_claim_words(section: dict, original: str, rewrite: str) -> list[str]:
+    """Render the claim-word section: group label, count, and the sentences
+    the word sat in. Falls back to a bare list when the source texts weren't
+    passed (e.g. a caller diffing pre-extracted results)."""
+    lines = [CLAIM_WORDS_PREAMBLE]
+    rows = (
+        [("VANISHED", i["value"], i["count"], "original") for i in section["vanished"]]
+        + [
+            ("CHANGED", i["value"], i["original_count"] - i["rewrite_count"], "original")
+            for i in section["changed"]
+            if i["original_count"] > i["rewrite_count"]
+        ]
+        + [("APPEARED", i["value"], i["count"], "rewrite") for i in section["appeared"]]
+        + [
+            ("CHANGED", i["value"], i["rewrite_count"] - i["original_count"], "rewrite")
+            for i in section["changed"]
+            if i["rewrite_count"] > i["original_count"]
+        ]
+    )
+    for verb, word, delta, side in rows:
+        group = CLAIM_WORD_OF_GROUP.get(word, "?")
+        count = f" (x{delta})" if delta > 1 else ""
+        direction = "-" if side == "original" else "+"
+        lines.append(f"  {verb:<9}{direction} {word}  [{group}]{count}")
+        source, other = (original, rewrite) if side == "original" else (rewrite, original)
+        if source:
+            for context in _claim_contexts(word, source, other):
+                lines.append(f'      "{context}"')
+    return lines
+
+
+def _format_report(results: dict, original: str = "", rewrite: str = "") -> str:
     lines: list[str] = []
 
     # The one finding that matters most, first and unmissable: a number the
@@ -405,6 +611,10 @@ def _format_report(results: dict) -> str:
             continue
         any_findings = True
         lines.append(f"-- {label} --")
+        if category == "claim_words":
+            lines.extend(_format_claim_words(section, original, rewrite))
+            lines.append("")
+            continue
         for item in section["appeared"]:
             lines.append(f"  APPEARED{_format_item(item, '+')[1:]}")
         for item in section["vanished"]:
@@ -429,7 +639,7 @@ def _format_report(results: dict) -> str:
         # a rewrite that dropped two of three claims from a numberless
         # sentence returned "No tracked differences", and the grader
         # correctly called the pass worthless.
-        if not results.get("_tracked_in_original"):
+        if not results.get("_hard_spans_in_original"):
             return (
                 "NOTHING TO CHECK. The original contains no numbers, quoted spans, "
                 "URLs or code spans, so this script can tell you nothing about "
@@ -439,9 +649,22 @@ def _format_report(results: dict) -> str:
             )
         return (
             f"No tracked differences: all {results['_tracked_in_original']} tracked "
-            f"span(s) in the original ({checked}) are present, unchanged, at the "
-            "same count, in the rewrite. Claims carrying no number, quote, URL or "
-            "code span are outside what this checks -- read for those."
+            f"item(s) in the original ({checked}) are present, unchanged, at the "
+            "same count, in the rewrite. A claim that ranks, scopes, compares or "
+            "requires nothing, and carries no number, quote, URL or code span, is "
+            "outside what this checks -- read for those."
+        )
+
+    # The same warning, as a footer, when there WERE findings but no hard
+    # spans behind them. A claim-word row is a real finding and can carry a
+    # whole report on its own -- and a reader who sees a populated report
+    # reasonably assumes the rest of it was checked. Over a draft with no
+    # numbers, quotes, URLs or code, it wasn't.
+    if not results.get("_hard_spans_in_original"):
+        lines.append(
+            "NOTE: the original carries no numbers, quoted spans, URLs or code "
+            "spans, so everything above comes from claim words alone. A dropped "
+            "claim that used none of these is invisible here. Read for those."
         )
     return "\n".join(lines).rstrip()
 
@@ -474,7 +697,7 @@ def main() -> int:
         print(json.dumps({k: v for k, v in results.items()
                           if not k.startswith("_")}, indent=2))
     else:
-        print(_format_report(results))
+        print(_format_report(results, original, rewrite))
 
     # Advisory tool, by design: there is no threshold to clear, so there is
     # no verdict to compute. Exit 0 means the run completed, not that the
