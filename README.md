@@ -1,6 +1,8 @@
 # claude-skills
 
-Twenty-one [Agent Skills](https://agentskills.io) and eight subagents I build and maintain,
+![claude-skills banner](images/banner.webp)
+
+Twenty-two [Agent Skills](https://agentskills.io) and eight subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
 some bundle scripts, evals or reference files. Subagents live under [`agents/`](./agents).
 
@@ -52,7 +54,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than twenty-one.
+rather than twenty-two.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
