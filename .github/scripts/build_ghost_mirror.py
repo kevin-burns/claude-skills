@@ -54,6 +54,11 @@ def build_readme(skill_readme: str) -> str:
         f"Part of the [claude-skills]({REPO_URL}) collection, and mirrored here as a "
         "standalone plugin.",
     )
+    # The banner is referenced relative to the skill README, which sits one
+    # level below the generated front page. Left alone it 404s on the mirror's
+    # landing page -- the first thing anyone sees.
+    text = text.replace("](images/", f"]({SKILL}/images/")
+
     # Sibling-skill references are relative paths that only resolve in the
     # source repo. Point them at the collection rather than leaving 404s.
     text = re.sub(
@@ -62,7 +67,18 @@ def build_readme(skill_readme: str) -> str:
         text,
     )
     title, _, body = text.partition("\n")
-    return f"{title}\n\n{GENERATED_BANNER}{body.lstrip()}"
+    body = body.lstrip()
+
+    # Keep a leading banner image directly under the title. Inserting the
+    # generated-repo notice above it pushes the only visual on the landing
+    # page below four lines of housekeeping, which is the wrong order for the
+    # first thing a stranger sees.
+    lead = ""
+    if body.startswith("!["):
+        image_line, _, rest = body.partition("\n")
+        lead, body = image_line + "\n\n", rest.lstrip()
+
+    return f"{title}\n\n{lead}{GENERATED_BANNER}{body}"
 
 
 def manifests(version: str) -> dict[str, dict]:
