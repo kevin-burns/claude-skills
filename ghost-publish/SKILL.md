@@ -175,6 +175,24 @@ survived unchanged. So reordering cards, or rewriting one, will not quietly dama
 `json.dumps(json.dumps(doc))` is an easy slip, and Ghost rejects it with a 422 `Validation
 error, cannot edit post` and leaves the post untouched — a loud failure, not a silent one.
 
+**Paste a provider's iframe into the markdown, not into an HTML card.** The two land in
+different Ghost nodes and they are styled differently. A raw `<iframe>` in a markdown file
+becomes an `embed` node, rendered as `<figure class="kg-card kg-embed-card">`, and themes
+generally centre that — the default one uses `align-items:center; display:flex;
+flex-direction:column`. The editor's HTML card becomes an `html` node, `kg-html-card`, which
+typically has **no layout rule at all**, so a fixed-width player sits left-aligned.
+
+If hand-authored HTML cards need centring too, that is a stylesheet fix rather than a content
+one — a transform would have to be reapplied on every re-upload, since regenerating the post
+from markdown rebuilds the card. One line of code injection covers every card, past and future:
+
+```css
+.kg-html-card iframe { display: block; margin-left: auto; margin-right: auto; }
+```
+
+Target the iframe rather than the card. Markdown tables also become `html` cards, so centring
+`.kg-html-card` itself would stop them filling the column.
+
 **A provider's own embed code is left exactly as pasted.** Bandcamp, and anything else you
 paste as a raw `<iframe>`, becomes an `embed` card whose `html` is the provider's markup —
 width, styling and all. Ghost normalises the HTML syntax (`seamless` becomes `seamless=""`)
