@@ -19,8 +19,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 21 skills + 8 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 21 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 22 skills + 8 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 22 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -77,6 +77,7 @@ picked up with no second install.
 | [cv-evidence-base](./cv-evidence-base) | Interrogate a CV to recover the evidence that never made it onto the page, and grade which roles you are genuinely credible for — including the ones you are not. Runs *before* `cv-and-human`, when there is no target role yet | — |
 | [c7search](./c7search) | Fetch up-to-date library docs via the `c7search` CLI | [Context7](https://context7.com) API |
 | [markdown-converter](./markdown-converter) | Convert PDF/Office/HTML/media files to Markdown | [markitdown](https://github.com/microsoft/markitdown) (MS, MIT) |
+| [ghost-publish](./ghost-publish) | Publish, update, schedule and verify Ghost posts from a markdown file — strips front matter Ghost would render as prose, and diffs what Ghost holds against the source in *both* directions | [ghst](https://github.com/TryGhost/ghst) (TryGhost, MIT) |
 | [nano-banana-pro-json](./nano-banana-pro-json) | Generate/edit images (Gemini 3 Pro Image) with structured JSON control + photographic style presets, plus recipes for logos (with a free raster→SVG trace), product/e-commerce shots, and infographics — each with honest boundaries | Google Gemini image API |
 | [convert-to-webp](./convert-to-webp) | Convert images to WebP for web projects | [libwebp](https://developers.google.com/speed/webp) `cwebp` / macOS `sips` |
 | [social-image-prep](./social-image-prep) | Resize and format images for social platforms | `sips` / [ImageMagick](https://imagemagick.org) / [Pillow](https://python-pillow.org) |
