@@ -182,12 +182,25 @@ generally centre that — the default one uses `align-items:center; display:flex
 flex-direction:column`. The editor's HTML card becomes an `html` node, `kg-html-card`, which
 typically has **no layout rule at all**, so a fixed-width player sits left-aligned.
 
-If hand-authored HTML cards need centring too, that is a stylesheet fix rather than a content
-one — a transform would have to be reapplied on every re-upload, since regenerating the post
-from markdown rebuilds the card. One line of code injection covers every card, past and future:
+Three routes, three different results — measured on a rendered page rather than assumed:
+
+| how the iframe gets in | node | rendered as | centred by a typical theme |
+|---|---|---|---|
+| the **markdown file**, uploaded by `ghst` | `embed` | `<figure class="kg-card kg-embed-card">` | **yes** |
+| an **HTML card** in the editor | `html` | `<div class="kg-card kg-html-card">` | no |
+| a **markdown card** in the editor | `markdown` | a bare `<iframe>`, **no wrapper at all** | no |
+
+That third row is the one that surprises people, and it defeats the obvious fix: a markdown
+card renders its raw HTML straight into the content flow with no card class, so there is no
+`kg-` hook to style.
+
+If hand-authored cards need centring too, that is a stylesheet fix rather than a content one —
+a transform would have to be reapplied on every re-upload, since regenerating the post from
+markdown rebuilds the card. Match the shape you actually have:
 
 ```css
-.kg-html-card iframe { display: block; margin-left: auto; margin-right: auto; }
+.kg-html-card iframe   { display: block; margin-left: auto; margin-right: auto; }  /* HTML card */
+.gh-content > iframe   { display: block; margin-left: auto; margin-right: auto; }  /* markdown card */
 ```
 
 Target the iframe rather than the card. Markdown tables also become `html` cards, so centring
