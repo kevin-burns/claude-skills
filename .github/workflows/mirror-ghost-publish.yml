@@ -59,10 +59,21 @@ jobs:
       # than no mirror, and this is the only place that difference shows up.
       - name: Build the mirror
         if: steps.gate.outputs.configured == 'true'
+        # PYTHONDONTWRITEBYTECODE and no:cacheprovider matter here: the build
+        # strips caches, but running the suite INSIDE the built tree recreates
+        # them afterwards, and the first real sync shipped five .pyc files to
+        # users because of it. The purge below is the backstop -- any future
+        # step that touches the tree cannot reintroduce them silently.
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
         run: |
           python3 .github/scripts/build_ghost_mirror.py --root . --out /tmp/mirror
           python3 -m pip install --quiet pytest
-          ( cd /tmp/mirror/ghost-publish && python3 -m pytest tests -q )
+          ( cd /tmp/mirror/ghost-publish && python3 -m pytest tests -q -p no:cacheprovider )
+          find /tmp/mirror \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} +
+          find /tmp/mirror -name '*.pyc' -delete
+          echo "tree to publish:"
+          find /tmp/mirror -type f | sed 's|/tmp/mirror/|  |' | sort
 
       - name: Push to ${{ env.TARGET_REPO }}
         if: steps.gate.outputs.configured == 'true'
