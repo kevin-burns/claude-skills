@@ -165,6 +165,16 @@ carry `width: null`, Ghost lays a gallery out by aspect ratio, and rather than e
 script declines the merge and says which file it could not measure. Separate image cards look
 ordinary; a broken gallery does not.
 
+**The round trip is lossless, which is what makes any of this safe.** `post get` → transform →
+`post update --lexical-file` returns every node byte-identical: verified by moving a gallery to
+the end of a post and comparing fingerprints, where all seven nodes — an embed with its iframe
+and full oEmbed metadata, an HTML card with its visibility block, a four-image gallery —
+survived unchanged. So reordering cards, or rewriting one, will not quietly damage the rest.
+
+`--lexical-file` wants the **document itself**, not a JSON-encoded string of it. Writing
+`json.dumps(json.dumps(doc))` is an easy slip, and Ghost rejects it with a 422 `Validation
+error, cannot edit post` and leaves the post untouched — a loud failure, not a silent one.
+
 **A provider's own embed code is left exactly as pasted.** Bandcamp, and anything else you
 paste as a raw `<iframe>`, becomes an `embed` card whose `html` is the provider's markup —
 width, styling and all. Ghost normalises the HTML syntax (`seamless` becomes `seamless=""`)
