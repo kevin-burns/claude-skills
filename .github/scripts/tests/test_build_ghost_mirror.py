@@ -99,3 +99,27 @@ def test_rebuild_is_deterministic(tmp_path):
     assert first == second
     for name in first:
         assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes()
+
+def test_banner_path_is_rewritten_for_the_generated_front_page(tmp_path):
+    """The skill README references the banner relatively, and that README sits
+    one level below the mirror's generated landing page. Left alone the image
+    404s on the first thing anyone sees."""
+    out = build_readme("# ghost-publish\n\n![banner](images/banner.webp)\n\nBody.\n")
+    assert "](ghost-publish/images/banner.webp)" in out
+    assert "](images/banner.webp)" not in out
+
+
+def test_banner_sits_above_the_generated_notice(tmp_path):
+    """Order matters on a landing page: title, then the one visual, then the
+    housekeeping. Notice first buries the banner under four lines of prose."""
+    out = build_readme("# ghost-publish\n\n![b](images/banner.webp)\n\nBody text here.\n")
+    lines = out.splitlines()
+    assert lines[0].startswith("# ")
+    assert lines[2].startswith("!["), "banner must be directly under the title"
+    assert out.index("![") < out.index("This repository is generated")
+
+
+def test_the_banner_file_is_actually_published(tmp_path):
+    files = build(ROOT, tmp_path / "out")
+    assert "ghost-publish/images/banner.webp" in files, \
+        "the README references it; shipping the reference without the file is worse than neither"
