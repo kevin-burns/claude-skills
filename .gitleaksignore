@@ -1,0 +1,28 @@
+# gitleaks findings that have been INVESTIGATED and dismissed with evidence.
+#
+# The rule for this file: nothing goes in here because it is inconvenient. A finding is
+# either a real credential that gets ROTATED, or it is demonstrably not a credential and
+# the demonstration is written down below it. Fingerprints are pinned to the exact
+# commit + file + rule + line, never to a rule or a path, so a genuinely new leak in the
+# same file still fails.
+
+# excalidraw-room-persistence Firebase web config, found 2026-08-15 by the adoption scan
+# required by claude-skills-a1b.4.
+#
+# WHY THIS IS NOT A LEAK, established rather than assumed:
+#   * The project is "excalidraw-room-persistence" — EXCALIDRAW'S, not ours. Confirmed
+#     from the authDomain, projectId and storageBucket in the same object.
+#   * It is compiled into the published excalidraw bundle and therefore shipped to every
+#     browser that loads excalidraw.com. It was public before it reached this repo.
+#   * A Firebase web apiKey is a public client identifier by Google's design. It
+#     identifies the project; it does not authorise access. Firebase security rules do
+#     that. There is nothing here to rotate, and nothing we could rotate if there were.
+#   * The file is no longer in HEAD. It was removed in bad8301 (PR #2), which replaced
+#     the vendored bundle with a fetch from a pinned GitHub Release. It survives only in
+#     history, which is exactly what the CI job scans — hence this entry rather than a
+#     narrower fix.
+#
+# History is NOT being rewritten to remove it: this repo is public, has a generated
+# mirror, and rewriting would break every existing clone and fork to hide a third party's
+# public identifier.
+8380a5e562e6b3ae66dcbfcc1d7fc39e1438dc7d:excalidraw-diagram/references/vendor/excalidraw.mjs:gcp-api-key:1

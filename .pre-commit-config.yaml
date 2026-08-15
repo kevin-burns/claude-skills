@@ -97,8 +97,30 @@ repos:
       # in case commits cleanly here and breaks the build there.
       - id: check-case-conflict
 
-# DELIBERATELY NOT HERE YET, each with its own bead rather than smuggled in:
-#   gitleaks    claude-skills-a1b.4 — secret scanning, hook AND CI. One repo block, but
-#               the bead owns both halves and half-closing it is worse than waiting.
+  # Broad-spectrum secret scanner, and the highest-value hook here. This repo is PUBLIC,
+  # documents credential env vars across 22 skills (GEMINI_API_KEY, BRAVE_SEARCH_API_KEY,
+  # GHOST_STAFF_ACCESS_TOKEN, MIRROR_TOKEN, LINEAR_API_TOKEN, staff tokens in
+  # {id}:{secret} form), and feeds a generated public mirror — so a real key committed as
+  # an "example" propagates to a SECOND public repo on the next sync.
+  #
+  # It catches what detect-private-key cannot: connection strings carrying passwords,
+  # cloud API keys (AWS, GitHub, Anthropic, OpenAI, Stripe, Supabase, Neon) and ~160
+  # other token patterns.
+  #
+  # KNOW ITS LIMIT. gitleaks guards the repo boundary and nothing else. It did NOT catch
+  # either of the two real credential exposures in this project's history, because
+  # neither was a commit — one PAT was pasted into a chat window and another was echoed
+  # by expanding ${VAR:-default} to test whether it was set. See the
+  # secret-handling-shell memory. A clean gitleaks run is not evidence that no secret
+  # escaped.
+  #
+  # This hook scans STAGED CHANGES only. Whether something already landed is a different
+  # question, answered by the full-history job in .github/workflows/ci.yml.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+# DELIBERATELY NOT HERE YET:
 #   actionlint  claude-skills-a1b.5 — this repo has two workflows; upstream had none,
 #               which is why its config has no equivalent.

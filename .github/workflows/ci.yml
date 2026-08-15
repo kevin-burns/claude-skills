@@ -44,6 +44,42 @@ jobs:
       - name: ruff check
         run: uvx ruff@0.16.3 check --output-format github .
 
+  secrets:
+    name: secrets (gitleaks, full history)
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 is the whole point of this job. The pre-commit hook already
+      # scans staged changes; what it cannot answer is whether something ALREADY
+      # LANDED. A shallow clone would turn this into a slower duplicate of the hook.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # The binary is downloaded from a pinned release rather than using
+      # gitleaks-action, deliberately: the action requires a GITLEAKS_LICENSE once a
+      # repo belongs to an organisation, and that failure would arrive on the day the
+      # repo moves rather than the day the workflow changed. Same version the
+      # pre-commit hook pins — when one moves, both move.
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # --redact so a finding does not print the secret into a PUBLIC build log, which
+      # would widen the exposure the job exists to catch. The fingerprint and file are
+      # still reported, which is what you need to act on it.
+      #
+      # Dismissals live in .gitleaksignore, pinned per finding with the evidence written
+      # beside them. A finding is either rotated or demonstrated not to be a credential.
+      - name: Scan full history
+        run: gitleaks git --redact --verbose .
+
   conventions:
     name: conventions
     runs-on: ubuntu-latest
