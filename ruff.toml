@@ -1,0 +1,81 @@
+# Ruff configuration for claude-skills.
+#
+# `ruff.toml` rather than `pyproject.toml` on purpose: this repo is not a Python
+# package and never gets installed. A pyproject would imply otherwise.
+#
+# Every number below was measured against the 52 tracked first-party Python files
+# on 2026-08-15, not chosen by taste. The measurements are recorded next to the
+# setting they justify, because a threshold without its measurement is a guess
+# that looks like a decision.
+
+# 3.12 is the CI floor (raised from 3.9 on 2026-08-13, see .github/workflows/ci.yml).
+target-version = "py312"
+
+# MEASURED: line-too-long findings at each width, across the tracked files —
+#     88 (ruff default) -> 402      100 -> 75      120 -> 12      140 -> 3
+# The code here is already written to roughly 120. Choosing 88 would mean
+# reflowing 402 lines to satisfy a default nobody wrote to.
+line-length = 120
+
+# Ruff honours .gitignore by default, so the four local .venv/ trees are already
+# out of scope. Listed anyway: CI checks out a clean tree, and an explicit
+# exclude does not depend on a file that could be edited.
+extend-exclude = [
+    ".venv",
+    "**/site-packages",
+
+    # DELIBERATELY BROKEN CODE. These fixtures carry PLANTED bugs and are the
+    # test material for the code-reviewer and coherence-checker evals — e.g.
+    # agents/code-reviewer/evals/fixtures/stats.py has an off-by-one in
+    # median()'s even-length branch, with a correct clamp() beside it as a
+    # precision control. Linting them is pointless and `--fix` would silently
+    # destroy the evals. Exclude, never per-file-ignore: the point is that the
+    # code is wrong.
+    "agents/*/evals/fixtures",
+]
+
+[lint]
+# WHY THIS SET. Measured counts at line-length 120:
+#     E4,E7,E9,F  (bare default)                      19
+#     E,F,I,UP,B,SIM,C4,RET                           84
+#     ...,EXE,PLW           <- selected              118   (29 auto-fixable)
+#     ...,S                                          559
+#
+# `S` (flake8-bandit) is deliberately NOT here, and it is not an oversight:
+# 412 of the 441 findings it adds are S101 (assert) inside tests/ and evals/,
+# where asserts are the correct construct. Most of the remainder — S603, S607,
+# S310, S314 — are a repo of CLI tools doing exactly what those tools exist to
+# do. Secret scanning is covered by gitleaks (claude-skills-a1b.4). If `S` is
+# ever wanted, it needs per-file-ignores for tests/evals first, and its own
+# bead.
+#
+# `PLR` (pylint refactor) is also out: 77 of its findings are PLR2004
+# magic-value-comparison, overwhelmingly in test assertions, plus complexity
+# rules that are opinion rather than defect. `PLW` (pylint warnings) IS in,
+# because PLW1510 alone found 9 real cases of subprocess.run without an
+# explicit check= — the same defect class that ruff surfaced in the upstream
+# repo.
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes — the real bug catcher
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "C4",   # flake8-comprehensions
+    "RET",  # flake8-return
+    "EXE",  # flake8-executable — 23 findings, the largest single real group
+    "PLW",  # pylint warnings only
+]
+
+[lint.per-file-ignores]
+# Test and eval modules import fixtures and adjust sys.path before importing,
+# which is legitimate there and a defect in a script.
+"**/tests/*" = ["E402"]
+"**/evals/*" = ["E402"]
+
+[format]
+# Not enabled as a gate yet. `ruff format` would rewrite every tracked file in
+# one commit, which buries the lint fixes it is supposed to sit beside. It gets
+# its own change, or it does not happen.
+quote-style = "double"

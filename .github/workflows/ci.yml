@@ -23,6 +23,27 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Pinned to the same version as the pre-commit hook, deliberately. A CI
+      # lint that disagrees with the local gate is worse than no CI lint: it
+      # fails on a push that passed every hook, and the fix is invisible.
+      # When one moves, both move.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+
+      # Configuration lives in ruff.toml at the repo root, with every threshold
+      # recorded next to the measurement that chose it. Nothing is passed here
+      # that could disagree with what runs locally.
+      - name: ruff check
+        run: uvx ruff@0.16.3 check --output-format github .
+
   conventions:
     name: conventions
     runs-on: ubuntu-latest
