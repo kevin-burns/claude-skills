@@ -47,7 +47,7 @@ When sources disagree, the higher tier wins and you report the conflict explicit
 
 ## How to verify
 - **Repo facts:** `Grep`/`Glob`/`Read` the named file. Cite `path:line`.
-- **Library / API / CLI facts:** resolve by library NAME, then fetch — 
+- **Library / API / CLI facts:** resolve by library NAME, then fetch —
   `c7search resolve --library-name "<lib>" "<topic>"` to get the ID, then
   `c7search docs "<id>" --topic "<topic>"`. Avoid `c7search ask "<long query>"`: it
   ranks the whole query string and drifts to the wrong library on incidental

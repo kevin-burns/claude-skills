@@ -82,14 +82,14 @@ dependency "network" {
 
 dependency "database" {
   config_path = "../database"
-  
+
   # Database depends on network, but we also need network
   # Terragrunt handles this automatically
 }
 
 dependency "cache" {
   config_path = "../cache"
-  
+
   # Cache also depends on network
 }
 
@@ -104,13 +104,13 @@ locals {
 inputs = {
   vpc_id                  = dependency.network.outputs.vpc_id
   subnet_ids              = dependency.network.outputs.app_subnet_ids
-  
+
   database_endpoint       = dependency.database.outputs.endpoint
   database_port           = dependency.database.outputs.port
-  
+
   cache_endpoint          = dependency.cache.outputs.endpoint
   cache_port              = dependency.cache.outputs.port
-  
+
   allowed_security_groups = local.all_security_groups
 }
 
@@ -136,7 +136,7 @@ Skip dependencies in specific scenarios like destroy or first deployment
 ```hcl
 dependency "vpc" {
   config_path = "../vpc"
-  
+
   # Skip dependency during destroy to avoid order issues
   skip_outputs = true
 }
@@ -145,17 +145,17 @@ dependency "vpc" {
 locals {
   # Check if this is a destroy operation
   is_destroy = get_env("TG_COMMAND", "") == "destroy"
-  
+
   # Check if VPC module has been applied
   vpc_exists = fileexists("${get_terragrunt_dir()}/../vpc/.terragrunt-cache")
 }
 
 dependency "database" {
   config_path = "../rds"
-  
+
   # Skip outputs during destroy or if not yet created
   skip_outputs = local.is_destroy
-  
+
   mock_outputs = {
     endpoint = "localhost:5432"
   }
@@ -184,7 +184,7 @@ Define mock outputs to enable plan without applying dependencies
 ```hcl
 dependency "vpc" {
   config_path = "../vpc"
-  
+
   # Mock outputs for planning when VPC doesn't exist yet
   mock_outputs = {
     vpc_id             = "vpc-mock-12345"
@@ -192,7 +192,7 @@ dependency "vpc" {
     public_subnet_ids  = ["subnet-mock-3", "subnet-mock-4"]
     vpc_cidr_block     = "10.0.0.0/16"
   }
-  
+
   # Only use mocks when allowed (not in production)
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
   mock_outputs_merge_strategy_with_state  = "shallow"
@@ -200,13 +200,13 @@ dependency "vpc" {
 
 dependency "database" {
   config_path = "../rds"
-  
+
   mock_outputs = {
     endpoint        = "mock-db.example.com:5432"
     connection_url  = "postgresql://mock:mock@mock-db.example.com:5432/app"
     read_replica_endpoints = []
   }
-  
+
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
@@ -239,11 +239,11 @@ locals {
   region      = local.path_parts[1]  # us-east-1
   app_name    = local.path_parts[2]  # app
   module_name = local.path_parts[3]  # web-server
-  
+
   # Derive resource naming convention
   name_prefix = "${local.environment}-${local.region}-${local.app_name}"
   full_name   = "${local.name_prefix}-${local.module_name}"
-  
+
   # Common tags derived from parsed values
   common_tags = {
     Environment = local.environment
@@ -253,10 +253,10 @@ locals {
     ManagedBy   = "Terragrunt"
     FullName    = local.full_name
   }
-  
+
   # Conditional values based on environment
   is_production = local.environment == "production"
-  
+
   instance_settings = local.is_production ? {
     instance_type = "m5.large"
     min_size      = 3
@@ -297,7 +297,7 @@ locals {
   default_cpu    = 256
   default_memory = 512
   default_port   = 8080
-  
+
   health_check = {
     path     = "/health"
     interval = 30
@@ -326,7 +326,7 @@ locals {
   cpu    = 512  # Override: need more CPU
   memory = include.service.locals.default_memory  # Keep default
   port   = include.service.locals.default_port    # Keep default
-  
+
   # Deep merge health check with overrides
   health_check = merge(
     include.service.locals.health_check,
@@ -384,7 +384,7 @@ locals {
   environment = include.env.locals.environment
   aws_region  = include.env.locals.aws_region
   common_tags = include.root.locals.common_tags
-  
+
   # ECS-specific settings from module include
   ecs_cluster = include.ecs.locals.cluster_name
 }
@@ -393,7 +393,7 @@ inputs = {
   environment  = local.environment
   region       = local.aws_region
   cluster_name = local.ecs_cluster
-  
+
   tags = merge(
     local.common_tags,
     {
@@ -425,13 +425,13 @@ locals {
     staging    = "222222222222"
     production = "333333333333"
   }
-  
+
   vpc_cidrs = {
     dev        = "10.0.0.0/16"
     staging    = "10.1.0.0/16"
     production = "10.2.0.0/16"
   }
-  
+
   database_configs = {
     dev = {
       instance_class = "db.t3.micro"
@@ -455,12 +455,12 @@ locals {
   # Read environment from folder structure
   env_config  = read_terragrunt_config(find_in_parent_folders("env.hcl"))
   environment = local.env_config.locals.environment
-  
+
   # Read shared configuration
   shared = read_terragrunt_config(
     "${dirname(find_in_parent_folders("root.hcl"))}/_shared/common.hcl"
   )
-  
+
   # Look up values for current environment
   account_id = local.shared.locals.aws_account_ids[local.environment]
   vpc_cidr   = local.shared.locals.vpc_cidrs[local.environment]
@@ -548,7 +548,7 @@ Toggle features based on environment using configuration flags
 locals {
   env_config = read_terragrunt_config(find_in_parent_folders("env.hcl"))
   environment = local.env_config.locals.environment
-  
+
   # Feature flags per environment
   feature_flags = {
     dev = {
@@ -573,7 +573,7 @@ locals {
       enable_waf           = true
     }
   }
-  
+
   # Get flags for current environment
   flags = local.feature_flags[local.environment]
 }
@@ -609,17 +609,17 @@ locals {
     max_size      = 3
     enable_ha     = false
   }
-  
+
   # Environment-specific overrides
   env_config = read_terragrunt_config(find_in_parent_folders("env.hcl"))
   env_vars   = try(local.env_config.locals.app_config, {})
-  
+
   # Module-specific overrides (highest priority)
   module_vars = {
     # Override specific values for this module
     min_size = 2
   }
-  
+
   # Merge all configurations
   # Order matters: later maps override earlier ones
   config = merge(
@@ -656,13 +656,13 @@ Multi-level configuration hierarchy for root/account/region/environment
 locals {
   # Parse the file path to extract environment components
   parsed = regex(".*/(?P<account>.*)/(?P<region>.*)/(?P<env>.*)/(?P<module>.*)$", get_terragrunt_dir())
-  
+
   # Load configs from each level of the hierarchy
   root_config    = read_terragrunt_config(find_in_parent_folders("root.hcl"))
   account_config = read_terragrunt_config(find_in_parent_folders("account.hcl"))
   region_config  = read_terragrunt_config(find_in_parent_folders("region.hcl"))
   env_config     = read_terragrunt_config(find_in_parent_folders("env.hcl"))
-  
+
   # Merge configurations (later values override earlier)
   merged_tags = merge(
     local.root_config.locals.tags,
@@ -673,7 +673,7 @@ locals {
       Module = local.parsed.module
     }
   )
-  
+
   # Extract commonly used values
   account_id  = local.account_config.locals.account_id
   aws_region  = local.region_config.locals.aws_region
@@ -723,10 +723,10 @@ locals {
       replica_count = 3
     }
   }
-  
+
   # Get current workspace or default
   workspace = get_env("TF_WORKSPACE", "default")
-  
+
   # Select configuration for current workspace
   config = lookup(local.workspace_configs, local.workspace, local.workspace_configs["default"])
 }
@@ -735,7 +735,7 @@ inputs = {
   environment   = local.config.environment
   instance_type = local.config.instance_type
   replica_count = local.config.replica_count
-  
+
   tags = {
     Environment = local.config.environment
     Workspace   = local.workspace
@@ -838,7 +838,7 @@ EOF
 locals {
   # Load environment-specific config
   env_config = read_terragrunt_config(find_in_parent_folders("env.hcl"))
-  
+
   backend_bucket = local.env_config.locals.backend_bucket
   aws_region     = local.env_config.locals.aws_region
   lock_table     = local.env_config.locals.lock_table
@@ -886,7 +886,7 @@ EOF
 locals {
   env_config   = read_terragrunt_config(find_in_parent_folders("env.hcl"))
   account_vars = read_terragrunt_config(find_in_parent_folders("account.hcl"))
-  
+
   aws_region   = local.env_config.locals.aws_region
   environment  = local.env_config.locals.environment
   account_id   = local.account_vars.locals.account_id

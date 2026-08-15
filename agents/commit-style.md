@@ -32,4 +32,3 @@ Platform-neutral — same body works for GitHub or GitLab.
   anywhere (commit, title, or body). This is non-negotiable (global git rules).
 - No secrets, tokens, or subscription IDs in any message.
 - Don't auto-push or open/merge — that's the caller's job (AGENTS.md "Landing the Plane").
-

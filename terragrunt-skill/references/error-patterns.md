@@ -37,12 +37,12 @@ AWS credentials are not configured or invalid
 
 **Solutions:**
 
-- 
+-
   ```bash
   aws configure
   ```
-- 
-- 
+-
+-
 
 ## ERROR: Azure authentication required
 
@@ -57,15 +57,15 @@ Not authenticated to Azure or subscription not accessible
 
 **Solutions:**
 
-- 
+-
   ```bash
   az login
   ```
-- 
+-
   ```bash
   az account set --subscription <subscription-id>
   ```
-- 
+-
 
 ## ERROR: GCP credentials not found
 
@@ -80,12 +80,12 @@ GCP credentials are not configured
 
 **Solutions:**
 
-- 
+-
   ```bash
   gcloud auth application-default login
   ```
-- 
-- 
+-
+-
 
 ## ERROR: Access denied to backend
 
@@ -182,12 +182,12 @@ The GCS bucket for remote state does not exist
 
 **Solutions:**
 
-- 
-- 
+-
+-
   ```bash
   gsutil ls gs://<bucket-name>
   ```
-- 
+-
 
 ## ERROR: S3 bucket does not exist
 
@@ -202,12 +202,12 @@ The S3 bucket specified for remote state does not exist
 
 **Solutions:**
 
-- 
-- 
+-
+-
   ```bash
   aws s3 ls s3://<bucket-name>
   ```
-- 
+-
 
 ## ERROR: After apply hook failed
 
@@ -222,9 +222,9 @@ After apply hook execution failed
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Before init hook failed
 
@@ -239,9 +239,9 @@ Before init hook execution failed
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Circular dependency in locals
 
@@ -256,9 +256,9 @@ Local variables have circular dependencies
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Circular include detected
 
@@ -273,9 +273,9 @@ Include files create a circular reference
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Configuration path not found
 
@@ -290,9 +290,9 @@ Referenced file or directory does not exist
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Duplicate configuration block
 
@@ -307,9 +307,9 @@ Configuration block defined multiple times
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Function evaluation error
 
@@ -324,9 +324,9 @@ Error evaluating Terragrunt function
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Generate if_exists strategy error
 
@@ -341,9 +341,9 @@ Invalid if_exists strategy in generate block
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Generate invalid path
 
@@ -358,9 +358,9 @@ Generated file path is invalid
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Generate permission denied
 
@@ -375,9 +375,9 @@ Insufficient permissions to write generated file
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Generate template error
 
@@ -392,9 +392,9 @@ Error in generate block template
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Generated file already exists
 
@@ -409,9 +409,9 @@ Generated file already exists and cannot be overwritten
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Hook command failed
 
@@ -426,9 +426,9 @@ Before or after hook command failed
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Hook environment variable missing
 
@@ -443,9 +443,9 @@ Required environment variable for hook is missing
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Hook execution timeout
 
@@ -460,9 +460,9 @@ Hook command exceeded timeout
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Hook log suppression error
 
@@ -477,9 +477,9 @@ Error with hook log suppression configuration
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Hook working directory error
 
@@ -494,9 +494,9 @@ Cannot access hook working directory
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Include dependency resolution error
 
@@ -511,9 +511,9 @@ Cannot resolve dependencies in included configuration
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Include expose configuration conflict
 
@@ -528,9 +528,9 @@ Conflict in include expose configuration
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Include file not found
 
@@ -545,9 +545,9 @@ Referenced include file does not exist
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Include file parse error
 
@@ -562,9 +562,9 @@ Syntax error in included file
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Include merge conflict
 
@@ -579,9 +579,9 @@ Cannot merge configurations from includes
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Include path traversal limit
 
@@ -596,9 +596,9 @@ Exceeded limit searching for include file
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Interpolation error
 
@@ -613,9 +613,9 @@ Error in variable interpolation or template
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Invalid attribute value
 
@@ -630,9 +630,9 @@ Invalid or unsupported attribute in configuration
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Invalid configuration block
 
@@ -647,9 +647,9 @@ Invalid or unsupported block in terragrunt.hcl
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Invalid terraform source
 
@@ -664,9 +664,9 @@ The terraform source URL format is invalid
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Local evaluation error
 
@@ -681,9 +681,9 @@ Error evaluating local variable expression
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Local type error
 
@@ -698,9 +698,9 @@ Local variable has wrong type
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Locals merge error
 
@@ -715,9 +715,9 @@ Error merging locals from includes
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Missing required input variable
 
@@ -732,9 +732,9 @@ A required input variable is not provided
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: No Terraform configuration files found
 
@@ -749,9 +749,9 @@ Terragrunt cannot find any .tf files in the source directory
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Remote state configuration missing
 
@@ -766,9 +766,9 @@ Remote state backend is not configured
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Required attribute missing
 
@@ -783,9 +783,9 @@ Required configuration attribute is not provided
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Syntax error in configuration
 
@@ -800,9 +800,9 @@ HCL syntax error in terragrunt.hcl or .tf files
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Type mismatch error
 
@@ -817,9 +817,9 @@ Value type does not match expected type
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Undefined local reference
 
@@ -834,9 +834,9 @@ Referenced local variable is not defined
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Working directory error
 
@@ -851,9 +851,9 @@ Cannot access or change to working directory
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Circular dependency detected
 
@@ -868,9 +868,9 @@ Modules have circular dependencies which Terraform cannot resolve
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Circular module source reference
 
@@ -885,9 +885,9 @@ Module source creates a circular reference
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Could not download source
 
@@ -902,9 +902,9 @@ Failed to download module source code
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Git authentication failed
 
@@ -919,9 +919,9 @@ Failed to authenticate with Git repository
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Git ref not found
 
@@ -936,9 +936,9 @@ Specified Git tag or branch does not exist
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Local module path invalid
 
@@ -953,9 +953,9 @@ Local module path is invalid or inaccessible
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Module archive extraction error
 
@@ -970,9 +970,9 @@ Failed to extract module archive
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Module cache corrupted
 
@@ -987,12 +987,12 @@ Module cache is corrupted
 
 **Solutions:**
 
-- 
+-
   ```bash
   terragrunt clear-cache
   ```
-- 
-- 
+-
+-
 
 ## ERROR: Module checksum mismatch
 
@@ -1007,9 +1007,9 @@ Downloaded module checksum does not match expected value
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Module not found
 
@@ -1024,9 +1024,9 @@ Terragrunt cannot locate a referenced module
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Module registry unavailable
 
@@ -1041,9 +1041,9 @@ Cannot access Terraform module registry
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Module subdirectory not found
 
@@ -1058,9 +1058,9 @@ Specified subdirectory does not exist in module source
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Module version not found
 
@@ -1075,9 +1075,9 @@ No module version matches the specified constraint
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Connection refused
 
@@ -1092,9 +1092,9 @@ Cannot establish connection to remote service
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Network timeout
 
@@ -1109,9 +1109,9 @@ Network operation timed out
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
 
 ## ERROR: Backend configuration changed
 
@@ -1126,15 +1126,15 @@ The backend configuration has changed and state needs to be migrated
 
 **Solutions:**
 
-- 
+-
   ```bash
   terragrunt init -reconfigure
   ```
-- 
+-
   ```bash
   terragrunt init -migrate-state
   ```
-- 
+-
 
 ## ERROR: Error acquiring state lock
 
@@ -1149,9 +1149,9 @@ Unable to acquire state lock, usually because another process has it
 
 **Solutions:**
 
-- 
-- 
-- 
+-
+-
+-
   ```bash
   terragrunt force-unlock <LOCK_ID>
   ```
@@ -1169,15 +1169,15 @@ Cannot retrieve or access Terraform workspace
 
 **Solutions:**
 
-- 
+-
   ```bash
   terragrunt init
   ```
-- 
+-
   ```bash
   terragrunt workspace list
   ```
-- 
+-
   ```bash
   terragrunt workspace new <name>
   ```
@@ -1195,12 +1195,12 @@ Required Terraform provider is not installed
 
 **Solutions:**
 
-- 
+-
   ```bash
   terragrunt init
   ```
-- 
-- 
+-
+-
 
 ## ERROR: Provider version constraint
 
@@ -1215,12 +1215,12 @@ Provider version does not meet requirements
 
 **Solutions:**
 
-- 
-- 
+-
+-
   ```bash
   terragrunt init -upgrade
   ```
-- 
+-
 
 ## ERROR: Terraform version constraint not met
 
@@ -1235,9 +1235,9 @@ The installed Terraform version does not meet requirements
 
 **Solutions:**
 
-- 
+-
   ```bash
   terraform version
   ```
-- 
-- 
+-
+-

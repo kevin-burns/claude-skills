@@ -357,7 +357,7 @@ Find Terragrunt modules in a directory tree.
 
 **Usage:** `terragrunt find [flags] [path]`
 
-Searches for all Terragrunt configuration files (terragrunt.hcl) in the 
+Searches for all Terragrunt configuration files (terragrunt.hcl) in the
 specified directory tree. This is useful for discovering all modules in
 a large infrastructure repository.
 
@@ -417,8 +417,8 @@ Execute an arbitrary shell command with Terragrunt environment variables.
 
 **Usage:** `terragrunt exec [flags] -- [command]`
 
-The exec command runs an arbitrary shell command while setting up the Terragrunt 
-environment variables and context. This is useful for running custom scripts that need access 
+The exec command runs an arbitrary shell command while setting up the Terragrunt
+environment variables and context. This is useful for running custom scripts that need access
 to Terragrunt's resolved configuration values.
 
 **Options:**
@@ -445,10 +445,10 @@ Run one or more Terraform/OpenTofu commands against a single unit or a stack of 
 
 **Usage:** `terragrunt run [flags] -- [terraform command]`
 
-The run command is the primary way to execute Terraform/OpenTofu commands through Terragrunt. 
+The run command is the primary way to execute Terraform/OpenTofu commands through Terragrunt.
 It can operate on a single module (unit) or across multiple modules (stack) using the --all flag.
 
-When running against a stack, Terragrunt automatically determines the correct execution order based on 
+When running against a stack, Terragrunt automatically determines the correct execution order based on
 dependencies defined in terragrunt.hcl files.
 
 **Options:** (1.0 flags — the pre-1.0 `--terragrunt-` prefix is gone)
@@ -640,7 +640,7 @@ Shortcut for running terraform plan through Terragrunt.
 
 **Usage:** `terragrunt plan [flags]`
 
-A convenience shortcut equivalent to 'terragrunt run -- plan'. 
+A convenience shortcut equivalent to 'terragrunt run -- plan'.
 Runs terraform plan with all Terragrunt configuration applied, including
 input variables, backend configuration, and any before/after hooks.
 

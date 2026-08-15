@@ -136,14 +136,14 @@ falls, the cost of *verifying* must rise — generated HCL is not trustworthy un
 ```hcl
 dependency "vpc" {
   config_path = "../vpc"
-  
+
   mock_outputs = {
     vpc_id            = "vpc-00000000000000000"
     vpc_cidr          = "10.0.0.0/16"
     private_subnet_ids = ["subnet-00000000000000001", "subnet-00000000000000002"]
     public_subnet_ids  = ["subnet-00000000000000003", "subnet-00000000000000004"]
   }
-  
+
   # Only use mocks for validate and plan
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -216,7 +216,7 @@ inputs = {
 # live/dev/env.hcl
 locals {
   environment = "dev"
-  
+
   # Environment-specific settings
   instance_type    = "t3.small"
   min_size         = 1
@@ -241,7 +241,7 @@ locals {
 ```hcl
 dependency "vpc" {
   config_path = "../vpc"
-  
+
   # Mock outputs for plan/apply when VPC doesn't exist yet
   mock_outputs = {
     vpc_id     = "vpc-mock-12345"
@@ -253,7 +253,7 @@ dependency "vpc" {
 
 dependency "security_group" {
   config_path = "../security-group"
-  
+
   mock_outputs = {
     security_group_id = "sg-mock-12345"
   }
@@ -351,15 +351,15 @@ locals {
   env_vars     = read_terragrunt_config(find_in_parent_folders("env.hcl"))
   region_vars  = read_terragrunt_config(find_in_parent_folders("region.hcl"))
   account_vars = read_terragrunt_config(find_in_parent_folders("account.hcl"))
-  
+
   # Extract commonly used values
   environment = local.env_vars.locals.environment
   region      = local.region_vars.locals.aws_region
   account_id  = local.account_vars.locals.account_id
-  
+
   # Compute derived values
   name_prefix = "${local.environment}-${local.region}"
-  
+
   # Standard tags
   common_tags = {
     Environment = local.environment
@@ -438,7 +438,7 @@ terraform {
 variable "vpc_cidr" {
   type        = string
   description = "CIDR block for the VPC. Must be a valid IPv4 CIDR (e.g., 10.0.0.0/16)"
-  
+
   validation {
     condition     = can(cidrnetmask(var.vpc_cidr))
     error_message = "vpc_cidr must be a valid CIDR block."
@@ -703,7 +703,7 @@ remote_state {
     bucket  = "terraform-state"
     key     = "${path_relative_to_include()}/terraform.tfstate"
     encrypt = true  # Server-side encryption
-    
+
     # Optional: Use KMS key for additional control
     kms_key_id = "arn:aws:kms:us-east-1:123456789:key/12345678-1234-1234-1234-123456789"
   }
@@ -737,7 +737,7 @@ remote_state {
     region         = "us-east-1"
     encrypt        = true
     dynamodb_table = "terraform-state-locks"
-    
+
     # Prevent accidental bucket deletion
     skip_bucket_versioning = false
   }
@@ -792,7 +792,7 @@ terraform {
     commands = ["apply", "plan"]
     execute  = ["tflint", "--config=.tflint.hcl"]
   }
-  
+
   before_hook "security_scan" {
     commands = ["apply"]
     execute  = ["tfsec", "."]

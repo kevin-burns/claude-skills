@@ -112,7 +112,7 @@ inputs = {
 ```hcl
 dependency "vpc" {
   config_path = "../vpc"
-  
+
   mock_outputs = {
     vpc_id            = "vpc-mock12345"
     private_subnet_ids = ["subnet-mock1", "subnet-mock2"]
@@ -192,7 +192,7 @@ generate "provider" {
   contents  = <<EOF
 provider "aws" {
   region = "${local.region}"
-  
+
   default_tags {
     tags = {
       Environment = "${local.environment}"
@@ -212,7 +212,7 @@ generate "versions" {
   contents  = <<EOF
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -414,10 +414,10 @@ locals { ... }
 locals {
   environment = "production"
   region      = "us-east-1"
-  
+
   # Computed values
   name_prefix = "${local.environment}-app"
-  
+
   # Load from files
   account_vars = read_terragrunt_config(find_in_parent_folders("account.hcl"))
   account_id   = local.account_vars.locals.account_id
@@ -428,9 +428,9 @@ locals {
 ```hcl
 locals {
   is_prod = local.environment == "production"
-  
+
   instance_type = local.is_prod ? "m5.xlarge" : "t3.micro"
-  
+
   tags = {
     Environment = local.environment
     ManagedBy   = "Terragrunt"
@@ -669,7 +669,7 @@ terraform {
 ```hcl
 terraform {
   source = "../modules/vpc"
-  
+
   extra_arguments "common_vars" {
     commands = ["apply", "plan", "import", "push", "refresh"]
     arguments = ["-var-file=${get_terragrunt_dir()}/common.tfvars"]
