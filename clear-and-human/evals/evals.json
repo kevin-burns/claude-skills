@@ -26,24 +26,25 @@
     },
     {
       "id": 3,
-      "prompt": "Does this LinkedIn post sound like AI? Rewrite it if so:\n\n\"Most people get this wrong. Read that again.\n\nSuccess isn't about talent \u2192 it's about consistency \u2192 it's about showing up.\n\nAgree? Drop a comment below \ud83d\udc47\"",
+      "prompt": "Does this LinkedIn post sound like AI? Rewrite it if so:\n\n\"Most people get this wrong. Read that again.\n\nSuccess isn't about talent → it's about consistency → it's about showing up.\n\nAgree? Drop a comment below 👇\"",
       "expected_output": "Detects LinkedIn, flags the permission phrase, arrow chain, and engagement-bait closer, and removes all three in the rewrite.",
       "expectations": [
         "The output classifies the content as linkedin",
         "The output flags the phrase 'Read that again.' as a marker to cut. Any wording is acceptable; the assertion is that the phrase is named. Do not require the terms 'permission' or 'gravity' -- neither appears anywhere in the skill.",
-        "The output flags the arrow chain (\u2192) and converts it to prose in the rewrite",
+        "The output flags the arrow chain (→) and converts it to prose in the rewrite",
         "The output flags the engagement-bait closer 'Agree? Drop a comment'",
-        "The rewrite contains no arrow characters (\u2192) and no 'drop a comment' style closer"
+        "The rewrite contains no arrow characters (→) and no 'drop a comment' style closer"
       ]
     },
     {
       "id": 4,
-      "prompt": "Clean up the mechanics in this text: \"The system is fast \u2014 really fast \u2014 and it\u2019s \u201creliable\u201d too. ## Key Features And Benefits\"",
-      "expected_output": "Converts em-dashes to commas/periods, curly quotes to straight quotes, and Title Case heading to sentence case.",
+      "prompt": "Clean up the mechanics in this text: \"The system is fast — really fast — and it’s “reliable” too. ## Key Features And Benefits\"",
+      "expected_output": "Converts the Title Case heading to sentence case. Does NOT blanket-cut em-dashes or curly quotes: references/ai-patterns.md makes both author-relative and model-specific, so a rewrite that strips them without a reason has followed a rule the skill deleted on 2026-08-13. With no surrounding file to compare against, the correct move is to say so rather than normalise silently.",
       "expectations": [
-        "The rewrite contains no em-dash characters",
-        "The rewrite uses straight quotation marks rather than curly ones",
-        "The heading is converted from title case to sentence case (e.g. 'Key features and benefits')"
+        "The heading is converted from title case to sentence case (e.g. 'Key features and benefits')",
+        "The output does not justify changing the em-dashes on the grounds that em-dashes are an AI tell or should be removed as a matter of course. references/ai-patterns.md says to compare against the author's own rate rather than against zero, and cites a July 2026 finding that of contemporary models only Claude used em dashes MORE than professional writers. Changing them for a stated reason about THIS text -- two in one short sentence is a high rate -- passes. Changing them silently, or because they look like AI, fails.",
+        "The output does not silently convert the curly quotes to straight ones. The rule is a consistency check within one document -- 'only where the surrounding file uses straight ones' -- and this input is a fragment with no surrounding file. Either leaving them or changing them is acceptable; doing it without acknowledging that the convention is unknown is not.",
+        "The emphasis carried by 'really fast' survives the rewrite in some form. Core rule 2 forbids dropping an argument, and the repetition is the argument here."
       ]
     },
     {
@@ -110,7 +111,7 @@
       "expectations": [
         "The output is structured as ordered steps using imperative instructions",
         "The output does not present any invented file path, certificate name, or version number as if it were the user's actual environment",
-        "Environment-specific values (paths, domain names, certificate filenames) are explicitly marked as placeholders to replace (e.g. angle-bracketed or with a 'replace with your\u2026' note), not stated as concrete fact",
+        "Environment-specific values (paths, domain names, certificate filenames) are explicitly marked as placeholders to replace (e.g. angle-bracketed or with a 'replace with your…' note), not stated as concrete fact",
         "The voice is plain and instructional rather than promotional or personality-driven"
       ]
     },
