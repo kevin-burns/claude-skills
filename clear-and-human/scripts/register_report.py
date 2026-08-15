@@ -140,14 +140,14 @@ NOMINALISATION = re.compile(r"\b\w{2,}(?:tion|sion|ment|ness|ity|ance|ence)s?\b"
 
 # Words that clear the stem floor but are not verb-derived abstract nouns.
 # Checked against the matcher, not assumed -- see the test of the same name.
-NOT_NOMINALISATIONS = frozenset("""
-stance stances chance chances france advance advances balance balances
-finance finances instance instances romance romances entrance entrances
-sentence sentences silence science sciences audience audiences
-patience conscience nuisance moment moments comment comments
-garment garments ornament fragment fragments monument monuments
-pigment segment segments cement parliament tournament document documents
-""".split())
+NOT_NOMINALISATIONS = frozenset([
+    "stance", "stances", "chance", "chances", "france", "advance", "advances", "balance",
+    "balances", "finance", "finances", "instance", "instances", "romance", "romances", "entrance",
+    "entrances", "sentence", "sentences", "silence", "science", "sciences", "audience", "audiences",
+    "patience", "conscience", "nuisance", "moment", "moments", "comment", "comments", "garment",
+    "garments", "ornament", "fragment", "fragments", "monument", "monuments", "pigment", "segment",
+    "segments", "cement", "parliament", "tournament", "document", "documents",
+])
 
 
 def count_nominalisations(text: str) -> int:
@@ -210,8 +210,7 @@ def strip_noise(text: str) -> str:
     # indented code (four leading spaces/tabs on one line) still matches.
     text = re.sub(r"^[ \t]{4,}\S.*$", " ", text, flags=re.M)      # indented code
     text = re.sub(r"^#{1,6}\s+", "", text, flags=re.M)            # heading marks
-    text = re.sub(r"https?://\S+", " ", text)
-    return text
+    return re.sub(r"https?://\S+", " ", text)
 
 
 def profile(text: str) -> dict:
@@ -444,7 +443,9 @@ def to_json(draft: dict, stance: str, baseline: dict | None, label: str) -> dict
             "features": {k: draft["features"][k] for k, *_ in PERSON_META},
         },
         "stiffness": {
-            "note": "reported separately from PERSON because person is an authorial choice, not because the axes are uncorrelated -- no independence is claimed",
+            "note": "reported separately from PERSON because person is an authorial "
+                    "choice, not because the axes are uncorrelated -- no independence "
+                    "is claimed",
             "features": {k: draft["features"][k] for k, *_ in STIFFNESS_META},
             "ttr_caveat": "type/token ratio is a register indicator only, never an AI-likeness signal",
         },

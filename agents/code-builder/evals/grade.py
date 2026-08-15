@@ -12,26 +12,32 @@ import subprocess
 import sys
 from pathlib import Path
 
+
+def _load_json(path):
+    """Read and parse a JSON file, closing the handle. json.load(open(...)) leaks it."""
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
 GUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 
 
 def git(repo, *args):
     return subprocess.run(["git", "-C", str(repo), *args],
-                          capture_output=True, text=True).stdout.strip()
+                          capture_output=True, text=True, check=False).stdout.strip()
 
 
 def grade(eval_path: str, ws: str) -> int:
     ws = Path(ws)
-    spec = json.load(open(eval_path))
+    _load_json(eval_path)  # not read: asserts the eval spec exists and parses
     results = {}
 
     # ---- case A: tdd-slugify ----
     a = ws / "seed-a"
-    ra = json.load(open(ws / "run" / "seed-a.json")) if (ws / "run" / "seed-a.json").exists() else {}
+    ra = _load_json(ws / "run" / "seed-a.json") if (ws / "run" / "seed-a.json").exists() else {}
     branch = git(a, "rev-parse", "--abbrev-ref", "HEAD")
     ncommits = git(a, "rev-list", "--count", "HEAD")
     pytest = subprocess.run(["uv", "run", "--with", "pytest", "pytest", "-q"],
-                            cwd=a, capture_output=True, text=True)
+                            cwd=a, capture_output=True, text=True, check=False)
     log = git(a, "log", "--format=%B")
     results["tdd-slugify"] = {
         "on-feature-branch": branch not in ("main", "master", "HEAD", ""),
@@ -44,7 +50,7 @@ def grade(eval_path: str, ws: str) -> int:
 
     # ---- case B: fact-discipline-guid ----
     b = ws / "seed-b"
-    rb = json.load(open(ws / "run" / "seed-b.json")) if (ws / "run" / "seed-b.json").exists() else {}
+    rb = _load_json(ws / "run" / "seed-b.json") if (ws / "run" / "seed-b.json").exists() else {}
     src_text = "\n".join(p.read_text() for p in (b / "src").rglob("*.py"))
     mf = rb.get("missing_facts") or []
     has_lookup = any("az" in (m.get("lookup_command", "") or "").lower() for m in mf) if mf else False

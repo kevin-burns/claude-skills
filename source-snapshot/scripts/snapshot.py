@@ -28,7 +28,7 @@ import shlex
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 EXIT_OK, EXIT_NONE, EXIT_USAGE, EXIT_RUN = 0, 1, 2, 3
@@ -50,7 +50,7 @@ EXTRACTORS = {
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _defuddle_runner() -> list | None:
@@ -188,7 +188,7 @@ def _run_extractor(extractor: str, source: str) -> str:
     else:
         raise RuntimeError(f"no runner for extractor '{extractor}'")
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
     except FileNotFoundError as e:
         raise RuntimeError(f"{cmd[0]} not found on PATH: {e}") from e
     if proc.returncode != 0:

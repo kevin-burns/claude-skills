@@ -19,7 +19,6 @@ Exits non-zero on any failure.
 import json
 import pathlib
 import re
-import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -61,6 +60,7 @@ def check_frontmatter(skill):
         fail(skill.name, f"frontmatter name is {name.group(1)!r}, directory is {skill.name!r}")
     if not re.search(r"^description:", block, re.M):
         fail(skill.name, "SKILL.md frontmatter has no 'description:'")
+    return None
 
 
 def check_readme(skill):

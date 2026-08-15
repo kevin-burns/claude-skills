@@ -57,11 +57,15 @@ def icon_bounds(elements: list[dict]) -> tuple[float, float, float, float]:
         w, h = el.get("width", 0) or 0, el.get("height", 0) or 0
         if el.get("type") in ("arrow", "line") and "points" in el:
             for px, py in el["points"]:
-                xs0.append(x + px); ys0.append(y + py)
-                xs1.append(x + px); ys1.append(y + py)
+                xs0.append(x + px)
+                ys0.append(y + py)
+                xs1.append(x + px)
+                ys1.append(y + py)
         else:
-            xs0.append(x); ys0.append(y)
-            xs1.append(x + abs(w)); ys1.append(y + abs(h))
+            xs0.append(x)
+            ys0.append(y)
+            xs1.append(x + abs(w))
+            ys1.append(y + abs(h))
     if not xs0:
         return (0.0, 0.0, 0.0, 0.0)
     min_x, min_y = min(xs0), min(ys0)

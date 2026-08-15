@@ -16,12 +16,13 @@ third-party packages, so `python3` is a supported runner alongside `uv`.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 import threading
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 CONFIG_DIR = Path.home() / ".config" / "job-feeds"
@@ -109,7 +110,7 @@ class RateLimiter:
         polled at least once — which makes an absent state file lost
         state rather than a first run.
         """
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         state, problem = self._load()
 
         if problem == "unreadable":
@@ -160,7 +161,7 @@ class RateLimiter:
             backoff = value.get("backoff") or 0
             strikes = value.get("strikes") or 0
         try:
-            return (datetime.strptime(raw, STAMP).replace(tzinfo=timezone.utc),
+            return (datetime.strptime(raw, STAMP).replace(tzinfo=UTC),
                     int(backoff), int(strikes))
         except (TypeError, ValueError):
             return None, 0, 0
@@ -204,14 +205,14 @@ class RateLimiter:
         no standing limit still has to be remembered, or the next run
         retries immediately.
         """
-        if not source.rate_limit_seconds and not force:
+        if not source.rate_limit_seconds and not force:  # noqa: SIM102 - the comment below explains the inner check
             # ...but a recovered source must still have its strike count
             # cleared, or escalation ratchets up forever for the seven
             # sources that declare no standing limit. Caught by test:
             # two throttles then a clean fetch left strikes at 2.
             if not (healthy and self._strikes(source)):
                 return
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         with self._lock:
             state, _ = self._load()
             stamp = now.strftime(STAMP)
@@ -259,10 +260,8 @@ class RateLimiter:
         finally:
             # A crash between write and replace must not litter the config
             # directory with fragments that look like real state.
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 tmp.unlink()
-            except FileNotFoundError:
-                pass
 
 
 # --------------------------------------------------------------------------
@@ -327,7 +326,7 @@ class Store:
         replacing the original, because the other listing may be the one
         worth applying through.
         """
-        stamp = (now or datetime.now(timezone.utc)).strftime(STAMP)
+        stamp = (now or datetime.now(UTC)).strftime(STAMP)
         new = seen = 0
         for entry in jobs:
             key = dedupe_key(entry.get("company"), entry.get("title"), entry.get("location"))
@@ -363,7 +362,7 @@ class Store:
         dates at all, so a naive date filter would delete that entire
         source without saying so.
         """
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         cutoff = (now - timedelta(days=window_days)).strftime(STAMP)
         sql = "SELECT * FROM jobs WHERE (posted_at IS NULL OR posted_at >= ?)"
         params = [cutoff]
@@ -394,7 +393,7 @@ class Store:
         the URL it came from. Replaying one against a changed URL can return
         304 with zero rows while `jfeeds sources` reports `unchanged`.
         """
-        stamp = (now or datetime.now(timezone.utc)).strftime(STAMP)
+        stamp = (now or datetime.now(UTC)).strftime(STAMP)
         self.conn.execute(
             "INSERT INTO sources"
             " (name, last_fetch, status, reason, row_count, pages, etag, etag_url)"
@@ -657,7 +656,7 @@ def fetch_all(sources, opener=http_open, limiter=None, store=None, now=None,
     A source that raises never propagates: it becomes a `failed` result so
     the seven feeds that answered still reach the store.
     """
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     limiter = limiter if limiter is not None else RateLimiter()
     store = store if store is not None else Store(DB_DEFAULT)
     sources = list(sources)
@@ -923,7 +922,7 @@ def attach_seen_age(rows, now):
         if not stamp:
             continue
         try:
-            seen = datetime.strptime(stamp, STAMP).replace(tzinfo=timezone.utc)
+            seen = datetime.strptime(stamp, STAMP).replace(tzinfo=UTC)
         except (TypeError, ValueError):
             continue
         row["seen_days"] = max(0, (now - seen).days)
@@ -988,10 +987,10 @@ def render_table(rows):
              ("★ " if row["highlight"] else "") + (row["title"] or "")[:44],
              (row["location"] or "")[:24]) for row in rows]
     widths = ([max(len(str(cell)) for cell in column)
-               for column in zip(header, *body)] if body else [len(h) for h in header])
-    heading = "  ".join(h.ljust(w) for h, w in zip(header, widths))
+               for column in zip(header, *body, strict=True)] if body else [len(h) for h in header])
+    heading = "  ".join(h.ljust(w) for h, w in zip(header, widths, strict=True))
     lines = [heading, "-" * len(heading)]
-    lines += ["  ".join(str(c).ljust(w) for c, w in zip(row, widths)) for row in body]
+    lines += ["  ".join(str(c).ljust(w) for c, w in zip(row, widths, strict=True)) for row in body]
     return "\n".join(lines)
 
 
@@ -1186,7 +1185,7 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
                     "no sources selected — check --only against config 'sources'")
             limiter = RateLimiter(ratelimit_path_for(args.db))
             results = fetch_all(chosen, opener or http_open, limiter, store,
-                                now or datetime.now(timezone.utc), args.max_pages,
+                                now or datetime.now(UTC), args.max_pages,
                                 window, build_user_agent(config.contact))
             failed = []
             fresh = 0
@@ -1220,7 +1219,7 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
         for row in selected:
             reason = exclusion_reason(row, config)
             (dropped if reason else rows).append(reason or row)
-        attach_seen_age(rows, now or datetime.now(timezone.utc))
+        attach_seen_age(rows, now or datetime.now(UTC))
         for row in rows:
             row["lanes"] = lanes_for(row, config)
             row["highlight"] = is_highlighted(row, config)
@@ -1271,7 +1270,7 @@ def main(argv=None, out=None, err=None, now=None, opener=None):
 
         if args.command == "report":
             from report import render_html
-            stamp = (now or datetime.now(timezone.utc)).strftime(STAMP)
+            stamp = (now or datetime.now(UTC)).strftime(STAMP)
             document = render_html(rows, config, window, store.source_states(), stamp)
             if args.out:
                 target = resolve_report_path(args.out, config.report_dir)

@@ -47,7 +47,7 @@ import os
 import re
 import sys
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 csv.field_size_limit(10_000_000)
@@ -224,7 +224,7 @@ def fetch_one(root: Path, name: str, force: bool) -> dict:
     os.replace(tmp, csv_path(root, name))
     meta = {
         "dataset": name, "source_url": url,
-        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "fetched_at": datetime.now(UTC).isoformat(),
         "sha256": sha, "rows": rows, "cols": len(header),
         "attribution": "Data from AzAdvertizer (Julian Hayward), https://www.azadvertizer.net",
     }
@@ -248,7 +248,7 @@ def snapshot_provenance(root: Path, name: str, max_age_days: int | None):
     warns = []
     try:
         fetched = datetime.fromisoformat(meta["fetched_at"])
-        age = (datetime.now(timezone.utc) - fetched).total_seconds() / 86400
+        age = (datetime.now(UTC) - fetched).total_seconds() / 86400
         prov["snapshot_age_days"] = round(age, 2)
         prov["stale"] = bool(max_age_days is not None and age > max_age_days)
         if prov["stale"]:
@@ -283,8 +283,8 @@ def split_cell(name: str, col: str, value: str):
     if mode in ("nameid", "nameid_src"):
         parts = re.split(r"(?<=\))" + re.escape(delim.rstrip()), v)
         out = []
-        for p in parts:
-            p = p.strip().rstrip(delim.strip()).strip()
+        for raw_part in parts:
+            p = raw_part.strip().rstrip(delim.strip()).strip()
             if not p:
                 continue
             m = NAMEID_RE.match(p)
@@ -329,8 +329,8 @@ def cmd_fetch(args) -> int:
     root = cache_root(args)
     names = args.only.split(",") if args.only else list(DATASETS)
     results, any_err = [], False
-    for n in names:
-        n = n.strip()
+    for raw_name in names:
+        n = raw_name.strip()
         if n not in DATASETS:
             return emit(envelope("fetch", error=f"unknown dataset: {n}"), 2)
         if not args.force and csv_path(root, n).exists() and not args.refresh:
@@ -411,10 +411,7 @@ def cmd_get(args) -> int:
     if not matches:
         return emit(envelope(args.cmd, provenance=prov, warnings=warns,
                              error=f"no {name} with {key} or name == {args.id!r}"), 1)
-    if name == "initiative":
-        data = _assemble_initiative(matches)
-    else:
-        data = project(name, matches[0], None, args.split)
+    data = _assemble_initiative(matches) if name == "initiative" else project(name, matches[0], None, args.split)
     return emit(envelope(args.cmd, data=data, provenance=prov, warnings=warns), 0)
 
 
@@ -455,10 +452,7 @@ def cmd_search(args) -> int:
         preds.append((DATASETS[name]["name_col"], args.name.lower()))
 
     def hit(r):
-        for col, sub in preds:
-            if sub not in (r.get(col, "") or "").lower():
-                return False
-        return True
+        return all(sub in (r.get(col, "") or "").lower() for col, sub in preds)
 
     fields = args.fields.split(",") if args.fields else None
     if name == "initiative":

@@ -55,7 +55,8 @@ def check_eval0(text: str, files: list[Path]) -> list[dict]:
          "evidence": "all present" if all(s in text for s in ("EC2", "RDS", "CloudFront")) else "missing some"},
         {"text": "</script>-breakout payload neutralized (no raw breakout in output)",
          "passed": payload not in text,
-         "evidence": "raw breakout absent (escaped)" if payload not in text else "RAW </script> BREAKOUT PRESENT — XSS"},
+         "evidence": ("raw breakout absent (escaped)" if payload not in text
+                      else "RAW </script> BREAKOUT PRESENT — XSS")},
     ]
 
 

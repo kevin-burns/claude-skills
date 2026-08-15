@@ -35,7 +35,7 @@ def to_utc(value):
         return None
     if isinstance(value, (int, float)):
         try:
-            return dt.datetime.fromtimestamp(value, dt.timezone.utc).strftime(
+            return dt.datetime.fromtimestamp(value, dt.UTC).strftime(
                 "%Y-%m-%dT%H:%M:%SZ")
         except (OverflowError, OSError, ValueError):
             return None
@@ -59,8 +59,8 @@ def to_utc(value):
     if parsed is None:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=dt.timezone.utc)
-    return parsed.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        parsed = parsed.replace(tzinfo=dt.UTC)
+    return parsed.astimezone(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 # --------------------------------------------------------------------------

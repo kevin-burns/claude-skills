@@ -171,7 +171,7 @@ def _run_cli(tmp_path, profile: dict, *, json_out: bool = False):
     args = [sys.executable, str(SCRIPT), str(profile_path)]
     if json_out:
         args.append("--json")
-    return subprocess.run(args, capture_output=True, text=True, env=env)
+    return subprocess.run(args, capture_output=True, text=True, env=env, check=False)
 
 
 def test_main_exits_zero_on_a_clean_emoji_profile_under_c_locale(tmp_path):

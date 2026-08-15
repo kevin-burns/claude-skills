@@ -9,12 +9,18 @@ import subprocess
 import sys
 from pathlib import Path
 
+
+def _load_json(path):
+    """Read and parse a JSON file, closing the handle. json.load(open(...)) leaks it."""
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
 HERE = Path(__file__).resolve().parent
 TOOL = HERE.parent / "scripts" / "snapshot.py"
 
 
 def run(argv):
-    p = subprocess.run(["python3", str(TOOL), *argv], capture_output=True, text=True)
+    p = subprocess.run(["python3", str(TOOL), *argv], capture_output=True, text=True, check=False)
     try:
         out = json.loads(p.stdout) if p.stdout.strip() else {}
     except json.JSONDecodeError:
@@ -41,7 +47,7 @@ def check(case) -> list:
 
 
 def main() -> int:
-    spec = json.load(open(HERE / "eval.json"))
+    spec = _load_json(HERE / "eval.json")
     ok_all = True
     for case in spec["cases"]:
         checks = check(case)

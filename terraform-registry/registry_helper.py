@@ -25,14 +25,13 @@ Exit codes: 0 ok | 1 not-found | 2 usage | 3 network/registry error.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DEFAULT_HOST = "registry.terraform.io"
@@ -55,7 +54,7 @@ class RegistryError(Exception):
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _cache_key(path: str, params: dict) -> str:

@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 import render_excalidraw as rx
 
 

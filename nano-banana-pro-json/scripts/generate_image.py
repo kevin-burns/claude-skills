@@ -69,7 +69,8 @@ STYLE_PRESETS = {
             "perspective": "Slightly off-center, candid",
             "depth_of_field": "Medium, everything mostly in focus",
         },
-        "prompt_suffix": "1990s film aesthetic, visible film grain, slight color shift, nostalgic warm tones, authentic snapshot feel",
+        "prompt_suffix": "1990s film aesthetic, visible film grain, slight color shift, "
+                         "nostalgic warm tones, authentic snapshot feel",
     },
     "cinematic": {
         "camera": {
@@ -113,7 +114,8 @@ STYLE_PRESETS = {
             "perspective": "Slightly low angle for power",
             "depth_of_field": "Medium-shallow, subject sharp",
         },
-        "prompt_suffix": "high-fashion editorial photograph, Vogue magazine style, bold styling, dramatic contrast, professional retouching",
+        "prompt_suffix": "high-fashion editorial photograph, Vogue magazine style, "
+                         "bold styling, dramatic contrast, professional retouching",
     },
     "anime-hyperrealistic": {
         "camera": {
@@ -135,7 +137,8 @@ STYLE_PRESETS = {
             "perspective": "Slightly low angle",
             "depth_of_field": "Very shallow, dreamy background blur",
         },
-        "prompt_suffix": "anime-inspired hyperrealistic portrait, large expressive eyes, high contrast, vibrant colors, smooth skin, dramatic lighting",
+        "prompt_suffix": "anime-inspired hyperrealistic portrait, large expressive eyes, high contrast, "
+                         "vibrant colors, smooth skin, dramatic lighting",
     },
 }
 

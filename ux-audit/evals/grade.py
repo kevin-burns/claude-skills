@@ -99,7 +99,9 @@ def check_eval1(text: str, outputs: Path) -> list[dict]:
     return [
         {"text": "flags icon button missing accessible name",
          "passed": _has_any(text, "accessible name", "aria-label", "button name", "icon button", "discernible"),
-         "evidence": "name issue mentioned" if _has_any(text, "accessible name", "aria-label", "discernible") else "none"},
+         "evidence": ("name issue mentioned"
+                      if _has_any(text, "accessible name", "aria-label", "discernible")
+                      else "none")},
         {"text": "flags placeholder-as-label", "passed": "placeholder" in text or "label" in text,
          "evidence": "placeholder/label mentioned" if ("placeholder" in text or "label" in text) else "none"},
         {"text": "flags table missing headers",

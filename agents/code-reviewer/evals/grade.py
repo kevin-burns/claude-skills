@@ -9,14 +9,19 @@ import re
 import sys
 
 
+def _load_json(path):
+    """Read and parse a JSON file, closing the handle. json.load(open(...)) leaks it."""
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
 def line_of(location: str):
     m = re.search(r":(\d+)", location or "")
     return int(m.group(1)) if m else None
 
 
 def grade(eval_path: str, out_path: str) -> int:
-    spec = json.load(open(eval_path))
-    out = json.load(open(out_path))
+    spec = _load_json(eval_path)
+    out = _load_json(out_path)
     findings = out.get("findings", [])
     near = set(spec["bug"]["near_lines"])
     control = set(spec["control"]["lines"])

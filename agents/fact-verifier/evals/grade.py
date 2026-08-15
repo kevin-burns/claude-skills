@@ -8,9 +8,14 @@ import json
 import sys
 
 
+def _load_json(path):
+    """Read and parse a JSON file, closing the handle. json.load(open(...)) leaks it."""
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
 def grade(eval_path: str, verdicts_path: str) -> int:
-    spec = json.load(open(eval_path))
-    out = json.load(open(verdicts_path))
+    spec = _load_json(eval_path)
+    out = _load_json(verdicts_path)
     by_claim = {v["claim"]: v for v in out.get("verdicts", [])}
 
     all_pass = True

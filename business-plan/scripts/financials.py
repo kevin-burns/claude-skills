@@ -82,7 +82,8 @@ def project_financials(a: Assumptions) -> dict:
 if __name__ == "__main__":
     import json
     import sys
+    from pathlib import Path
     # Reads an assumptions JSON object from argv[1] (file path) or stdin, prints the projection.
-    raw = open(sys.argv[1], encoding="utf-8").read() if len(sys.argv) > 1 else sys.stdin.read()
+    raw = Path(sys.argv[1]).read_text(encoding="utf-8") if len(sys.argv) > 1 else sys.stdin.read()
     data = json.loads(raw)
     print(json.dumps(project_financials(Assumptions(**data)), indent=2))

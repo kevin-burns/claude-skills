@@ -12,13 +12,13 @@ SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from register_report import (
-    DEMONSTRATIVE,
-    count_nominalisations,
-    NOT_NOMINALISATIONS,  # noqa: E402
     CONTRACTION,
+    DEMONSTRATIVE,
     MIN_WORDS,
     NOMINALISATION,
+    NOT_NOMINALISATIONS,  # noqa: E402
     collect_baseline,
+    count_nominalisations,
     format_report,
     profile,
     strip_noise,
@@ -154,7 +154,7 @@ def test_profile_refuses_below_minimum_words():
     short_text = "This is short. " * 5  # well under MIN_WORDS
     try:
         profile(short_text)
-        assert False, "profile() should have raised ValueError on a short document"
+        raise AssertionError("profile() should have raised ValueError on a short document")
     except ValueError as exc:
         assert str(MIN_WORDS) in str(exc)
 
@@ -333,7 +333,7 @@ def _run_cli(args, cwd=None, input_text=None):
     env = dict(os.environ, LC_ALL="C", LANG="C")
     cmd = [sys.executable, str(SCRIPT), *args]
     return subprocess.run(
-        cmd, capture_output=True, text=True, env=env, cwd=cwd, input=input_text,
+        cmd, capture_output=True, text=True, env=env, cwd=cwd, input=input_text, check=False
     )
 
 

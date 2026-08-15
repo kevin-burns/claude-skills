@@ -14,19 +14,18 @@ import json
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import report  # noqa: E402
-from job_feeds import (  # noqa: E402
-    RateLimiter, Store, fetch_all, load_config, location_counts)
+from job_feeds import RateLimiter, Store, fetch_all, load_config, location_counts  # noqa: E402
 from sources import SOURCES, validate_schema  # noqa: E402
 
 FIXTURES = ROOT / "scripts" / "tests" / "fixtures"
-NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=UTC)
 RSS = ("wwr", "pythonorg")
 
 results = []

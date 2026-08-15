@@ -13,8 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from sources import (  # noqa: E402
-    SOURCES, clean_text, strip_contacts, validate_schema)
+from sources import SOURCES, clean_text, strip_contacts, validate_schema  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 RSS_SOURCES = ("wwr", "pythonorg")

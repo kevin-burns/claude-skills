@@ -14,7 +14,6 @@ import re
 from pathlib import Path
 
 import pytest
-
 from li_profile_check import LIMITS
 
 SKILL_DIR = Path(__file__).resolve().parent.parent

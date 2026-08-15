@@ -4,7 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from job_feeds import STAMP, RateLimiter, Store  # noqa: E402
 from sources import SOURCES  # noqa: E402
 
-NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=UTC)
 
 
 class TestRateLimiter(unittest.TestCase):

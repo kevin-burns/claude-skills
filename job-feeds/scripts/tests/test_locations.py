@@ -12,15 +12,14 @@ import json
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from job_feeds import (  # noqa: E402
-    LOC_LIMIT, Store, location_counts, main)
+from job_feeds import LOC_LIMIT, Store, location_counts, main  # noqa: E402
 
-NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=UTC)
 
 CONFIG = {
     "defaults": {"window": 14},

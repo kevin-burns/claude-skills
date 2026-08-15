@@ -20,16 +20,16 @@ from __future__ import annotations
 
 import argparse
 import functools
-import json
-import sys
-import threading
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 import hashlib
+import json
 import os
+import sys
 import tempfile
+import threading
 import urllib.error
 import urllib.request
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 REFERENCES_DIR = Path(__file__).parent
 MODULE_READY_TIMEOUT_MS = 8000
@@ -54,7 +54,7 @@ def _load_bundle_lock() -> dict:
         raise BundleError(
             f"references/vendor/bundle.lock.json is missing or invalid ({e}); "
             "cannot locate the render engine."
-        )
+        ) from e
     missing = [key for key in ("url", "sha256") if not lock.get(key)]
     if missing:
         raise BundleError(
@@ -118,16 +118,16 @@ def _ensure_bundle() -> Path:
                 f"{url} returned 404 — the release asset for excalidraw "
                 f"{lock.get('excalidraw_version', '?')} hasn't been published yet. "
                 "Build it locally with references/scripts/vendor.sh."
-            )
+            ) from e
         raise BundleError(
             f"couldn't download the Excalidraw render engine from {url}: HTTP {e.code}. "
             "Check your connection, or build it locally with references/scripts/vendor.sh."
-        )
+        ) from e
     except (urllib.error.URLError, OSError, TimeoutError) as e:
         raise BundleError(
             f"couldn't download the Excalidraw render engine from {url}: {e}. "
             "Check your connection, or build it locally with references/scripts/vendor.sh."
-        )
+        ) from e
     return BUNDLE_PATH
 
 
@@ -238,7 +238,8 @@ def render(
         from playwright.sync_api import sync_playwright
     except ImportError:
         print("ERROR: playwright not installed.", file=sys.stderr)
-        print("Run: cd .claude/skills/excalidraw-diagram/references && uv sync && uv run playwright install chromium", file=sys.stderr)
+        print("Run: cd .claude/skills/excalidraw-diagram/references && "
+              "uv sync && uv run playwright install chromium", file=sys.stderr)
         sys.exit(1)
 
     # Read and validate
@@ -293,7 +294,8 @@ def render(
             except Exception as e:
                 if "Executable doesn't exist" in str(e) or "browserType.launch" in str(e):
                     print("ERROR: Chromium not installed for Playwright.", file=sys.stderr)
-                    print("Run: cd .claude/skills/excalidraw-diagram/references && uv run playwright install chromium", file=sys.stderr)
+                    print("Run: cd .claude/skills/excalidraw-diagram/references && "
+                          "uv run playwright install chromium", file=sys.stderr)
                     sys.exit(1)
                 raise
 
@@ -303,7 +305,9 @@ def render(
             )
 
             # Attach listeners BEFORE navigation so nothing is missed.
-            page.on("console", lambda m: console_errors.append(f"[{m.type}] {m.text}") if m.type in ("error", "warning") else None)
+            page.on("console",
+                    lambda m: console_errors.append(f"[{m.type}] {m.text}")
+                    if m.type in ("error", "warning") else None)
             page.on("pageerror", lambda e: page_errors.append(str(e)))
             page.on("requestfailed", lambda r: failed_requests.append(f"{r.url} — {r.failure}"))
 
@@ -358,7 +362,8 @@ def render(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render Excalidraw JSON to PNG")
     parser.add_argument("input", type=Path, help="Path to .excalidraw JSON file")
-    parser.add_argument("--output", "-o", type=Path, default=None, help="Output PNG path (default: same name with .png)")
+    parser.add_argument("--output", "-o", type=Path, default=None,
+                        help="Output PNG path (default: same name with .png)")
     parser.add_argument("--scale", "-s", type=int, default=2, help="Device scale factor (default: 2)")
     parser.add_argument("--width", "-w", type=int, default=1920, help="Max viewport width (default: 1920)")
     args = parser.parse_args()

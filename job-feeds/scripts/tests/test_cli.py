@@ -6,17 +6,24 @@ import os
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from sources import SOURCES  # noqa: E402
 from job_feeds import (  # noqa: E402
-    ConfigError, Store, attach_seen_age, is_excluded, is_highlighted,
-    lanes_for, load_config, main)
+    ConfigError,
+    Store,
+    attach_seen_age,
+    is_excluded,
+    is_highlighted,
+    lanes_for,
+    load_config,
+    main,
+)
+from sources import SOURCES  # noqa: E402
 
-NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=UTC)
 
 GOOD_CONFIG = {
     "defaults": {"window": 14, "exclude_company": ["randstad"],

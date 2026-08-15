@@ -23,7 +23,7 @@ import io
 import json
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -83,7 +83,8 @@ check("search storage matched>=1", env["ok"] and env["provenance"]["matched"] >=
 check("search storage all-Storage", all(r["policyCategory"] == "Storage" for r in rows), str(rows[:1]))
 
 # --- E2. pagination: page through ALL policies (policyId= matches every row) ---
-code, env = run(C + ["search", "policy", "--where", "policyId=", "--fields", "policyId", "--limit", "5", "--offset", "0"])
+code, env = run(C + ["search", "policy", "--where", "policyId=", "--fields", "policyId",
+                     "--limit", "5", "--offset", "0"])
 p = env["provenance"]
 total_pol = p["matched"]
 check("pagination page1 metadata",
@@ -218,7 +219,7 @@ with tempfile.TemporaryDirectory() as tmp:
 # Q. within the freshness window, NO refresh happens (no network touched)
 with tempfile.TemporaryDirectory() as tmp:
     root = Path(tmp)
-    _seed(root, datetime.now(timezone.utc).isoformat())  # fresh -> within 7d
+    _seed(root, datetime.now(UTC).isoformat())  # fresh -> within 7d
 
     def _boom(url):
         raise AssertionError("network should not be touched for a fresh snapshot")

@@ -6,16 +6,15 @@ import sqlite3
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from job_feeds import (  # noqa: E402
-    BACKOFF_CEILING_SECONDS, RateLimiter, Store, fetch_all, main)
+from job_feeds import BACKOFF_CEILING_SECONDS, RateLimiter, Store, fetch_all, main  # noqa: E402
 from sources import SOURCES  # noqa: E402
 
-NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=UTC)
 ARB = SOURCES["arbeitnow"].url
 
 
@@ -269,9 +268,8 @@ class TestHttpOpenStatusMapping(unittest.TestCase):
     def test_other_error_statuses_still_raise(self):
         import urllib.error
         for code in (404, 418, 500):
-            with self.subTest(code=code):
-                with self.assertRaises(urllib.error.HTTPError):
-                    self._open(code)
+            with self.subTest(code=code), self.assertRaises(urllib.error.HTTPError):
+                self._open(code)
 
 
 class TestUserAgentCarriesNoPersonalData(unittest.TestCase):

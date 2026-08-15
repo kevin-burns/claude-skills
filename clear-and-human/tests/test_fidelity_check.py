@@ -22,10 +22,8 @@ from fidelity_check import (  # noqa: E402
     extract_tracked_spans,
     normalize_code,
     normalize_number,
-    normalize_quote,
     normalize_url,
 )
-
 
 # ---------------------------------------------------------------------------
 # Numbers: the single most important case in the whole script is "a number
@@ -415,7 +413,7 @@ def _run_cli(args, stdin_text=None):
         input=stdin_text,
         capture_output=True,
         text=True,
-        env=env,
+        env=env, check=False
     )
 
 

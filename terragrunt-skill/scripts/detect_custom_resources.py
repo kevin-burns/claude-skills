@@ -10,14 +10,12 @@ This script analyzes Terragrunt and Terraform configurations to identify:
 Outputs a report that can be used to guide documentation lookup via WebSearch or Context7.
 """
 
-import re
-import json
 import argparse
+import json
+import re
 import sys
-from pathlib import Path
-from typing import List
 from collections import defaultdict
-
+from pathlib import Path
 
 # Known official HashiCorp providers (comprehensive list)
 OFFICIAL_PROVIDERS = {
@@ -82,7 +80,7 @@ class ResourceDetector:
         """Return True when a file is inside ignored/generated directories."""
         return any(part in IGNORED_DIR_NAMES for part in path.parts)
 
-    def find_hcl_files(self) -> List[Path]:
+    def find_hcl_files(self) -> list[Path]:
         """Find all .hcl and .tf files in the target directory."""
         hcl_files = []
         for ext in ['*.hcl', '*.tf']:
@@ -253,14 +251,14 @@ class ResourceDetector:
         """Categorize the module source type."""
         if source.startswith('./') or source.startswith('../'):
             return 'local'
-        elif source.startswith('tfr:///'):
+        if source.startswith('tfr:///'):
             # Terragrunt registry format
             return 'terragrunt'
-        elif source.startswith('git::') or 'github.com' in source or 'gitlab.com' in source:
+        if source.startswith('git::') or 'github.com' in source or 'gitlab.com' in source:
             return 'git'
-        elif source.startswith('http://') or source.startswith('https://'):
+        if source.startswith('http://') or source.startswith('https://'):
             return 'http'
-        elif '/' in source and not source.startswith('.'):
+        if '/' in source and not source.startswith('.'):
             # Check if this looks like a provider source (org/name) vs module (org/name/provider)
             # Provider sources have exactly 2 path components (e.g., hashicorp/aws, datadog/datadog)
             # Module sources have 3+ components (e.g., terraform-aws-modules/vpc/aws)
@@ -269,11 +267,9 @@ class ResourceDetector:
                 # This looks like a provider source, not a module
                 # Filter these out as they're detected separately in extract_providers
                 return 'provider'
-            else:
-                # Likely Terraform Registry format (e.g., terraform-aws-modules/vpc/aws)
-                return 'registry'
-        else:
-            return 'custom'
+            # Likely Terraform Registry format (e.g., terraform-aws-modules/vpc/aws)
+            return 'registry'
+        return 'custom'
 
     def analyze_directory(self) -> None:
         """Analyze all HCL files in the target directory."""
@@ -285,7 +281,7 @@ class ResourceDetector:
 
         for filepath in hcl_files:
             try:
-                with open(filepath, 'r', encoding='utf-8') as f:
+                with open(filepath, encoding='utf-8') as f:
                     content = f.read()
                     self.extract_providers(content, filepath)
                     self.extract_modules(content, filepath)
@@ -296,20 +292,16 @@ class ResourceDetector:
         """Generate a report of custom resources found."""
         if output_format == 'json':
             return self._generate_json_report()
-        else:
-            return self._generate_text_report()
+        return self._generate_text_report()
 
     def _generate_json_report(self) -> str:
         """Generate JSON format report."""
         report = {
             'custom_providers': {
-                provider: sorted(list(versions))
+                provider: sorted(versions)
                 for provider, versions in sorted(self.custom_providers.items())
             },
-            'custom_modules': {
-                source: modules
-                for source, modules in sorted(self.custom_modules.items())
-            }
+            'custom_modules': dict(sorted(self.custom_modules.items()))
         }
         return json.dumps(report, indent=2)
 
@@ -328,9 +320,10 @@ class ResourceDetector:
             for provider, versions in sorted(self.custom_providers.items()):
                 lines.append(f"\nProvider: {provider}")
                 lines.append(f"  Versions: {', '.join(sorted(versions))}")
-                lines.append(f"  → Action: Resolve with Context7 library lookup:")
-                lines.append(f"            mcp__context7__resolve-library-id (libraryName: \"{provider} terraform provider\")")
-                lines.append(f"            mcp__context7__query-docs (query: \"authentication and configuration\")")
+                lines.append("  → Action: Resolve with Context7 library lookup:")
+                lines.append("            mcp__context7__resolve-library-id "
+                             f'(libraryName: "{provider} terraform provider")')
+                lines.append("            mcp__context7__query-docs (query: \"authentication and configuration\")")
                 lines.append(f"            or search web: '{provider} terraform provider documentation'")
             lines.append("")
         else:
@@ -360,7 +353,7 @@ class ResourceDetector:
                     lines.append(f"  → Action: Visit https://registry.terraform.io/modules/{registry_source}")
                     lines.append(f"            and resolve with Context7: \"{registry_source}\"")
                 else:
-                    lines.append(f"  → Action: Search for documentation related to this module source")
+                    lines.append("  → Action: Search for documentation related to this module source")
             lines.append("")
         else:
             lines.append("CUSTOM MODULES: None detected")

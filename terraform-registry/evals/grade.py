@@ -9,6 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+
+def _load_json(path):
+    """Read and parse a JSON file, closing the handle. json.load(open(...)) leaks it."""
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
 HERE = Path(__file__).resolve().parent
 CLI = HERE.parent / "registry_helper.py"
 CACHE = HERE / "fixtures" / "cache"
@@ -17,7 +23,7 @@ CACHE = HERE / "fixtures" / "cache"
 def run(argv):
     proc = subprocess.run(
         ["python3", str(CLI), "--cache-dir", str(CACHE), *argv],
-        capture_output=True, text=True)
+        capture_output=True, text=True, check=False)
     try:
         payload = json.loads(proc.stdout) if proc.stdout.strip() else {}
     except json.JSONDecodeError:
@@ -67,7 +73,7 @@ def check_case(case) -> list:
 
 
 def main() -> int:
-    spec = json.load(open(HERE / "eval.json"))
+    spec = _load_json(HERE / "eval.json")
     all_pass = True
     for case in spec["cases"]:
         checks = check_case(case)

@@ -32,14 +32,15 @@ Below --min-successful (default 5) valid runs it refuses to report a median — 
 distribution over a handful of survivors is noise, not signal.
 """
 from __future__ import annotations
+
 import argparse
 import json
 import random
 import statistics
 import subprocess
 import sys
-from dataclasses import dataclass, asdict, field
-from typing import Callable, Optional
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
 
 
 @dataclass
@@ -103,7 +104,7 @@ def subprocess_scorer(scorer_cmd: str) -> Callable[[str], float]:
     def _scorer(cv_path: str) -> float:
         cmd = scorer_cmd.replace("{cv}", cv_path)
         out = subprocess.run(cmd, shell=True, capture_output=True, text=True,
-                             timeout=600)
+                             timeout=600, check=False)
         text = out.stdout.strip()
         try:
             data = json.loads(text)
@@ -113,7 +114,7 @@ def subprocess_scorer(scorer_cmd: str) -> Callable[[str], float]:
         except json.JSONDecodeError:
             pass
         # Fallback: last number on the last non-empty line.
-        for line in reversed([l for l in text.splitlines() if l.strip()]):
+        for line in reversed([ln for ln in text.splitlines() if ln.strip()]):
             toks = [t for t in line.replace(":", " ").split() if _isnum(t)]
             if toks:
                 return float(toks[-1])
@@ -172,14 +173,14 @@ def selftest() -> int:
     print("== adversarial harness self-test ==")
 
     # v0: weak CV (linkless tutorial projects, no portfolio).
-    v0_signals = dict(real_open_source=False, complex_projects=False,
-                      all_projects_have_links=False, portfolio_url=False,
-                      tutorial_projects=True)
+    v0_signals = {"real_open_source": False, "complex_projects": False,
+                  "all_projects_have_links": False, "portfolio_url": False,
+                  "tutorial_projects": True}
     # v1: truthful improvements (surfaced real OSS, added real links + portfolio,
     # dropped toy projects).
-    v1_signals = dict(real_open_source=True, complex_projects=True,
-                      all_projects_have_links=True, portfolio_url=True,
-                      tutorial_projects=False)
+    v1_signals = {"real_open_source": True, "complex_projects": True,
+                  "all_projects_have_links": True, "portfolio_url": True,
+                  "tutorial_projects": False}
 
     history: list[Distribution] = []
     for label, sig in (("v0", v0_signals), ("v1", v1_signals)):
