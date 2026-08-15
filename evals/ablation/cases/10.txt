@@ -1,0 +1,1 @@
+Write a 4-step runbook for rotating an expired TLS certificate on an nginx server.

@@ -49,3 +49,6 @@ docs/superpowers/
 # here by running a wrangler command from this directory; not needed by this repo.
 .wrangler/
 .dev.vars
+
+# beads gate lock, local only
+.beads.gate.lock

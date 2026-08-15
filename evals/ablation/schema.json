@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "content_type": {
+      "type": "string",
+      "description": "What kind of content the input is. One of: docs, blog, youtube-script, linkedin, email, slack."
+    },
+    "tells": {
+      "type": "array",
+      "description": "Every phrase or structure in the input that reads as AI-generated.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "quote": { "type": "string", "description": "The exact text from the input." },
+          "label": { "type": "string", "description": "What to call this tell." },
+          "fix": { "type": "string", "description": "The concrete fix." }
+        },
+        "required": ["quote", "label", "fix"],
+        "additionalProperties": false
+      }
+    },
+    "rewrite": {
+      "type": "string",
+      "description": "The rewritten text. Empty string if the task did not ask for a rewrite."
+    }
+  },
+  "required": ["content_type", "tells", "rewrite"],
+  "additionalProperties": false
+}

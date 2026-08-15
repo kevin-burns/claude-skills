@@ -1,0 +1,6 @@
+Assume this WRITING_CONTEXT.md is in my project root:
+
+Phrases I never use: leverage, synergy
+Approved facts I can cite: we cut deploy time from 40 minutes to 6 minutes
+
+Now write a two-sentence LinkedIn post announcing our new CI pipeline.
