@@ -121,6 +121,23 @@ repos:
     hooks:
       - id: gitleaks
 
-# DELIBERATELY NOT HERE YET:
-#   actionlint  claude-skills-a1b.5 — this repo has two workflows; upstream had none,
-#               which is why its config has no equivalent.
+  # Workflow linting. Upstream has no equivalent because it has no workflows; this repo
+  # has two, and they are shell-heavy — which is where actionlint earns its place, since
+  # it runs shellcheck over every `run:` block as well as validating expressions.
+  #
+  # WHAT IT ACTUALLY CATCHES, verified by injecting three deliberate defects rather than
+  # trusting the description:
+  #   caught  SC2086, an unquoted variable in a run: block (via shellcheck)
+  #   caught  ${{ github.nosuchfield }}, a property that does not exist on the context
+  #   MISSED  uses: actions/chekout@v5 — a typo'd action ref. Confirming an action exists
+  #           needs a network call, and actionlint does not make one.
+  #
+  # SET EXPECTATIONS ACCORDINGLY. It would not have caught either mirror bug shipped on
+  # 2026-08-14: `git push origin HEAD` is valid shell that does the wrong thing against an
+  # empty repository, and pytest recreating __pycache__ inside the built tree is a
+  # pipeline-ordering problem. Both were found by running the thing. This catches a
+  # different and cheaper class.
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint

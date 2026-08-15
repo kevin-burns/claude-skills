@@ -44,6 +44,25 @@ jobs:
       - name: ruff check
         run: uvx ruff@0.16.3 check --output-format github .
 
+      # The pre-commit hook covers whoever ran `prek install`. This covers everyone
+      # else, which for a public repo taking outside changes is the case that matters.
+      # Same version the hook pins; when one moves, both move. shellcheck is
+      # preinstalled on ubuntu-latest, and it is what makes this worth running at all
+      # on workflows as shell-heavy as these.
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+          sudo install /tmp/actionlint /usr/local/bin/actionlint
+          actionlint --version
+
+      - name: actionlint
+        run: actionlint -color
+
   secrets:
     name: secrets (gitleaks, full history)
     runs-on: ubuntu-latest
