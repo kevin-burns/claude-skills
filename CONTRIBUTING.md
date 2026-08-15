@@ -100,6 +100,31 @@ Same rule for a workflow dispatched via the Workflow tool: pass an **absolute** 
 `~/.claude/skills/dev-fleet/dev-story.workflow.js` — a relative `dev-fleet/…` won't resolve
 from another repo. See [dev-fleet](./dev-fleet).
 
+## Local gates: install the hooks after cloning
+
+```bash
+prek install        # or: pre-commit install — same config format
+```
+
+**An uninstalled hook is not a gate.** `.pre-commit-config.yaml` in the repo root does
+nothing until this is run, and nothing warns you.
+
+Two things about this repo specifically:
+
+**The hooks live in `.beads/hooks/`, not `.git/hooks/`.** Beads sets `core.hooksPath`, so
+`prek install` writes there and chains the existing beads hook rather than replacing it.
+If you ever see `ls .git/hooks/pre-commit` come back empty, that is expected, not a
+failed install — check `git config core.hooksPath`.
+
+**Ruff runs on staged files only.** A commit touching a script with outstanding findings
+will fail until those are fixed. Run `uvx ruff@0.16.3 check .` to see the whole picture.
+Configuration lives in `ruff.toml`, and the CI lint job pins the same version — when one
+moves, both move.
+
+The hooks fix some things in place (trailing whitespace, final newlines, ruff's safe
+fixes). When a commit is rejected because a hook rewrote a file, re-stage and commit
+again. Do not reach for `--no-verify`.
+
 ## General skill conventions
 
 - Each skill lives in its own directory with a `SKILL.md` (`name` + `description` frontmatter).

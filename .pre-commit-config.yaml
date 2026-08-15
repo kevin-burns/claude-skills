@@ -1,0 +1,104 @@
+# prek / pre-commit hooks for claude-skills.
+#
+#   prek install          install the git hook (an uninstalled hook is not a gate)
+#   prek run --all-files  first run, or after editing this file
+#
+# prek is the Rust reimplementation and reads this exact format, so the config stays
+# portable to pre-commit proper.
+#
+# WHAT THIS REPO IS, because it changes which hooks make sense: a skills monorepo that
+# is mostly markdown, with 52 tracked first-party Python files and a lot of DELIBERATELY
+# BROKEN TEST MATERIAL. Several eval fixtures carry planted bugs, malformed JSON, or
+# missing newlines on purpose. Every hook below was checked against them before it was
+# enabled — see the notes on end-of-file-fixer and ruff.
+#
+# Pins verified against the upstream repos on 2026-08-15, not assumed. They match the
+# versions the CI lint job uses; when one moves, both move.
+
+# pre-commit 3.x renamed the stage `commit` -> `pre-commit`. prek accepts either;
+# `pre-commit` is what stays valid under pre-commit proper.
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.3
+    hooks:
+      # v0.16.x renamed the ids: `ruff` is now a legacy alias for `ruff-check`.
+      # Configuration comes from ruff.toml at the repo root — nothing is passed here
+      # that could disagree with what CI runs.
+      #
+      # NOTE: 140 findings exist today (claude-skills-a1b.1). This hook only sees
+      # STAGED files, so it does not block unrelated work, but a commit touching an
+      # unfixed script will fail until that bead is done. That is the intended
+      # pressure, not an accident.
+      - id: ruff-check
+        args: [--fix]
+
+      # ruff-format is DELIBERATELY ABSENT. Running it would rewrite every tracked
+      # Python file in one commit, burying the lint fixes it is meant to sit beside.
+      # ruff.toml says the same. It gets its own change, or it does not happen.
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # MEASURED 2026-08-15: all 5 tracked YAML files parse, including the openapi
+      # reference and the fact-verifier fixture. Adopts clean.
+      - id: check-yaml
+
+      # MEASURED: every tracked .json parses strictly. No exclusion needed — unlike
+      # the upstream config, this repo has no .jsonc and no tsconfig.json, so the
+      # JSONC carve-out there does not apply here.
+      #
+      # DO NOT OVERSELL THIS HOOK. The plugin manifests are this repo's most silent
+      # failure surface: a manifest with the wrong SHAPE parses perfectly and then
+      # registers zero skills. check-json catches malformed JSON and nothing else.
+      # See the agent-plugin-manifests memory and claude-skills-dyy.
+      - id: check-json
+      - id: check-toml
+
+      # MEASURED: 3 text files lack a final newline, all of them
+      # azadvertizer/evals/fixtures/*.meta.json.
+      #
+      # CHECKED BEFORE ENABLING, because this repo hashes some fixtures: the .meta.json
+      # files are NOT hashed — their own sha256 field is the literal string "fixture" —
+      # and azadvertizer hashes the .csv payloads, which all already end in a newline.
+      # The job-feeds fixtures are read with read_bytes() and immediately parsed as
+      # JSON or XML, where a trailing newline is inert.
+      #
+      # Binaries are safe by construction: this hook declares `types: [text]`, so the
+      # 20-plus tracked .woff2 fonts, PNGs and .webp images are never opened. Verified
+      # against the v6.0.0 manifest rather than assumed — appending a newline to a font
+      # would corrupt it silently.
+      - id: end-of-file-fixer
+
+      # MEASURED: 25 tracked files carry trailing whitespace. Same `types: [text]`
+      # protection. Expect one sizeable cleanup commit on the first --all-files run.
+      - id: trailing-whitespace
+
+      - id: check-merge-conflict
+
+      # MEASURED: largest tracked file is 292 KB
+      # (excalidraw-diagram/references/examples/cicd-pipeline.png), so 500 has real
+      # headroom. The 8 MB vendored excalidraw.mjs is gitignored and never staged.
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+      - id: detect-private-key
+
+      # MEASURED: 24 tracked files have a shebang and mode 100644 — 23 Python (ruff's
+      # EXE001 sees those) plus one other file that only this hook covers.
+      #
+      # THE TRAP: this reads the GIT INDEX, not the filesystem. `chmod +x` alone does
+      # not satisfy it; the mode is tracked, so it needs `git update-index --chmod=+x`
+      # or a re-add. Budget for that in claude-skills-a1b.1.
+      - id: check-shebang-scripts-are-executable
+
+      # macOS is case-insensitive and Linux CI is not. A pair of files differing only
+      # in case commits cleanly here and breaks the build there.
+      - id: check-case-conflict
+
+# DELIBERATELY NOT HERE YET, each with its own bead rather than smuggled in:
+#   gitleaks    claude-skills-a1b.4 — secret scanning, hook AND CI. One repo block, but
+#               the bead owns both halves and half-closing it is worse than waiting.
+#   actionlint  claude-skills-a1b.5 — this repo has two workflows; upstream had none,
+#               which is why its config has no equivalent.
