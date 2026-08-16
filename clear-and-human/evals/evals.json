@@ -125,6 +125,30 @@
         "The rewrite invents no customer, metric, product name or outcome, and leaves a placeholder where a specific would help.",
         "The output does not read any file outside the supplied prompt and the skill's own directory. This case exists because six of ten first-run executors silently read a gitignored personal context file, making that run unreproducible by anyone else."
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "Review this and tell me if it sounds like AI:\n\n\"Most teams think they have a tooling problem. They have a standards problem. This isn't about buying another dashboard. It's about deciding what ‘done’ means. While observability may seem like a technology question, the real issue is agreement.\"",
+      "expected_output": "Flags the passage as negative parallelism / reframing across three separate constructions, including the cross-sentence and softened forms, and rewrites each as a direct positive claim without inventing detail.",
+      "expectations": [
+        "The output names negative parallelism, reframing, or the not-X-but-Y pattern as the primary problem",
+        "It identifies the CROSS-SENTENCE instance (\"Most teams think they have a tooling problem. They have a standards problem.\") and not only the explicit \"This isn't about X. It's about Y.\" one",
+        "It identifies the softened form beginning \"While observability may seem...\" as the same pattern rather than treating it as ordinary concession",
+        "Any rewrite deletes the rejected half and states the positive claim directly, rather than replacing one reframe with another",
+        "It does not invent product names, metrics or specifics that were absent from the input"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Humanise this paragraph:\n\n\"Think of your data pipeline as a leaky bucket. Every integration you bolt on is another hole. The strategy is your compass here, and observability is the backbone of the whole ecosystem — it's the DNA of a healthy engineering org.\"",
+      "expected_output": "Flags the stacked metaphors against the analogy rules, replaces them with literal statements, and does not invent figures to fill the gap left by the removed imagery.",
+      "expectations": [
+        "The output flags the analogies/metaphors as the main issue, naming at least two of: leaky bucket, bolt on, compass, backbone, ecosystem, DNA",
+        "It notes that the metaphors are stacked, or that more than one appears in a passage this short",
+        "The rewrite uses literal verbs in place of the metaphor verbs (for example 'added' or 'connected' rather than 'bolt on')",
+        "It does NOT invent a percentage, user count or other specific figure to replace the imagery; if a specific fact is needed it says so or leaves a placeholder",
+        "It does not simply substitute a different metaphor for the ones it removed"
+      ]
     }
   ]
 }

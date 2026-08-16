@@ -29,7 +29,7 @@ on that date are noted; the rest are inherited and unverified.
 ## Phrase-level
 
 **AI vocabulary (cut or replace with the specific thing):**
-delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultivate, facilitate, streamline, optimize, unlock, empower, elevate, enhance, garner, showcase, underscore (verb), highlight (verb), align with, transformative, groundbreaking, seamless, robust, holistic, dynamic, agile, synergy, scalable, disruptive, paradigm, landscape (abstract), realm, tapestry (abstract), multifaceted, nuanced, comprehensive, intricate, crucial, vital, pivotal, essential, key (adj), enduring, vibrant, testament, interplay, albeit, whilst, essentially, certainly, absolutely (opener), overall (filler), typically, various (vague pluralizer), actually, additionally.
+delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultivate, facilitate, streamline, optimize, unlock, empower, elevate, enhance, garner, showcase, underscore (verb), highlight (verb), align with, transformative, groundbreaking, seamless, robust, holistic, dynamic, agile, synergy, scalable, disruptive, paradigm, landscape (abstract), realm, tapestry (abstract), multifaceted, nuanced, comprehensive, intricate, crucial, vital, pivotal, essential, key (adj), enduring, vibrant, testament, interplay, showcasing, intricacies, meticulous, meticulously, unparalleled, albeit, whilst, essentially, certainly, absolutely (opener), overall (filler), typically, various (vague pluralizer), actually, additionally.
 
 > **Which of these have evidence, and which are inherited.** Checked 2026-08-13 against
 > Kobak, D., González-Márquez, R., Horvát, E-Á., & Lause, J. (2025), "Delving into
@@ -40,13 +40,17 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
 > are published at **github.com/berenslab/llm-excess-vocab** (`results/excess_words.csv`,
 > MIT). 407 are style words, 268 of them verbs.
 >
-> **32 of the 56 words above appear in that style set:** delve, leverage, harness, utilize, foster, facilitate, streamline, unlock, empower, elevate, enhance, garner, showcase, underscore, highlight, align with, transformative, groundbreaking, seamless, realm, multifaceted, nuanced, comprehensive, intricate, crucial, pivotal, essential, enduring, interplay, typically, various, additionally.
+> **32 of the 61 words above appear in that style set:** delve, leverage, harness, utilize, foster, facilitate, streamline, unlock, empower, elevate, enhance, garner, showcase, underscore, highlight, align with, transformative, groundbreaking, seamless, realm, multifaceted, nuanced, comprehensive, intricate, crucial, pivotal, essential, enduring, interplay, typically, various, additionally.
 >
-> **24 do not:** navigate, cultivate, optimize, robust, holistic, dynamic, agile, synergy, scalable, disruptive, paradigm, landscape, tapestry, vital, key, vibrant, testament, albeit, whilst, essentially, certainly, absolutely, overall, actually. That is not proof they are wrong — the
+> **29 do not:** navigate, cultivate, optimize, robust, holistic, dynamic, agile, synergy, scalable, disruptive, paradigm, landscape, tapestry, vital, key, vibrant, testament, showcasing, intricacies, meticulous, meticulously, unparalleled, albeit, whilst, essentially, certainly, absolutely, overall, actually. That is not proof they are wrong — the
 > corpus is biomedical abstracts, so tech-register words like *synergy*, *scalable*, *agile*
 > and *paradigm* would not surface there whatever their LLM overuse. It is the honest
 > partition: two-thirds sourced, one-third inherited from intermediaries with nothing behind
-> it. Weight a hit accordingly.
+> it. Weight a hit accordingly. The five added 2026-08-16 — *showcasing, intricacies,
+> meticulous, meticulously, unparalleled* — are in the unsourced group by construction: they
+> were taken from `delete-ai-words` only because each is a morphological sibling of a word
+> that IS in the Kobak set (*showcase, intricate*), which is a weaker warrant than the study
+> itself and is not the same thing as evidence.
 >
 > **We deliberately do not import the other 407.** They describe excess vocabulary in
 > academic abstracts, and pulling them in wholesale would drag that register into blog and
@@ -100,7 +104,36 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
   other item here was not.
 - **Intro → 3-point list → summary** template; the **rule of three** forced everywhere ("innovation, inspiration, insight").
 - **Stacked fragment cadence** as punchlines: "X. Y. Z." → write a real sentence.
-- **Negative parallelism:** "It's not about X, it's about Y", "Not only… but also". → positive declarative.
+- **Negative parallelism / the reframe.** Rejecting one frame and replacing it with another to
+  manufacture depth. Expanded 2026-08-16 from a single line naming two shapes; the taxonomy is
+  inherited and unverified, like the analogy section below, but the pattern is easy to check
+  by eye and the one-liner caught only the most obvious form.
+
+  A passage fails if it (1) dismisses, minimises or questions X, then (2) upgrades to Y —
+  **even when the word "not" never appears.**
+
+  *Shapes:* "This isn't X, it's Y" · "Not X. Y." · "Forget X, focus on Y" · "Less X, more Y" ·
+  "Not only X but also Y" · "X? No. Y." · "Stop thinking X, start thinking Y" · "X is dead,
+  Y is the future" · "The question isn't X, it's Y" · "You don't need X, you need Y" ·
+  "It was never about X, it was always about Y".
+
+  *Softened forms doing the same work:* "While X may seem…", "Although X appears…",
+  "At first glance…", "On the surface…", "Most people think X…", "Conventional wisdom says X…".
+  Watch the pivot: *but, yet, actually, really, instead, rather, ultimately, in reality, the
+  truth is, what matters is, the real, the deeper, the hidden, the overlooked.*
+
+  **It crosses sentence boundaries**, which the old one-liner missed entirely:
+  - Before: "Most teams think they have a hiring problem. They have a standards problem."
+  - After: "The team's standards are unclear."
+
+  Headings too — "Not a tool. A system." / "The real problem" → name the thing directly.
+
+  **Fix:** delete the rejected half, then write the positive claim as a plain sentence.
+  "It's not about the prompt, it's about the context." → "Context controls the output."
+
+  **Allowed, and this exception is what makes the rule usable:** contrast that corrects a
+  specific factual, legal, technical, date, number, name or scope error. "The meeting is on
+  Tuesday, not Thursday." Never contrast for drama or manufactured insight.
 - **Tailing negation:** "...no guessing", "...no wasted motion" tacked on. → real clause.
 - **False ranges:** "from the Big Bang to dark matter, from birth to death of stars" where endpoints aren't a real scale. → name the actual items.
 - **Elegant variation** (synonym cycling): protagonist → main character → central figure → hero, all for one subject. Pick one.
@@ -118,6 +151,49 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
   **Compare against the author's rate for that channel, not a global range.** Fifteen documents from one author's 2008–2012 product blog average **3.7** contractions per 1,000 words against **11–29** for the same author's technical blog — and **6 of the 15 sit at exactly zero**, every one written a decade before any LLM existed. Same person, same measure, one fifth the rate, because it is a different job. `scripts/register_report.py --baseline <dir>` makes that comparison against the author's own corpus.
 - Before: "It is not something we would recommend, and we cannot support it in production."
 - After: "It's not something we'd recommend, and we can't support it in production."
+
+## Analogy and metaphor
+
+> **Inherited and unverified**, and flagged as such because the rest of this file partitions
+> its claims. Adapted 2026-08-16 from a widely circulated anti-AI-writing skill
+> (`delete-ai-words`) that cites nothing. Nothing below is sourced to a study; it is one
+> writer's taste, and the frequency budget in particular is a number somebody chose. It earns
+> a place because reaching for a metaphor to explain an ordinary idea is a recognisable habit
+> and this file previously said nothing about it at all — not under-specified, absent. Treat
+> every item as a reason to look, per the rules at the top.
+
+**The default is no analogy.** Do not explain an ordinary idea through metaphor, and do not
+decorate a clear point with imagery.
+
+**Permission test — an analogy is allowed only if all five pass.** The subject is genuinely
+unfamiliar, abstract or technical; the analogy makes it *easier*; it is **shorter** than the
+literal version; it is exact enough not to mislead; and it reads normally aloud. If any fail,
+write it literally. The "shorter" test does most of the work: an analogy that costs more words
+than the plain statement is decoration.
+
+**Rough budget:** none under 800 words, at most one per 800–1,500, and never stacked. Held
+loosely — it is a smell test for over-reaching, not a quota to fill.
+
+**Banned setups:** "Think of it as", "Imagine", "Picture", "It's like", "As if", "The X of Y",
+"Works like", "Acts like", "A bridge between", "A lens for", "A roadmap for", "The engine of",
+"The backbone of", "The DNA of".
+
+**Tired families for abstract work:** journey, battlefield, ecosystem, engine/fuel,
+map/compass, signal/noise (unless literal), iceberg, north star, flywheel, scaffolding,
+plumbing, gardening, chess, sports, puzzle.
+
+**Metaphor verbs applied to ideas, strategy or products:** sanded down, bolted on, stripped
+back, stitched together, woven, layered, carved out, baked in, distilled, unpacked,
+crystallized, sharpened, surfaced, amplified, anchored, cemented, bridged. Use the literal
+verb: cut, added, removed, changed, joined, caused, showed, reduced, clarified, fixed, named,
+compared, chose, rejected.
+
+- Before: "Your onboarding is a leaky bucket."
+- After: "42% of users leave on step 2, where the form asks for billing details before showing
+  the product."
+
+The fix is usually not a better metaphor. It is the specific fact the metaphor was standing in
+for — which is why this belongs next to the vague-attribution and puffery entries above.
 
 ## Formatting / mechanics
 
@@ -140,6 +216,32 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
   Wikipedia also notes *"Gemini and Claude models typically do not use curly quotes"*,
   so it misses two current model families outright. Treat as a consistency check
   within one document, not as evidence of origin.
+
+## Do not "fix" these by merging another list over them
+
+Three entries in this file **contradict** the popular anti-AI-writing lists, on purpose and
+with sources. A future merge that quietly restored the common version would be a regression,
+so the disagreements are named here rather than left to be rediscovered.
+
+- **Em dashes.** The circulating rule is a blanket ban. This file compares against the
+  author's own rate instead, because a July 2026 study found that of contemporary models only
+  Claude used em dashes *more* than professional writers and ChatGPT used them *less*, and
+  GPT-5.1 was changed to suppress them. A blanket cut is backwards for at least one model
+  family.
+- **Hedges** (*arguably, to some extent, broadly speaking*). Commonly listed as AI tells.
+  Three independent sources put them on the **human** side -- Jiang & Hyland (2025), Mizumoto
+  et al. (2024), and Wikipedia's own guide. Tighten them as wordiness; never score them as
+  machine origin.
+- **"In order to", "due to the fact that", "as a result of".** Same story: Wikipedia reports
+  these as *more* common in human writing across 25 years of editing. Strunk edits, not tells.
+
+The general rule this file follows: **a bigger banned list is not a better one.** The
+`delete-ai-words` list compared against on 2026-08-16 carries 82 words to this file's 61, but
+the extra ones are largely B2B marketing vocabulary -- *cutting-edge, state-of-the-art,
+turnkey, plug-and-play, mission-critical, future-proof* -- which predates LLMs by decades and
+is written by humans daily. Importing it would conflate puffery with machine origin and fire
+on ordinary product writing. Only five words were taken from it, each a morphological sibling
+of a word already sourced to Kobak et al. (2025).
 
 ## Chatbot artifacts (delete on sight in pasted content)
 
