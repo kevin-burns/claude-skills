@@ -1,0 +1,4 @@
+runs/
+prompts/
+runs-stale-*/
+prompts-stale-*/
