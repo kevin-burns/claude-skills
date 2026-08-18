@@ -178,4 +178,7 @@ Kobak et al. (2025, *Science Advances* 11(27):eadt3813) — 32 of its 56 words a
 dataset's 407 style words, 24 do not, and the file states the split rather than presenting all 56
 as one list.
 
-Full citations, including the contrary evidence, are in `SKILL.md` and the script docstrings.
+Full citations, including the contrary evidence and the deliberately-excluded methods, are in
+[`references/provenance.md`](references/provenance.md) and the script docstrings. They live there
+rather than in `SKILL.md` because none of it changes what the skill does at runtime — measured,
+not assumed: `evals/ablation` arm G, 2026-08-18.

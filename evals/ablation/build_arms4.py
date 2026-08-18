@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
 """Fourth ablation: arm G strips the Provenance block, keeping the exclusions.
 
+RETIRED 2026-08-18, the same day it ran. This arm existed to answer whether the
+Provenance block could be cut; the answer was yes, and the cut has since been made
+-- the citations now live in clear-and-human/references/provenance.md. So arm A IS
+what arm G was, and this build now exits 1 with "marker missing: '## Provenance'"
+because the material it removes is already gone.
+
+Kept rather than deleted for two reasons: it is the template for any future PRUNING
+arm (it asserts a size DECREASE against its control and asserts what it cannot
+isolate, neither of which arms A-F do), and its failure is the honest record that
+the change it authorised was actually applied.
+
 This arm inverts the harness's usual question, and that has to be said first.
 Arms A-F asked "is this material dead weight?", where a null is a limitation.
 Arm G asks "is it SAFE TO CUT?", where a null is the RESULT. An underpowered
