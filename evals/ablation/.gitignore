@@ -1,3 +1,6 @@
 arms/
 runs/
 runs-free/
+arms-*/
+runs-stale-*/
+runs-free-stale-*/
