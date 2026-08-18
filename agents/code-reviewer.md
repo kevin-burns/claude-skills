@@ -55,7 +55,10 @@ false-positive calibration, not suppression: a real-but-uncertain finding is rep
   fact-verifier rather than guessing.
 - Every finding must point at a location and propose a concrete fix. No vague "consider
   improving this."
-- Don't report style/formatting that a linter/formatter owns.
+- Don't report anything the project's own tooling already enforces — not just style and
+  formatting a linter owns, but type errors a type-checker catches, vulnerable deps a
+  scanner flags, and anything a pre-commit hook rejects. A finding the build would have
+  raised anyway costs attention and returns nothing.
 
 ## Return format (final message) — JSON only
 ```json

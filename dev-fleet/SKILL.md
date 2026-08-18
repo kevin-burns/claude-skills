@@ -137,6 +137,16 @@ values, "library X supports Y", resource IDs, version constraints, "the spec say
   re-verify — never commit on an unresolved fact.
 - Skip only when the finished change asserts no external facts (pure refactor with green tests).
 
+### 3a. Check the diff exists before dispatching anyone
+
+Before any review-side agent is dispatched, confirm the thing they are meant to read actually
+resolves: the branch or ref exists (`git rev-parse`), and the diff against it is **non-empty**.
+
+A bad ref or an empty diff should fail *here*, in one cheap command, not inside two dispatched
+agents that each burn a cold cache to discover there is nothing to look at and then report
+confidently on nothing. Same failure shape as an ablation arm whose build silently no-ops: the
+expensive thing runs, returns clean, and the cleanliness means nothing.
+
 ### 4. coherence-checker — structural gate (non-trivial changes)
 Runs **after** fact-verifier (so refuted assumptions are known) and **before** code-reviewer (a
 cheaper structural pass than line-level review). It checks whether the implementation that exists
@@ -176,6 +186,20 @@ Dispatch on the builder's branch/diff. Read the findings:
   builder pass) then continue.
 - It is **advisory**. You weigh it and decide (disagree-and-commit); don't treat the
   verdict as a veto, but don't ignore a well-evidenced `blocking` finding either.
+
+### 5a. Reading two gates without flattening them
+
+coherence-checker and code-reviewer answer **different questions** — "does this match what was
+asked for?" and "is this correct?" — and a change can pass one and fail the other. Code that
+follows every convention while implementing the wrong thing passes review and fails coherence.
+Code that does exactly what the spec asked while breaking a contract does the reverse.
+
+So report them **separately and do not rerank across them**. Keep the two lists under their own
+headings, and do not merge into one severity-ordered list or pick a single "worst finding"
+overall — name the worst finding *within each*. Merging is what lets one axis mask the other,
+which is the whole reason the pipeline runs two gates instead of one.
+
+Within an axis, rank freely. Across axes, never.
 
 ### 6. Full-suite gate — the orchestrator's job
 code-builder **bounds** its own test runs (targeted + the relevant module once) to avoid
