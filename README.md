@@ -2,7 +2,7 @@
 
 ![claude-skills banner](images/banner.webp)
 
-Twenty-two [Agent Skills](https://agentskills.io) and eight subagents I build and maintain,
+Twenty-three [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
 some bundle scripts, evals or reference files. Subagents live under [`agents/`](./agents).
 
@@ -21,8 +21,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 22 skills + 8 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 22 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 23 skills + 9 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 23 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -54,7 +54,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than twenty-two.
+rather than twenty-three.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
