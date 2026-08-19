@@ -19,8 +19,13 @@ read ONLY the listed reference(s), then act. References are grep-friendly — pr
    these, flag them and propose the 1.x form.
 2. **Fact-based generation.** Every generated pattern must trace to a documented Gruntwork
    pattern (references here carry doc links to docs.terragrunt.com). Don't invent layouts.
-3. **Knowledge freshness.** Embedded references were verified against Terragrunt 1.x
-   (current stable **v1.1.2**, released 2026-07-29). **v1.1.0 graduated six experiments to
+3. **Knowledge freshness. This skill does not assert what the current Terragrunt release is.**
+   That claim has a half-life of about six weeks and it expired unnoticed: this line said
+   "current stable v1.1.2" while the binary on the author's own machine was already v1.1.3.
+   Run **`scripts/preflight.py`** instead — it reads `terragrunt --version` and reports which
+   of the gates below your build satisfies, which it does not reach, and which upgrade hazards
+   are in effect on it. Everything that follows is a fact about *when a feature landed*, which
+   does not rot. **v1.1.0 graduated six experiments to
    GA** — `stack-dependencies`, `cas`, `catalog-redesign`, `mark-many-as-read`,
    `opt-out-auth`, `dag-queue-display` — so their features are now **enabled by default**;
    passing the old `--experiment`/`TG_EXPERIMENT` value only prints a "completed experiment"
@@ -47,13 +52,55 @@ read ONLY the listed reference(s), then act. References are grep-friendly — pr
      the trust policy, but editing the trust policy is the wrong fix — upgrading is. See
      `references/hcl-blocks.md` under `## BLOCK: iam_role`.
 
+   **v1.1.3 graduated nothing.** No experiment stabilised, so the "enabled by default" list
+   above is unchanged from v1.1.0. It is twelve bug fixes and five new experiments, but two
+   items in it change what to advise and one changes behaviour whether or not you opt in.
+
+   **Recommend v1.1.3+ wherever `--provider-cache` is used, or wherever two Terragrunt runs
+   can overlap on one machine.** Two separate race conditions were fixed, and both are the
+   same shape as the v1.1.2 provider-cache issue above:
+   - The cache server could start answering requests before it had finished preparing its
+     directories. A provider requested in that window had its archive and lock file written
+     **relative to the working directory**, leaving zip files loose in the project.
+   - Two concurrent runs staged provider downloads at the same path, so the first to finish
+     could delete an archive the other was still unpacking, failing it with
+     `failed to open zip archive`. Relevant to any parallel CI matrix on a shared runner.
+   See `references/scale-and-performance.md`.
+
+   **THE ONE THAT BITES WITHOUT OPTING IN: `(` and `)` are now reserved in `--filter`.** The
+   `bounded-discovery` experiment introduces an inline `(dir)` boundary operand, and reserving
+   those characters **changes how `--filter` parses everywhere, not only when the experiment is
+   enabled**. `--filter '1...(foo | bar)'` previously matched a unit literally named `(foo` or
+   `bar)`; on v1.1.3 it is rejected as a malformed boundary. Wrap a name or path containing
+   parentheses in braces — `--filter '{./weird(name)}'` — to keep it literal. This is the
+   v1.1.1-`iam_role`-shaped item for this release: an upgrade can break a working invocation
+   with nothing enabled. Check filter strings and unit names for parentheses before upgrading.
+
+   **v1.1.3 added five experiments, all opt-in, none GA:** `block-iteration` (reserves the
+   `expansion` block for iterating `dependency`/`unit`/`stack` over `count`/`for_each`, plus an
+   `enabled` attribute on `unit` and `stack` — **reserved only in this release, enabling it has
+   no behavioural effect**, but writing `expansion` *without* it is now an error rather than a
+   silent discard), `bounded-discovery` (above), `browse-tui` (`terragrunt browse`, a
+   three-column TUI estate browser), `mutable-generate` (see the collision warning below) and
+   `optional-dependency-outputs` (`--no-dependency-outputs`, the global form of
+   `skip_outputs`). Syntax and gating in `references/hcl-blocks.md`.
+
+   **NAME COLLISION — `mutable` now means two different things.** On the **`unit`** block it is
+   GA since v1.1.0 and needs no experiment. On the **`generate`** block it is new in v1.1.3 and
+   requires `--experiment mutable-generate`; setting it without the experiment is an error, and
+   earlier versions reject the attribute outright. Do not carry the v1.1.0 gate across to
+   `generate`. Both are in `references/hcl-blocks.md`.
+
    **Experiments are not a short list, and they move in patch releases.** Alongside the two
    above, `azure-backend`, `deep-merge`, `dependency-fetch-output-from-state`,
    `hook-context-env`, `iac-engine`, `optional-hooks`, `slow-task-reporting` and `symlinks`
    were active as of v1.1.1, and **v1.1.2 added `otel-logs`** (OpenTelemetry logs signal via
    `TG_TELEMETRY_LOGS_EXPORTER`) **and `profiling`** (pprof CPU/heap/goroutine collection for
    debugging Terragrunt itself, not the infrastructure it manages) — twelve active as of
-   v1.1.2. v1.1.2 also changed two existing ones: `azure-backend` went from inert to
+   v1.1.2 — **and that count was already short by one: `catalog-format` was active and is not
+   in the list above.** The authoritative list gives **eighteen active as of v1.1.3**, so do not
+   reach the number by adding this release's five to a previous total; read the page.
+   v1.1.2 also changed two existing ones: `azure-backend` went from inert to
    functional (see `references/azure-backend.md` — this reverses a long-standing "Terragrunt
    never bootstraps Azure state" rule), and `oci` gained CAS caching plus Docker
    credential-helper auth. These references cover only some of them, so an unfamiliar

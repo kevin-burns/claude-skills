@@ -27,6 +27,29 @@ The `--filter` flag is the single 1.0 mechanism for targeting units and stacks, 
 
 **Exclude-by-default:** using *any* positive filter (one not starting with `!`) switches Terragrunt out of "include everything" mode — it then includes only what the positive filters match. Negative-only filters keep the include-all default and just subtract.
 
+> **v1.1.3 changed filter parsing, and one half of it applies whether or not you opt in.**
+>
+> **`(` and `)` are now reserved** for the `(dir)` boundary operand that the
+> `bounded-discovery` experiment introduces. The reservation is unconditional: on v1.1.3
+> `--filter '1...(foo | bar)'` is rejected as a malformed boundary where it previously
+> matched a unit literally named `(foo` or `bar)`. Wrap a name or path containing
+> parentheses in braces — `--filter '{./weird(name)}'` — to keep it literal. Audit filter
+> strings and unit names for parentheses before upgrading.
+>
+> **The exclude-by-default rule above only became true in v1.1.3.** Before it, a query that
+> *began* with a negation was treated as an exclusion in its entirety, and positive
+> expressions chained after it stopped restricting the selection. On ≤v1.1.2
+> `--filter '!name=foo | name=bar'` returned everything except nothing useful; on v1.1.3 it
+> returns `bar`. A query is treated as an exclusion only when **every** expression in it is
+> negated (`'!name=foo'`, `'!name=foo | !name=bar'`).
+>
+> **`bounded-discovery` (v1.1.3, opt-in)** additionally bounds graph traversal to a
+> directory: `--discovery-boundary <dir>` (env `TG_DISCOVERY_BOUNDARY`) replaces the Git
+> repository root as the enclosure for a whole run, and the inline `(dir)` operand bounds a
+> single expression, overriding the flag. Anything resolving outside the boundary is not
+> read, parsed or returned. Dependent traversal searches upward, so the boundary must be the
+> working directory or one of its parents; dependency-only filters accept any directory.
+
 **Graph traversal operators** (trailing `...` walks toward **dependencies**, leading `...` toward **dependents**):
 - `target...` — the target **and all its dependencies**.
 - `...target` — the target **and everything that depends on it**.
@@ -159,6 +182,15 @@ directory — components can live anywhere; add a `.terragrunt-catalog-ignore` f
 globs) to filter paths out. Each component shows a **kind** label (`template`, `stack`, `unit`,
 `module`) plus optional tags from its `README.md` front-matter; press `s` on a component to
 open the interactive scaffold screen.
+
+> **`scaffold` was wrong for units and stacks before v1.1.3, and exited 0 while being wrong.**
+> It read every source as an OpenTofu/Terraform module, so given a unit or a stack — which
+> are Terragrunt configurations, not modules — it wrote an invalid `terragrunt.hcl` and
+> reported success. v1.1.3 scaffolds them the way the Catalog TUI does: the configuration's
+> files are copied into the working directory to edit in place, along with a
+> `terragrunt.values.hcl` listing every `values.*` reference the configuration makes.
+> Copying refuses to overwrite — a file that would land on an existing path stops the
+> command before anything is written. Modules and templates are unaffected.
 
 **Options:**
 - `--url`: URL of the catalog to browse

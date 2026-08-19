@@ -45,7 +45,10 @@ footer stating exactly what was verified and when. That is deliberate: Terragrun
 *behaviour* and *experiments* move in patch releases, and semantic versioning describes
 the API contract, not the documentation blast radius.
 
-Current state: verified against **v1.1.2** (2026-07-29). The most recent lesson is worth
+Current state: **this skill does not claim a current release.** Run `scripts/preflight.py` —
+it reads `terragrunt --version` and tells you which gates your build satisfies and which
+upgrade hazards apply to it. The references state when each feature landed, not what is
+newest. The most recent lesson is worth
 repeating — v1.1.2 was a patch that **reversed a two-year-old rule**. The
 `azure-backend` experiment went from inert to functional, so "Terragrunt never bootstraps
 Azure state" is now true only on the default path; on v1.1.2+ with
@@ -65,7 +68,7 @@ skimming it is exactly how the above was nearly missed.
   backends and providers, `[BRACKET]` elsewhere) and all of them must be replaced before
   anything is presented. It will ask, or use obvious dummies labelled as such, rather than
   producing a plausible-looking account ID or secret.
-- **It does not cover every experiment.** Twelve were active as of v1.1.2 and these
+- **It does not cover every experiment.** Eighteen were active as of v1.1.3 and these
   references cover only some. An unfamiliar `--experiment` value is *not* evidence that it
   is wrong — look it up rather than flagging it.
 - **It does not assume OpenTofu or Terraform.** Terragrunt orchestrates either; the skill

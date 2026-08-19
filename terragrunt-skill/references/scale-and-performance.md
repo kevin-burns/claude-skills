@@ -119,6 +119,23 @@ downloads/stores each provider exactly once across all units.
   secret path segment (regenerated per server start, redacted from the server's own logs)
   into the URLs handed to OpenTofu/Terraform; requests without it get a 404. No config change
   is needed — the fix is the upgrade.
+- **Require v1.1.3+ for two race conditions in the same area.** Both are correctness bugs
+  rather than security ones, and both bite exactly where the cache server is most useful:
+  - The server could begin answering requests before it had finished preparing the
+    directories it caches into. A provider requested in that window had its archive and lock
+    file written **relative to the working directory**, leaving zip files loose in the
+    project tree. Providers now always download into the cache directory.
+  - Two Terragrunt runs on one machine staged provider downloads at the same path, so the
+    run that finished first could delete an archive the other was still unpacking, failing it
+    with `failed to open zip archive`. Two runs can now cache the same provider concurrently.
+    This is the one to quote at anyone running a parallel CI matrix on a shared runner.
+- **`providers lock` flag values, v1.1.3+.** The space-delimited form
+  (`providers lock -platform linux_amd64`) previously had its value moved to the end of the
+  command, where it was read as a provider address and failed with
+  `Invalid provider type "linux_amd64"`; only the attached form `-platform=linux_amd64`
+  worked. `-fs-mirror` and `-net-mirror` were moved the same way. All now keep their values,
+  and with `--provider-cache` enabled platforms are split correctly across the per-platform
+  `providers lock` runs used to warm the cache.
 - **Do NOT set `TF_PLUGIN_CACHE_DIR` yourself with `run --all`** — OpenTofu/Terraform's
   built-in plugin cache is not concurrency-safe, and parallel units corrupt it
   (`Error: Failed to install provider`). Let Terragrunt manage caching. On OpenTofu ≥ 1.10,
@@ -231,5 +248,6 @@ performance techniques here don't require it.
 - experiments — cas / mark-many-as-read / opt-out-auth / dag-queue-display / stack-dependencies / catalog-redesign graduated to GA in v1.1.0. Twelve active as of v1.1.2: azure-backend, deep-merge, dependency-fetch-output-from-state, hook-context-env, iac-engine, oci, optional-hooks, otel-logs, profiling, slow-task-reporting, symlinks, version-attribute (oci and version-attribute new in v1.1.1; otel-logs and profiling new in v1.1.2, and v1.1.2 also made azure-backend functional — see azure-backend.md). Authoritative list: https://docs.terragrunt.com/reference/experiments/active
 - v1.1.0 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.0
 - v1.1.1 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.1
+- v1.1.3 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.3 — two provider-cache race conditions fixed; `providers lock` space-delimited flag values; `--filter` now reserves `(`/`)` unconditionally and applies positive expressions after a leading negation; `tflint` hook honours `--config=`; `scaffold` fixed for units and stacks; five experiments added, none graduated
 - v1.1.2 release notes: https://github.com/gruntwork-io/terragrunt/releases/tag/v1.1.2 — provider cache server download endpoint now requires the run's secret path segment; `find_in_parent_folders()` 7–10x faster; local-source hashing honours `include_in_copy`/`exclude_from_copy` so uncopied files no longer force a re-init
 - run command flags & exit codes: https://docs.terragrunt.com/reference/cli/commands/run/
