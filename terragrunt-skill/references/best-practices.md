@@ -790,7 +790,7 @@ remote_state {
 terraform {
   before_hook "validate" {
     commands = ["apply", "plan"]
-    execute  = ["tflint", "--config=.tflint.hcl"]
+    execute  = ["tflint", "--config=.tflint.hcl"]  # requires v1.1.3+ — see note below
   }
 
   before_hook "security_scan" {
@@ -799,6 +799,17 @@ terraform {
   }
 }
 ```
+
+> **v1.1.3+ for the `--config=` form.** The built-in `tflint` hook reads the config path out
+> of the arguments you give it, and before v1.1.3 it recognised only the space-separated
+> `--config <path>` spelling. Written as `--config=<path>` the hook behaved as though no
+> config had been named at all: it searched the unit directory and its parents for a
+> `.tflint.hcl`, then either failed with config-not-found or ran `tflint init` against
+> whatever unrelated config the search turned up. **It did not warn.** v1.1.3 accepts
+> `--config <path>`, `--config=<path>`, `-c <path>` and `-c=<path>`. On ≤v1.1.2 use the
+> space-separated form. v1.1.3 also orders the `--var` arguments the hook builds from
+> `inputs` and `TF_VAR_` `extra_arguments` by variable name, so the logged command line is
+> stable between runs.
 
 **Antipatterns:**
 - Applying without any validation
