@@ -153,7 +153,7 @@ the fastest route to an answer is the grep handle, not the filename.
 | `azure-backend.md` | Azure state, auth and provider gotchas | — | read whole; it is short |
 | `scale-and-performance.md` | run only what changed, cache, parallelism | — | read whole; it is short |
 
-Two of the nine carry no heading convention because they are short enough to read end to end.
+Two of the ten carry no heading convention because they are short enough to read end to end.
 Counts are verified against the files, not asserted: regenerate with
 `grep -c '^## ERROR:' references/error-patterns.md` and so on.
 

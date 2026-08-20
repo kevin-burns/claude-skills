@@ -87,9 +87,16 @@ LEGAL_INSIDE = {
 WINDOW = 2      # lines either side searched for a MARKED signal
 ENCLOSING = 12  # lines searched BACKWARDS for an allowing block
 
+# scripts/ was OUTSIDE this scan until 2026-08-20, and that is how validate.sh -- the skill's
+# own executable validator -- kept gating on Terragrunt 0.93 while the skill it ships with
+# bans every pre-1.0 form. Prose is not the only place a stale form hides; something that RUNS
+# is worse, because it acts on the claim.
 TARGETS = ["SKILL.md", "README.md"] + sorted(
     str(p.relative_to(ROOT)) for p in (ROOT / "references").glob("*.md")
-) + sorted(str(p.relative_to(ROOT)) for p in (ROOT / "templates").rglob("*.hcl"))
+) + sorted(str(p.relative_to(ROOT)) for p in (ROOT / "templates").rglob("*.hcl")) + sorted(
+    str(p.relative_to(ROOT)) for p in (ROOT / "scripts").iterdir()
+    if p.suffix in (".sh", ".py") and p.name != "scan_pre10.py"
+)
 
 # Files harvested from the pre-1.0 source, per their own headers. Reported separately because
 # they are where a hit is most likely and least surprising.

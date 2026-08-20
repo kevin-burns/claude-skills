@@ -14,8 +14,11 @@
 #   * Every declared path is now checked for existence FIRST, and a missing one is named. A
 #     bare 127 tells you nothing about which file moved.
 #   * The two phantom regression tests are gone rather than left as steps pointing at files
-#     nobody has. That leaves validate.sh and detect_custom_resources.py with NO regression
-#     test of their own -- a real gap, recorded rather than papered over.
+#     nobody has. That left validate.sh and detect_custom_resources.py with NO regression test
+#     of their own -- a real gap, recorded rather than papered over, and CLOSED on 2026-08-20
+#     by tests/test_validate_sh.py and tests/test_detect_custom_resources.py
+#     (claude-skills-gm0). Writing them found validate.sh gating on Terragrunt 0.93, a pre-1.0
+#     floor inside a skill whose first hard policy bans pre-1.0 forms.
 
 set -euo pipefail
 
