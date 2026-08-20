@@ -100,6 +100,10 @@ MIRRORS: dict[str, Mirror] = {
         exclude=(
             "evals/runs",
             "evals/arms",
+            # NOT covered by "evals/arms": the on-disk routing arms are a whole second copy
+            # of the skill (SKILL.md plus every reference), so a local build shipped the skill
+            # twice. Gitignored, so CI never had them and never caught it.
+            "evals/arms-disk",
             "evals/snapshots",
             # runs-* covers the cross-model banks AND the dated tarballs. Named
             # individually first, this shipped runs-google-gemini-3.7-flash/ from a local
