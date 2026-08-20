@@ -83,6 +83,46 @@ jobs:
           echo "tree to publish:"
           find /tmp/mirror -type f | sed 's|/tmp/mirror/|  |' | sort
 
+      # THE LAST GATE BEFORE CONTENT LEAVES FOR A DIFFERENT REPO. The source repo is scanned
+      # twice -- a pre-commit hook over staged changes, and ci.yml over full history -- but
+      # neither covers this push, for two reasons:
+      #
+      #   * ORDERING. ci.yml and this workflow both fire on push to main, independently and
+      #     in parallel. Nothing makes this one wait for the secrets job, so a secret that
+      #     landed on main can reach a SECOND public repo before the first has reported.
+      #   * GENERATED FILES. The four plugin manifests do not exist in claude-skills; the
+      #     builder synthesises them. A full-history scan of the source cannot see a file
+      #     that has never been in it.
+      #
+      # Scanned as a DIRECTORY, not a git history: this tree has no history yet. That also
+      # means .gitleaksignore is not carried over, and does not need to be. Its one dismissal
+      # pins a Firebase web config inside excalidraw-diagram's vendored render engine, which
+      # was committed in 8380a5e, untracked in e0790d3, and now arrives from a pinned GitHub
+      # Release instead. The file is gitignored and absent from the working tree, so it exists
+      # only in HISTORY -- reachable by ci.yml's full-history scan and by nothing a directory
+      # scan can see. Any dismissal here would have to be argued on its own evidence.
+      #
+      # That release-asset shape is also why excalidraw-diagram is not a candidate for this
+      # mirror pattern as it stands: the builder copies the working tree, which does not
+      # contain the engine at all.
+      #
+      # --redact so a finding cannot print the secret into a PUBLIC build log, which would
+      # widen the exposure this step exists to catch.
+      - name: Scan the built tree for secrets
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          # Pinned to the same version as .pre-commit-config.yaml, ci.yml and the sibling
+          # mirror workflow. test_build_skill_mirror.py fails when those four disagree.
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+          gitleaks dir --redact --verbose /tmp/mirror
+
       - name: Push to ${{ env.TARGET_REPO }}
         if: steps.gate.outputs.configured == 'true'
         env:
