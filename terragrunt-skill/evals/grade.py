@@ -19,6 +19,17 @@ skill's own warning as a violation and could invert the result. So every hit is 
 every hit is written out with its surrounding text, and the headline numbers are refused
 until a human has read them.
 
+ci-skip: needs-run-bank
+
+CI cannot run this end to end and should not pretend to. It grades runs/, a bank of model
+responses that is gitignored on purpose: an arm is built from SKILL.md, so a banked run has to
+be regenerated whenever SKILL.md moves, and committing one guarantees today's arm gets compared
+against last week's answer. There is nothing in a fresh checkout to grade.
+
+That is NOT a coverage hole. The part of this file that could be wrong is the detection and
+classification, and 40 tests in tests/test_eval_grade.py cover it against committed fixtures.
+What CI cannot do is re-run the experiment, which costs money and is a decision.
+
 Lesson 4 of evals/ablation/README.md is the precedent: an earlier metric there scored correct
 placeholder behaviour as fabrication and reported p = 0.0017 for an effect that was partly an
 artefact. Only the class that survived reading every hit individually was published.

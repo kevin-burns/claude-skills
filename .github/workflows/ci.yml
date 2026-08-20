@@ -241,6 +241,19 @@ jobs:
               continue
             fi
 
+            # A third kind, and it needs its own reason rather than borrowing one
+            # above: an ablation grader reads a bank of MODEL RESPONSES. That bank
+            # is gitignored because an arm is built from SKILL.md, so a committed
+            # run guarantees today's arm gets compared against last week's answer.
+            # Re-running the experiment costs money and is a decision, not a CI
+            # step. The grader's own logic is covered by unit tests in the step
+            # above, so this skips the end-to-end run and nothing else.
+            if grep -q '^ci-skip: needs-run-bank' "$grader"; then
+              echo "${skill}: SKIPPED — grades a run bank that is gitignored by design"
+              skipped=$((skipped + 1))
+              continue
+            fi
+
             # A PEP 723 shebang means the grader pins its own interpreter and
             # deps; run it through uv so that pin is honoured. Everything else
             # runs on the matrix Python, which is the point of the 3.9 leg.
