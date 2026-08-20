@@ -218,6 +218,59 @@ def check_reference_placeholders(skill):
         if blanks:
             fail(rel, f"{blanks} empty list bullet(s) — they render as blank items")
 
+        # A bold section label with nothing under it. This check exists because removing the
+        # 192 blank bullets above CREATED the defect: for 52 of the 69 error entries those
+        # bullets WERE the whole `**Solutions:**` body, so the heading survived with an empty
+        # section beneath it. Three blank bullets were already worthless, but a heading that
+        # promises solutions and holds none is worse than one that was never written -- the
+        # reader greps, lands on it, and reads the absence as "no fix exists".
+        # Terminal only: the section must run to the next `## ` heading or EOF with nothing
+        # but whitespace in it. A label followed by a fence, a table or prose is fine.
+        hollow = re.findall(r"(?m)^\*\*([A-Z][A-Za-z ]*):\*\*[ \t]*\n\s*(?=^## |\Z)", text)
+        if hollow:
+            fail(rel, f"{len(hollow)} bold section(s) with an empty body "
+                      f"({', '.join(sorted(set(hollow))[:3])}) — a heading that promises "
+                      "content and holds none")
+
+
+
+def check_reference_counts(skill):
+    """Entry counts written in prose, against the files they claim to count.
+
+    SKILL.md's navigation table already said "Counts are verified against the files, not
+    asserted" and named the exact `grep -c` to regenerate them. Nothing ran it. That is the
+    same shape as the version pin this skill stopped asserting in claude-skills-802600b: a
+    number written into prose, correct on the day, with no mechanism tying it to the thing
+    it describes. A count only has to be wrong once for a reader to stop trusting the file.
+
+    Rows read from the table itself, so adding a reference needs no change here. Rows whose
+    Entries cell is an em dash opt out -- two files are short enough to read end to end and
+    carry no heading convention."""
+    skill_md = skill / "SKILL.md"
+    if not skill_md.is_file():
+        return
+    row = re.compile(r"^\|\s*`([\w.\-]+\.md)`\s*\|[^|]*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*$", re.M)
+    for name, counts_cell, handle_cell in row.findall(skill_md.read_text(encoding="utf-8")):
+        if not re.search(r"\d", counts_cell):
+            continue
+        path = skill / "references" / name
+        if not path.is_file():
+            fail(f"{skill.name}/SKILL.md", f"navigation table names references/{name}, which does not exist")
+            continue
+        counts = [int(n) for n in re.findall(r"\d+", counts_cell)]
+        handles = re.findall(r"`([^`]+)`", handle_cell)
+        if len(counts) != len(handles):
+            fail(f"{skill.name}/SKILL.md",
+                 f"{name}: {len(counts)} count(s) but {len(handles)} grep handle(s) — "
+                 "they have to pair up or the row cannot be checked")
+            continue
+        text = path.read_text(encoding="utf-8")
+        for claimed, handle in zip(counts, handles, strict=True):
+            actual = len(re.findall(handle, text, re.M))
+            if actual != claimed:
+                fail(f"{skill.name}/SKILL.md",
+                     f"{name} claims {claimed} for `{handle}`, file has {actual}")
+
 
 def main():
     skills = skill_dirs()
@@ -230,6 +283,7 @@ def main():
         check_relative_script_paths(skill)
         check_shipped_json(skill)
         check_reference_placeholders(skill)
+        check_reference_counts(skill)
 
     check_catalog()
     check_manifest_lists_every_skill(skills)
