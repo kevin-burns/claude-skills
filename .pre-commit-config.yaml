@@ -141,3 +141,21 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
+
+  # Structural checks, run here as well as in ci.yml. The hook is the point rather than a
+  # duplicate: a plugin manifest that lists 22 skills for a repo containing 23 fails by
+  # loading LESS, never by erroring, so nothing surfaces it until someone installs the
+  # collection and counts. That is how frontier-rounds stayed invisible to every plugin
+  # user until 2026-08-20 — found by installing, not by reading.
+  #
+  # It is stdlib-only and takes under a second over the whole repo, so it runs on every
+  # commit rather than only on the files staged: a skill directory added without touching
+  # a manifest is exactly the change that would otherwise slip past a file-scoped hook.
+  - repo: local
+    hooks:
+      - id: check-conventions
+        name: Skill structure and plugin manifests
+        entry: python3 .github/scripts/check_conventions.py
+        language: system
+        pass_filenames: false
+        always_run: true
