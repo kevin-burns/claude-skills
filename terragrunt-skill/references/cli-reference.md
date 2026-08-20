@@ -379,7 +379,7 @@ Does not validate Terraform configurations.
 terragrunt hcl validate
 ```
 
-*The `validate-inputs` replacement*
+*What replaced the removed `validate-inputs` command*
 ```bash
 terragrunt hcl validate --inputs             # missing / mismatched inputs
 terragrunt hcl validate --inputs --strict    # also flag inputs the module ignores
