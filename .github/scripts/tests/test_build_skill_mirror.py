@@ -9,6 +9,7 @@ in another.
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -211,7 +212,16 @@ def test_banner_sits_above_the_generated_notice():
     assert out.index("![") < out.index("This repository is generated")
 
 
-def test_the_banner_file_is_actually_published(tmp_path):
-    files = build(ROOT, tmp_path / "out", "ghost-publish")
-    assert "ghost-publish/images/banner.webp" in files, \
-        "the README references it; shipping the reference without the file is worse than neither"
+@pytest.mark.parametrize("skill", SKILLS)
+def test_every_image_the_front_page_references_is_actually_published(tmp_path, skill):
+    """Shipping the reference without the file is worse than neither, and it is
+    invisible until someone loads the mirror's landing page. Checks whatever the
+    README actually links to rather than one hardcoded filename, so a second
+    image added later is covered without anyone remembering to."""
+    out = tmp_path / "out"
+    files = set(build(ROOT, out, skill))
+    referenced = re.findall(rf"\]\({re.escape(skill)}/(images/[^)\s]+)\)",
+                            (out / "README.md").read_text())
+    assert referenced, f"the {skill} front page references no image at all"
+    for rel in referenced:
+        assert f"{skill}/{rel}" in files, f"{skill}/{rel} is linked but was not published"

@@ -1,5 +1,7 @@
 # terragrunt-skill
 
+![terragrunt-skill banner](images/banner.webp)
+
 Generate, validate, review and debug Terragrunt **1.x** configurations across AWS, Azure
 and GCP — from a reference set that states which Terragrunt release it tracks.
 
@@ -94,7 +96,7 @@ implying it did.
 
 ## Provenance
 
-MIT, and **not wholly original** — five of the nine reference files began as curated data from
+MIT, and **not wholly original** — five of the ten reference files began as curated data from
 [omattsson/terragrunt-mcp-server](https://github.com/omattsson/terragrunt-mcp-server) (MIT),
 restructured for grep-based lookup and since re-checked against docs.terragrunt.com. That
 repository's last commit predates Terragrunt v1.0.0 by five weeks, so the re-checks are what
