@@ -212,29 +212,94 @@ Docs: https://docs.terragrunt.com/reference/cli/commands/catalog/
 
 **Category:** catalog
 
-Generate a new Terragrunt configuration from a module in the catalog.
+Generate a new Terragrunt unit from a module, filling in its inputs.
 
-**Usage:** `terragrunt scaffold [flags] [module-url]`
+**Usage:** `terragrunt scaffold [flags] [module-url] [template-url]`
 
-Creates a new Terragrunt configuration file by scaffolding from a module
-in the catalog. This generates the necessary terragrunt.hcl with all inputs
-and configuration pre-filled based on the module's interface.
+**Scaffolding is done by boilerplate, not by Terragrunt itself.** The engine is
+[gruntwork-io/boilerplate](https://github.com/gruntwork-io/boilerplate) (MPL-2.0, Go), and
+knowing that is the difference between "the prompts are whatever Terragrunt decided" and
+"the prompts are a file I can author". Terragrunt picks a template in this order:
 
-**Options:**
-- `--output`: Output directory for the scaffolded configuration
-- `--var`: Set input variables for the scaffold
+1. the `template-url` given as the second argument, if present;
+2. a **`.boilerplate` sub-directory inside the module** at `module-url`, if one exists;
+3. the **built-in default template**.
 
-*Scaffold a VPC module*
+The built-in template generates a `terraform` block carrying the module source, an `inputs`
+section listing every required and optional variable with its type, description and default,
+and a `ref` on the source URL pointing at the module's latest release tag.
+
+You can also set a catalog-wide default with the **`default_template`** option in the catalog
+configuration, which applies to every module scaffolded from that catalog.
+
+**Options** — verified against docs.terragrunt.com on 2026-08-19:
+- `--var`: set a template variable (repeatable)
+- `--var-file`: supply variable values from a file
+- `--non-interactive`: skip the interactive form and write TODO placeholders instead
+- `--no-dependency-prompt`: skip only the dependency confirmation, keeping interactive mode
+- `--no-include-root`: do not include the root config in the generated `terragrunt.hcl`
+- `--root-file-name`: name of the root config to include in the generated `terragrunt.hcl`
+- `--no-shell`: disable shell command execution in boilerplate templates during scaffolding
+- `--no-hooks`: disable hook execution in boilerplate templates during scaffolding
+- `--output`: output directory. **Carried over from an earlier revision of this file and NOT
+  re-verified on 2026-08-19** — it did not appear in the flag list on the scaffold docs page.
+  Check before relying on it.
+
+*Scaffold a module with the built-in template*
 ```bash
 terragrunt scaffold github.com/gruntwork-io/terraform-aws-vpc//modules/vpc
 ```
 
-*Scaffold with variables*
+*Scaffold non-interactively in CI, passing every variable*
 ```bash
-terragrunt scaffold --var=env=prod github.com/example/module
+terragrunt scaffold --non-interactive --var-file=prod.yml github.com/example/module
 ```
 
-Docs: https://docs.terragrunt.com/reference/cli/commands/scaffold/
+### Authoring a `.boilerplate` template
+
+Put a `boilerplate.yml` in the module's `.boilerplate` directory. Users are prompted for each
+variable when they scaffold; `--non-interactive` requires every value to come from `--var` or
+`--var-file` instead.
+
+```yaml
+# .boilerplate/boilerplate.yml
+variables:
+  - name: InstanceClass
+    description: RDS instance class
+    type: string
+    default: db.t3.medium
+
+  - name: EngineVersion
+    description: Database engine version
+    type: string
+    default: "15.4"
+
+  - name: MultiAz
+    description: Deploy across two availability zones?
+    type: bool
+    default: false
+```
+
+Reference a variable inside any template file in that directory as `{{.InstanceClass}}`.
+
+**Variable fields:** `name` (the only required one), `description`, `type`, `default`,
+`options` (for `enum`), `reference` (take the value from another variable), `order` (prompt
+order), `validations`.
+
+**Variable types:** `string` (the default when omitted), `int`, `float`, `bool`, `map`,
+`list`, `enum`.
+
+**Other top-level keys in `boilerplate.yml`:** `required_version` (a Terraform-style version
+constraint on boilerplate itself), `dependencies` (run other templates first), `hooks` (shell
+commands before and after), `partials` (reusable templates by glob), `skip_files` (exclude
+paths, optionally conditional), `engines` (render a path with an alternative engine).
+
+> Quote a number or a default from this section only after checking it — every field above was
+> read from the boilerplate README on 2026-08-19, and boilerplate is on its own release
+> cadence (v0.16.0, 2026-05-13; last commit 2026-08-17), independent of Terragrunt's.
+
+Docs: https://docs.terragrunt.com/features/catalog/scaffold
+Boilerplate: https://github.com/gruntwork-io/boilerplate
 
 ## COMMAND: dag graph
 

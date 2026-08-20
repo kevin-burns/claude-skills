@@ -1,34 +1,57 @@
 # Terragrunt HCL Block Reference
 
 > Source: curated data harvested from omattsson/terragrunt-mcp-server, restructured for grep-based lookup.
-> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01), updated for **v1.1.1** (2026-07-14), then reviewed against the **v1.1.2** release notes (2026-07-29) on 2026-08-05 — one change: `iam_role` carries a v1.1.1 regression warning (see `## BLOCK: iam_role`). Flag and avoid any pre-1.0 idioms.
+> Content spot-checked against docs.terragrunt.com at **v1.1.0** (2026-07-01), updated for **v1.1.1** (2026-07-14), then reviewed against the **v1.1.2** release notes (2026-07-29) on 2026-08-05 — one change: `iam_role` carries a v1.1.1 regression warning (see `## ATTRIBUTE: iam_role`). Flag and avoid any pre-1.0 idioms.
+>
+> **Audited 2026-08-19** against snapshots of `/reference/hcl/blocks/` and
+> `/reference/hcl/attributes/` (kept in `evals/snapshots/`). Four pre-1.0 blocks removed
+> (`retryable_errors`, `retry_max_attempts`, `retry_sleep_interval_sec`, `skip`); five added
+> that were missing entirely (`errors`, `exclude`, `catalog`, `engine`, `feature`); four
+> attributes added to `terraform`; ten entries retagged from `BLOCK` to `ATTRIBUTE`.
+> **Every version number in this file is UNVERIFIED against the reference pages** — they state
+> no versions at all. The gates come from release notes, which were not re-snapshotted. Treat a
+> version claim here as a lead, not a fact, and check `scripts/preflight.py` for what the local
+> binary actually supports.
 
-Lookup: `grep -n '^## BLOCK:' hcl-blocks.md`
+Lookup: `grep -n '^## BLOCK:' hcl-blocks.md` for blocks, `grep -n '^## ATTRIBUTE:'` for
+attributes, or `grep -nE '^## (BLOCK|ATTRIBUTE):'` for both.
+
+> **Two headings, deliberately.** Terragrunt's own reference splits these: blocks live on
+> `/reference/hcl/blocks/` and take braces; attributes live on `/reference/hcl/attributes/` and
+> take `=`. Until 2026-08-19 this file labelled all of them `## BLOCK:`, so grepping for a block
+> returned attributes and the file disagreed with its own source's taxonomy. The content was
+> correct throughout; only the label was wrong.
 
 ## Contents
+
+**Blocks** (`grep '^## BLOCK:'`) — take braces:
 - autoinclude (terragrunt.stack.hcl, v1.1.0+)
+- catalog
 - dependencies
 - dependency
-- download_dir
+- engine (experimental; stub upstream)
+- errors (retry / ignore — replaces pre-1.0 retryable_errors)
+- exclude (replaces the pre-1.0 skip attribute)
+- feature (flags; the producer for exclude's `if`)
 - generate
+- include
+- locals
+- remote_state
+- stack (terragrunt.stack.hcl)
+- terraform
+- unit (terragrunt.stack.hcl)
+
+**Attributes** (`grep '^## ATTRIBUTE:'`) — take `=`:
+- download_dir
 - iam_assume_role_duration
 - iam_assume_role_session_name
 - iam_role
 - iam_web_identity_token
-- include
 - inputs
-- locals
 - prevent_destroy
-- remote_state
-- retry_max_attempts
-- retry_sleep_interval_sec
-- retryable_errors
-- skip
-- stack (terragrunt.stack.hcl)
-- terraform
 - terraform_binary
 - terraform_version_constraint
-- unit (terragrunt.stack.hcl)
+- terragrunt_version_constraint
 
 ## BLOCK: dependencies
 
@@ -153,7 +176,7 @@ dependency "vpc" {
 
 Related: dependencies, inputs
 
-## BLOCK: download_dir
+## ATTRIBUTE: download_dir
 
 **Download Directory Attribute**  |  Category: terraform
 
@@ -201,9 +224,17 @@ generate "<label>" { ... }
   this block a writable file of its own instead. **Setting it without the experiment is an
   error, and versions before v1.1.3 reject the attribute outright.** `--no-cas` writes
   generated files directly and `mutable` then has no effect.
-  **DO NOT confuse this with `mutable` on the `unit` block**, which is GA since v1.1.0 and
-  needs no experiment. Same name, same read-only-link-vs-writable-copy meaning, different
-  block and a different gate.
+  **`mutable` EXISTS ON THREE DIFFERENT BLOCKS. Check which one you are looking at.**
+
+  | block | what it means | gate |
+  |---|---|---|
+  | `generate` (here) | the generated file is an ordinary writable file | experiment `mutable-generate` |
+  | `terraform` | CAS content is copied and the working tree is editable, instead of materialised read-only | none |
+  | `unit` | the same read-only-link vs writable-copy choice, for a unit in a stack | none, GA since v1.1.0 |
+
+  Default is `false` everywhere. The `terraform` one has no effect when CAS is not used to
+  fetch the source. An earlier revision of this file warned about two of the three, which is
+  worse than warning about none — it implies the list is complete.
 
 *Generate AWS provider*
 ```hcl
@@ -247,7 +278,7 @@ EOF
 
 Related: terraform, remote_state
 
-## BLOCK: iam_assume_role_duration
+## ATTRIBUTE: iam_assume_role_duration
 
 **IAM Assume Role Duration Attribute**  |  Category: iam
 
@@ -268,7 +299,7 @@ iam_assume_role_duration = 7200  # 2 hours
 
 Related: iam_role, iam_assume_role_session_name
 
-## BLOCK: iam_assume_role_session_name
+## ATTRIBUTE: iam_assume_role_session_name
 
 **IAM Assume Role Session Name Attribute**  |  Category: iam
 
@@ -289,7 +320,7 @@ iam_assume_role_session_name = "terragrunt-${local.environment}-deploy"
 
 Related: iam_role, iam_assume_role_duration
 
-## BLOCK: iam_role
+## ATTRIBUTE: iam_role
 
 **IAM Role Attribute**  |  Category: iam
 
@@ -321,7 +352,7 @@ backend-specific and are still assumed on top of the supplied credentials.
 
 Related: iam_assume_role_duration, iam_assume_role_session_name
 
-## BLOCK: iam_web_identity_token
+## ATTRIBUTE: iam_web_identity_token
 
 **IAM Web Identity Token Attribute**  |  Category: iam
 
@@ -356,7 +387,7 @@ include "<label>" { ... }
 **Attributes:**
 - `path` (string, required): Path to the terragrunt.hcl file to include. Use find_in_parent_folders("root.hcl") — bare find_in_parent_folders("root.hcl") targets a legacy root terragrunt.hcl; do not generate it.
 - `expose` (boolean): When true, exposes the included config's locals and inputs for access via include.<label>.
-- `merge_strategy` (string): How to merge the included configuration with the current one.
+- `merge_strategy` (string): how to merge the included configuration with the current one. Valid values: `no_merge` (do not merge), `shallow` (**the default**), `deep`.
 
 *Include root configuration*
 ```hcl
@@ -380,7 +411,7 @@ locals {
 
 Related: locals, terraform, remote_state
 
-## BLOCK: inputs
+## ATTRIBUTE: inputs
 
 **Inputs Block**  |  Category: core
 
@@ -461,7 +492,7 @@ locals {
 
 Related: inputs, include
 
-## BLOCK: prevent_destroy
+## ATTRIBUTE: prevent_destroy
 
 **Prevent Destroy Attribute**  |  Category: execution
 
@@ -565,99 +596,183 @@ references/azure-backend.md.
 
 Related: terraform, generate
 
-## BLOCK: retry_max_attempts
+## BLOCK: catalog
 
-**Retry Max Attempts Attribute**  |  Category: execution
+**Catalog Block**  |  Category: core
 
-Maximum number of retry attempts for retryable errors. Works in conjunction with retryable_errors.
-
-**Syntax:**
-```hcl
-retry_max_attempts = <number>
-```
-
-**Attributes:**
-- `retry_max_attempts` (number): Maximum number of retry attempts.
-
-*Set maximum retry attempts*
-```hcl
-retry_max_attempts = 5
-```
-
-Related: retryable_errors, retry_sleep_interval_sec
-
-## BLOCK: retry_sleep_interval_sec
-
-**Retry Sleep Interval Attribute**  |  Category: execution
-
-Number of seconds to wait between retry attempts. Works in conjunction with retryable_errors.
+Where Terragrunt looks for reusable patterns — OpenTofu/Terraform modules and Boilerplate
+templates — for the `catalog` and `scaffold` commands, plus scaffolding behaviour.
 
 **Syntax:**
 ```hcl
-retry_sleep_interval_sec = <number>
+catalog {
+  urls = [
+    "/Users/acme/modules",
+    "github.com/acme/infrastructure-modules",
+  ]
+  default_template = "/Users/acme/templates/default"
+}
 ```
 
 **Attributes:**
-- `retry_sleep_interval_sec` (number): Seconds to wait between retries.
+- `urls` (list, **required**): URLs pointing to module catalogs. Local file paths or remote
+  URLs. Relative paths resolve against the configuration file.
+- `default_template` (string, optional): a default Boilerplate template for scaffolding modules
+  that do not carry their own `.boilerplate` directory.
+- `no_shell` (boolean, optional, default `false`): disable shell command execution in
+  Boilerplate templates during scaffolding. Overridable with `--no-shell`.
+- `no_hooks` (boolean, optional, default `false`): disable hook execution in Boilerplate
+  templates during scaffolding. Overridable with `--no-hooks`.
 
-*Configure retry interval*
-```hcl
-retry_sleep_interval_sec = 30
-```
+Scaffolding is performed by [boilerplate](https://github.com/gruntwork-io/boilerplate); see
+`## COMMAND: scaffold` in `cli-reference.md` for the template resolution order and the
+`boilerplate.yml` schema.
 
-Related: retryable_errors, retry_max_attempts
+Related: terraform
 
-## BLOCK: retryable_errors
+## BLOCK: engine
 
-**Retryable Errors Attribute**  |  Category: execution
+**Engine Block**  |  Category: experimental
 
-List of regex patterns for errors that should trigger automatic retry. Useful for handling transient errors like rate limiting or network issues.
+Experimental Terragrunt engine configuration. The blocks reference documents it as a stub and
+points at <https://docs.terragrunt.com/features/units/engine/>; nothing further is stated there,
+so nothing further is asserted here. Fetch that page before advising on it.
+
+Related: terraform_binary
+
+## BLOCK: feature
+
+**Feature Block**  |  Category: execution
+
+Feature flags in HCL, scoped to one Terragrunt unit. **Every flag must declare a default.**
+Overridable at run time with `--feature` or `TG_FEATURE`.
 
 **Syntax:**
 ```hcl
-retryable_errors = [...]
+feature "string_flag" {
+  default = "test"
+}
+
+feature "run_hook" {
+  default = false
+}
+
+terraform {
+  before_hook "feature_flag" {
+    commands = ["apply", "plan", "destroy"]
+    execute  = feature.run_hook.value ? ["sh", "-c", "feature_flag_script.sh"] : ["sh", "-c", "exit", "0"]
+  }
+}
+
+inputs = {
+  string_feature_flag = feature.string_flag.value
+}
 ```
 
-**Attributes:**
-- `retryable_errors` (list): Regex patterns for errors that should be retried.
+Read a flag as `feature.<name>.value`. This is the producer for the `if` condition on
+`## BLOCK: exclude` — a unit is commonly excluded on a feature flag rather than on a hardcoded
+condition.
 
-*Retry AWS rate limiting errors*
-```hcl
-retryable_errors = [
-  ".*RequestLimitExceeded.*",
-  ".*Throttling.*",
-  ".*rate exceeded.*"
-]
-```
+Related: exclude, terraform, inputs
 
-Related: retry_max_attempts, retry_sleep_interval_sec
+## BLOCK: errors
 
-## BLOCK: skip
+**Errors Block**  |  Category: execution
 
-**Skip Attribute**  |  Category: execution
+Retry and ignore policies for failures in the wrapped OpenTofu/Terraform command. **This is
+the 1.x replacement for the pre-1.0 top-level `retryable_errors`, `retry_max_attempts` and
+`retry_sleep_interval_sec` attributes**, which no longer exist as top-level attributes and
+must not be emitted as such.
 
-When set to true, Terragrunt will skip this module during run --all commands. Useful for temporarily disabling modules or for modules that should only run under certain conditions.
+Both nested blocks take a **label**.
 
 **Syntax:**
 ```hcl
-skip = <boolean>
+errors {
+  retry "transient_errors" {
+    retryable_errors   = [".*Error: transient network issue.*"]
+    max_attempts       = 3
+    sleep_interval_sec = 5
+  }
+  ignore "known_safe_errors" {
+    ignorable_errors = [
+      ".*Error: safe warning.*",
+      "!.*Error: do not ignore.*",
+    ]
+    message = "Ignoring safe warning errors"
+    signals = {
+      alert_team = false
+    }
+  }
+}
 ```
 
-**Attributes:**
-- `skip` (boolean): Whether to skip this module.
+**`retry "<label>"` attributes:**
+- `retryable_errors` (list of strings, required): regex patterns matching errors eligible for retry.
+- `max_attempts` (number, required): maximum retry attempts.
+- `sleep_interval_sec` (number, required): seconds to wait between retries.
 
-*Conditionally skip based on environment*
+**`ignore "<label>"` attributes:**
+- `ignorable_errors` (list of strings, required): regex patterns for errors to ignore. A `!`
+  prefix negates — that pattern will NOT be ignored even if an earlier pattern matches it.
+- `message` (string, optional): warning shown when an error is ignored.
+- `signals` (map, optional): key/value pairs for signalling an external system.
+
+> **`retryable_errors` is banned at the top level and correct HERE.** Same identifier, opposite
+> verdict depending on where it sits. Inside `errors { retry {} }` it is the documented 1.x
+> attribute; on its own at the top of a `terragrunt.hcl` it is the pre-1.0 form. A grep alone
+> cannot tell them apart — check the enclosing block.
+
+Verified against <https://docs.terragrunt.com/reference/hcl/blocks/> on 2026-08-19. The docs do
+not state which release introduced this block; it is 1.x and the attributes it replaced were
+pre-1.0.
+
+Related: exclude, prevent_destroy
+
+## BLOCK: exclude
+
+**Exclude Block**  |  Category: execution
+
+Conditionally leave a unit out of a run. **This is the 1.x replacement for the pre-1.0 `skip`
+attribute**, which no longer exists and must not be emitted.
+
+**Syntax:**
 ```hcl
-skip = local.environment == "development"
+exclude {
+  if                   = feature.feature_name.value
+  actions              = ["plan", "apply"]
+  exclude_dependencies = false
+}
 ```
 
-*Skip deprecated module*
+**Attributes** (all optional):
+- `if` (boolean): the condition deciding whether the exclusion applies.
+- `actions` (list of strings): which actions to exclude when the condition holds. Documented
+  values: `"plan"`, `"apply"`, `"all"`, `"all_except_output"`.
+- `exclude_dependencies` (boolean, default `false`): whether the unit's dependencies are
+  excluded too.
+- `no_run` (boolean): prevents execution for **single-unit** commands matching `actions`.
+
+Exclusion applies when the `if` condition is true **and** the current action appears in
+`actions`.
+
+> **`no_run` is ignored by `run --all`.** It applies only to single-unit commands such as
+> `terragrunt run plan`. If you are trying to keep a unit out of a whole-tree run, `no_run` is
+> not the attribute — use `if` and `actions`.
+
+*Keep a production-only unit out of a dev run*
 ```hcl
-# This module is deprecated, skip it
-skip = true
+exclude {
+  if      = local.environment == "dev"
+  actions = ["all"]
+}
 ```
 
-Related: prevent_destroy
+Verified against <https://docs.terragrunt.com/reference/hcl/blocks/> on 2026-08-19. The docs do
+not state which release introduced this block, and they do not themselves describe it as the
+successor to `skip`; that mapping comes from this skill's post-1.0 policy.
+
+Related: errors, feature, prevent_destroy
 
 ## BLOCK: terraform
 
@@ -671,10 +786,27 @@ terraform { ... }
 ```
 
 **Attributes:**
-- `source` (string, required): The source URL for the Terraform module. Supports local paths, Git URLs, S3, GCS, and Terraform Registry.
+- `source` (string, required): where to fetch the module from — local path, Git URL, S3, GCS, an OCI image reference, or a `tfr://` registry address. **A bare `tfr:///` does not resolve to a fixed registry — see the subsection below before using one.**
 - `version` (string): **Experiment `version-attribute`, v1.1.1+.** Resolves a `tfr://` registry module by version constraint instead of pinning an exact version in the source URL. Not available without the experiment flag — see below.
 - `include_in_copy` (list): List of glob patterns for additional files to copy to the Terraform working directory. **v1.1.2 note:** for a *local* `source`, Terragrunt decides whether its cached copy is stale by hashing the source directory. Before v1.1.2 that hash covered every file in the directory — hidden files and `exclude_from_copy` matches included — so creating or touching a file that is never copied (an editor swap file, a scratch note) forced a needless re-copy and auto-init on the next run. The hash now covers only the files a copy would actually deliver, honouring the default hidden-file rule alongside `include_in_copy` and `exclude_from_copy`. **v1.1.3 note:** with the `fast-copy` strict control enabled, a hidden directory copied because `include_in_copy` matched something inside it took the permissions of the first file generated within it rather than its own source permissions. Such directories now keep their source permissions, matching the copy performed with the control disabled.
 - `extra_arguments` (block): Nested block to pass additional CLI arguments to specific Terraform commands.
+- `exclude_from_copy` (list): glob patterns always skipped when copying the directory
+  containing `terragrunt.hcl` into the working directory. **Not mutually exclusive with
+  `include_in_copy`** — a file matching both is NOT included, so if you need it, make sure the
+  `include_in_copy` patterns do not also match an `exclude_from_copy` pattern.
+- `copy_terraform_lock_file` (boolean, default `true`): disable copying the generated or
+  existing `.terraform.lock.hcl` from the temp folder into the working directory. Use when you
+  do not want the provider lock file checked into the source repo from the working directory.
+- `mutable` (boolean, default `false`): when `true`, content fetched into `.terragrunt-cache`
+  through the CAS is **copied** from the store and the working tree is editable. The default
+  materialises files **read-only, so an accidental edit cannot reach back into the shared CAS
+  store**. No effect when CAS is not used to fetch the source — the standard download path
+  already produces an independent writable copy. See the three-way warning below.
+- `update_source_with_cas` (boolean): rewrite a **relative, literal** `source` to a `cas::`
+  reference. Two hard constraints, both of which fail at generation time rather than at plan:
+  the `source` must be a literal string (interpolation, function calls and references such as
+  `local.foo` all cause stack generation to fail), and `--no-cas` must NOT be set or Terragrunt
+  errors out. Valid on `unit` in a `terragrunt.stack.hcl` as well — see `## BLOCK: unit`.
 - `before_hook` (block): Nested block to execute commands before Terraform runs.
 - `after_hook` (block): Nested block to execute commands after Terraform runs.
 - `error_hook` (block): Nested block to execute commands when Terraform encounters an error.
@@ -709,6 +841,52 @@ terraform {
 }
 ```
 
+### The `tfr:///` default registry depends on which engine Terragrunt is driving
+
+`tfr://` accepts a shorthand with the host omitted — three slashes:
+
+```hcl
+source = "tfr:///terraform-aws-modules/vpc/aws?version=5.8.1"
+```
+
+**That shorthand is not portable between OpenTofu and Terraform.** From the Terragrunt docs:
+
+> "The `tfr` protocol supports a shorthand notation where the `REGISTRY_HOST` can be omitted to
+> default to the public registry. The default registry depends on the wrapped executable: for
+> Terraform, it is `registry.terraform.io`, and for OpenTofu, it is `registry.opentofu.org`."
+
+So the same config pulls from a different registry depending on what Terragrunt is wrapping.
+Set it explicitly when it matters:
+
+```hcl
+source = "tfr://registry.terraform.io/terraform-aws-modules/vpc/aws?version=5.8.1"
+```
+
+or override the default for the whole run with the environment variable
+**`TG_TF_DEFAULT_REGISTRY_HOST`**.
+
+**Why this bites: the two registries are not the same set of modules.** The OpenTofu registry
+is **not a mirror**. It is populated by GitHub search and by polling releases and tags, and a
+repository has to be onboarded through an issue submission before any of its versions appear.
+So a module — or a specific version of one — can exist on `registry.terraform.io` and not yet
+on `registry.opentofu.org`. There is no published sync interval or SLA.
+
+Both registries expose the same unauthenticated endpoint, so checking costs nothing:
+
+```bash
+curl -s https://registry.terraform.io/v1/modules/terraform-aws-modules/vpc/aws/versions
+curl -s https://registry.opentofu.org/v1/modules/terraform-aws-modules/vpc/aws/versions
+```
+
+For anything beyond "does this version exist" — required inputs, outputs, what changed between
+versions — use the `terraform-registry` skill rather than reading registry JSON by hand.
+
+Verified against docs.terragrunt.com and both registry APIs on 2026-08-19. Not determined: the
+exact mechanism by which Terragrunt decides which executable it is wrapping for this purpose —
+the docs say only "the wrapped executable" and do not name `terraform_binary` or an `engine`
+block in that context. If the distinction is load-bearing for you, set the host explicitly
+rather than relying on detection.
+
 *`version-attribute` experiment — resolve a `tfr://` registry module by constraint*
 ```hcl
 terraform {
@@ -729,7 +907,7 @@ from a dependency.
 
 Related: remote_state, include, dependency
 
-## BLOCK: terraform_binary
+## ATTRIBUTE: terraform_binary
 
 **Terraform Binary Attribute**  |  Category: terraform
 
@@ -755,7 +933,26 @@ terraform_binary = "~/.tfenv/bin/terraform"
 
 Related: terraform_version_constraint
 
-## BLOCK: terraform_version_constraint
+## ATTRIBUTE: terragrunt_version_constraint
+
+**Terragrunt Version Constraint Attribute**  |  Category: core
+
+Which versions of the **Terragrunt CLI** may be used with this configuration. If the running
+version does not satisfy the constraint, Terragrunt errors and exits without taking any further
+action.
+
+**Syntax:**
+```hcl
+terragrunt_version_constraint = ">= 0.23"
+```
+
+> **Not the same attribute as `terraform_version_constraint`**, which constrains the wrapped
+> OpenTofu/Terraform binary. Both exist, the names differ by one word, and they gate different
+> things.
+
+Related: terraform_version_constraint, terraform_binary
+
+## ATTRIBUTE: terraform_version_constraint
 
 **Terraform Version Constraint Attribute**  |  Category: terraform
 

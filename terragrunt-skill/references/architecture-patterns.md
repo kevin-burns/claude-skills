@@ -203,10 +203,98 @@ a nested `stack` block produces another `terragrunt.stack.hcl` (then itself expa
 Docs: https://docs.terragrunt.com/features/stacks/explicit/ ·
 https://docs.terragrunt.com/reference/cli/commands/stack/generate/
 
+## PATTERN: catalog repository (the other repo in the two-repo model)
+
+Everything above describes the **live** repo — the tree you actually deploy. A catalog repo is
+the other half: it holds the reusable pieces the live tree scaffolds *from*, and it is what
+`terragrunt catalog` browses and `terragrunt scaffold` consumes.
+
+Gruntwork publishes the reference layout as
+[terragrunt-infrastructure-catalog-example](https://github.com/gruntwork-io/terragrunt-infrastructure-catalog-example)
+(MPL-2.0). Its actual shape, read from the repo on 2026-08-19:
+
+```
+infrastructure-catalog/
+├── modules/          # the OpenTofu/Terraform modules themselves
+│   ├── s3-bucket/
+│   ├── dynamodb-table/
+│   ├── lambda-service/
+│   └── ...
+├── units/            # a terragrunt.hcl per module: the wrapper a live tree includes
+│   ├── lambda-stateful-service/
+│   ├── mysql/
+│   └── ...
+├── stacks/           # terragrunt.stack.hcl: units composed into a deployable set
+│   └── ec2-asg-stateful-service/
+├── examples/
+├── docs/
+└── test/
+```
+
+**The three directories are three different things and the distinction is the whole point.**
+`modules/` is Terraform. `units/` wraps one module with Terragrunt config. `stacks/` composes
+units. A live repo then references a stack rather than restating its parts — which is why
+adding a unit to a stack changes every environment that consumes it, and why a live tree stays
+small.
+
+Note it is `units/` and `stacks/` as siblings of `modules/`, **not** nested under it. Since
+v1.1.0 `catalog` discovers components anywhere in the repo rather than only under `modules/`,
+so the layout is a convention rather than a constraint — but it is the convention `catalog`
+labels correctly, and each component's kind (`template`, `stack`, `unit`, `module`) shows in
+the TUI.
+
+Give any module a `.boilerplate/boilerplate.yml` to control what `scaffold` prompts for when
+someone pulls it into a live tree. See `## COMMAND: scaffold` in `cli-reference.md`.
+
+**The live counterpart**, from
+[terragrunt-infrastructure-live-example](https://github.com/gruntwork-io/terragrunt-infrastructure-live-example)
+(Apache-2.0), read on 2026-08-19, is the account → region → environment tree the patterns above
+describe, with a root `_envcommon/` holding the shared per-unit config:
+
+```
+infrastructure-live/
+├── _envcommon/
+├── non-prod/
+│   ├── account.hcl
+│   └── us-east-1/
+│       ├── qa/
+│       └── stage/
+└── prod/
+    ├── account.hcl
+    └── us-east-1/
+        └── prod/
+```
+
+That `_envcommon/` is the centralised-environment-definitions pattern above, under Gruntwork's
+own name for it.
+
 ## PATTERN: migrate an existing tree to explicit stacks
 
 Use when an existing implicit layout (directory tree of `terragrunt.hcl` units, often with an
 `_envcommon`/`_env` pattern) should become explicit `terragrunt.stack.hcl` stacks. Migration
+### Mixing implicit and explicit stacks in one repo
+
+**You can, and Terragrunt's own guidance expects you to.** A classic directory tree of units
+(an *implicit* stack) and a `terragrunt.stack.hcl` (an *explicit* stack) coexist in the same
+repository. docs.terragrunt.com presents implicit stacks as the place to start — small unit
+counts, teams new to Terragrunt — and explicit stacks as what you introduce for reusable
+patterns as the estate grows. The classic layout is a current, supported choice, not a
+deprecated one.
+
+**The one hard rule: never both in the same directory.** From the v1.0.0 release notes
+(2026-03-30):
+
+> "Previously, Terragrunt would silently engage in undefined behavior when both a
+> `terragrunt.hcl` and `terragrunt.stack.hcl` file existed in the same directory. With this
+> release, Terragrunt will start to throw warnings and prevent such usage. Users will have to
+> ensure that only one of a unit (`terragrunt.hcl`) or stack configuration
+> (`terragrunt.stack.hcl`) exist in a unit or stack directory, respectively."
+
+So a repo mixing the two is normal; a *directory* mixing the two is an error on v1.0.0+ and was
+**silent undefined behaviour before it**. If you are migrating a tree that was laid out under
+pre-1.0 Terragrunt, that directory is a thing to go and look for — it may have been quietly
+wrong for months without ever failing a run.
+
 is **optional and incremental** — if the current layout works, adopt stacks only for *new*
 infrastructure. The hazard is **state**: done wrong, every unit's state key changes and
 Terragrunt plans to destroy-and-recreate live infrastructure.
