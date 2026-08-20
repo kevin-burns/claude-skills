@@ -112,6 +112,34 @@ def test_no_manifest_carries_another_mirrors_name(tmp_path, skill):
 
 
 @pytest.mark.parametrize("skill", SKILLS)
+def test_no_relative_link_in_the_mirror_points_at_nothing(tmp_path, skill):
+    """The mirror carries TWO copies of the skill README: the generated front page, whose
+    links build_readme rewrites, and <skill>/README.md, which is copied VERBATIM. SKILL.md and
+    every reference are verbatim too. So a `](../other-skill)` link -- fine in a collection of
+    twenty-odd -- resolves to a path that does not exist once the skill is the whole repo, and
+    it is invisible until a stranger clicks it.
+
+    Resolving every relative link against the built tree needs no allowlist: `../README.md`
+    from <skill>/README.md lands on the generated front page and passes, while `../c7search`
+    lands on nothing and fails. That distinction is the whole check."""
+    out = tmp_path / "out"
+    build(ROOT, out, skill)
+    dead = []
+    for md in sorted(out.rglob("*.md")):
+        # Strip fenced blocks and inline code first. `![alt](url)` in ghost-publish/SKILL.md is
+        # markdown SYNTAX being documented, not a link, and reading it as one made this check
+        # fail on prose that was never wrong.
+        text = re.sub(r"^```.*?^```", "", md.read_text(encoding="utf-8"), flags=re.S | re.M)
+        text = re.sub(r"`[^`\n]*`", "", text)
+        for target in re.findall(r"\]\(([^)\s#]+)\)", text):
+            if re.match(r"[a-z][a-z0-9+.-]*:", target) or target.startswith("#"):
+                continue          # absolute URL, or an in-page anchor
+            if not (md.parent / target).exists():
+                dead.append(f"{md.relative_to(out)} -> {target}")
+    assert not dead, "relative links resolving to nothing in the mirror:\n  " + "\n  ".join(dead)
+
+
+@pytest.mark.parametrize("skill", SKILLS)
 def test_no_caches_or_virtualenvs_reach_the_published_tree(tmp_path, skill):
     files = build(ROOT, tmp_path / "out", skill)
     for name in files:

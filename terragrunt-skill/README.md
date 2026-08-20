@@ -78,14 +78,19 @@ skimming it is exactly how the above was nearly missed.
   reads your repo for the signal (`.terraform-version`, `terraform_binary`, provider
   constraints, an `engine` block) rather than guessing.
 - **It does not guess when the references fall short.** For anything newer or niche, it
-  fetches docs.terragrunt.com or uses [`c7search`](../c7search).
+  fetches [docs.terragrunt.com](https://docs.terragrunt.com), or queries
+  [Context7](https://context7.com) through [`c7search`](https://github.com/kevin-burns/c7search)
+  — a separate MIT CLI of mine, installable on its own.
 - **It does not look up modules, resource types, or their inputs and outputs.** Terragrunt
   orchestrates modules; it does not tell you whether `terraform-aws-modules/vpc/aws` 5.8.1
   exists, which inputs it takes and which are required, what it returns, or what attributes an
-  `azurerm_key_vault` actually has. That is [`terraform-registry`](../terraform-registry) —
-  fast, targeted lookup against the registry JSON API, cached as provenance-stamped snapshots
-  so a repeat call costs nothing. Reach for it while writing an `inputs = {}` block or before
-  pinning a version in a `source`, not after the apply fails.
+  `azurerm_key_vault` actually has. Those answers live in the
+  [Terraform Registry's JSON API](https://registry.terraform.io), and the
+  [`terraform-registry`](https://github.com/kevin-burns/claude-skills/tree/main/terraform-registry)
+  skill queries it directly — targeted lookup rather than scraping a page, cached as
+  provenance-stamped snapshots so a repeat call costs nothing. Unlike `c7search` it has no
+  standalone repo; it ships inside the claude-skills collection. Reach for it while writing an
+  `inputs = {}` block or before pinning a version in a `source`, not after the apply fails.
 
 ## Requirements
 

@@ -132,7 +132,7 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 | Anything Azure backend/provider (state, auth, gotchas) | (any mode) | **also** references/azure-backend.md |
 | "Only run changed units", slow `run --all`, CI fan-out, performance at scale | SCALE | references/scale-and-performance.md |
 | CI/CD pipeline, OIDC auth to AWS/GCP/Azure, saving plans between plan and apply | CICD | references/cicd.md |
-| Look up a module, a resource type, or their inputs/outputs — before pinning a `source` or writing `inputs` | *(hand off)* | the `terraform-registry` skill, not this one |
+| Look up a module, a resource type, or their inputs/outputs — before pinning a `source` or writing `inputs` | *(hand off)* | the [`terraform-registry`](https://github.com/kevin-burns/claude-skills/tree/main/terraform-registry) skill, not this one |
 | "Migrate to stacks", convert an `_envcommon`/tree layout to `terragrunt.stack.hcl` | MIGRATE | references/architecture-patterns.md `## PATTERN: migrate an existing tree to explicit stacks` |
 
 ## Reference index (grep, don't read whole files)
