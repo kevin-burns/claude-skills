@@ -381,8 +381,19 @@ back past it to the feature image. So a post that sets `og_image` alone ships **
 pictures** — the Open Graph one on Facebook and LinkedIn, the feature image on X — and nothing
 warns you, because both fields are populated and both render.
 
-If the social card should be the same everywhere, set `og_image` **and** `twitter_image`. Both
-need `--from-json` for anything except `og_image`, which has a flag.
+A second probe with a **different image in all three slots** completes the rule:
+
+| `feature_image` | `og_image` | `twitter_image` | → `og:image` | → `twitter:image` |
+|---|---|---|---|---|
+| set | unset | unset | feature | feature |
+| set | set | unset | og | **feature** |
+| set | set | set | og | twitter |
+
+So each card reads its own field first and falls back to `feature_image` — never to the other
+card. The feature image is not used by either card once both are set explicitly.
+
+If the social card should be the same everywhere, set `og_image` **and** `twitter_image`.
+Everything except `og_image` needs `--from-json`; only that one has a flag.
 
 ## Verify — the step that earns this skill
 
