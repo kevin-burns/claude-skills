@@ -32,6 +32,7 @@
     "./cv-evidence-base",
     "./dev-fleet",
     "./excalidraw-diagram",
+    "./frontier-rounds",
     "./ghost-publish",
     "./hook-and-human",
     "./job-feeds",

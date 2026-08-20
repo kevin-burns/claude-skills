@@ -152,6 +152,38 @@ def check_shipped_json(skill):
             fail(str(path.relative_to(ROOT)), f"invalid JSON: {exc}")
 
 
+def check_manifest_lists_every_skill(skills):
+    """A skill absent from a plugin manifest is INVISIBLE TO EVERY PLUGIN USER, and nothing
+    says so. Found 2026-08-20 by installing the collection and counting: the manifests listed
+    22 skills, the repo had 23, and `frontier-rounds` had never been added. The plugin
+    description said "Twenty-three" while the array said otherwise, and the array is the half
+    that is enforced.
+
+    This is the same silent-schema failure recorded in [[agent-plugin-manifests]] -- a
+    marketplace that registered cleanly and listed zero plugins, an `agents` field that
+    accepted valid paths and loaded none. They fail by loading LESS, never by erroring, so the
+    only way to catch one is to count.
+
+    Checked in both directions: an entry pointing at a directory that no longer exists is the
+    same defect arriving from the other side, after a rename."""
+    on_disk = {s.name for s in skills}
+    for rel in (".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
+        path = ROOT / rel
+        if not path.exists():
+            continue
+        try:
+            listed = json.loads(path.read_text()).get("skills") or []
+        except json.JSONDecodeError as e:
+            fail(rel, f"not valid JSON: {e}")
+            continue
+        names = {entry.rsplit("/", 1)[-1] for entry in listed}
+        for missing in sorted(on_disk - names):
+            fail(rel, f"{missing}/ has a SKILL.md but is not in the manifest — "
+                      "plugin users would never see it")
+        for stale in sorted(names - on_disk):
+            fail(rel, f"lists {stale}, which has no SKILL.md — renamed or deleted?")
+
+
 def main():
     skills = skill_dirs()
     if not skills:
@@ -164,6 +196,7 @@ def main():
         check_shipped_json(skill)
 
     check_catalog()
+    check_manifest_lists_every_skill(skills)
 
     for path in [ROOT / "README.md", ROOT / "CONTRIBUTING.md"]:
         if path.exists():
