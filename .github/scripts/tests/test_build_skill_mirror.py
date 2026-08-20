@@ -253,3 +253,45 @@ def test_every_image_the_front_page_references_is_actually_published(tmp_path, s
     assert referenced, f"the {skill} front page references no image at all"
     for rel in referenced:
         assert f"{skill}/{rel}" in files, f"{skill}/{rel} is linked but was not published"
+
+
+# --------------------------------------------------------------------- the workflows
+
+REPO_ROOT = ROOT
+WORKFLOWS = REPO_ROOT / ".github" / "workflows"
+
+
+@pytest.mark.parametrize("skill", SKILLS)
+def test_every_mirror_scans_the_built_tree_before_it_pushes(skill):
+    """The source repo is scanned twice, and neither covers this push. ci.yml and the mirror
+    workflows both fire on push to main IN PARALLEL, so nothing makes a mirror wait for the
+    secrets job -- a secret on main can reach a second public repo before the first reports.
+    And the four plugin manifests are synthesised by the builder, so they have never been in
+    claude-skills and a full-history scan of it cannot see them."""
+    wf = WORKFLOWS / f"mirror-{skill}.yml"
+    text = wf.read_text()
+    assert "gitleaks dir" in text, f"{wf.name} pushes without scanning the built tree"
+    scan = text.index("gitleaks dir")
+    push = text.index("Push to ${{ env.TARGET_REPO }}")
+    assert scan < push, f"{wf.name} scans AFTER pushing, which is not a gate"
+    assert "--redact" in text, "a finding must not print the secret into a public build log"
+
+
+def test_every_gitleaks_pin_in_the_repo_agrees():
+    """Four files now pin a gitleaks version: the pre-commit hook, ci.yml, and both mirror
+    workflows. A version pinned in four places is three chances to drift, which is the shape
+    this repo spent a week removing from terragrunt-skill. This is the thing that enforces it."""
+    sources = {
+        ".pre-commit-config.yaml": r"gitleaks\n\s+rev: v([\d.]+)",
+        ".github/workflows/ci.yml": r"GITLEAKS_VERSION: ([\d.]+)",
+    }
+    for skill in SKILLS:
+        sources[f".github/workflows/mirror-{skill}.yml"] = r"GITLEAKS_VERSION: ([\d.]+)"
+
+    found = {}
+    for rel, pattern in sources.items():
+        text = (REPO_ROOT / rel).read_text()
+        m = re.search(pattern, text)
+        assert m, f"no gitleaks version pin found in {rel}"
+        found[rel] = m.group(1)
+    assert len(set(found.values())) == 1, f"gitleaks pins disagree: {found}"
