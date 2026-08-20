@@ -3,14 +3,15 @@
 # Terragrunt Validation Script
 # This script performs comprehensive validation of Terragrunt configurations including:
 # - HCL formatting checks
-# - HCL input validation (new in 0.93+)
+# - HCL input validation (`terragrunt hcl validate --inputs`)
 # - Terragrunt validation
 # - Terraform validation
 # - Linting with tflint
 # - Security scanning with Trivy (preferred) or tfsec (legacy)
 # - Dependency graph validation
 #
-# Designed for Terragrunt 0.93+ with the new CLI redesign
+# Designed for Terragrunt 1.x. v1.0.0 (2026-03-30) renamed much of the CLI, and every
+# command this script runs is a post-1.0 form. On an older binary they do not exist.
 
 set -euo pipefail
 
@@ -113,12 +114,14 @@ check_dependencies() {
         tg_version=$(terragrunt --version | head -n1)
         print_success "terragrunt $tg_version"
 
-        # Check if version is >= 0.93 for new CLI
-        if [[ "$tg_version" =~ v0\.([0-9]+) ]]; then
-            local minor_version="${BASH_REMATCH[1]}"
-            if (( minor_version < 93 )); then
-                print_warning "Terragrunt version < 0.93 detected. Some new CLI features may not work."
-                print_info "Consider upgrading to 0.93+ for best compatibility."
+        # THE GATE IS 1.0.0, not 0.93. This script gated on 0.93 until 2026-08-20 -- a
+        # pre-1.0 floor inside a skill whose first hard policy bans pre-1.0 forms. Every
+        # command below (`hcl fmt`, `hcl validate`, `run --all`) is a post-1.0 name.
+        if [[ "$tg_version" =~ [^0-9]([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+            if (( BASH_REMATCH[1] < 1 )); then
+                print_warning "Terragrunt ${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]} is pre-1.0."
+                print_info "This skill targets 1.x. The commands below were renamed in v1.0.0 and do not exist here."
+                print_info "For which gates your build satisfies: python3 scripts/preflight.py"
             fi
         fi
     fi
@@ -212,7 +215,8 @@ format_check() {
     fi
 }
 
-# Validate HCL inputs (new in Terragrunt 0.93+)
+# Validate HCL inputs via `terragrunt hcl validate --inputs` (1.x; `validate-inputs` was
+# the pre-1.0 name and no longer exists).
 validate_inputs() {
     print_header "HCL Input Validation"
 
@@ -246,10 +250,10 @@ validate_inputs() {
         # Check if it's a "command not found" error (127) or actual validation failure
         if [[ $exit_code -eq 127 ]]; then
             print_warning "Input validation command not available"
-            print_info "This feature requires Terragrunt 0.93+"
+            print_info "terragrunt hcl validate --inputs is a 1.x command; see scripts/preflight.py"
         elif echo "$output" | grep -q "unknown command\|unknown flag"; then
             print_warning "Input validation not supported in this Terragrunt version"
-            print_info "This feature requires Terragrunt 0.93+"
+            print_info "terragrunt hcl validate --inputs is a 1.x command; see scripts/preflight.py"
         else
             # Show the actual error for debugging
             echo "$output" | head -20
@@ -314,11 +318,11 @@ validate_terragrunt() {
             hcl_exit=$?
         fi
 
-        # Command not found (127) or unknown command means pre-0.93 Terragrunt.
+        # Command not found (127) or unknown command means a pre-1.0 Terragrunt.
         # Fall back to format check as a best-effort proxy — it at least catches
         # structural HCL errors even though it is not a pure syntax validator.
         if [[ $hcl_exit -eq 127 ]] || echo "$output" | grep -q "unknown command"; then
-            print_warning "terragrunt hcl validate not available (requires 0.93+), using format check as proxy"
+            print_warning "terragrunt hcl validate not available (1.x command), using format check as proxy"
             if terragrunt hcl fmt --check > /dev/null 2>&1 || terragrunt hcl format --check > /dev/null 2>&1; then
                 print_success "Terragrunt configuration syntax appears valid (format check passed)"
             else
@@ -507,7 +511,7 @@ validate_dependencies() {
     if find . -name "*.hcl" -type f ! -path "*/.terragrunt-cache/*" -exec grep -l "dependency" {} \; | grep -q .; then
         print_success "Dependency blocks found in configuration"
 
-        # Try to generate DAG graph (new in 0.93+)
+        # `dag graph` is the 1.x name; `graph-dependencies` was the pre-1.0 one.
         if terragrunt dag graph > /dev/null 2>&1; then
             print_success "Dependency graph is valid (no cycles detected)"
         else
@@ -572,7 +576,7 @@ run_plan() {
 main() {
     echo -e "${BLUE}╔═══════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║   Terragrunt Validation Suite         ║${NC}"
-    echo -e "${BLUE}║   (Designed for Terragrunt 0.93+)     ║${NC}"
+    echo -e "${BLUE}║   (Terragrunt 1.x)                    ║${NC}"
     echo -e "${BLUE}╚═══════════════════════════════════════╝${NC}"
 
     if [[ -n "$STRICT_FLAG" ]]; then
@@ -628,7 +632,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     echo "Usage: $0 [TARGET_DIR]"
     echo ""
     echo "Validates Terragrunt configurations with comprehensive checks."
-    echo "Designed for Terragrunt 0.93+ with the new CLI redesign."
+    echo "Targets Terragrunt 1.x. v1.0.0 renamed much of the CLI; the commands run here"
+    echo "are post-1.0 forms. Run scripts/preflight.py to see what your build supports."
     echo ""
     echo "Options:"
     echo "  TARGET_DIR              Directory containing Terragrunt files (default: current directory)"

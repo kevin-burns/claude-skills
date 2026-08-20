@@ -131,9 +131,32 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
 | Complex/edge-case examples (multi-account, CI, mocks) | EXAMPLES | references/advanced-examples.md |
 | Anything Azure backend/provider (state, auth, gotchas) | (any mode) | **also** references/azure-backend.md |
 | "Only run changed units", slow `run --all`, CI fan-out, performance at scale | SCALE | references/scale-and-performance.md |
+| CI/CD pipeline, OIDC auth to AWS/GCP/Azure, saving plans between plan and apply | CICD | references/cicd.md |
+| Look up a module, a resource type, or their inputs/outputs — before pinning a `source` or writing `inputs` | *(hand off)* | the [`terraform-registry`](https://github.com/kevin-burns/claude-skills/tree/main/terraform-registry) skill, not this one |
 | "Migrate to stacks", convert an `_envcommon`/tree layout to `terragrunt.stack.hcl` | MIGRATE | references/architecture-patterns.md `## PATTERN: migrate an existing tree to explicit stacks` |
 
 ## Reference index (grep, don't read whole files)
+
+**Quick navigation.** Every reference is written to be grepped by a heading convention, so
+the fastest route to an answer is the grep handle, not the filename.
+
+| Reference | Holds | Entries | Grep handle |
+|---|---|---|---|
+| `error-patterns.md` | diagnosed errors with cause and fix | 68 | `^## ERROR:` |
+| `functions.md` | built-in functions by category | 31 | `^## FUNCTION:` |
+| `best-practices.md` | practices, plus comparisons and decision guides | 29 / 7 / 3 | `^## PRACTICE:` `^## COMPARISON:` `^## DECISION:` |
+| `cli-reference.md` | the 1.x command tree and the `--filter` system | 24 | `^## COMMAND:` |
+| `hcl-blocks.md` | every HCL block and attribute | 15 / 10 | `^## BLOCK:` `^## ATTRIBUTE:` |
+| `advanced-examples.md` | worked examples: multi-account/subscription/project, CI, mocks, AVM, CFT, own-module | 28 | `^## EXAMPLE:` |
+| `architecture-patterns.md` | layout patterns, catalog/live repo shape, migration to stacks | 6 | `^## PATTERN:` |
+| `cicd.md` | OIDC per cloud, plan-then-apply across a stack | — | grep a `^## ` heading |
+| `azure-backend.md` | Azure state, auth and provider gotchas | — | read whole; it is short |
+| `scale-and-performance.md` | run only what changed, cache, parallelism | — | read whole; it is short |
+
+Two of the ten carry no heading convention because they are short enough to read end to end.
+Counts are verified against the files, not asserted: regenerate with
+`grep -c '^## ERROR:' references/error-patterns.md` and so on.
+
 
 - `references/architecture-patterns.md` — layout patterns, env-agnostic root rule, unit/stack
   model, dependency wiring, runtime control. Headings: `## PATTERN:`
@@ -146,12 +169,16 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
   keywords first: `grep -in 'state lock' references/error-patterns.md`
 - `references/best-practices.md` — practices with priority/rationale/antipatterns, plus
   `## COMPARISON:` (e.g. dependency vs dependencies) and `## DECISION:` guides
-- `references/advanced-examples.md` — 21 worked examples. `grep '^## EXAMPLE:'`
+- `references/advanced-examples.md` — 28 worked examples. `grep '^## EXAMPLE:'`
 - `references/azure-backend.md` — Azure (`azurerm`) remote state + provider setup and
   gotchas: whether Terragrunt bootstraps Azure depends on version + experiment
   (no by default, yes on v1.1.2+ with `--experiment azure-backend`), backend key list, auth methods,
   `use_azuread_auth`/Entra ID, provider v4 `subscription_id`, RBAC + shared-key gotchas,
   OIDC for CI. Read this for ANY Azure backend/provider task.
+- `references/cicd.md` — CI/CD: OIDC to AWS (incl. the immutable `sub` claim that breaks
+  pipelines on repos created from 2026-07-15), GCP Workload Identity Federation, a pointer to
+  the Azure section, and `--out-dir` for saving a plan per unit between plan and apply. Read
+  for anything about pipelines or CI authentication.
 - `references/scale-and-performance.md` — running only changed units/stacks at scale:
   `--filter` git+graph targeting (`--filter-affected`), `find --json` CI matrices, provider
   cache server, CAS, dependency-output-from-state, parallelism, per-unit overhead, OSS vs
@@ -170,9 +197,14 @@ reusable unit/module definitions. Targeting uses `--filter` expressions.
   must pre-exist — which is what these templates assume. On **v1.1.2+ with
   `--experiment azure-backend`** that reverses and Terragrunt does manage them. Establish
   the version before advising; full detail in `references/azure-backend.md`.
-- `templates/providers/` — provider `generate` blocks (`aws-generate-provider.hcl`,
-  `azure-generate-provider.hcl`). For Azure, `subscription_id` is **required** by
-  `azurerm` provider v4+ — see `references/azure-backend.md`.
+- `templates/providers/` — provider `generate` blocks for all three clouds
+  (`aws-generate-provider.hcl`, `azure-generate-provider.hcl`, `gcp-generate-provider.hcl`).
+  **Each cloud constrains the target differently, and one of them does not constrain it at
+  all:** AWS has `allowed_account_ids`; `azurerm` v4+ makes `subscription_id` **required**
+  (see `references/azure-backend.md`); the `google` provider has **no equivalent and no
+  required argument whatsoever**, so an unset `project` falls through to `GOOGLE_PROJECT`,
+  then ADC, then whatever `gcloud config set project` last selected. Derive `project` from
+  the directory tree rather than typing it.
 
 Replace ALL placeholder variables before presenting (`{{mustache}}` in templates/backends and
 templates/providers; `[BRACKET]` style everywhere else); never leave placeholders or invent
@@ -220,8 +252,33 @@ item 1) as findings.
 
 ## Provenance
 
-This skill is original content (MIT). Its patterns and references trace to the public
-Terragrunt documentation (<https://docs.terragrunt.com>); **Terragrunt** is © Gruntwork, Inc.
-(MIT licensed). This skill is not affiliated with or endorsed by Gruntwork. The bundled
-`scripts/validate.sh` invokes external tools when present — `terragrunt`, `tflint` (MPL-2.0),
-and `trivy` (Apache-2.0) — but does not bundle them; their own licenses apply.
+This skill is MIT licensed. It is **not** wholly original, and the parts that are not are
+named here.
+
+**Harvested content.** Five reference files — `advanced-examples.md`, `best-practices.md`,
+`error-patterns.md`, `functions.md` and `hcl-blocks.md` — began as curated data from
+[omattsson/terragrunt-mcp-server](https://github.com/omattsson/terragrunt-mcp-server)
+(MIT), restructured here for grep-based lookup and since re-checked against
+docs.terragrunt.com. Each file repeats this in its own header. Together they are roughly
+two-thirds of the reference corpus by size, so it is the single largest input to this skill
+after the Terragrunt documentation itself.
+
+  Two things follow, and both matter. **MIT permits the reuse and requires the notice**, which
+  is why this paragraph exists. And that repository's last commit predates Terragrunt v1.0.0
+  by five weeks, so anything harvested from it is **pre-1.0 material by default** — the
+  re-checks are what make it safe, not the source. Where a re-check has not happened, treat
+  the entry as suspect rather than current. `references/hcl-blocks.md` is known to still carry
+  three pre-1.0 retry blocks for exactly this reason.
+
+**Layout and scaffolding guidance** describes, but does not copy, Gruntwork's published
+reference repositories:
+[terragrunt-infrastructure-catalog-example](https://github.com/gruntwork-io/terragrunt-infrastructure-catalog-example)
+(MPL-2.0),
+[terragrunt-infrastructure-live-example](https://github.com/gruntwork-io/terragrunt-infrastructure-live-example)
+(Apache-2.0), and [gruntwork-io/boilerplate](https://github.com/gruntwork-io/boilerplate)
+(MPL-2.0), the templating engine behind `scaffold` and `catalog`.
+
+**Terragrunt** is © Gruntwork, Inc. (MIT). This skill is not affiliated with or endorsed by
+Gruntwork. The bundled `scripts/validate.sh` invokes external tools when present —
+`terragrunt`, `tflint` (MPL-2.0) and `trivy` (Apache-2.0) — but does not bundle them; their
+own licenses apply.

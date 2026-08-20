@@ -9,41 +9,57 @@ Sections: PRACTICE (by category), COMPARISON (block A vs B), DECISION (pattern g
 
 **Category:** ci_cd  |  **Priority:** recommended  |  **Level:** intermediate
 
-**Why:** The run --all command applies changes to multiple modules respecting dependencies. Parallelism speeds up execution while staying within API rate limits.
+**Why:** `run --all` walks the units in dependency order. Parallelism speeds that up while
+staying inside provider API rate limits.
 
-```hcl
-# Apply all modules in dependency order with parallelism
-terragrunt run --all apply --parallelism 5
+**Mind the `--` separator.** The documented form is `terragrunt run [flags] -- [tofu command]`.
+Terragrunt's own flags go *before* the separator; everything after it is passed through to
+OpenTofu/Terraform. Putting `--parallelism` after the subcommand is a common and avoidable
+mistake.
 
-# Plan all and save output
-terragrunt run --all plan --parallelism 10 -out=tfplan
+```bash
+# Apply every unit in dependency order, five at a time
+terragrunt run --all --parallelism 5 -- apply
+
+# Plan every unit, ten at a time
+terragrunt run --all --parallelism 10 -- plan
 ```
 
-**Antipatterns:**
-- Applying modules one at a time in scripts
-- Unlimited parallelism (API rate limiting)
-- Not using --non-interactive in CI
+`run --all` with `apply` or `destroy` **silently adds `-auto-approve`**, because a shared stdin
+makes per-unit approval impossible. That is what you want in CI; know that it is happening, and
+use `--no-auto-approve` if you do not.
 
-**Tradeoffs:** Higher parallelism = faster but more API calls; run --all applies might be harder to debug
+**Antipatterns:**
+- Applying units one at a time in a shell loop
+- Unlimited parallelism (provider API rate limiting)
+- Omitting `--non-interactive` in CI
+- Putting a Terragrunt flag after the OpenTofu subcommand instead of before the `--`
+
+**Tradeoffs:** higher parallelism is faster but makes more API calls, and a failed `run --all`
+apply is harder to unpick than a single unit.
 
 ## PRACTICE: Implement plan/apply separation with artifact storage in pipelines
 
 **Category:** ci_cd  |  **Priority:** recommended  |  **Level:** intermediate
 
-**Why:** Storing plan files as artifacts ensures the exact planned changes are what gets applied, enables review workflows, and provides audit trails.
+**Why:** Applying a saved plan guarantees that what was reviewed is what gets applied. It also
+gives the review workflow something concrete to look at and leaves an audit trail.
 
-```hcl
-# GitLab CI example
+**Use `--out-dir`, not `-out=`.** A single `-out=tfplan` cannot work across a stack, because the
+path is relative to each unit — every unit would write to the same name in its own directory and
+nothing would gather them. `--out-dir` writes one plan per unit, mirroring the stack's directory
+structure under the directory you name.
+
+```yaml
+# GitLab CI
 plan:
   stage: plan
   script:
     - cd live/${ENVIRONMENT}
-    - terragrunt run --all plan -out=tfplan
-    - terragrunt run --all show -json tfplan > plan.json
+    - terragrunt run --all --out-dir "$CI_PROJECT_DIR/.tfplan" -- plan
   artifacts:
     paths:
-      - live/${ENVIRONMENT}/**/tfplan
-      - live/${ENVIRONMENT}/**/plan.json
+      - .tfplan/
     expire_in: 1 day
 
 apply:
@@ -52,8 +68,20 @@ apply:
   when: manual
   script:
     - cd live/${ENVIRONMENT}
-    - terragrunt run --all apply tfplan
+    - terragrunt run --all --out-dir "$CI_PROJECT_DIR/.tfplan" -- apply
 ```
+
+Two rules the docs are explicit about:
+
+- **Apply fails if any unit has no saved plan.** "Performing a `run --all --out-dir <dir> --
+  apply` requires that a plan already exists for each unit in the stack."
+- **A `--filter` must match between the plan and the apply.** Plan a narrower set than you
+  apply and the apply fails on the units you never planned.
+
+Add `--json-out-dir` alongside `--out-dir` if you want machine-readable plans for a policy
+check or a PR comment.
+
+See `references/cicd.md` for the full pipeline, including OIDC to AWS, GCP and Azure.
 
 **Antipatterns:**
 - Running plan and apply in the same job
@@ -607,11 +635,11 @@ EOF
 
 **Tradeoffs:** Additional indirection can make debugging harder; Must understand merge_strategy options (deep, shallow, no_merge)
 
-## PRACTICE: Organize directories by environment, then region/account, then component
+## PRACTICE: Organize directories by environment, then region/account, then unit
 
 **Category:** project_structure  |  **Priority:** recommended  |  **Level:** beginner
 
-**Why:** A consistent hierarchy of environment > region > component makes it easy to understand what infrastructure exists where, enables targeted operations on specific environments or regions, and supports multi-region deployments.
+**Why:** A consistent hierarchy of environment > region > unit makes it easy to understand what infrastructure exists where, enables targeted operations on specific environments or regions, and supports multi-region deployments.
 
 ```hcl
 # Recommended hierarchy
@@ -635,7 +663,7 @@ live/
 
 **Antipatterns:**
 - Flat structure mixing all environments in one directory
-- Organizing by component first (all VPCs together) instead of by environment
+- Organizing by unit type first (all VPCs together) instead of by environment
 - Inconsistent hierarchy across different parts of the codebase
 
 **Tradeoffs:** Deeper directory nesting; More files to maintain (env.hcl, region.hcl per level)
@@ -772,12 +800,45 @@ remote_state {
 }
 ```
 
+**This one line is a granularity decision, not just a naming convention.** Because the key is
+derived per unit, you get **one state file per unit per environment** by default — you do not
+have to choose it, and you cannot accidentally share a state between two units. That is the
+granularity three independent organisations converge on:
+
+> "you've moved from a 'one state file per environment' model to a 'one state file per
+> component, per environment' model. This is a common and highly recommended pattern for mature
+> Infrastructure as Code (IaC) management." — docs.terragrunt.com, breaking up a terralith
+
+> "manage resources in separate workspaces when possible, grouping together only necessary and
+> logically-related resources... By managing stateful resources independently of stateless
+> ones... you limit the blast radius." — HashiCorp, workspace best practices
+
+(Both quotes say "component" or "workspace" where this skill says **unit** — Terragrunt's own
+term, and the one used throughout here. A unit is one `terragrunt.hcl`; a **stack** is a set of
+units, implicit as a directory tree or explicit as a `terragrunt.stack.hcl`.)
+
+The argument in one sentence, from Gruntwork: *do you want a routine update to a Lambda's
+application code to require a plan that also evaluates your production database?* Coupled state
+means a mistake in one can reach the other, and every routine change pays the plan time of
+everything it is coupled to.
+
 **Antipatterns:**
 - Hardcoding state keys
 - Using the same state key for different modules
 - Manual key construction that can lead to collisions
+- One state file for a whole environment. It is the stage teams grow out of, and the symptom is
+  that unrelated changes queue behind each other on the same lock.
 
-**Tradeoffs:** State key structure mirrors directory structure; Renaming directories requires state migration
+**Tradeoffs.** The key mirrors the directory structure, which is the point and also the cost:
+**moving or renaming a directory moves the state**, and Terragrunt will plan to destroy and
+recreate everything in it unless you migrate the state first. That is not a small caveat — it
+is the single most expensive mistake available in this area, and it is why the migration
+guidance in `architecture-patterns.md` (`## PATTERN: migrate an existing tree to explicit
+stacks`) leads with the state-key safety rule rather than the layout. Decide the tree before
+you fill it.
+
+Related: `no_dot_terragrunt_stack` on the `stack` block exists precisely to keep
+`path_relative_to_include()` stable during a soft migration — see `hcl-blocks.md`.
 
 ## PRACTICE: Validate Terragrunt configurations before apply using hooks
 
@@ -818,26 +879,95 @@ terraform {
 
 **Tradeoffs:** Adds time to each operation; Must maintain validation tooling and configs
 
-## PRACTICE: Use terragrunt validate-inputs to catch input errors early
+## PRACTICE: Check inputs against the module's variables before you plan
 
 **Category:** testing  |  **Priority:** recommended  |  **Level:** beginner
 
-**Why:** The validate-inputs command checks that all required inputs are provided and types match, catching configuration errors before plan/apply.
+**Why:** Catching a missing or mistyped input before `plan` is cheaper than discovering it
+during `apply`, and far cheaper than discovering it in a pipeline that has already applied
+three units ahead of the broken one.
 
-```hcl
-# Validate inputs for a single module
-terragrunt validate-inputs
+**The command is `hcl validate --inputs`.** The pre-1.0 `terragrunt validate-inputs` was
+removed in v1.0.0 (2026-03-30) and must not be emitted.
 
-# Validate all modules
-terragrunt run --all validate-inputs
+```bash
+# One unit
+terragrunt hcl validate --inputs
+
+# Every unit in the tree
+terragrunt run --all -- hcl validate --inputs
 ```
 
-**Antipatterns:**
-- Discovering missing inputs during apply
-- Not validating in CI before merge
-- Ignoring validation errors
+Note the `--` separator on the second form: `--all` is Terragrunt's flag, `hcl validate
+--inputs` is the command being run.
 
-**Tradeoffs:** Adds step to workflow; Requires accurate variable definitions in modules
+**Antipatterns:**
+- Discovering a missing input during `apply`
+- Not validating in CI before merge
+- Ignoring validation errors because "it planned fine"
+- Reaching for `validate-inputs` — it no longer exists
+
+**Tradeoffs:** it adds a step, and it is only as good as the variable definitions in the
+module. It cannot tell you an input is *wrong*, only that it is absent or the wrong type. For
+what a module actually accepts, use the `terraform-registry` skill.
+
+## COMPARISON: state locking on AWS, Azure and GCP
+
+**The three clouds do not solve this the same way, and only one of them makes you choose.**
+Verified against the OpenTofu backend docs and this skill's Azure reference on 2026-08-19.
+
+| backend | mechanism | what you configure |
+|---|---|---|
+| `s3` | S3 conditional writes (`If-None-Match`), **or** an external DynamoDB table | `use_lockfile = true`, **or** `dynamodb_table` |
+| `azurerm` | native blob lease on the state blob | **nothing** |
+| `gcs` | native | **nothing** |
+
+**Azure and GCS have no lock table because they never needed one.** The `azurerm` backend takes
+a blob lease before any write; there is no second resource to create, no extra IAM to grant and
+nothing to forget. GCS likewise — the docs say only "This backend supports state locking", with
+no configuration to set. The cost is that a crashed run can leave a lease held: break it with
+`az storage blob lease break`. See `azure-backend.md`.
+
+**Only S3 presents a choice, and it is a recent one.** `use_lockfile = true` locks in the state
+bucket itself, so there is no DynamoDB table to provision, pay for or grant access to — which is
+why it is the sensible default for new work. The older `dynamodb_table` remains correct and is
+what most existing estates run.
+
+Be careful how strongly you state this. The docs are explicit:
+
+> "Both S3 and DynamoDB locking mechanisms are fully supported, and the OpenTofu team has no
+> plans to deprecate either option. You should choose the locking mechanism that best fits your
+> infrastructure requirements."
+
+Only `dynamodb_endpoint` carries a **Deprecated** marker; `dynamodb_table` does not. So:
+recommend `use_lockfile` for greenfield, do **not** tell someone their DynamoDB table is
+obsolete, and do not call it deprecated — it isn't.
+
+**Migrating S3 from DynamoDB to native locking**, per the documented path — the point is that
+both run at once so nobody can take a lock under the old configuration while the change rolls
+out:
+
+```hcl
+remote_state {
+  backend = "s3"
+  config = {
+    bucket         = "acme-tfstate"
+    key            = "${path_relative_to_include()}/tofu.tfstate"
+    region         = "eu-west-1"
+    use_lockfile   = true            # 1. add alongside the existing table
+    dynamodb_table = "acme-tf-locks" # 2. bake; a lock is held only when BOTH succeed
+  }                                  # 3. then remove this line
+}
+```
+
+**One operational caveat on `use_lockfile`.** Locking writes objects into the state bucket, and
+the docs recommend versioning on that bucket — so lock objects generate versions too. Add a
+lifecycle rule limiting the number of versions. The storage cost is negligible; the version
+count is not.
+
+Sources: OpenTofu S3 backend and GCS backend docs, snapshotted 2026-08-19 to
+`evals/snapshots/tofu-s3-backend.md` and `tofu-gcs-backend.md`; Azure behaviour from
+`references/azure-backend.md`.
 
 ## COMPARISON: dependency vs dependencies
 

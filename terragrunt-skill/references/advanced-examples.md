@@ -28,6 +28,393 @@ Lookup: `grep -n '^## EXAMPLE:' advanced-examples.md`
 - Version Constraints Generation (generate, basic)
 - Workspace-Based Environment Selection (environment, intermediate)
 
+## EXAMPLE: Integrate a module you wrote yourself
+
+**Category:** modules  |  **Complexity:** basic  |  Tags: source, own-module, git, monorepo, pinning
+
+Most Terragrunt material assumes you are consuming somebody else's registry module. The common
+real case is a module your team wrote. Terragrunt does not care who wrote it — what changes is
+**where it lives**, and that decides the `source` syntax and the pinning strategy.
+
+**Three layouts, three sources:**
+
+```hcl
+# 1. Module in its own repo — the usual choice once more than one team consumes it.
+#    `//` separates the repo from the path INSIDE it. `?ref=` is the git ref.
+terraform {
+  source = "git::ssh://git@github.com/acme/terraform-modules.git//vpc?ref=v1.4.0"
+}
+
+# 2. Module in the SAME repo as the live config.
+#    No fetch, no ref, no tag to cut. Good while a module has exactly one consumer.
+#    ANCHOR TO THE CONFIG HIERARCHY, NOT TO GIT AND NOT TO A COUNT OF `../`.
+terraform {
+  source = "${dirname(find_in_parent_folders("root.hcl"))}//modules/vpc"
+}
+#    A bare "../../../modules/vpc" encodes how deep this unit happens to sit, so it breaks the
+#    day someone adds a region or environment level. `get_repo_root()` and
+#    `get_path_to_repo_root()` look like the fix and are worse: both walk up to `.git`, so they
+#    resolve differently — or error — in an exported artifact, a partial CI checkout, or a
+#    monorepo where the git root sits above the infrastructure root. That failure is
+#    environment-dependent: correct locally, wrong in the pipeline. See `functions.md`.
+
+# 3. Module in a private registry.
+#    Name the host: a bare `tfr:///` follows the wrapped engine (see `## BLOCK: terraform`).
+terraform {
+  source = "tfr://registry.example.com/acme/vpc/aws?version=1.4.0"
+}
+```
+
+**Pin to a tag, never a branch.** `?ref=main` means the module can change between your plan and
+your apply, and can differ between the run that deployed staging and the run that deployed
+production an hour later. `?ref=v1.4.0` is reproducible; a commit SHA is more so and is uglier.
+The reason this matters more for your own module than for a registry one is that your own module
+changes far more often, and often while you are mid-rollout.
+
+**The trade-off between 1 and 2 is not style.** A relative path costs nothing and updates
+instantly, which is exactly the problem: every environment moves the moment the module changes,
+because there is no version to hold prod back while you test in dev. A separate repo forces a
+tag, and the tag is what lets environments sit on different versions. Split when you need that,
+not before.
+
+If you keep the module in the same repo and use it from a catalog, `update_source_with_cas`
+rewrites the relative source into a content-addressed reference at stack generation — but the
+`source` must be a literal string, and `--no-cas` must not be set. See `## BLOCK: terraform`.
+
+**Local modules are copied, not linked.** Terragrunt copies the source into
+`.terragrunt-cache`, so files beside the module are not automatically present. `include_in_copy`
+and `exclude_from_copy` on the `terraform` block control that, and they are **not** mutually
+exclusive — a file matching both is excluded.
+
+## EXAMPLE: Iterate on your own module without cutting a release
+
+**Category:** modules  |  **Complexity:** intermediate  |  Tags: source, source-map, local-development
+
+The friction with layout 1 above is the loop: edit module, commit, tag, bump the `ref` in the
+unit, run. Terragrunt has two overrides so you do not have to.
+
+**`--source` replaces the source outright, for one run:**
+
+```bash
+terragrunt run plan --source ../../../modules/vpc
+```
+
+> "This overrides any `source` parameters specified in the Terragrunt configuration files."
+
+Simple, and it only helps one unit — you are naming a single path.
+
+**`--source-map` rewrites matching URLs across the whole run**, which is what you want for
+`run --all`:
+
+```bash
+terragrunt run --all   --source-map "git::ssh://git@github.com/acme/terraform-modules.git=../../terraform-modules"   -- plan
+```
+
+It "affects both direct source references and sources specified in dependency blocks", so a
+whole tree points at your working copy without a single file being edited. Also available as
+`TG_SOURCE_MAP`.
+
+**THE TRAP, and it fails silently.** From the docs:
+
+> "Source mapping only performs literal matches on the URL portion. For example, a map key of
+> `ssh://git@github.com/org/repo.git` will not match sources of the form
+> `git::ssh://git@github.com/org/repo.git`. The latter requires a map key of
+> `git::ssh://git@github.com/org/repo.git`."
+
+A key that does not match produces **no error**. Terragrunt fetches the real module from git,
+the plan succeeds, and you spend the next twenty minutes wondering why your edit had no effect.
+**Copy the `source` string out of the config verbatim, `git::` prefix and all, and use that as
+the key.**
+
+**And clear the cache when the source changes shape:**
+
+```bash
+terragrunt run plan --source-update
+```
+
+> "Delete the contents of the temporary folder to clear out any old, cached source code before
+> downloading new source code into it."
+
+Verified against docs.terragrunt.com/reference/cli/commands/run/ on 2026-08-19.
+
+## EXAMPLE: GCP project-per-environment, with the project derived from the tree
+
+**Category:** gcp  |  **Complexity:** intermediate  |  Tags: gcp, google, project, multi-project, provider
+
+GCP's isolation boundary is the **project**, so the shape that maps onto an AWS multi-account
+or Azure multi-subscription estate is multi-project. The trap is specific to GCP and worth
+stating first.
+
+**Every argument on the `google` provider is optional, and there is no `allowed_account_ids`.**
+AWS lets you assert which account a unit may touch; azurerm v4 makes `subscription_id`
+mandatory. GCP has neither. An unset `project` falls back to `GOOGLE_PROJECT`, then to
+Application Default Credentials, then to whatever `gcloud config set project` last pointed at.
+The plan succeeds against the wrong project and nothing warns.
+
+**So derive the project from the path and never type it in a unit.**
+
+```
+live/
+├── root.hcl                      # backend + generated provider
+├── prod/
+│   ├── env.hcl                   # locals { project_id = "acme-prod-1a2b", environment = "prod" }
+│   └── europe-west2/
+│       ├── region.hcl            # locals { region = "europe-west2" }
+│       ├── network/terragrunt.hcl
+│       └── storage/terragrunt.hcl
+└── nonprod/
+    ├── env.hcl                   # locals { project_id = "acme-nonprod-3c4d" }
+    └── europe-west2/...
+```
+
+```hcl
+# root.hcl — the project comes from the tree, so the path and the target cannot disagree
+locals {
+  env_vars    = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  region_vars = read_terragrunt_config(find_in_parent_folders("region.hcl"))
+  project_id  = local.env_vars.locals.project_id
+  region      = local.region_vars.locals.region
+}
+
+generate "provider" {
+  path      = "provider.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<PROVIDER
+provider "google" {
+  project = "${local.project_id}"
+  region  = "${local.region}"
+}
+PROVIDER
+}
+
+remote_state {
+  backend = "gcs"
+  config = {
+    bucket = "acme-tfstate-${local.env_vars.locals.environment}"
+    prefix = path_relative_to_include()
+  }
+}
+```
+
+See `templates/providers/gcp-generate-provider.hcl` for the fuller version, including
+impersonation and the `user_project_override` / `billing_project` pairing.
+
+## EXAMPLE: Wrapping Cloud Foundation Toolkit modules
+
+**Category:** gcp  |  **Complexity:** basic  |  Tags: gcp, google, cft, module, dependency
+
+Google's equivalent of Azure's AVM is the **Cloud Foundation Toolkit** — the
+`terraform-google-modules/*` and `GoogleCloudPlatform/*` namespaces on the public registry.
+Unlike AVM these are **past 1.0**, so a major version means what semver says it means.
+Verified on **2026-08-19**:
+
+| module | version | required inputs |
+|---|---|---|
+| `terraform-google-modules/network/google` | 18.1.2 | `project_id`, `network_name`, `subnets` |
+| `terraform-google-modules/project-factory/google` | 18.3.0 | 2 |
+| `terraform-google-modules/cloud-storage/google` | 12.3.0 | `project_id`, `names` |
+| `GoogleCloudPlatform/lb-http/google` | 14.2.0 | 3 |
+
+**`project_id` is a required input on the modules themselves**, not merely a provider default —
+so it is passed twice, and the two must agree. Deriving both from the same local is the point
+of the previous example.
+
+```hcl
+# live/prod/europe-west2/storage/terragrunt.hcl
+terraform {
+  source = "tfr://registry.terraform.io/terraform-google-modules/cloud-storage/google?version=12.3.0"
+}
+
+include "root" { path = find_in_parent_folders("root.hcl") }
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+}
+
+dependency "network" {
+  config_path = "../network"
+
+  mock_outputs = {
+    network_name = "mock-vpc"
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  project_id = local.env_vars.locals.project_id
+  names      = ["acme-prod-artifacts", "acme-prod-logs"]
+  location   = "EUROPE-WEST2"
+}
+```
+
+**Pin the registry host.** A bare `tfr:///` resolves to `registry.terraform.io` under Terraform
+and `registry.opentofu.org` under OpenTofu, and the OpenTofu registry is populated
+independently rather than mirrored — a version present on one may be absent from the other. See
+`## BLOCK: terraform` in `hcl-blocks.md`.
+
+For a module's current version, required inputs or a resource's attributes, use the
+`terraform-registry` skill — it covers the google provider (1,344 resources cached) as well as
+aws and azurerm.
+
+## EXAMPLE: Wrap an Azure Verified Module in a Terragrunt unit
+
+**Category:** azure  |  **Complexity:** basic  |  Tags: azure, avm, module, source, unit
+
+AVM is Microsoft's set of pre-built, WAF-aligned Azure modules. They are ordinary registry
+modules, so a Terragrunt unit wraps one exactly as it wraps any other — the value is that the
+defaults are the ones Microsoft recommends rather than the ones the provider ships.
+
+**Two classes, and the names tell you which you have:**
+
+| class | registry name | what it deploys |
+|---|---|---|
+| Resource module | `avm-res-<provider>-<resourcetype>` | one primary resource, with WAF defaults set |
+| Pattern module | `avm-ptn-<name>` | several resources, usually composed from resource modules |
+
+All published under the `Azure/` namespace on the public Terraform registry.
+
+```hcl
+# live/prod/uksouth/network/terragrunt.hcl
+terraform {
+  source = "tfr://registry.terraform.io/Azure/avm-res-network-virtualnetwork/azurerm?version=0.22.1"
+}
+
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+dependency "rg" {
+  config_path = "../resource-group"
+}
+
+inputs = {
+  parent_id     = dependency.rg.outputs.resource_id
+  location      = "uksouth"
+  name          = "vnet-prod-uksouth"
+  address_space = ["10.20.0.0/16"]
+
+  # AVM ships a telemetry module on by default. Many enterprises turn it off.
+  enable_telemetry = false
+}
+```
+
+**Pin the host, not just the version.** A bare `tfr:///` resolves to `registry.terraform.io`
+under Terraform and `registry.opentofu.org` under OpenTofu, and the OpenTofu registry is not a
+mirror — see `## BLOCK: terraform` in `hcl-blocks.md`. AVM publishes to the Terraform registry;
+name it.
+
+**Find the module rather than guessing its name.** Microsoft publishes a machine-readable
+index — `https://azure.github.io/Azure-Verified-Modules/module-indexes/TerraformResourceModules.csv`
+— which carried 158 resource modules on 2026-08-19. For inputs, outputs and current versions,
+use the `terraform-registry` skill rather than reading registry JSON by hand.
+
+## EXAMPLE: The AVM interface is not uniform — check every module's required inputs
+
+**Category:** azure  |  **Complexity:** intermediate  |  Tags: azure, avm, inputs, trap
+
+**Do not assume AVM modules share a shape.** They are versioned independently and the interface
+has moved over time. Eight resource modules sampled from the registry on **2026-08-19**:
+
+| module | version | required inputs |
+|---|---|---|
+| `avm-res-resources-resourcegroup` | 0.4.0 | `name`, `location` |
+| `avm-res-network-virtualnetwork` | 0.22.1 | **`parent_id`**, `location` — `name` is *optional* |
+| `avm-res-storage-storageaccount` | 0.9.0 | **`parent_id`**, `name`, `location` |
+| `avm-res-containerservice-managedcluster` | 0.8.1 | **`parent_id`**, `name`, `location` |
+| `avm-res-keyvault-vault` | 0.11.0 | **`resource_group_name`**, `name`, `location`, `tenant_id` |
+| `avm-res-network-networksecuritygroup` | 0.5.1 | **`resource_group_name`**, `name`, `location` |
+| `avm-res-operationalinsights-workspace` | 0.5.1 | **`resource_group_name`**, `name`, `location` |
+| `avm-res-compute-virtualmachine` | 0.21.0 | **`resource_group_name`**, `name`, `location`, `zone` |
+
+**Of the seven that need a containing resource group, three take `parent_id` and four take
+`resource_group_name`.** That is a coin flip, not a migration edge case — you cannot infer one
+module's spelling from another's. `compute-virtualmachine` additionally requires a `zone` that
+no other module in the sample does, and `network-virtualnetwork` — where you would most expect
+a name — is the only one where `name` is optional.
+
+**Every module here is still 0.x**, from 0.4.0 to 0.22.1. None of them owes you interface
+stability under semver, and a minor bump can move a required input.
+
+```hcl
+# WRONG — assumes keyvault takes parent_id like its siblings
+inputs = {
+  parent_id = dependency.rg.outputs.resource_id   # keyvault does not accept this
+  name      = "kv-prod-uksouth"
+}
+
+# RIGHT — check the module you are actually calling
+inputs = {
+  resource_group_name = dependency.rg.outputs.name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  name                = "kv-prod-uksouth"
+  location            = "uksouth"
+}
+```
+
+The failure is a plan-time "Unsupported argument" or a missing-required-argument error, so it
+does not reach apply — but it costs a cycle per module, and it recurs every time a module is
+upgraded across the migration. **Check the required inputs at the version you are pinning**,
+with `terraform-registry`, before writing the unit.
+
+## EXAMPLE: Multi-subscription Azure estate, resource group first
+
+**Category:** azure  |  **Complexity:** advanced  |  Tags: azure, multi-subscription, dependency, avm, layout
+
+Azure's analogue of AWS multi-account is multi-subscription, and the ordering constraint is
+firmer: almost everything lives inside a resource group, so the resource group unit is a
+dependency of nearly every sibling.
+
+```
+live/
+├── root.hcl                          # backend + azurerm provider, subscription_id from the tree
+├── prod/
+│   ├── subscription.hcl              # subscription_id, tenant_id for this scope
+│   └── uksouth/
+│       ├── region.hcl
+│       ├── resource-group/terragrunt.hcl     # avm-res-resources-resourcegroup
+│       ├── network/terragrunt.hcl            # avm-res-network-virtualnetwork  -> depends on rg
+│       ├── keyvault/terragrunt.hcl           # avm-res-keyvault-vault          -> depends on rg
+│       └── storage/terragrunt.hcl            # avm-res-storage-storageaccount  -> depends on rg
+└── nonprod/
+    ├── subscription.hcl
+    └── uksouth/...
+```
+
+```hcl
+# live/prod/uksouth/storage/terragrunt.hcl
+terraform {
+  source = "tfr://registry.terraform.io/Azure/avm-res-storage-storageaccount/azurerm?version=0.9.0"
+}
+
+include "root" { path = find_in_parent_folders("root.hcl") }
+
+dependency "rg" {
+  config_path = "../resource-group"
+
+  # So `run --all plan` works before anything is applied.
+  mock_outputs = {
+    resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/mock"
+    name        = "rg-mock"
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  parent_id                = dependency.rg.outputs.resource_id
+  name                     = "stprodukso001"
+  location                 = "uksouth"
+  account_tier             = "Standard"
+  account_replication_type = "ZRS"
+  enable_telemetry         = false
+}
+```
+
+**The Azure-specific traps are in `azure-backend.md`, not here** — a data-plane RBAC role is
+required for blob state and ARM Owner or Contributor is *not* sufficient, the provider needs
+`subscription_id` on v4, and shared-key-disabled storage returns 403 unless `use_azuread_auth`
+is set. Read that file for any Azure backend or provider work; this example assumes it is
+already right.
+
 ## EXAMPLE: Basic Cross-Module Dependency
 
 **Category:** dependencies  |  **Complexity:** basic  |  Tags: dependency, outputs, cross-module, vpc

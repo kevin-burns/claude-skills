@@ -373,7 +373,19 @@ terraform {
 }
 ```
 
-Related: get_repo_root, get_path_from_repo_root
+> **Prefer a config-hierarchy anchor to a git anchor.** Both this and `get_repo_root()` walk up
+> to `.git`, so they resolve to the wrong place — or error outright — when the working tree is
+> an exported artifact with no `.git`, when CI checks out only the infrastructure subtree, or
+> when the git root sits above the infrastructure root in a monorepo. The failure is
+> environment-dependent: it works on your laptop and breaks in the pipeline.
+>
+> Anchor to a marker file that always ships with the configs instead:
+> `dirname(find_in_parent_folders("root.hcl"))`, or `get_parent_terragrunt_dir("root")` in a
+> unit that includes the root. For a path *within* the hierarchy — a state key, a generated
+> file path — use `path_relative_to_include()`. Full reasoning in
+> `architecture-patterns.md`, `## Path anchoring: marker files over git`.
+
+Related: get_repo_root, get_path_from_repo_root, path_relative_to_include, get_parent_terragrunt_dir
 
 ## FUNCTION: get_repo_root
 
