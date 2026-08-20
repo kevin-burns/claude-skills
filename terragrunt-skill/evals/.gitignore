@@ -13,3 +13,8 @@ snapshots/
 # whose inputs are not here. RESULTS.md and adjudications.json are the record that survives.
 hits.jsonl
 runs-*.tar.gz
+
+# Cross-model banks and their derived files. Same reasoning as runs/ above: regenerable, and
+# a bank committed once looks current forever. RESULTS.md carries what survives.
+runs-*/
+hits-*.jsonl

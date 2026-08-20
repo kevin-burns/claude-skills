@@ -103,13 +103,21 @@ NEAR = 60       # chars either side that a WEAK signal must fall within to count
   # chars either side, enough to see the sentence and any surrounding fence
 
 
-def run_files() -> list[pathlib.Path]:
-    return sorted(RUNS.glob("*.json"))
+def run_files(runs_dir: pathlib.Path = RUNS) -> list[pathlib.Path]:
+    return sorted(runs_dir.glob("*.json"))
 
 
 def parse_name(p: pathlib.Path) -> tuple[str, str, str] | None:
     m = re.fullmatch(r"(\d+)-([CSP])-(\d+)", p.stem)
     return (m.group(1), m.group(2), m.group(3)) if m else None
+
+
+def filter_cases(files: list[pathlib.Path], spec: str) -> list[pathlib.Path]:
+    """Keep only the runs for the named cases. Exists because pooling the positive suite with
+    the negative one produces a real number that answers a question nobody asked, and it looks
+    enough like the headline to be quoted in its place."""
+    wanted = {c.strip() for c in spec.split(",") if c.strip()}
+    return [p for p in files if (parse_name(p) or ("",))[0] in wanted]
 
 
 def result_text(p: pathlib.Path) -> tuple[str, float]:
@@ -137,14 +145,20 @@ def result_text(p: pathlib.Path) -> tuple[str, float]:
     return text, float(env.get("total_cost_usd") or 0.0)
 
 
-def hit_id(case: str, arm: str, rep: str, form: str, snippet: str) -> str:
+def hit_id(case: str, arm: str, rep: str, form: str, snippet: str, bank: str = "runs") -> str:
     """Stable across reruns of the grader, so adjudications survive. Keyed on the snippet
-    rather than the byte offset, because an offset shifts when anything upstream changes."""
-    h = hashlib.sha256(f"{case}|{arm}|{rep}|{form}|{snippet.strip()}".encode()).hexdigest()
+    rather than the byte offset, because an offset shifts when anything upstream changes.
+
+    `bank` is the runs directory. The default contributes NOTHING to the hash, so the 245
+    verdicts already recorded against the Claude bank stay valid. Any other bank is mixed in,
+    because two models emitting the same snippet in the same cell would otherwise share an id
+    and inherit each other's verdict."""
+    prefix = "" if bank == "runs" else f"{bank}|"
+    h = hashlib.sha256(f"{prefix}{case}|{arm}|{rep}|{form}|{snippet.strip()}".encode()).hexdigest()
     return h[:12]
 
 
-def find_hits(text: str, case: str, arm: str, rep: str) -> list[dict]:
+def find_hits(text: str, case: str, arm: str, rep: str, bank: str = "runs") -> list[dict]:
     out = []
     for form, pattern, replacement in FORMS:
         for m in re.finditer(pattern, text):
@@ -160,7 +174,7 @@ def find_hits(text: str, case: str, arm: str, rep: str) -> list[dict]:
             else:
                 auto = "violation"
             out.append({
-                "id": hit_id(case, arm, rep, form, m.group(0) + context[:80]),
+                "id": hit_id(case, arm, rep, form, m.group(0) + context[:80], bank),
                 "case": case, "arm": arm, "rep": rep,
                 "form": form, "matched": m.group(0), "should_be": replacement,
                 "auto": auto, "context": context,
@@ -168,7 +182,8 @@ def find_hits(text: str, case: str, arm: str, rep: str) -> list[dict]:
     return out
 
 
-def load_adjudications() -> dict[str, str]:
+def load_adjudications(adj_path: pathlib.Path = ADJ) -> dict[str, str]:
+    ADJ = adj_path  # noqa: N806 -- keeps the messages below naming the real file
     if not ADJ.exists():
         return {}
     try:
@@ -184,7 +199,9 @@ def load_adjudications() -> dict[str, str]:
     return data
 
 
-def report(hits: list[dict], files: list[pathlib.Path], adj: dict[str, str], final: bool) -> int:
+def report(hits: list[dict], files: list[pathlib.Path], adj: dict[str, str], final: bool,
+           bank: str = "runs", hits_name: str = "hits.jsonl",
+           adj_name: str = "adjudications.json") -> int:
     verdict = {h["id"]: adj.get(h["id"], h["auto"]) for h in hits}
     unadjudicated = [h for h in hits if h["id"] not in adj]
 
@@ -207,6 +224,15 @@ def report(hits: list[dict], files: list[pathlib.Path], adj: dict[str, str], fin
         runs[arm].append(n)
         cell[(case, arm)][rep] = n
 
+    print()
+    cases_in = sorted({parse_name(p)[0] for p in files if parse_name(p)}, key=int)
+    print(f"BANK: {bank}/   CASES: {','.join(cases_in)}   RUNS: {len(files)}")
+    if bank != "runs":
+        print("      NOT the Claude bank. These runs are a separate experiment and must not")
+        print("      be pooled with, or quoted in place of, the runs/ measurement.")
+    elif cases_in != ["1", "2", "3", "4", "5", "6", "7"]:
+        print("      This is NOT the headline set. The published figure is cases 1-7 only:")
+        print("      grade.py --cases 1,2,3,4,5,6,7")
     print()
     print("PRE-1.0 EMISSION BY ARM")
     print("  C = control (no skill)   S = full SKILL.md   P = SKILL.md minus the ban")
@@ -250,13 +276,13 @@ def report(hits: list[dict], files: list[pathlib.Path], adj: dict[str, str], fin
     n = lambda k: sum(1 for h in hits if verdict[h["id"]] == k)  # noqa: E731
     print(f"HITS: {len(hits)} total | {n('violation')} violations | {n('advisory')} advisory "
           f"(named to warn) | {n('valid-1x')} valid 1.x usage inside an allowing block.")
-    print(f"      {len(unadjudicated)} not yet read by a human. Written to {HITS.name}.")
+    print(f"      {len(unadjudicated)} not yet read by a human. Written to {hits_name}.")
     print(f"COST: ${cost:.2f} across {len(files)} runs.")
 
     if unadjudicated:
         print()
         print("  THESE NUMBERS ARE PROVISIONAL. The advisory/violation split above is a regex")
-        print("  guess. Read the hits and record verdicts in adjudications.json as")
+        print(f"  guess. Read the hits and record verdicts in {adj_name} as")
         print('  {"<id>": "violation"} or {"<id>": "advisory"} before quoting anything.')
         if final:
             print()
@@ -272,13 +298,35 @@ def main() -> int:
                     help="print only the hits with no human verdict, as a worksheet")
     ap.add_argument("--final", action="store_true",
                     help="exit non-zero unless every hit has been adjudicated")
+    ap.add_argument("--runs-dir", default="runs",
+                    help="which bank to grade (default runs/, the Claude measurement). A "
+                         "cross-model bank written by run_model.py lives in runs-<model>/ and "
+                         "carries its own adjudications file.")
+    ap.add_argument("--cases", default=None,
+                    help="comma-separated case ids, e.g. 1,2,3,4,5,6,7 for the published "
+                         "positive suite. Without it every case in the bank is pooled, which "
+                         "produces a real number that answers a question nobody asked.")
     args = ap.parse_args()
 
-    files = run_files()
+    runs_dir = HERE / args.runs_dir
+    bank = runs_dir.name
+    hits_path = HITS if bank == "runs" else HERE / f"hits-{bank}.jsonl"
+    # A separate verdict file per bank. Merging another model's hits into adjudications.json
+    # would put unread verdicts behind the --final gate that guards the published figure.
+    adj_path = ADJ if bank == "runs" else HERE / f"adjudications-{bank}.json"
+
+    files = run_files(runs_dir)
     if not files:
-        print(f"No runs in {RUNS}. Build the arms and run the matrix first:", file=sys.stderr)
+        print(f"No runs in {runs_dir}. Build the arms and run the matrix first:", file=sys.stderr)
         print("  uv run evals/build_arms.py && ./evals/matrix.sh", file=sys.stderr)
         return 1
+
+    if args.cases:
+        kept = filter_cases(files, args.cases)
+        if not kept:
+            print(f"No runs in {runs_dir} for cases {args.cases}.", file=sys.stderr)
+            return 1
+        files = kept
 
     hits: list[dict] = []
     for p in files:
@@ -286,10 +334,10 @@ def main() -> int:
         if not parsed:
             continue
         text, _ = result_text(p)
-        hits.extend(find_hits(text, *parsed))
+        hits.extend(find_hits(text, *parsed, bank=bank))
 
-    HITS.write_text("".join(json.dumps(h) + "\n" for h in hits))
-    adj = load_adjudications()
+    hits_path.write_text("".join(json.dumps(h) + "\n" for h in hits))
+    adj = load_adjudications(adj_path)
 
     if args.adjudicate:
         pending = [h for h in hits if h["id"] not in adj]
@@ -304,10 +352,10 @@ def main() -> int:
             print("-" * 78)
             print(h["context"].strip())
             print()
-        print(f"{len(pending)} to adjudicate. Record them in {ADJ.name}.")
+        print(f"{len(pending)} to adjudicate. Record them in {adj_path.name}.")
         return 0
 
-    return report(hits, files, adj, args.final)
+    return report(hits, files, adj, args.final, bank, hits_path.name, adj_path.name)
 
 
 if __name__ == "__main__":

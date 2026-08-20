@@ -214,3 +214,27 @@ def test_the_old_backticked_form_reads_as_advisory():
     old followed by form/syntax/name/command/way, and the word was followed by a backtick."""
     text = "Validate with `terragrunt hcl validate` (not the old `hclvalidate`) after adding this."
     assert verdicts(text) == [("hclvalidate", "advisory")]
+
+
+# --------------------------------------------------------------------- suite separation
+
+def test_the_case_filter_keeps_the_two_suites_apart():
+    """Cases 1-7 are the positive suite and carry the published figure; 8-12 are negative and
+    are a null on every arm. Pooling them produces a real number that answers a question
+    nobody asked, and it looks enough like the headline to be quoted in its place."""
+    files = [pathlib.Path(f"{c}-C-1.json") for c in (1, 3, 7, 8, 10, 12)]
+    kept = [p.name for p in grade.filter_cases(files, "1,2,3,4,5,6,7")]
+    assert kept == ["1-C-1.json", "3-C-1.json", "7-C-1.json"]
+
+
+def test_the_case_filter_tolerates_spaces_and_ignores_unknown_cases():
+    files = [pathlib.Path("1-C-1.json"), pathlib.Path("8-S-2.json")]
+    assert [p.name for p in grade.filter_cases(files, " 1 , 8 ")] == ["1-C-1.json", "8-S-2.json"]
+    assert grade.filter_cases(files, "99") == []
+
+
+def test_a_file_that_is_not_a_cell_is_dropped_rather_than_crashing():
+    """hits.jsonl and adjudications.json live beside the bank; a stray .json must not take
+    the grader down mid-run."""
+    files = [pathlib.Path("1-C-1.json"), pathlib.Path("adjudications.json")]
+    assert [p.name for p in grade.filter_cases(files, "1")] == ["1-C-1.json"]

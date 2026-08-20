@@ -246,12 +246,16 @@ effect. The number for the post is computed over **cases 1–7 only**:
 To reproduce it, restrict the scan:
 
 ```bash
-CASES="1 2 3 4 5 6 7" uv run evals/grade.py --final   # if/when grade.py learns --cases
-# until then: read the BY CASE table and sum rows 1-7, or move runs/8-*..12-* aside
+uv run evals/grade.py --cases 1,2,3,4,5,6,7 --final
 ```
 
-**TODO, small and worth doing:** give `grade.py` a `--cases` filter so the two suites cannot be
-pooled by accident. The pooled number is not wrong, it is just answering a question nobody
-asked, and it looks enough like the headline to be quoted in its place.
+`grade.py` gained that filter on 2026-08-20, and it now leads its report with the bank and the
+case list it is summarising, warning outright when they are not the published set:
+
+    BANK: runs/   CASES: 1,2,3,4,5,6,7   RUNS: 63
+
+Running it without `--cases` still pools all twelve and still prints a real number. It is just
+answering a question nobody asked, and it looks enough like the headline to be quoted in its
+place — which is why the header now says which one you are looking at.
 
 All 245 hits across all 12 cases are adjudicated; `--final` exits 0.

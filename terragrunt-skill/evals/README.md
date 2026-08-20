@@ -59,6 +59,57 @@ Each run is `claude -p --safe-mode` in an empty sandbox with every file and sear
 disallowed. Measured cost: **$0.04** for a control run; the skill arms carry a ~16 KB system
 prompt and cost more. `arms/` and `runs/` are gitignored.
 
+## Two suites, and why the grader now makes you choose
+
+Cases **1–7** are positive: they ask for Terragrunt config, and they carry the published
+figure. Cases **8–12** are negative: they ask for plain Terraform, or for advice, and check
+the skill does not scaffold Terragrunt nobody asked for.
+
+Pooling them is not wrong, it just answers a question nobody asked — and the pooled figure
+looks enough like the headline to be quoted in its place. So `grade.py` prints the bank and
+the cases it is reporting on, warns when they are not the published set, and takes a filter:
+
+```bash
+uv run evals/grade.py --cases 1,2,3,4,5,6,7 --final    # the published figure
+```
+
+## The cross-model arm
+
+`runs/` is the Claude bank and the only thing the headline comes from. A second question sits
+beside it: does the effect come from what the skill **says**, or is it a Claude-specific
+quirk? Running the same arms and cases through models from other labs answers that, and it is
+the strongest single sentence the write-up can carry.
+
+It is cheap because the expensive half is already model-agnostic — the graders are regex over
+text and neither knows nor cares which model wrote it. Only the runner is new.
+
+```bash
+source ~/.config/dotfiles/env.sh          # OPENROUTER_API_KEY, absent from non-interactive shells
+SMOKE=1 ./evals/matrix_model.sh google/gemini-3.7-flash    # 6 cells
+./evals/matrix_model.sh google/gemini-3.7-flash            # 63 cells
+uv run evals/grade.py --runs-dir runs-google-gemini-3.7-flash --cases 1,2,3,4,5,6,7
+```
+
+**It is ADDITIVE, never a substitute.** A different model is a different prior, so these runs
+cannot be pooled with the Claude ones and cannot stand in for them. That is enforced rather
+than asked for: `run_model.py` refuses `--out-dir runs`, each bank gets its own hits and
+adjudications file, and hit ids mix in the bank name so two models cannot inherit each other's
+verdicts.
+
+**The trap:** a model too weak to write Terragrunt at all emits no banned forms and scores as
+a clean pass. **The control arm is the detector.** If arm C is also clean, that model is not
+exercising the thing being measured — drop it from the panel rather than reporting it. Same
+rule that turned the negative suite into a null.
+
+**Pick for provenance diversity, not price.** Three cheap models from one lab are weaker
+evidence than one each from three labs.
+
+Spend is capped by OpenRouter on the key itself, so a runaway loop cannot exceed it:
+
+```bash
+curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" https://openrouter.ai/api/v1/key
+```
+
 ## The three arms
 
 | arm | contents | what it isolates |
