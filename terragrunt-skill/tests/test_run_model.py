@@ -96,6 +96,10 @@ def test_a_non_empty_arm_becomes_the_system_message():
 # --------------------------------------------------------------------- bank isolation
 
 def test_the_runner_refuses_to_write_into_the_claude_bank(tmp_path, monkeypatch):
+    """The refusal must fire BEFORE the arm and case files are looked for. arms/ is gitignored,
+    so a version of this test that reached the arm check first passed here and failed in CI,
+    where no arms exist -- and it would have let a real `--out-dir runs` through on any machine
+    that had not built the arms yet."""
     monkeypatch.setenv("OPENROUTER_API_KEY", "not-a-real-key")
     with pytest.raises(SystemExit) as e:
         rm.main(["--model", "x/y", "--arm", "C", "--case", "1", "--rep", "1",

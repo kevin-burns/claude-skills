@@ -143,6 +143,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
     args = p.parse_args(argv)
 
+    # THE DESTINATION IS CHECKED FIRST, before the inputs exist. This is a safety guard, not a
+    # precondition: someone who typos --out-dir runs should be told THAT, whatever else is
+    # missing. It also keeps the guard testable anywhere -- arms/ is gitignored, so a test
+    # that reached the arm check first passed locally and failed in CI, where no arms exist.
+    out_dir = HERE / (args.out_dir or f"runs-{slug(args.model)}")
+    if out_dir.resolve() == (HERE / "runs").resolve():
+        raise SystemExit(
+            "refusing to write into runs/ -- that is the Claude bank, and pooling a "
+            "different model's runs with it would corrupt the published measurement."
+        )
+
     armfile = HERE / "arms" / f"{args.arm}.md"
     casefile = HERE / "cases" / f"{args.case}.txt"
     if not armfile.is_file():
@@ -150,12 +161,6 @@ def main(argv: list[str] | None = None) -> int:
     if not casefile.is_file():
         raise SystemExit(f"no case {args.case}")
 
-    out_dir = HERE / (args.out_dir or f"runs-{slug(args.model)}")
-    if out_dir.resolve() == (HERE / "runs").resolve():
-        raise SystemExit(
-            "refusing to write into runs/ -- that is the Claude bank, and pooling a "
-            "different model's runs with it would corrupt the published measurement."
-        )
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / f"{args.case}-{args.arm}-{args.rep}.json"
 
