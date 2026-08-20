@@ -10,6 +10,7 @@ in another.
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,11 +67,37 @@ def test_terragrunt_leaves_local_eval_state_behind(tmp_path):
     reads. Shipping them once sets the expectation that they stay current."""
     files = build(ROOT, tmp_path / "out", "terragrunt-skill")
     for name in files:
-        assert "/evals/runs/" not in name
+        assert "/evals/runs" not in name        # covers runs/ AND every runs-<model>/ bank
         assert "/evals/arms/" not in name
         assert "/evals/snapshots/" not in name
         assert not name.endswith(".tar.gz")
-        assert not name.endswith("hits.jsonl")
+        assert "/evals/hits" not in name
+
+
+@pytest.mark.parametrize("skill", SKILLS)
+def test_the_mirror_is_a_function_of_the_committed_source_only(tmp_path, skill):
+    """THE GENERAL FORM, and the one that matters. Patching the exclude list file by file is
+    whack-a-mole: `evals/runs-*.tar.gz` was named individually and so missed the cross-model
+    bank runs-google-gemini-3.7-flash/, and nothing named .DS_Store at all. A local build
+    shipped 139 files where CI published 74, and CI was right only by accident -- those paths
+    are gitignored, so the runner never had them.
+
+    Anything the builder copies must therefore be TRACKED. An untracked file means the mirror
+    depends on whose machine built it, which is the one property a build artifact cannot have.
+    Generated files are exempt because they are generated, and are checked elsewhere."""
+    generated = {"README.md", "LICENSE", ".claude-plugin/plugin.json",
+                 ".claude-plugin/marketplace.json", ".codex-plugin/plugin.json",
+                 ".agents/plugins/marketplace.json"}
+    tracked = set(subprocess.run(
+        ["git", "ls-files", skill], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.split())
+    assert tracked, f"git ls-files {skill} returned nothing -- wrong ROOT?"
+
+    untracked = [f for f in build(ROOT, tmp_path / "out", skill)
+                 if f not in generated and f not in tracked]
+    assert not untracked, (
+        "the mirror would ship files that are not committed, so its contents depend on the "
+        "machine that built it:\n  " + "\n  ".join(sorted(untracked)))
 
 
 @pytest.mark.parametrize("skill", SKILLS)

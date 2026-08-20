@@ -101,8 +101,13 @@ MIRRORS: dict[str, Mirror] = {
             "evals/runs",
             "evals/arms",
             "evals/snapshots",
+            # runs-* covers the cross-model banks AND the dated tarballs. Named
+            # individually first, this shipped runs-google-gemini-3.7-flash/ from a local
+            # build -- 139 files against the 63 CI published. CI was right only by
+            # accident: those paths are gitignored, so the runner never had them.
+            "evals/runs-*",
             "evals/hits.jsonl",
-            "evals/runs-*.tar.gz",
+            "evals/hits-*.jsonl",
         ),
     ),
 }
@@ -235,7 +240,10 @@ def build(root: Path, out: Path, skill: str = "ghost-publish") -> list[str]:
     # The skill itself, minus caches that would otherwise ship to users.
     shutil.copytree(
         src, out / m.skill,
-        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", ".venv"),
+        # .DS_Store is macOS Finder state. It reached a local build and would have reached
+        # users from any machine that ran the builder outside CI.
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", ".venv",
+                                      ".DS_Store"),
     )
     # Local working state named by path relative to the skill root, so a future
     # `runs/` elsewhere in a skill is not dropped by accident. Globs are allowed
