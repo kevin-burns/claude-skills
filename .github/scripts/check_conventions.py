@@ -184,6 +184,41 @@ def check_manifest_lists_every_skill(skills):
             fail(rel, f"lists {stale}, which has no SKILL.md — renamed or deleted?")
 
 
+def check_reference_placeholders(skill):
+    """Templated fields that shipped EMPTY, and empty list bullets.
+
+    Found 2026-08-20 in terragrunt-skill/references/error-patterns.md, and only because a
+    number on a banner was checked before publishing it. All 68 entries carried
+    `**Match:** `{}`` -- the field DIAGNOSE was supposed to match a pasted error against, empty
+    in every one, so the router advertised a mode whose data did not exist. Alongside them,
+    192 bare `-` bullets rendered as blank list items.
+
+    Both came in with harvested content, like the four pre-1.0 blocks in claude-skills-c3x.
+    Neither is a broken link or a bad heading, so nothing structural noticed. A reference that
+    ships a placeholder is making a promise the file cannot keep, and the cost lands on whoever
+    greps it expecting an answer."""
+    refs = skill / "references"
+    if not refs.is_dir():
+        return
+    for path in sorted(refs.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        rel = f"{skill.name}/references/{path.name}"
+        # SAME LINE, and a literal {} -- nothing else. The first version allowed an empty
+        # alternative and \s* across newlines, so `**Syntax:**` followed by an opening ```
+        # fence matched as an empty value. It flagged 38 correct blocks in four files before
+        # anything was looked at. A check that cries wolf gets switched off.
+        # No ^ anchor: the real one was mid-line, `**Category:** authentication  |
+        # **Match:** `{}``, and anchoring to the line start missed every instance while
+        # still passing. Same-line is guaranteed by ` +` matching spaces and not newlines.
+        empty_value = len(re.findall(r"\*\*[A-Z][A-Za-z ]*:\*\* +`\{\}`", text))
+        if empty_value:
+            fail(rel, f"{empty_value} templated field(s) ship empty (`{{}}`) — "
+                      "a field that promises a value and holds none")
+        blanks = len(re.findall(r"^-\s*$", text, re.M))
+        if blanks:
+            fail(rel, f"{blanks} empty list bullet(s) — they render as blank items")
+
+
 def main():
     skills = skill_dirs()
     if not skills:
@@ -194,6 +229,7 @@ def main():
         check_readme(skill)
         check_relative_script_paths(skill)
         check_shipped_json(skill)
+        check_reference_placeholders(skill)
 
     check_catalog()
     check_manifest_lists_every_skill(skills)
