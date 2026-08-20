@@ -31,6 +31,7 @@ VALIDATOR_SCRIPT="$SKILL_DIR/scripts/validate.sh"
 DETECTOR_SCRIPT="$SKILL_DIR/scripts/detect_custom_resources.py"
 PREFLIGHT_SCRIPT="$SKILL_DIR/scripts/preflight.py"
 SCAN_SCRIPT="$SKILL_DIR/scripts/scan_pre10.py"
+BANNER_SCRIPT="$SKILL_DIR/scripts/make_banner.py"
 TESTS_DIR="$SKILL_DIR/tests"
 SELF_SCRIPT="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
 
@@ -111,17 +112,17 @@ main() {
     export LANG=C
     export TZ=UTC
 
-    echo "[0/5] declared paths exist"
+    echo "[0/6] declared paths exist"
     assert_paths_exist "$VALIDATOR_SCRIPT" "$DETECTOR_SCRIPT" "$PREFLIGHT_SCRIPT" \
-                       "$SCAN_SCRIPT" "$TESTS_DIR" "$SELF_SCRIPT"
+                       "$SCAN_SCRIPT" "$BANNER_SCRIPT" "$TESTS_DIR" "$SELF_SCRIPT"
 
-    echo "[1/5] bash syntax"
+    echo "[1/6] bash syntax"
     bash -n "$VALIDATOR_SCRIPT" "$SELF_SCRIPT"
 
-    echo "[2/5] python syntax"
-    python3 -m py_compile "$DETECTOR_SCRIPT" "$PREFLIGHT_SCRIPT" "$SCAN_SCRIPT"
+    echo "[2/6] python syntax"
+    python3 -m py_compile "$DETECTOR_SCRIPT" "$PREFLIGHT_SCRIPT" "$SCAN_SCRIPT" "$BANNER_SCRIPT"
 
-    echo "[3/5] unit tests"
+    echo "[3/6] unit tests"
     local uv_bin
     if uv_bin="$(resolve_uv)"; then
         "$uv_bin" run --with pytest pytest "$TESTS_DIR" -q
@@ -137,10 +138,10 @@ main() {
     # The regression guard for claude-skills-c3x and claude-skills-cun. Both were pre-1.0 forms
     # taught as current inside files harvested from a source that predates Terragrunt v1.0.0.
     # Without this step they can come back silently.
-    echo "[4/5] pre-1.0 guard"
+    echo "[4/6] pre-1.0 guard"
     python3 "$SCAN_SCRIPT"
 
-    echo "[5/5] shellcheck"
+    echo "[5/6] shellcheck"
     if [[ "$skip_shellcheck" -eq 1 ]]; then
         echo "ShellCheck: SKIP (--skip-shellcheck)"
     elif command -v shellcheck >/dev/null 2>&1; then
@@ -151,6 +152,19 @@ main() {
         exit 1
     else
         echo "ShellCheck: SKIP (not installed; use --require-shellcheck to enforce)"
+    fi
+
+    # The banner carries a terragrunt version, which is a pin baked into an image -- exactly
+    # the shape this skill was hardened against, and worse than prose because a picture cannot
+    # be grepped. This WARNS rather than fails: a check that breaks the build the day
+    # Terragrunt ships a patch is a check that gets commented out. Skips cleanly with no
+    # terragrunt, because there is then no version to compare against and inventing one is the
+    # failure being guarded.
+    echo "[6/6] banner freshness"
+    if command -v terragrunt >/dev/null 2>&1; then
+        python3 "$BANNER_SCRIPT" --check
+    else
+        echo "Banner: SKIP (terragrunt not installed; nothing to read a version from)"
     fi
 
     echo "PASS: terragrunt-skill CI checks"
