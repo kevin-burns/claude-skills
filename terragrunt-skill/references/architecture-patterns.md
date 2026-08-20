@@ -270,6 +270,8 @@ own name for it.
 
 ## PATTERN: two accounts, many regions (accounts isolate state, one file holds the region list)
 
+![Account and region are not the same axis](../images/two-accounts-many-regions.webp)
+
 Use when the estate spans **more than one account** and **more than one region**, and the
 region list is expected to grow. Account and region are different axes, and the common mistake
 is to treat them as one — putting both in the directory tree, so adding a region means copying
