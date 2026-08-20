@@ -1,14 +1,16 @@
-name: mirror ghost-publish
+name: mirror terragrunt-skill
 
-# `ghost-publish` is published as a standalone repo so Ghost users can find
-# and install it without the other twenty-one skills. That copy is a BUILD
+# `terragrunt-skill` is published as a standalone repo so Terragrunt users can
+# find and install it without the other twenty-odd skills. That copy is a BUILD
 # ARTIFACT, never edited by hand: this repo stays the source of truth and the
 # mirror is regenerated here, so the two cannot drift.
 #
 # One-time setup before this can run:
-#   1. Create the empty target repo (default: kevin-burns/ghost-publish).
-#   2. Add a repo secret MIRROR_TOKEN — a fine-grained PAT scoped to that ONE
-#      repository with Contents: read and write. Nothing else.
+#   1. Create the empty target repo (default: kevin-burns/terragrunt-skill).
+#   2. Add a repo secret MIRROR_TERRAGRUNT_SKILL — a fine-grained PAT scoped to
+#      that ONE repository with Contents: read and write. Nothing else.
+# It is a DIFFERENT secret from the ghost mirror's MIRROR_TOKEN on purpose: one
+# token per target repo, so revoking one does not silently stop the other.
 # Without the secret the job skips rather than failing, so a fork or a
 # contributor's push never trips it.
 
@@ -16,20 +18,20 @@ on:
   push:
     branches: [main]
     paths:
-      - 'ghost-publish/**'
+      - 'terragrunt-skill/**'
       - '.github/scripts/build_skill_mirror.py'
-      - '.github/workflows/mirror-ghost-publish.yml'
+      - '.github/workflows/mirror-terragrunt-skill.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: mirror-ghost-publish
+  group: mirror-terragrunt-skill
   cancel-in-progress: false
 
 env:
-  TARGET_REPO: kevin-burns/ghost-publish
+  TARGET_REPO: kevin-burns/terragrunt-skill
 
 jobs:
   mirror:
@@ -45,31 +47,37 @@ jobs:
       - name: Is the mirror configured?
         id: gate
         env:
-          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TERRAGRUNT_SKILL }}
         run: |
           if [ -z "${MIRROR_TOKEN}" ]; then
-            echo "MIRROR_TOKEN is not set — skipping. This is expected on forks."
+            echo "MIRROR_TERRAGRUNT_SKILL is not set — skipping. This is expected on forks."
             echo "configured=false" >> "$GITHUB_OUTPUT"
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # Build first, and run the skill's own tests against the BUILT tree
-      # rather than the source. A mirror that ships a broken copy is worse
-      # than no mirror, and this is the only place that difference shows up.
+      # Build first, and run the skill's own checks against the BUILT tree
+      # rather than the source. A mirror that ships a broken copy is worse than
+      # no mirror, and this is the only place that difference shows up --
+      # notably the eval-grader tests, which reach into ../evals from tests/ and
+      # so only pass if the harness actually shipped.
       - name: Build the mirror
         if: steps.gate.outputs.configured == 'true'
         # PYTHONDONTWRITEBYTECODE and no:cacheprovider matter here: the build
         # strips caches, but running the suite INSIDE the built tree recreates
-        # them afterwards, and the first real sync shipped five .pyc files to
-        # users because of it. The purge below is the backstop -- any future
-        # step that touches the tree cannot reintroduce them silently.
+        # them afterwards, and the ghost mirror's first real sync shipped five
+        # .pyc files to users because of it. The purge below is the backstop.
         env:
           PYTHONDONTWRITEBYTECODE: '1'
         run: |
-          python3 .github/scripts/build_skill_mirror.py --skill ghost-publish --root . --out /tmp/mirror
+          python3 .github/scripts/build_skill_mirror.py --skill terragrunt-skill \
+            --root . --out /tmp/mirror
           python3 -m pip install --quiet pytest
-          ( cd /tmp/mirror/ghost-publish && python3 -m pytest tests -q -p no:cacheprovider )
+          ( cd /tmp/mirror/terragrunt-skill && python3 -m pytest tests -q -p no:cacheprovider )
+          # The skill's own guard: it bans pre-1.0 Terragrunt forms, so it must
+          # not ship any. Run it on the built tree, where a reference dropped by
+          # the builder would show up as a passing scan over a missing file.
+          ( cd /tmp/mirror/terragrunt-skill && python3 scripts/scan_pre10.py )
           find /tmp/mirror \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} +
           find /tmp/mirror -name '*.pyc' -delete
           echo "tree to publish:"
@@ -78,7 +86,7 @@ jobs:
       - name: Push to ${{ env.TARGET_REPO }}
         if: steps.gate.outputs.configured == 'true'
         env:
-          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TERRAGRUNT_SKILL }}
           SOURCE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -86,8 +94,8 @@ jobs:
             "https://x-access-token:${MIRROR_TOKEN}@github.com/${TARGET_REPO}.git" /tmp/target
 
           # Replace the tracked content wholesale, but never touch .git.
-          # --delete removes files the builder no longer produces, so a
-          # renamed script cannot leave a stale copy behind for users.
+          # --delete removes files the builder no longer produces, so a renamed
+          # reference cannot leave a stale copy behind for users.
           rsync -a --delete --exclude '.git/' /tmp/mirror/ /tmp/target/
 
           cd /tmp/target
@@ -104,9 +112,9 @@ jobs:
 
           # Ordinary commit on top of history. Never force-push: the mirror's
           # history is the record of what users actually installed.
-          git commit -m "sync ghost-publish from claude-skills@${SOURCE_SHA:0:7}
+          git commit -m "sync terragrunt-skill from claude-skills@${SOURCE_SHA:0:7}
 
-          Generated by .github/workflows/mirror-ghost-publish.yml.
+          Generated by .github/workflows/mirror-terragrunt-skill.yml.
           Source: https://github.com/${GITHUB_REPOSITORY}/commit/${SOURCE_SHA}
           Do not edit this repository directly; changes are overwritten."
           # Push to main explicitly. Cloning an EMPTY repo leaves HEAD on an
