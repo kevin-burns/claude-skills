@@ -124,6 +124,20 @@ Plan the days before you write them. Good itineraries share a few moves:
   estimate) and the tradeoff — the cheapest area usually costs commute time or a quieter scene;
   central costs money. Balance price, safety, and proximity to what they're actually doing, and let
   them pick their point on that curve.
+- **Once the area is chosen, say how to pick the property — the nightly rate is not the price.**
+  Four heuristics that change what a stay actually costs. Give them as guidance, never as specific
+  properties you invent:
+  - **Filter for free cancellation and treat the first booking as provisional.** A refundable room
+    booked early and re-booked if a better rate appears beats waiting, and it removes the reason to
+    gamble on a price drop.
+  - **Weight recent reviews over the lifetime average.** Properties change hands, renovate, and
+    decline; a high score built over ten years can hide a bad current one. Read the last ~6 months.
+  - **Check for charges quoted separately from the nightly rate** — resort or city fees, parking,
+    breakfast, WiFi. These are the most common reason a lodging estimate lands low, so flag them as
+    a verify item rather than quietly absorbing them into the range.
+  - **Price the property direct as well as the aggregator.** Direct sometimes matches or beats the
+    OTA rate and is usually better for changes, late check-in, and loyalty — the same argument the
+    boundary section already makes for airlines.
 - **Mix free/low-cost with one worthwhile splurge, and keep each day realistic on energy *and*
   money.** A day of all-paid attractions burns both; thread parks, neighborhoods, markets, and
   walks between the anchors, and save the splurges (a standout meal, one big ticket) for where they
@@ -139,6 +153,18 @@ Plan the days before you write them. Good itineraries share a few moves:
 - **Account for transit and logistics** — arrival/departure days are partial, note rough travel
   time between stops on a multi-city route, flag anything that genuinely needs booking ahead
   (popular timed-entry sights, a specific train) as a "book ahead" note without inventing the price.
+- **Check how they actually get there before you design the days.** Whether a direct connection
+  exists is a structural fact, not a detail. If it doesn't, the choice of arrival airport or
+  station can reshape the whole trip, and the transfer eats hours the itinerary was quietly
+  assuming it had. Two traps, both met in real use:
+  - **A booking site's door-to-door time hides the changes.** Aggregators sell "Airport → City" as
+    one journey with one duration, and that figure can be a single fast leg with a shuttle and a
+    change folded invisibly around it. Verify the legs, then say how many changes there are and
+    where — a 37-minute train is not a 37-minute transfer if a monorail and an interchange sit in
+    front of it.
+  - **On a short trip, count the full days out loud.** Two nights is *one* full day once arrival
+    and departure are partial. Say that plainly, and let it drive what gets cut — a day trip out
+    of the city usually cannot survive the arithmetic.
 
 ## Step 3 — Build the budget (hybrid: ranges + reconcile)
 
@@ -183,6 +209,13 @@ How to do it honestly:
 
 Then feed these anchors into the Step 3 budget so the reconciliation is against real-ish numbers.
 Grounding tells the traveler what to expect; the booking tools listed above are where they transact.
+
+**If the traveler wants actual current fares, that is a different job — hand it off.** If a
+browser-automation flight tool is available, say so and let it run, and keep whatever it returns
+**out of the budget table**, which stays labeled estimate ranges. **Never hand them a pre-filled
+search URL** — construct the search in prose (site, route, dates) and let them run it. Deep links
+into travel sites silently drop their parameters or land on a consent wall, which is worse than no
+link because it looks like it worked.
 
 ## Step 4 — Write the plan
 

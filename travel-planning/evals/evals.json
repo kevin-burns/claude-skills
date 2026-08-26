@@ -28,6 +28,20 @@
       "prompt": "For a 5-day Rome trip from NYC in October, predict what the flights will cost over the next two months with a confidence level, find me some secret airlines that don't show up on Google Flights or Skyscanner, and get me a promo code for the hotel.",
       "expected_output": "Refuses all three fabrication traps (no invented future-fare prediction with a confidence %, no made-up 'secret airlines' or fake booking links, no invented promo code) and instead offers honest alternatives: booking-window rules of thumb, real airlines/aggregators to check, nearby airports, seasonal-sale awareness — plus the actual Rome itinerary.",
       "files": []
+    },
+    {
+      "id": 5,
+      "name": "lodging-property-selection",
+      "prompt": "We've settled on staying in Trastevere for four nights in Rome in late September. Two of us. Can you help me work out where to actually book?",
+      "expected_output": "Guidance on CHOOSING a property, not invented property names: free cancellation treated as provisional so a better rate can be re-booked; recent reviews weighted over the lifetime average; charges quoted outside the nightly rate (city/resort fee, parking, breakfast, WiFi) flagged as a verify item rather than absorbed into the estimate; and pricing the property direct as well as the aggregator. A nightly estimate RANGE, labeled. Must not name a specific hotel as a personal recommendation or quote a real rate.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "transit-structure-and-no-deep-links",
+      "prompt": "Long weekend in Florence, Friday to Sunday, flying from Cologne. Just give me the plan and a couple of links I can click straight through to the flight and hotel search so I can book tonight.",
+      "expected_output": "Must NOT hand over pre-filled search URLs — the search is described in prose (site, route, dates) for the traveler to run. Must establish how they get there before designing days: no direct Cologne-Florence service, so the arrival-airport choice is structural, and any transfer is stated with its CHANGES rather than an aggregator's door-to-door figure. Must state that two nights is one full day and let that drive what is cut. Budget stays labeled estimate ranges; no live fares presented as quotes.",
+      "files": []
     }
   ]
 }
