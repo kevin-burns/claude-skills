@@ -1,13 +1,13 @@
 # job-feeds
 
-Aggregate eight sanctioned public job feeds into one deduplicated local database, match
+Aggregate nine sanctioned public job feeds into one deduplicated local database, match
 them against your career lanes, and get a filterable HTML report you can open offline.
 
 Part of [claude-skills](../README.md).
 
 ## What it does
 
-Polls eight documented JSON APIs and RSS feeds — [Arbeitnow](https://www.arbeitnow.com),
+Polls nine documented JSON APIs and RSS feeds from eight publishers — [Arbeitnow](https://www.arbeitnow.com),
 [Jobicy](https://jobicy.com), [Remotive](https://remotive.com),
 [Remote OK](https://remoteok.com), [Working Nomads](https://www.workingnomads.com),
 [4 Day Week](https://4dayweek.io), [We Work Remotely](https://weworkremotely.com) and
@@ -28,7 +28,7 @@ signal.
 Coverage is uneven by design — these are not interchangeable. Verified 2026-08-05.
 
 **This table is about choosing.** The one in [`SKILL.md`](./SKILL.md) covers the same eight
-sources operationally — exact rate limits, pagination depth, payload quirks — and is worth
+publishers operationally — exact rate limits, pagination depth, payload quirks — and is worth
 reading only when something looks wrong. You do not need both to get started.
 
 | Source | Good for | Worth knowing |
@@ -39,7 +39,7 @@ reading only when something looks wrong. You do not need both to get started.
 | [Remote OK](https://remoteok.com) | Volume — 100 rows/fetch | Requires a dofollow backlink; the report carries it. Some listings are low quality |
 | [Working Nomads](https://www.workingnomads.com) | Remote, curated | Undocumented endpoint — could vanish without notice |
 | [4 Day Week](https://4dayweek.io) | Reduced-hours roles | Small but distinctive inventory |
-| [We Work Remotely](https://weworkremotely.com) | Remote engineering | Per-category RSS |
+| [We Work Remotely](https://weworkremotely.com) | Remote engineering | Per-category RSS — **two feeds are polled**, programming and DevOps/Sysadmin, because there is no usable combined feed |
 | [Python.org](https://www.python.org/jobs/) | Python roles, high signal | Tiny volume, and publishes **no dates at all** — those rows show `—` |
 
 [`SKILL.md`](./SKILL.md) carries the rest: exact endpoints, pagination behaviour, rate-limit
@@ -114,7 +114,7 @@ signal. Coverage is uneven by design; the sources are not interchangeable.
 **Dominating our results is not the same as covering the market.** Every source here is a
 free job board, most run by small teams or one person, each carrying whatever employers
 chose to post there. A role can be live on a national employment service and absent from
-all eight — observed 2026-08-06, when forward-deployed engineer roles posted to the
+all of them — observed 2026-08-06, when forward-deployed engineer roles posted to the
 Bundesagentur für Arbeit within the previous week did not appear in Arbeitnow. So read a
 quiet week as "quiet on these boards", never as "quiet in the market". Run
 `jfeeds locations` to see the split on your own fetch rather than taking that on trust —
@@ -161,7 +161,7 @@ rows are, so a wrong-country result announces itself instead of looking like a q
   directly alongside this tool — it is not a substitute for one.
 
 - **It leans toward remote and contract work, and that is structural.** Five of the eight
-  sources are remote-only job boards — not a bias we inferred, but what they are. On a real
+  publishers are remote-only job boards — not a bias we inferred, but what they are. On a real
   1,279-row corpus, rows that state an employment type ran roughly **3:1 contract or
   freelance over permanent**; treat that as directional only, since **78% of rows state
   neither** and most permanent roles never use the word. The practical consequence is that a
