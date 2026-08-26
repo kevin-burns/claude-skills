@@ -182,7 +182,7 @@ class TestCliContract(ConfigCase):
                                     "--db", str(self.tmp / "j.db"))
         self.assertEqual(code, 0)
         self.assertIn("2 lane", out)
-        self.assertIn("7 enabled", out, "jobicy is disabled in GOOD_CONFIG")
+        self.assertIn("8 enabled", out, "jobicy is disabled in GOOD_CONFIG")
 
     def test_digest_on_an_empty_store_says_so_on_stderr_not_stdout(self):
         """A bare newline on stdout is indistinguishable from a bug."""

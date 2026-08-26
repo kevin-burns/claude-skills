@@ -6,16 +6,16 @@ description: >
   report. Use whenever the user wants to search or monitor job boards - "find me remote
   platform engineering roles", "what jobs came up this week", "check the job boards",
   "aggregate job listings", "what's new since I last looked" - or wants a report of
-  current openings across multiple sites. Covers eight documented JSON APIs and RSS
-  feeds (Arbeitnow, Jobicy, Remotive, Remote OK, Working Nomads, 4 Day Week, We Work
-  Remotely, Python.org Jobs), weighted towards the German and EU-remote market. NOT for
+  current openings across multiple sites. Covers nine documented JSON APIs and RSS
+  feeds from eight publishers (Arbeitnow, Jobicy, Remotive, Remote OK, Working
+  Nomads, 4 Day Week, We Work Remotely, Python.org Jobs), weighted towards the German and EU-remote market. NOT for
   LinkedIn - that needs a signed-in session and is a separate tool. This skill never
   scrapes HTML, never works around a block, and never republishes what it collects.
 ---
 
 # job-feeds
 
-Eight job boards, one deduplicated database, one report. Every source is a **documented
+Eight job boards across nine feeds, one deduplicated database, one report. Every source is a **documented
 JSON API or RSS feed the publisher offers** — this is not a scraper.
 
 ## Provenance
@@ -70,7 +70,7 @@ Instead, ask them three questions and write the file yourself:
 2. **Where?** Ask, but **be honest about the answer: there is no location filter.**
    There is no geography control at all. `--remote` is not one, and is worth
    understanding before you reach for it: it is **effectively a source selector, not a row
-   filter.** Five of the eight feeds are remote-only boards whose normaliser sets the flag
+   filter.** Five of the eight publishers are remote-only boards whose normaliser sets the flag
    to a constant `1`, while Arbeitnow — 78% of the corpus — sets it on 6.8% of rows. So
    `--remote` roughly means "drop Arbeitnow and 4 Day Week", not "show me remote jobs".
    Measured on 1,323 rows: of the rows whose location plainly says remote, **52% carry
@@ -262,7 +262,7 @@ source that is *not* German-weighted. Their words: they could only have discover
 German weighting by doing the full fetch the docs told them not to do.
 
 So after the smoke test, tell them what they have just seen and what they have not:
-`jfeeds sources` now lists all eight with `never polled` against the seven that were
+`jfeeds sources` now lists all nine with `never polled` against the eight that were
 skipped, which is the honest picture. Only after a full `jfeeds fetch` does
 `jfeeds locations` describe the corpus they will actually be working with — that is the
 run the geography advice in *First run* refers to, and it comes second, not instead.
@@ -407,7 +407,7 @@ orientation.
 | Remote OK | First array element is a ToS object, not a job. Requires the backlink. |
 | Working Nomads | Undocumented endpoint — treat as liable to vanish without notice. |
 | 4 Day Week | `robots.txt` disallows `/api/` broadly but explicitly allows v1, v2 and mcp. |
-| We Work Remotely | Per-category RSS. Titles are `"Company: Role"`. |
+| We Work Remotely | Per-category RSS, and there is no usable combined feed — the site-wide `remote-jobs.rss` caps at ~10 per category and would **lose** programming depth. **Two feeds polled**: `wwr` (programming) and `wwr_devops` (DevOps/Sysadmin). Titles are `"Company: Role"`. |
 | Python.org | Tiny volume, high signal. **Carries no dates at all** — those rows are always undated. |
 
 **`--window 14` cannot get 14 days from Arbeitnow**, which only holds about 7. Per-source

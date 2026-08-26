@@ -13,10 +13,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from sources import SOURCES, clean_text, strip_contacts, validate_schema  # noqa: E402
+from sources import RSS_SOURCES, SOURCES, clean_text, strip_contacts, validate_schema  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
-RSS_SOURCES = ("wwr", "pythonorg")
 
 
 def load(name):
@@ -28,12 +27,12 @@ def load(name):
 
 
 class TestEveryNormaliser(unittest.TestCase):
-    """One assertion set applied to all eight. A normaliser returning a dict
+    """One assertion set applied to every source. A normaliser returning a dict
     of Nones is the failure mode that matters: it reads as "no new jobs"
     rather than as an error."""
 
-    def test_all_eight_sources_have_a_fixture(self):
-        self.assertEqual(len(SOURCES), 8)
+    def test_every_source_has_a_fixture(self):
+        self.assertEqual(len(SOURCES), 9)
         for name in SOURCES:
             with self.subTest(source=name):
                 self.assertTrue((FIXTURES / (name + (".xml" if name in RSS_SOURCES

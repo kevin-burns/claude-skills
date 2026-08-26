@@ -467,7 +467,7 @@ def build_user_agent(contact=None):
         return DEFAULT_USER_AGENT
     return f"{DEFAULT_USER_AGENT[:-1]}; +{cleaned})"
 
-RSS_SOURCES = ("wwr", "pythonorg")
+from sources import RSS_SOURCES  # noqa: E402  -- one definition, in sources.py
 
 # Applied when a 429/503 arrives without a parseable Retry-After.
 DEFAULT_BACKOFF_SECONDS = 3600

@@ -2,8 +2,14 @@
 
 This is the only module that knows a given upstream exists. Everything
 downstream consumes the common job dict produced here, so adding a feed
-means adding one entry to SOURCES and one normalise function -- nothing
-else in the codebase changes.
+means adding one entry to SOURCES, one normalise function, and -- if the
+payload is XML rather than JSON -- the source's name in RSS_SOURCES below.
+Nothing outside this file changes.
+
+That last clause was false until 2026-08-26: RSS_SOURCES was defined
+separately in job_feeds.py and again in the tests, so a new XML source
+registered here was parsed as JSON and failed at fetch time. One
+definition now, imported by both.
 
 Standard library only.
 """
@@ -144,6 +150,14 @@ from collections import namedtuple  # noqa: E402
 
 Source = namedtuple(
     "Source", "name url required rows normalise rate_limit_seconds paginates")
+
+# Which sources are XML rather than JSON. THIS IS THE ONLY DEFINITION.
+# It lived in job_feeds.py and again in the tests, so adding wwr_devops to
+# SOURCES alone produced a JSONDecodeError at fetch time on 2026-08-26 --
+# the registry said the source existed and a second, invisible registry
+# decided how to parse it. Cannot be derived from the URL: python.org ends
+# in '/rss/', not '.rss'.
+RSS_SOURCES = ("wwr", "wwr_devops", "pythonorg")
 
 # GDPR: ads routinely carry a named recruiter's direct email or phone.
 # Stripping at ingest rather than at display keeps the operator from
@@ -361,6 +375,24 @@ SOURCES = {
         _rows_key("data"), n_4dayweek, None, False),
     "wwr": Source(
         "wwr", "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+        set(), _rows_rss, n_wwr, None, False),
+    # WWR publishes one RSS feed PER CATEGORY and no usable combined feed, so
+    # a single entry silently covers a single category. Measured 2026-08-26:
+    # the programming feed alone was returning 25 items and the DevOps and
+    # Sysadmin category -- the one that matters most for a platform lane --
+    # was not being fetched at all.
+    #
+    # The site-wide https://weworkremotely.com/remote-jobs.rss exists and
+    # returns 200, but it is NOT the fix: it caps at ~10 items per category
+    # across 9 categories, so adopting it would have DROPPED programming
+    # coverage from 25 to ~20 while adding 60 rows of sales, design and
+    # customer support. Two narrow feeds beat one broad one here.
+    #
+    # Same publisher, same normaliser, same attribution -- this is a second
+    # feed from WWR, not a ninth publisher.
+    "wwr_devops": Source(
+        "wwr_devops",
+        "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
         set(), _rows_rss, n_wwr, None, False),
     "pythonorg": Source(
         "pythonorg", "https://www.python.org/jobs/feed/rss/",
