@@ -44,6 +44,7 @@
     "./terraform-registry",
     "./terragrunt-skill",
     "./travel-planning",
+    "./trilium-capture",
     "./use-linearis",
     "./ux-audit"
   ]
