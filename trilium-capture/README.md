@@ -56,13 +56,85 @@ it supplies the judgment the tools have no opinion about:
   unless it refuses this explicitly.
 - **It does not invent a label.** If something needs a tag outside the vocabulary, it asks.
 
+## Setting it up
+
+Nothing to install — the MCP server ships **inside** Trilium. There are three steps and one
+trap, and the trap is where the time goes.
+
+**1. Mint an ETAPI token.** In Trilium: **Options → ETAPI → Create new token**. Copy it once;
+you cannot read it back. Put it in whatever file holds your other secrets, never in a config
+file that gets committed:
+
+```sh
+export TRILIUM_ETAPI_KEY='...'      # in ~/.config/dotfiles/env.sh, or your equivalent
+```
+
+**2. Point your agent at `/mcp`.** For Claude Code, at **user** scope — project scope would
+put your private host in a repo:
+
+```sh
+claude mcp add --transport http trilium http://YOUR-HOST:8080/mcp -s user \
+  -H 'Authorization: Bearer ${TRILIUM_ETAPI_KEY}'
+```
+
+The `${VAR}` is expanded at connect time, so the token stays out of `~/.claude.json`. Plain
+`http` to a host on your own network is fine — the client does not require TLS.
+
+**3. Make sure the variable is actually in the agent's environment.** This is the trap.
+
+`${TRILIUM_ETAPI_KEY}` expands from the **process** environment of the agent, fixed when it
+launched. A secrets file that nothing sources is invisible to it, and so is one sourced from
+`~/.zshrc` — that file is read only by *interactive* shells, which a child process is not. The
+symptom is a 401 that looks like a bad token:
+
+```
+Failed to connect — Server rejected the configured Authorization header (HTTP 401)
+{"error":"MCP requires an ETAPI token. Create one in Options > ETAPI ..."}
+```
+
+Restarting the agent does not help, and neither does reconnecting: the config is re-read, the
+environment is not. Source the file from **`~/.zshenv`**, which every zsh reads including new
+tmux panes, then start the agent fresh:
+
+```sh
+# ~/.zshenv
+[ -f ~/.config/dotfiles/env.sh ] && source ~/.config/dotfiles/env.sh
+```
+
+Anything in `~/.zshenv` must be **silent** — output there breaks `scp` and `rsync`. Check with
+`zsh -c 'source ~/.config/dotfiles/env.sh' | wc -c`, which must print `0`.
+
+### Verifying it, without guessing
+
+Prove the endpoint and the token independently of the client:
+
+```sh
+curl -s -H "Authorization: Bearer $TRILIUM_ETAPI_KEY" http://YOUR-HOST:8080/etapi/app-info
+# -> {"appVersion":"0.105.0", ...}
+
+curl -s -X POST http://YOUR-HOST:8080/mcp \
+  -H "Authorization: Bearer $TRILIUM_ETAPI_KEY" \
+  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}'
+# -> serverInfo {"name":"trilium-notes","version":"0.105.0"}
+```
+
+If those work and the client still 401s, **the problem is the environment, not the token** —
+the header is going out with the placeholder as literal text. `evals/smoke_live.py` in this
+directory exercises the whole convention set the same way, creating a throwaway subtree and
+deleting it.
+
+**Requires Trilium v0.93.0+** for the `Bearer` header form. Verified against **0.105.0**.
+
 ## Requirements
 
 A reachable Trilium instance with its **built-in** MCP server — v0.93.0 or later, mounted at
-`/mcp`, authenticated with an ETAPI token as `Authorization: Bearer <token>`. Nothing to
-install: the server ships inside Trilium and shares its tool definitions with Trilium's own LLM
-chat. Do not add a third-party Trilium MCP server; there are more than twenty on GitHub and the
-two with any traction carry no licence.
+`/mcp`. See [Setting it up](#setting-it-up) above for the token, the client config and the
+environment trap that produces a misleading 401.
+
+Nothing to install: the server ships inside Trilium and shares its tool definitions with
+Trilium's own LLM chat. **Do not add a third-party Trilium MCP server** — there are more than
+twenty on GitHub, and the two with any traction carry no licence at all.
 
 If the MCP tools are not connected, the skill says so and returns the content in the reply
 rather than dropping it.
