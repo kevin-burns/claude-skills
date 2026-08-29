@@ -228,6 +228,32 @@ invocations when the computer is asleep, launchd will start the job the next tim
 computer wakes up."* On a laptop that is the difference between a daily report and a report
 on the days you happened to be awake at half seven.
 
+#### The sweep script is macOS-specific; the tool is not
+
+`job_feeds.py` is pure standard library and runs anywhere. The **sweep wrapper** is not
+portable, and it is worth knowing exactly which parts:
+
+| | macOS | Linux / WSL | Windows (native) |
+|---|---|---|---|
+| schedule | `launchd` + the bundled `.plist` | `systemd` timer with `Persistent=true` | Task Scheduler |
+| catch up after sleep | launchd, by design | `Persistent=true` runs a missed trigger on wake | *"Run task as soon as possible after a scheduled start is missed"* |
+| stay awake | `caffeinate -i -m` | `systemd-inhibit --what=idle:sleep` | *"Wake the computer to run this task"* |
+| notify | `osascript` | `notify-send` | — |
+| power source | `pmset -g batt` | `/sys/class/power_supply/` | — |
+
+The script degrades rather than breaks: `caffeinate` and `osascript` are both behind
+`command -v` guards, so on Linux it simply runs unwrapped and silent. `pmset` now reports
+`pwr?` when absent instead of guessing `batt` — a wrong power source in the log is worse
+than an admitted gap, because that field exists to diagnose power-related failures.
+
+**Native Windows needs a rewrite, not a tweak** — it is a bash script. Use WSL, where it
+behaves exactly like Linux. Note that `~/.config/job-feeds/` then means your WSL home, not
+`C:\Users\...`.
+
+The `Persistent=true` point is the same argument as launchd-over-cron, and for the same
+reason: on a laptop, a scheduler that skips missed runs gives you a report on the days you
+happened to be awake at half seven.
+
 Daily polling does **not** save API calls — no feed here accepts a `since` or `after`
 parameter, so every run re-downloads the whole rolling window and duplicates are collapsed
 locally. What it buys you is a history the feeds do not keep: `fetch` reports how many rows

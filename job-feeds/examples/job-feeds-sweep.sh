@@ -20,12 +20,69 @@
 
 set -uo pipefail
 
+# --- hold the machine awake for the duration ------------------------------
+# Diagnosed 2026-08-27. The 07:30 run fires during a macOS DarkWake -- a brief
+# maintenance wake on battery -- and powerd caps that window:
+#
+#   07:29:34  DarkWake from Deep Idle ... Using BATT
+#   07:29:36  Entering Sleep state due to 'Sleep Service Back to Sleep'
+#   07:46:25  DarkWake ... SleepService: window begins with cap time=180 secs
+#
+# THREE MINUTES, then the machine sleeps whether the sweep has finished or not.
+# That single fact explains the whole log: evening runs fire at 17:30 exactly and
+# never degrade because the machine is awake and in use; morning runs always fire
+# LATE (07:30, :35, :37, :39, :43, :46 -- waiting for a DarkWake) and degraded on
+# 2 of 6 mornings. On 2026-08-27 job-feeds AND li-digest failed in the SAME run,
+# which is the tell: one cause, not two bugs.
+#
+# `caffeinate -i` holds a PreventUserIdleSystemSleep assertion for as long as the
+# wrapped process runs. `-m` keeps the disk awake too. NOT `-s`: its own man page
+# says it is valid only on AC power, and this machine is on battery.
+#
+# VERIFIED 2026-08-29, which is what the elapsed time was added to answer. Two
+# battery mornings since this landed, both fine, both far past the 180s cap:
+#
+#   08-28 07:43  jf:ok 1439 rows  [1639s batt caff:yes]
+#   08-29 07:33  jf:ok 1445 rows  [5165s batt caff:yes]
+#
+# Against the two before it: 08-25 07:35 degraded at 279 rows and 08-27 07:46 at
+# 291, roughly a fifth of a full sweep -- the shape of being cut off mid-run.
+# So the assertion does override the SleepService cap.
+#
+# Still true and worth knowing: the same run takes ~143s on AC and took 5165s on
+# battery, a ~35x slowdown from DarkWake CPU throttling. It completes; it is not
+# fast. If that ever matters, the fix is a machine that is awake, not a flag.
+if [ -z "${JOB_SWEEP_CAFFEINATED:-}" ] && command -v caffeinate >/dev/null 2>&1; then
+    export JOB_SWEEP_CAFFEINATED=1
+    exec caffeinate -i -m "$0" "$@"
+fi
+
 JF="$HOME/.claude/skills/job-feeds/scripts/job_feeds.py"
 OUTDIR="${JOB_SWEEP_OUTDIR:-$HOME/job-search}"
 LOG="$OUTDIR/sweep.log"
 STAMP="$(date '+%Y-%m-%d %H:%M')"
+START_EPOCH="$(date +%s)"
+
+# Was this run wrapped, and was the machine on battery? Both belong in the log
+# line: without them a degraded run is indistinguishable from a slow one.
+CAFF="caff:$([ -n "${JOB_SWEEP_CAFFEINATED:-}" ] && echo yes || echo NO)"
+# pmset is macOS-only. Without it we do NOT know the power source, and guessing
+# "batt" would put a false fact in the log -- which is the one thing this field
+# exists to prevent. Report it as unknown and let the reader see the gap.
+if command -v pmset >/dev/null 2>&1; then
+    PWR="$(pmset -g batt 2>/dev/null | grep -qi "AC Power" && echo ac || echo batt)"
+else
+    PWR="pwr?"
+fi
 
 mkdir -p "$OUTDIR"
+
+# Keep ONE previous copy of each diagnostic. These were overwritten every run, so
+# by the time a failure was noticed its evidence was already gone -- which is why
+# the 2026-08-27 failure had to be reconstructed from `pmset -g log`.
+for f in .li.log .jf.err .li.json; do
+    [ -f "$OUTDIR/$f" ] && cp "$OUTDIR/$f" "$OUTDIR/$f.prev" 2>/dev/null
+done
 
 notify() {  # notify <title> <message>
     # osascript is present on every Mac; no dependency to install. Failure to
@@ -66,17 +123,58 @@ fi
 # --- li-assist: only if installed AND the session is fresh ----------------
 li_line="not-installed"
 li_warn=""
+# Auth problems travel separately from li_warn so they can be notified on
+# their own. See the notification block at the foot of this file for why.
+auth_warn=""
+# How many days before the re-auth policy bites to start warning. The point
+# is to warn while the session STILL WORKS -- a warning that arrives with the
+# skip is a post-mortem, not an early warning.
+AUTH_WARN_LEAD_DAYS="${AUTH_WARN_LEAD_DAYS:-3}"
 if command -v li-assist >/dev/null 2>&1; then
     auth="$(li-assist auth status --json 2>/dev/null)"
     stale="$(printf '%s' "$auth" | sed -n 's/.*"stale"[[:space:]]*:[[:space:]]*\([a-z]*\).*/\1/p')"
     logged="$(printf '%s' "$auth" | sed -n 's/.*"logged_in"[[:space:]]*:[[:space:]]*\([a-z]*\).*/\1/p')"
     if [ "$logged" != "true" ]; then
         li_line="SKIP not-logged-in"
-        li_warn="LinkedIn: not logged in — run 'li-assist auth login'"
+        auth_warn="LinkedIn: not logged in — run 'li-assist auth login'"
     elif [ "$stale" = "true" ]; then
         li_line="SKIP stale-auth"
-        li_warn="LinkedIn: session stale — run 'li-assist auth login'"
+        auth_warn="LinkedIn: session stale — run 'li-assist auth login'"
     else
+        # Early warning: the session is still good, but not for long. Compute
+        # the remaining days and, inside the lead window, mark BOTH the log
+        # line and the notification. Unparseable values yield an empty
+        # days_left and simply skip the warning -- a missing warning must
+        # never cost you the sweep itself.
+        # Derived from captured_at, NOT age_days. li-assist marshals age_days
+        # as `float64` with `omitempty` (cmd/li-assist/auth.go), so the field
+        # DISAPPEARS from the payload whenever it rounds to 0 -- i.e. on any
+        # session under ~1.2h old. Reading it means a fresh session reports
+        # nothing rather than "14 days left", and the arithmetic silently
+        # yields no warning at all. captured_at is unconditional; age_days
+        # survives only as a fallback for a payload that lacks captured_at.
+        days_left="$(printf '%s' "$auth" | python3 -c "
+import json, sys, datetime
+try:
+    d = json.load(sys.stdin)
+    reauth = float(d['reauth_days'])
+    cap = d.get('captured_at')
+    if cap:
+        t = datetime.datetime.fromisoformat(cap.replace('Z', '+00:00'))
+        age = (datetime.datetime.now(datetime.timezone.utc) - t).total_seconds() / 86400.0
+    else:
+        age = float(d['age_days'])
+    print('%.1f' % (reauth - age))
+except Exception:
+    pass
+" 2>/dev/null)"
+        auth_expiring=""
+        if [ -n "$days_left" ] && awk -v d="$days_left" -v lead="$AUTH_WARN_LEAD_DAYS" \
+             'BEGIN { exit !(d <= lead) }'; then
+            auth_expiring="$days_left"
+            auth_warn="LinkedIn: session expires in ${days_left}d — run 'li-assist auth login' now, before it goes stale"
+        fi
+
         # Deliberately NOT --enrich: enrichment is the expensive half (a
         # detail fetch plus a model call per job) and belongs in an
         # interactive session where you can see what it costs.
@@ -203,14 +301,35 @@ else:
                 warn "li-report is not on PATH — the LinkedIn report is not being written"
             fi
         fi
+
+        # Appended last so it survives whatever li_line ended up as above.
+        # Upper-case on purpose: this is the one line in the log that means
+        # "act now" rather than "here is what happened".
+        [ -n "$auth_expiring" ] && li_line="$li_line — AUTH EXPIRES IN ${auth_expiring}d"
     fi
 fi
 
-printf '%s  jf:%s %s  li:%s\n' "$STAMP" "$jf_status" "${jf_line:-—}" "$li_line" >> "$LOG"
+# Elapsed, power source and caffeinate state are on every line now. A run that
+# degrades at ~180s on battery is the DarkWake cap; one that degrades at 20s is a
+# different bug, and the old log line could not tell them apart.
+ELAPSED="$(( $(date +%s) - START_EPOCH ))"
+printf '%s  jf:%s %s  li:%s  [%ss %s %s]\n' \
+    "$STAMP" "$jf_status" "${jf_line:-—}" "$li_line" "$ELAPSED" "$PWR" "$CAFF" >> "$LOG"
+
+# Auth trouble still appears in the combined message and the log, so nothing
+# that read li_warn before loses information.
+[ -n "$auth_warn" ] && li_warn="${li_warn:+$li_warn; }$auth_warn"
 
 msg="job-feeds: ${jf_line:-$jf_status}"
 [ -n "$li_warn" ] && msg="$msg"$'\n'"⚠ $li_warn"
 notify "Daily job sweep" "$msg"
+
+# ...and then AGAIN, on its own. On 2026-08-19 the stale-session warning was
+# already in the combined message above and was still missed: under a routine
+# "Daily job sweep" title it reads as part of the normal daily noise, and the
+# sweep went two runs without covering LinkedIn. Auth is the only failure here
+# that needs a human action rather than a glance, so it gets its own title.
+[ -n "$auth_warn" ] && notify "⚠ LinkedIn auth" "$auth_warn"
 
 [ "$jf_status" = "ok" ] || exit 1
 exit 0
