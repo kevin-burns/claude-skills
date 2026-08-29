@@ -193,15 +193,41 @@ jobs:
             echo "::endgroup::"
           }
 
+          # Runs from inside the suite's parent, as run_suite arranges. A function
+          # rather than an inline `bash -c` string: the subshell inherits it, and
+          # nothing has to survive two levels of quoting to get here intact.
+          # shellcheck disable=SC2329  # invoked indirectly, as run_suite's "$@"
+          run_shell_tests() {
+            local rc=0 t
+            for t in tests/*.sh; do
+              bash "$t" || rc=1
+            done
+            return "$rc"
+          }
+
           for suite in */scripts/tests; do
             [ -d "$suite" ] || continue
             run_suite "${suite%/tests}" python3 -m unittest discover -s tests
           done
 
+          # A suite is Python or shell, decided by what is IN it rather than by
+          # where it sits. Shell suites exist (job-feeds/examples/tests drives the
+          # sweep wrapper end to end, which pytest cannot do), and pointing pytest
+          # at one produces "no tests ran" -- reported as a failure, with nothing
+          # naming the real cause. Dispatching on contents keeps the discovery
+          # property this job is built on: add a suite, it runs, in either language.
           for suite in */tests */*/tests; do
             [ -d "$suite" ] || continue
             case "$suite" in */scripts/tests|*/.venv/*|*/site-packages/*) continue ;; esac
-            run_suite "${suite%/tests}" python3 -m pytest tests -q
+            if compgen -G "$suite/test_*.py" > /dev/null || compgen -G "$suite/*_test.py" > /dev/null; then
+              run_suite "${suite%/tests}" python3 -m pytest tests -q
+            elif compgen -G "$suite/*.sh" > /dev/null; then
+              run_suite "${suite%/tests}" run_shell_tests
+            else
+              # Silence here would be the same gap in a new costume.
+              echo "::error title=${suite}::tests/ holds nothing this runner recognises"
+              status=1
+            fi
           done
 
           if [ "$found" -eq 0 ]; then
