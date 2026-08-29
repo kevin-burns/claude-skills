@@ -52,3 +52,7 @@ docs/superpowers/
 
 # beads gate lock, local only
 .beads.gate.lock
+
+# Prismor agent-registry state: a machine-local last_seen timestamp, regenerated
+# on every run. Nothing reads it across machines.
+.prismor/
