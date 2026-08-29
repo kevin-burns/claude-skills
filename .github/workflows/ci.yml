@@ -193,18 +193,6 @@ jobs:
             echo "::endgroup::"
           }
 
-          # Runs from inside the suite's parent, as run_suite arranges. A function
-          # rather than an inline `bash -c` string: the subshell inherits it, and
-          # nothing has to survive two levels of quoting to get here intact.
-          # shellcheck disable=SC2329  # invoked indirectly, as run_suite's "$@"
-          run_shell_tests() {
-            local rc=0 t
-            for t in tests/*.sh; do
-              bash "$t" || rc=1
-            done
-            return "$rc"
-          }
-
           for suite in */scripts/tests; do
             [ -d "$suite" ] || continue
             run_suite "${suite%/tests}" python3 -m unittest discover -s tests
@@ -222,7 +210,15 @@ jobs:
             if compgen -G "$suite/test_*.py" > /dev/null || compgen -G "$suite/*_test.py" > /dev/null; then
               run_suite "${suite%/tests}" python3 -m pytest tests -q
             elif compgen -G "$suite/*.sh" > /dev/null; then
-              run_suite "${suite%/tests}" run_shell_tests
+              # One run_suite call per file, so each shell test gets its own
+              # collapsible group and its own pass/fail line. Done here rather
+              # than in a helper because a function reached only through "$@" is
+              # invisible to shellcheck, which then reports the whole body as
+              # unreachable -- two waivers to silence a warning that a plain
+              # loop never provokes.
+              for t in "$suite"/*.sh; do
+                run_suite "${suite%/tests}" bash "tests/${t##*/}"
+              done
             else
               # Silence here would be the same gap in a new costume.
               echo "::error title=${suite}::tests/ holds nothing this runner recognises"
