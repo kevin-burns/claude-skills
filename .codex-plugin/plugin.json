@@ -28,6 +28,7 @@
     "./clear-and-human",
     "./convert-to-webp",
     "./cv-and-human",
+    "./cv-cover-letter",
     "./cv-evidence-base",
     "./dev-fleet",
     "./excalidraw-diagram",
