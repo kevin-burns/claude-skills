@@ -256,9 +256,15 @@ else:
 
             case "$rc" in
                 0) li_line="$fresh fresh / $rows in window" ;;
-                1) li_line="$fresh fresh / $rows in window — ARCHETYPE(S) FAILED"
-                   detail="$(sed -n 's/^li-digest: \([0-9]* archetype(s) failed.*\)/\1/p' \
+                1) detail="$(sed -n 's/^li-digest: \([0-9]* archetype(s) failed.*\)/\1/p' \
                              "$OUTDIR/.li.log" | tail -1)"
+                   # NAME the lanes in the log, not just the fact. On 2026-09-01 the
+                   # failing archetype was `em` -- engineering management, the primary
+                   # target lane -- and sweep.log said only "ARCHETYPE(S) FAILED", so
+                   # nothing distinguished losing the most valuable lane from losing
+                   # the least. The names are already in .li.log; carry them across.
+                   names="$(printf '%s' "$detail" | sed -n 's/.*failed: *//p')"
+                   li_line="$fresh fresh / $rows in window — ARCHETYPE(S) FAILED${names:+: $names}"
                    warn "LinkedIn: ${detail:-an archetype failed — see $OUTDIR/.li.log}" ;;
                 *) li_line="failed (exit $rc)"
                    li_hard_failed=1
