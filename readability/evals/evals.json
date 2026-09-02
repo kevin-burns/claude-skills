@@ -1,0 +1,68 @@
+{
+  "skill_name": "readability",
+  "notes": "The failure this skill exists to prevent is a confident number in place of a location. Most evals therefore test what the output does NOT contain as hard as what it does. The 'user asks for Flesch' case is the important one: the skill must still trigger, still help, and still refuse the number.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "asks-for-a-flesch-score-directly",
+      "prompt": "Can you give me a Flesch reading ease score for my blog draft at ~/Developer/Blogarticles/ci-gates-for-a-machine-readable-cv.md? I want to know what grade level it's pitched at before I publish.",
+      "expected_output": "Triggers, runs the cohesion report, returns located findings, and explains in a sentence or two why no Flesch number or grade level is produced — citing that the formulas were validated on schoolchildren and Navy trainees and that Redish (2000) reports their validity for adult technical readers is unknown. Must NOT invent a Flesch number. Must NOT simply refuse and stop.",
+      "assertions": [
+        {"text": "No Flesch, Flesch-Kincaid, Gunning Fog or SMOG number appears anywhere in the response"},
+        {"text": "No US grade level is asserted"},
+        {"text": "The response names at least one specific line number or paragraph as a place the reader may struggle"},
+        {"text": "It explains why the number was not produced rather than only declining"},
+        {"text": "It offers textstat as the route if a number is contractually required"}
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "pre-publish-review-of-a-real-draft",
+      "prompt": "I'm publishing this post tomorrow. Read it end to end and tell me where it loses people: ~/Developer/Blogarticles/ci-gates-for-a-machine-readable-cv.md",
+      "expected_output": "Runs cohesion_report.py AND dispatches a fresh-context second reader (not a fork). Reports findings with line numbers, and says which came from the script and which from the reader. Does not rewrite the prose.",
+      "assertions": [
+        {"text": "cohesion_report.py is actually executed, not described"},
+        {"text": "A subagent is dispatched with no session context, and is not a fork"},
+        {"text": "Findings are attributed to their source — script or reader"},
+        {"text": "At least one finding carries a line number"},
+        {"text": "The response does not contain a rewritten version of any paragraph"}
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "short-document-must-not-report-clean",
+      "prompt": "Quick sanity check on this README section before I commit it — is it readable? It's only two short paragraphs.",
+      "expected_output": "Runs the script, which reports NOTHING TO CHECK or flags the junctions as unmeasurable, and says so plainly rather than reporting a clean result. A pass over an empty set is not evidence.",
+      "assertions": [
+        {"text": "The response does not claim the document is fine on the strength of the script alone"},
+        {"text": "It distinguishes 'too short to measure' from 'no problems found'"}
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "expert-audience-trap",
+      "prompt": "This is going out to a staff-engineer audience who already know Kubernetes and Terraform inside out. Should I strip out the explanatory connective tissue and make it denser? Check the draft and tell me.",
+      "expected_output": "Does NOT advise writing denser prose. Names the O'Reilly & McNamara (2007) correction: the low-cohesion benefit was restricted to LESS SKILLED high-knowledge readers, so a skilled expert audience still benefits from high cohesion. Suggests --terms for the vocabulary they know rather than removing cohesion.",
+      "assertions": [
+        {"text": "It does not recommend reducing cohesion or removing connectives for the expert audience"},
+        {"text": "It cites the 2007 correction rather than the earlier reverse-cohesion finding alone"},
+        {"text": "It distinguishes exempting known VOCABULARY from removing COHESION"}
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "should-not-trigger-voice-request",
+      "prompt": "Does this paragraph sound like AI wrote it? It's got three em-dashes and a rule of three in it and I'm second-guessing myself.",
+      "expected_output": "Routes to clear-and-human instead. This skill owns cohesion and comprehension, not AI texture, voice or register — and doing both badly is worse than doing one well.",
+      "assertions": [
+        {"text": "clear-and-human is named as the right skill"},
+        {"text": "The readability skill does not run its cohesion report as the primary answer"}
+      ],
+      "files": []
+    }
+  ]
+}
