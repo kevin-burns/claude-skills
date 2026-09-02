@@ -112,6 +112,50 @@ German CV slop to watch for:
 - *Mechanics:* unnecessary hyphens in compound adjectives, and uniform sentence/
   paragraph length — same tells as in English.
 
+## Maintaining ONE document in two languages
+
+Everything above is about producing a CV for a market. This is a different and later failure:
+keeping an English and a German edition of the *same* document correct as it changes. All three
+below have been observed live on a published CV before anyone caught them.
+
+**A shared field leaks the wrong language, and it leaks where a recruiter looks first.** In a
+data-driven CV the prose gets translated because it is obviously prose; the metadata does not,
+because it does not look like language. A single `dates` field renders the English month
+abbreviation and the English word for "present" inside the German edition. Certification
+metadata does the same with its issue label. A German recruiter meets both before reading a
+sentence.
+
+The fix is per-language fields — `dates_de`, `meta_de` — rendered through the same language spans
+the translated prose already uses. **Audit every field that renders without passing through a
+translation step**, not just the ones that read like sentences: dates, durations, "Present",
+issue and expiry labels, employment type, location qualifiers, and any unit or currency.
+
+**Typography is per-language, and mixing it is a tell.** German uses a spaced en dash as the
+*Gedankenstrich*; English uses the em dash. A document can use em dashes throughout while
+*already* using en dashes correctly for numeric ranges — internally inconsistent as well as
+wrong, and it took two dozen line changes on the German side while the English needed none.
+This is not the em-dash-as-AI-tell question; it is orthography, and it differs by language.
+
+**Second-language text needs an independent native review, and the reason is specific: the
+errors are fluent.** The failure to look for is a **meaning inversion** — a sentence that is
+grammatical, idiomatic, and says the opposite of the source. Constructed example of the shape:
+
+> EN: *the commercial tools were evaluated and rejected on licence cost*
+> DE: *die kommerziellen Werkzeuge wurden geprüft und wegen günstiger Lizenzkosten gewählt*
+
+Every word is correct German. It says they were **chosen for their favourable licence cost**.
+Nothing is wrong with the sentence except that it is false.
+
+**No spell-checker, grammar linter or style tool catches that**, because there is no error to
+find — only a mismatch with a source it never sees. The method that works is two independent
+native-level reviews with **no shared context**: two reviewers who have not seen each other's
+notes and are not told what the English said. Run that way on a single CV they returned dozens
+of items and agreed on the substance, and the agreement is what makes it worth something.
+
+**This belongs here rather than in a readability or register skill.** A CV is a summary paragraph
+plus fragments: it has no paragraph junctions to measure, and a cohesion tool correctly reports
+nothing to check on one. The transferable part is only the second reader.
+
 ## Other regions (brief)
 
 - **Europass** (EU standard template): structured and widely parseable, but its
