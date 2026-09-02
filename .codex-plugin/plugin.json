@@ -1,7 +1,7 @@
 {
   "name": "claude-skills",
   "version": "1.0.0",
-  "description": "Twenty-one Agent Skills for writing, CV work, cloud/IaC, docs, images, diagrams, reports and job search \u2014 each with its boundaries written down. MIT.",
+  "description": "Twenty-six Agent Skills for writing, CV work, cloud/IaC, docs, images, diagrams, reports and job search \u2014 each with its boundaries written down. MIT.",
   "author": {
     "name": "Kevin Burns",
     "url": "https://github.com/kevin-burns"
@@ -38,6 +38,7 @@
     "./job-feeds",
     "./markdown-converter",
     "./nano-banana-pro-json",
+    "./readability",
     "./report-builder",
     "./social-image-prep",
     "./source-snapshot",
