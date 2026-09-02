@@ -112,6 +112,44 @@ German CV slop to watch for:
 - *Mechanics:* unnecessary hyphens in compound adjectives, and uniform sentence/
   paragraph length — same tells as in English.
 
+## Maintaining ONE document in two languages
+
+Everything above is about producing a CV for a market. This is a different and later failure:
+keeping an English and a German edition of the *same* document correct as it changes. All three
+below were live on a real site before anyone caught them, 2026-09-02.
+
+**A shared field leaks the wrong language, and it leaks where a recruiter looks first.** In a
+data-driven CV the prose gets translated because it is obviously prose; the metadata does not,
+because it does not look like language. A single `dates` field rendered *"Mar 2024 – Present"* in
+the German edition, and certification metadata rendered *"Issued Jul 2026"*. A German recruiter
+meets both before reading a sentence.
+
+The fix is per-language fields — `dates_de`, `meta_de` — rendered through the same language spans
+the translated prose already uses. **Audit every field that renders without passing through a
+translation step**, not just the ones that read like sentences: dates, durations, "Present",
+issue and expiry labels, employment type, location qualifiers, and any unit or currency.
+
+**Typography is per-language, and mixing it is a tell.** German uses a spaced en dash as the
+*Gedankenstrich*; English uses the em dash. One document used em dashes throughout — while
+already using en dashes correctly for numeric ranges, so it was internally inconsistent as well
+as wrong. 24 German lines needed changing and the English ones were correct as they stood.
+This is not the em-dash-as-AI-tell question; it is orthography, and it differs by language.
+
+**Second-language text needs an independent native review, and the reason is specific: the
+errors are fluent.** The worst instance read *"kommerzielle Werkzeuge wurden geprüft und wegen
+Eignung und Lizenzkosten verworfen"* — rejected **because** they were suitable. Grammatical,
+idiomatic, and the exact reverse of the English it was translated from.
+
+**No spell-checker, grammar linter or style tool catches a meaning inversion**, because nothing
+is wrong with the sentence except that it is false. The method that works is two independent
+native-level reviews with **no shared context** — two reviewers who have not seen each other's
+notes and are not told what the English said. Run on one CV they returned roughly 35 items and
+agreed on the substance, which is what makes the agreement worth something.
+
+**This belongs here rather than in a readability or register skill.** A CV is a summary paragraph
+plus fragments: it has no paragraph junctions to measure, and a cohesion tool correctly reports
+nothing to check on one. The transferable part is only the second reader.
+
 ## Other regions (brief)
 
 - **Europass** (EU standard template): structured and widely parseable, but its

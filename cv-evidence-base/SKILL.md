@@ -88,6 +88,18 @@ coverage table — whatever it says has been mined, do not re-mine. Opening a
 session by re-asking questions already answered is the fastest way to get this
 tool abandoned.
 
+**Read the coverage table in the other direction too, before you believe an absence.**
+An absence in a corpus is evidence only when the corpus was built to cover the question.
+Measured 2026-09-02: a 70 KB evidence base returned **zero hits** across every on-premise,
+network and identity term — and the coverage table marked every engagement untouched, because
+three prior sessions had gone after positioning, career shape and leadership and never once at
+the technical estates. The zero meant *nobody had asked*, not *he has not done it*. A cover
+letter was one sentence from carrying the opposite conclusion.
+
+Those are opposite findings from an identical count, so **check what was searched before
+reporting a zero.** "Not covered" and "covered and absent" must never be reported the same
+way.
+
 Open by reflecting back what the CV currently transmits, in two or three
 sentences, before doing anything else. Not what the person is worth — what the
 page says about them to someone who has never met them. This is often the first
@@ -210,7 +222,7 @@ Ground every observation in a named, checkable failure rather than a vibe:
 |---|---|
 | Unscaled claim | An achievement with no size attached — how many, how big, how long, how much |
 | Baseline-free outcome | "Improved performance by 40%" with no starting point, so the number means nothing |
-| Orphan keyword | A tool or skill in the skills list that appears in zero roles |
+| Orphan keyword | A tool or skill in the skills list that appears in zero roles. **Read this as a coverage signal before you read it as a defect** — see below |
 | Stack as identity | A dense list of technologies with no account of what was built, why those tools were chosen, or what was learned — the reader cannot tell a senior engineer from someone who attended the training |
 | Scope/verb mismatch | "Led" and "owned" implying a seniority the described scope doesn't support |
 | Responsibility without outcome | What they were accountable for, never what changed |
@@ -218,6 +230,24 @@ Ground every observation in a named, checkable failure rather than a vibe:
 | Flat progression | Every role reads identically, so no growth is visible |
 | Unexplained gap | A date range with nothing in it and no framing |
 | Archetype mismatch | Evidence that doesn't support the target the person says they want |
+
+**An orphan keyword is usually under-elicitation, not padding, and the remedy order matters.**
+Measured on one real CV, 2026-09-02: **27 of 62 skills entries appeared in zero roles, and
+exactly one was genuinely stale.** All eight observability tools turned out to have real
+engagements nobody had ever asked about. Two entries — Kafka and BigQuery — had already been
+**cut** by an earlier session as unevidenced, and both were real work at the same employer. One
+more was a single message away from the same fate.
+
+Roughly one in twelve was padding. Treating the table row as a licence to cut would have deleted
+the other eleven, and deleting evidence is not a recoverable edit: the person stops mentioning
+what you told them they could not support.
+
+**So the order is elicit → place → cut, and never cut before asking which engagement it belongs
+to.** "This is in your skills list and in none of your roles — which engagement was it?" is the
+whole intervention. A skills list is where someone records what they can do; the roles are where
+a CV compresses. The gap between them is the most reliable map of what the page left out, which
+makes it this skill's best source of questions rather than a list of things to delete.
+
 
 For each finding, say what it costs them with this archetype's reader. A
 finding with no stated consequence is just criticism.
