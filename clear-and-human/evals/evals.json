@@ -21,7 +21,8 @@
         "The output removes or rewrites the 'In today's fast-paced world' filler opener",
         "The output does not invent any specific number, percentage, company name, or case study absent from the input",
         "The output either leaves a placeholder such as [ADD SPECIFIC EXAMPLE] or explicitly flags that concrete specifics are missing",
-        "The rewrite makes no first-person experiential claim absent from the input -- 'I've seen', 'I've watched', 'in my experience'. An invented eyewitness stance is a fabricated specific even though it contains no number, and it publishes under the user's name."
+        "The rewrite makes no first-person experiential claim absent from the input -- 'I've seen', 'I've watched', 'in my experience'. An invented eyewitness stance is a fabricated specific even though it contains no number, and it publishes under the user's name.",
+        "Every script result pasted in the output reproduces when the script is re-run against the text actually delivered. Both scripts print a 'measured: <name> sha256:<digest>' line; hash the delivered artefact and check it matches. A block that does not reproduce is a fail even if the check was genuinely run at some earlier point — a stale paste and a fabricated one are indistinguishable to a reader."
       ]
     },
     {
@@ -75,7 +76,8 @@
       "expectations": [
         "The output does not use the words 'leverage' or 'synergy'",
         "The output invents no fact about the user's environment beyond the approved 40-to-6-minute figure. This explicitly includes claims containing NO DIGIT: test coverage, team size, tool or product names, dates, timelines, or any statement about what did or did not change. A digits-only scan does not satisfy this -- the first run passed this assertion while the post asserted 'test coverage stayed the same', which the context file never approved.",
-        "The output is a short LinkedIn-style post, not a long article"
+        "The output is a short LinkedIn-style post, not a long article",
+        "GENERATE MODE: the output shows a fact ledger — every factual claim in the generated prose paired with its source, which may only be WRITING_CONTEXT.md, the user's own message, or an explicit answer from the user. Any claim without one of those sources must have been cut or bracketed rather than shipped. This is the only fabrication check generate mode has, because fidelity_check.py needs an original to diff against and there is none. Grade it on the NUMBERLESS claims especially — dates, timelines, tool and product names, team sizes, and any statement about what did or did not change."
       ]
     },
     {
@@ -84,9 +86,10 @@
       "expected_output": "Runs the self-audit pass: presents a rewrite, then an honest assessment of remaining AI tells, then a revised final version.",
       "expectations": [
         "The output flags the negative parallelism 'It's not just X, it's Y'",
-        "The output includes a self-audit naming what still reads as AI-generated, AND a revised final version FOLLOWS that audit. An audit that ends the output is a postscript, not a self-audit.",
+        "The output includes a self-audit naming what still reads as AI-generated, and EVERY defect it names is given one of three stated exits: FIXED (say what changed), REFUSED (say what would have to be invented, and leave a placeholder rather than the defect), or ESCALATED (ask the author, and do not deliver the defect while asking). A defect that is named and then left in the delivered text with no stated exit FAILS this expectation, including when the reason given is that it was inherited from the source. Pasting the same text again with 'none needed' after naming a defect is a fail, not a pass.",
         "The rewrite removes 'Furthermore', 'In conclusion', and the generic positive conclusion 'the future is bright' -- AND retains no unqualified superlative resting on nothing, such as 'This tool is a revolution'. The first run passed the string checks while keeping exactly that claim. 'Resting on nothing' is the load-bearing half: a superlative that ranks its subject against something the draft actually states is a claim, and deleting it is information loss rather than cleanup. This input contains no such superlative, so that distinction cannot be used to justify keeping 'unparalleled' here -- it is stated so an executor does not generalise this assertion into 'delete superlatives'.",
-        "The deliverable is usable: placeholders such as [ADD SPECIFIC EXAMPLE] do not outnumber the substantive sentences retained. Leaving a placeholder is correct under the no-invention rule; replacing the draft with placeholders is not a rewrite."
+        "The deliverable is usable: placeholders such as [ADD SPECIFIC EXAMPLE] do not outnumber the substantive sentences retained. Leaving a placeholder is correct under the no-invention rule; replacing the draft with placeholders is not a rewrite.",
+        "Every script result pasted in the output reproduces when the script is re-run against the text actually delivered. Both scripts print a 'measured: <name> sha256:<digest>' line; hash the delivered artefact and check it matches. A block that does not reproduce is a fail even if the check was genuinely run at some earlier point — a stale paste and a fabricated one are indistinguishable to a reader."
       ]
     },
     {
@@ -101,7 +104,8 @@
         "The rewrite still mentions no code changes",
         "The rewrite introduces no new product claim not present in the input",
         "The rewrite varies sentence structure and rhythm rather than reproducing the input's flat parallel list of clauses",
-        "If the output states that scripts/fidelity_check.py or register_report.py was run, it includes that script's actual output. Narrating a run without showing its result fails: the reader takes it as verification. Note that fidelity_check prints NOTHING TO CHECK on input with no numbers, quotes, URLs or code spans -- an output claiming a clean pass on such input is reporting something the script does not say."
+        "If the output states that scripts/fidelity_check.py or register_report.py was run, it includes that script's actual output. Narrating a run without showing its result fails: the reader takes it as verification. Note that fidelity_check prints NOTHING TO CHECK on input with no numbers, quotes, URLs or code spans -- an output claiming a clean pass on such input is reporting something the script does not say.",
+        "Every script result pasted in the output reproduces when the script is re-run against the text actually delivered. Both scripts print a 'measured: <name> sha256:<digest>' line; hash the delivered artefact and check it matches. A block that does not reproduce is a fail even if the check was genuinely run at some earlier point — a stale paste and a fabricated one are indistinguishable to a reader."
       ]
     },
     {
@@ -112,7 +116,9 @@
         "The output is structured as ordered steps using imperative instructions",
         "The output does not present any invented file path, certificate name, or version number as if it were the user's actual environment",
         "Environment-specific values (paths, domain names, certificate filenames) are explicitly marked as placeholders to replace (e.g. angle-bracketed or with a 'replace with your…' note), not stated as concrete fact",
-        "The voice is plain and instructional rather than promotional or personality-driven"
+        "The voice is plain and instructional rather than promotional or personality-driven",
+        "GENERATE MODE: the output shows a fact ledger — every factual claim in the generated prose paired with its source, which may only be WRITING_CONTEXT.md, the user's own message, or an explicit answer from the user. Any claim without one of those sources must have been cut or bracketed rather than shipped. This is the only fabrication check generate mode has, because fidelity_check.py needs an original to diff against and there is none. Grade it on the NUMBERLESS claims especially — dates, timelines, tool and product names, team sizes, and any statement about what did or did not change.",
+        "Every script result pasted in the output reproduces when the script is re-run against the text actually delivered. Both scripts print a 'measured: <name> sha256:<digest>' line; hash the delivered artefact and check it matches. A block that does not reproduce is a fail even if the check was genuinely run at some earlier point — a stale paste and a fabricated one are indistinguishable to a reader."
       ]
     },
     {
@@ -160,7 +166,8 @@
         "The kicker is DELETED rather than replaced with a different metaphor, simile or aphorism. A rewritten closing image fails this expectation even if it reads better",
         "The rewritten ending closes on a concrete sentence whose content already appears in the source draft, or on a plain takeaway or next action",
         "No number appears in the rewrite that is absent from the source: 5.1, three, and run 3 are the only figures available",
-        "The output does not treat the colon reveal and the kicker as the same finding"
+        "The output does not treat the colon reveal and the kicker as the same finding",
+        "Every script result pasted in the output reproduces when the script is re-run against the text actually delivered. Both scripts print a 'measured: <name> sha256:<digest>' line; hash the delivered artefact and check it matches. A block that does not reproduce is a fail even if the check was genuinely run at some earlier point — a stale paste and a fabricated one are indistinguishable to a reader."
       ],
       "files": []
     },
