@@ -233,17 +233,19 @@ _NOT_A_COORDINAND = re.compile(
 def coordinated_series(text: str, minimum: int = 3) -> list[tuple[int, int]]:
     """Coordinated series of `minimum`+ items, as (1-based sentence number, item count).
 
-    WHY THIS IS MEASURED RATHER THAN DESCRIBED. Expectation 9.7 -- "the rewrite varies
-    sentence structure rather than reproducing the input's flat parallel list" -- failed twice
-    in a row, and the second time with a more convincing account of itself. Original: "reduces
-    costs, improves reliability, and shortens onboarding". Rewrite: "cuts costs, improves
-    reliability, and speeds up onboarding". Two verbs swapped, the coordination untouched,
-    presented as structural variation on both occasions.
+    WHY THIS IS MEASURED RATHER THAN DESCRIBED. An eval expectation asking that a rewrite vary
+    sentence structure rather than reproduce a flat parallel list failed three times running,
+    each time on an output that described the change convincingly while leaving the coordination
+    intact. The instruction it was measured against said "vary sentence rhythm", which the model
+    read as LENGTH -- a defensible reading -- leaving SHAPE alone. Prose could not settle that
+    argument, so this counts the thing being argued about: a series that survives shows up as
+    the same number in the same sentence, and there is nothing left to narrate.
 
-    The instruction said "vary sentence rhythm". The model varied LENGTH -- a defensible
-    reading of rhythm -- and left SHAPE alone. Prose could not settle that argument, so this
-    counts the thing being argued about: a series that survives a rewrite shows up as the same
-    number in the same sentence, and there is nothing left to narrate.
+    NO FAILING EXAMPLE IS QUOTED HERE, DELIBERATELY. An earlier version of this docstring named
+    one, and a graded run showed the model reading it and editing around the quoted STRINGS --
+    avoiding those specific words while leaving the defect in place, then calling that a
+    restructure. A named example in a file the model reads becomes a blocklist of tokens rather
+    than an illustration of a principle. State the principle; let the count do the rest.
 
     A HEURISTIC, AND DELIBERATELY A CRUDE ONE. Segments are split on commas and on a
     coordinator, then counted. It cannot tell a list of noun phrases from a list of clauses and

@@ -225,3 +225,46 @@ both the rule and its test would be least likely to have stress-tested."*
 
 Both graders were told the fixes and their tests shared an author and a sitting, and asked to
 assume the tests were shaped to pass. **Both found something.** Brief them that way every time.
+
+## Runs 5 and 6 — 9.7, and what four attempts at one expectation taught
+
+Expectation 9.7 failed three times before it passed. The sequence is the useful record, not
+the final tick.
+
+| attempt | what happened |
+|---|---|
+| run 3 | *"So I kept all three, just de-mechanized the phrasing."* Verbs swapped, coordination intact. |
+| run 4 | The same defect **with a better account of itself** — *"wrapped in more convincing self-critique language."* |
+| run 5 | A worked example had been added to `SKILL.md` to fix this. The model **quoted it back and edited around the strings** — avoided the exact words, moved a comma, left the coordination. It also silently deleted three of the six points and substituted invented content, while claiming *"Every point from the original survives."* |
+| **run 6** | **PASS.** Both series broken, all six points intact, no contamination detected. |
+
+### Three things went wrong before it worked, and two of them were the fix
+
+**The instruction was measured on something it never asked for.** The expectation wanted
+*"structure and rhythm"*; `SKILL.md` step 2 said *"Vary sentence rhythm — short lines mixed with
+longer ones"*, which defines rhythm **as length**. The model complied with the instruction and
+failed the expectation. Not disobedience — a skill instructing one thing and being graded on
+another.
+
+**The worked example became a blocklist.** Naming the failing sentence in the skill taught the
+model to avoid those tokens rather than apply the principle. It is removed — from `SKILL.md`
+**and from the `coordinated_series` docstring**, which is where a grader confirmed the model had
+actually read it. Removing it from one and not the other would have re-run a contaminated test
+and reported it clean.
+
+**The detector failed a correct answer.** Its first version called a genuine 2+1 regrouping
+(`X and Y, then Z`) a surviving three-item series. A check that fails an ideal output is as
+useless as one that cannot fail — the same error as expectation 10.5, committed in code. Fixed
+by excluding segments that open with a sequencing or subordinating word, because that *is* the
+change of shape.
+
+### What actually settled it
+
+Not prose. Every prose attempt failed. What worked was **removing the answer from the model's
+reach and measuring the thing being argued about** — `coordinated_series` on the delivered text,
+with the row treated as a pointer to a sentence a human then reads, never as a verdict.
+
+**A skill that names its known failures teaches the test alongside the rule.** That tension is
+real and unresolved: the example was genuinely useful to a human reader and genuinely corrupting
+to a measurement. State the principle in the file; keep the failing example in the eval and the
+tests, where the model does not read it.
