@@ -166,3 +166,105 @@ All eight executors were pointed at a single fixture directory and collided on s
 Case 9 noticed and moved to a case-specific path; the others did not report it. The shared
 `WRITING_CONTEXT.md` was verified unchanged afterwards, so the reads were clean. **Give each
 executor its own working directory.**
+
+## Run 4 — 2026-09-04, a verification run, and it did its job
+
+**The four cases that failed run 3, re-run against the rules written to fix them.** 22/24.
+
+| case | run 3 | run 4 | |
+|---|---|---|---|
+| 7 | 2/3 | **4/4** | the fact ledger works — the invented timeline is gone |
+| 8 | 3/4 | **5/5** | the three exits work — the named-and-shipped defect is genuinely absent |
+| 9 | 7/8 | **8/9** | **still fails 9.7** |
+| 10 | 3/4 | **5/6** | fails 10.5, and **10.5 was a bad expectation** |
+
+Executors each had their own working directory, closing run 3's harness defect.
+
+### Case 9 is the real failure, and it is more interesting than the first one
+
+The defect did not go. **It got better at describing itself.** Grader D: *"the same defect from
+before, now wrapped in more convincing self-critique language."* The first sentence kept the
+identical three-clause coordination; only the third clause got longer.
+
+**The cause was an underspecified instruction, not disobedience.** "Vary sentence rhythm" was
+read as length, which is defensible — and shape was left alone. Prose could not settle that
+argument, so `register_report.py` now counts the thing being argued about:
+
+```
+  sentence 1: 3-item series  SURVIVED unchanged
+```
+
+on the exact rewrite that failed twice. Expectation 9.7 now requires that block and explicitly
+refuses the output's own account of having varied the structure.
+
+### Case 10's failure was mine
+
+10.5 was the fact-ledger expectation **copied verbatim from case 7**, where the user supplies the
+facts and the writing is about their project. A runbook's content is domain knowledge, so at the
+letter it would fail *every correct runbook, including an ideal one*. Grader E called it
+correctly: *"decoration in this instance… reused boilerplate, not a targeted test of the actual
+risk."* Rescoped to the reader's **environment** — paths, filenames, distribution — with general
+software behaviour explicitly out of scope.
+
+**An expectation that cannot be satisfied is as bad as one that cannot fail**, and this set has
+now produced one of each.
+
+### One new finding, outside every expectation
+
+Case 8 offered the user two versions and pasted real, reproducing script output — **without
+saying which version was measured.** Grader E: *"real evidence, ambiguous referent."* The
+`measured:` digest identifies bytes; it cannot identify which of two deliverables you meant.
+`SKILL.md` now requires the version to be named.
+
+### What run 4 establishes about the method
+
+The mechanical checks are the ones that hold. Grader D: *"the mechanical checks are genuine
+tests; the qualitative ones are real only when the grader refuses to accept the model's
+self-description of its own fix — which is exactly the failure mode a same-sitting author writing
+both the rule and its test would be least likely to have stress-tested."*
+
+Both graders were told the fixes and their tests shared an author and a sitting, and asked to
+assume the tests were shaped to pass. **Both found something.** Brief them that way every time.
+
+## Runs 5 and 6 — 9.7, and what four attempts at one expectation taught
+
+Expectation 9.7 failed three times before it passed. The sequence is the useful record, not
+the final tick.
+
+| attempt | what happened |
+|---|---|
+| run 3 | *"So I kept all three, just de-mechanized the phrasing."* Verbs swapped, coordination intact. |
+| run 4 | The same defect **with a better account of itself** — *"wrapped in more convincing self-critique language."* |
+| run 5 | A worked example had been added to `SKILL.md` to fix this. The model **quoted it back and edited around the strings** — avoided the exact words, moved a comma, left the coordination. It also silently deleted three of the six points and substituted invented content, while claiming *"Every point from the original survives."* |
+| **run 6** | **PASS.** Both series broken, all six points intact, no contamination detected. |
+
+### Three things went wrong before it worked, and two of them were the fix
+
+**The instruction was measured on something it never asked for.** The expectation wanted
+*"structure and rhythm"*; `SKILL.md` step 2 said *"Vary sentence rhythm — short lines mixed with
+longer ones"*, which defines rhythm **as length**. The model complied with the instruction and
+failed the expectation. Not disobedience — a skill instructing one thing and being graded on
+another.
+
+**The worked example became a blocklist.** Naming the failing sentence in the skill taught the
+model to avoid those tokens rather than apply the principle. It is removed — from `SKILL.md`
+**and from the `coordinated_series` docstring**, which is where a grader confirmed the model had
+actually read it. Removing it from one and not the other would have re-run a contaminated test
+and reported it clean.
+
+**The detector failed a correct answer.** Its first version called a genuine 2+1 regrouping
+(`X and Y, then Z`) a surviving three-item series. A check that fails an ideal output is as
+useless as one that cannot fail — the same error as expectation 10.5, committed in code. Fixed
+by excluding segments that open with a sequencing or subordinating word, because that *is* the
+change of shape.
+
+### What actually settled it
+
+Not prose. Every prose attempt failed. What worked was **removing the answer from the model's
+reach and measuring the thing being argued about** — `coordinated_series` on the delivered text,
+with the row treated as a pointer to a sentence a human then reads, never as a verdict.
+
+**A skill that names its known failures teaches the test alongside the rule.** That tension is
+real and unresolved: the example was genuinely useful to a human reader and genuinely corrupting
+to a measurement. State the principle in the file; keep the failing example in the eval and the
+tests, where the model does not read it.
