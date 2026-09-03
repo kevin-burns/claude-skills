@@ -31,6 +31,11 @@ you did not actually look at is worse than an item skipped honestly.
 4. If any environment-specific value is bracketed as a placeholder, is **every** one bracketed?
    Half-marking tells the reader the unmarked ones are real.
 5. Was an argument added or dropped? A rewrite changes delivery, not substance.
+5a. **Does every script result you pasted still describe the text you are delivering?** Both
+   scripts print `measured: <name> sha256:<digest>`. Hash the delivered artefact and check it
+   matches. If you edited anything after running a check, that check is stale and must be
+   re-run — a stale paste is indistinguishable from a fabricated one to the reader, and this
+   failure has happened.
 
 ## B. Voice — is it still this person?
 
