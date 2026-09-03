@@ -261,7 +261,10 @@ def extract_proper_nouns(text: str) -> list[str]:
 QUOTE_RE = re.compile(
     r'"([^"\n]+)"'
     r"|“([^”\n]+)”"
-    r"|'([^'\n]*\s[^'\n]*)'"
+    # Straight single quotes: the delimiters must sit at a word boundary. An opening mark
+    # cannot follow a word character and a closing mark cannot precede one, which is what
+    # separates a quote from a contraction or a possessive. See extract_quotes().
+    r"|(?<!\w)'([^'\n]*\s[^'\n]*)'(?!\w)"
     r"|‘([^’\n]*\s[^’\n]*)’"
 )
 
@@ -280,17 +283,35 @@ def normalize_quote(inner: str) -> str:
 
 
 def extract_quotes(text: str) -> list[str]:
-    """Quoted spans. Single quotes require an internal space, i.e. at
-    least two words: a naive '...' pattern pairs across contractions and
-    possessives ("she said 'don't stop'" reads the apostrophe in "don't"
-    as the closing mark, capturing the fragment "don"), the same trap the
-    contraction regex in the earlier prototype had to work around. The
-    whitespace requirement rejects that fragment outright, because a
-    contraction/possessive apostrophe is never followed by a space before
-    the "closing" mark -- at the cost of also missing any genuine
-    single-word single-quoted term ('yes', 'no'). Double quotes need no
-    such trade-off and are the reliable signal; single-quote detection is
-    deliberately best-effort.
+    """Quoted spans. Straight single quotes need TWO guards, and the first one alone
+    was not enough -- this docstring used to say it was.
+
+    GUARD 1, the internal space: at least two words inside. That rejects the adjacent
+    fragment a naive pattern produces from "she said 'don't stop'", where the apostrophe
+    in "don't" reads as the closing mark and captures "don".
+
+    GUARD 2, word boundaries, added 2026-09-03 after the first guard was measured to
+    leak. It leaks whenever two apostrophes sit far enough apart that the text between
+    them contains a space -- which is most of a paragraph. Reproduced: rewriting
+    "It is a thing that works. It does not fail." as "It's a thing that works. It
+    doesn't fail." reported a quoted span "s a thing that works. It doesn" as APPEARED,
+    from a rewrite that quoted nothing.
+
+    That mattered more than an ordinary false positive for two reasons. It fires on this
+    skill's OWN prescribed edit -- Layer 3 step 6 restores contractions -- and it fires
+    in the one script the skill forbids laundering, so a model following the rules
+    faithfully pastes a line claiming a fabricated quotation that does not exist. Two
+    eval executors hit it independently on different cases.
+
+    So an opening mark may not follow a word character and a closing mark may not precede
+    one. A contraction's apostrophe fails both tests; a possessive's fails the first.
+
+    KNOWN AND ACCEPTED LIMITS. A genuine single-quoted phrase containing a contraction
+    ('don't stop now') is not captured, because the character class cannot cross the inner
+    apostrophe -- a false negative, which is the right way to be wrong here. A single-word
+    single-quoted term ('yes') is still missed by guard 1. Curly marks were never affected:
+    the curly pattern needs a LEFT mark to open and an apostrophe is always the right one.
+    Double quotes need none of this and remain the reliable signal.
     """
     out = []
     for m in QUOTE_RE.finditer(text):

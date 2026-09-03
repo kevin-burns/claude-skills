@@ -600,3 +600,71 @@ def test_digest_is_present_in_json_too(tmp_path):
     payload = _json.loads(_run_cli([str(original), str(rewrite), "--json"]).stdout)
     assert "measured_sha256" in payload
     assert set(payload["measured_sha256"]) >= {"original", "rewrite"}
+
+
+# ------------------------------------------------------- apostrophes are not quote delimiters
+#
+# claude-skills-ulq5. Two eval executors, working independently on different cases, both had
+# QUOTED SPANS report APPEARED on a rewrite that added no quotation. The straight-apostrophe
+# pattern pairs ACROSS a sentence: 'It's ... doesn't' captures "s a thing that works. It doesn"
+# as a quoted span.
+#
+# What makes it worse than an ordinary false positive is that it fires on the skill's OWN
+# prescribed edit -- Layer 3 step 6 says to restore contractions -- and in the one script the
+# skill forbids laundering. A model that follows the rules faithfully pastes a line claiming a
+# quotation was fabricated when none was.
+#
+# Curly apostrophes were never affected: the curly pattern needs a left mark to open and an
+# apostrophe is always the right one. So this is a straight-quote defect only.
+
+
+def test_adding_contractions_invents_no_quoted_span():
+    from fidelity_check import extract_quotes
+    original = "It is a thing that works. It does not fail."
+    rewrite = "It's a thing that works. It doesn't fail."
+    assert extract_quotes(original) == []
+    assert extract_quotes(rewrite) == [], "an apostrophe was read as a quote delimiter"
+
+
+def test_possessives_invent_no_quoted_span():
+    from fidelity_check import extract_quotes
+    assert extract_quotes("the engineers' laptops and the managers' desks") == []
+    assert extract_quotes("James' report and Chris' review both landed") == []
+
+
+def test_curly_apostrophes_remain_unaffected():
+    from fidelity_check import extract_quotes
+    assert extract_quotes("It’s a thing that works. It doesn’t fail.") == []
+
+
+# --- the other half: the fix must not become suppression ---------------------
+
+def test_a_genuine_single_quoted_phrase_is_still_captured():
+    from fidelity_check import extract_quotes
+    assert extract_quotes("She said 'ship it now' before lunch.") == ["ship it now"]
+
+
+def test_a_genuine_double_quoted_phrase_is_still_captured():
+    from fidelity_check import extract_quotes
+    assert extract_quotes('She said "ship it now" before lunch.') == ["ship it now"]
+
+
+def test_a_quote_added_beside_contractions_is_still_reported():
+    """The realistic case: a rewrite both restores contractions AND fabricates a quotation.
+    The contractions must be ignored and the fabricated quotation must still surface."""
+    from fidelity_check import check_fidelity
+    original = "It is a thing that works. It does not fail."
+    rewrite = "It's a thing that works. It doesn't fail. She called it 'the best release yet'."
+    results = check_fidelity(original, rewrite)
+    # the diff carries {value, count} entries, not bare strings
+    assert [e["value"] for e in results["quotes"]["appeared"]] == ["the best release yet"]
+    assert results["quotes"]["vanished"] == []
+
+
+def test_a_vanished_quote_is_still_reported_when_contractions_are_added():
+    from fidelity_check import check_fidelity
+    original = "She said 'ship it now' and it is done."
+    rewrite = "It's done."
+    results = check_fidelity(original, rewrite)
+    assert [e["value"] for e in results["quotes"]["vanished"]] == ["ship it now"]
+    assert results["quotes"]["appeared"] == []
