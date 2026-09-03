@@ -138,7 +138,27 @@ delve, leverage (verb), harness, navigate (figurative), utilize, foster, cultiva
 - **False ranges:** "from the Big Bang to dark matter, from birth to death of stars" where endpoints aren't a real scale. → name the actual items.
 - **Elegant variation** (synonym cycling): protagonist → main character → central figure → hero, all for one subject. Pick one.
 - **Summary closing** that restates the piece; **generic upbeat conclusion** ("the future looks bright"). → end on a concrete next step, a real claim, or an open question. *Dated:* Wikipedia files "In summary" / "In conclusion" closings under Historical indicators (Nov 2022–2024), tied to older long-form generation. Cut them as flab; stop treating them as a tell.
+- **Fake-profound kicker:** the final "deep" line that turns the point into a cute metaphor,
+  an aphorism or a mic-drop. **This is a different failure from Summary closing above, and
+  covering one does not cover the other** — a recap restates what the reader just read; a
+  kicker adds a *new*, empty, quotable sentence that was never argued for.
+
+  **The instruction matters more than the label, because it forbids the obvious wrong fix.**
+  Do not rewrite it into a better metaphor. Do not preserve the rhythm. Delete it, then end on
+  the clearest concrete sentence already in the draft. If the ending genuinely needs closure,
+  add a plain takeaway or a next action. Added 2026-09-03 from `no-ai-slop` (MIT, petergyang).
 - **Fragmented header:** a heading followed by a one-line restatement of the heading. Delete the restatement.
+- **Colon reveals:** a noun phrase, a colon, then a lowercase dramatic reveal. "The detail that
+  makes it work: a separate agent grades it." / "The best part: it learns." The colon is doing
+  the job of a drum roll, and the sentence after it is usually ordinary. Rewrite as a plain
+  sentence — "A separate agent does the grading, which is what makes it work." Reserve colons
+  for lists, labels and quotes. Prefer sentence case after one unless grammar, a proper noun,
+  a title or code requires otherwise.
+
+  Distinct from **Fragmented header** above and **Signposting** below, which is why it was
+  missed: a fragmented header restates a heading, signposting announces what is coming, and
+  this stages a reveal in a single sentence. Added 2026-09-03 from `no-ai-slop` (MIT,
+  petergyang), which names it and which we had no equivalent for.
 - **Signposting:** "Let's dive in", "Here's what you need to know", "Now let's look at". Do the thing instead of announcing it.
 - **Evidence-rating asides:** "which is the part I didn't expect", "and that's the interesting bit", "works better than you'd expect", "which is where it gets strange". Signposting facing backwards — instead of announcing what is coming, these rate what just arrived, telling the reader how to feel about evidence rather than presenting it. Cut the aside and let the fact land; if it does not land without the label, the label is not what is missing. Two notes on how to fix them: the hedged-comparative form ("works better than you'd expect on X") usually also splits the verb from its complement, so the repair is word order rather than vocabulary — a thesaurus will not help. And check the author's own corpus before flagging: a writer who genuinely uses these is not doing anything wrong, which is the standing rule for everything on this page.
 - **Reading-complexity creep:** 3+ three-syllable words or 2+ nested clauses in one sentence. Shorten.

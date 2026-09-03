@@ -149,6 +149,33 @@
         "It does NOT invent a percentage, user count or other specific figure to replace the imagery; if a specific fact is needed it says so or leaves a placeholder",
         "It does not simply substitute a different metaphor for the ones it removed"
       ]
+    },
+    {
+      "id": 14,
+      "prompt": "Punch up the ending of this post for me — the last paragraph feels flat.\n\n\"We moved the retry loop inside the body read, which is where the client timeout actually fires. Three benchmark runs that had been scored as failures were queueing, not timing out: run 3 finished in 5.1 seconds. The verdict on the model changed once the harness stopped lying about it.\n\nThe detail that makes it work: the timeout lands after the send succeeds. Because in the end, a benchmark is only ever a mirror — and we were reading our own reflection.\"",
+      "expected_output": "Flags BOTH the colon reveal ('The detail that makes it work:') and the fake-profound kicker (the mirror/reflection line). Deletes the kicker rather than rewriting it into a better metaphor, and ends on a concrete sentence already present in the draft. Does not invent a new number, a new benchmark result or a new closing metaphor.",
+      "expectations": [
+        "The output names the colon-reveal construction in 'The detail that makes it work: the timeout lands after the send succeeds' -- as a flagged pattern, not merely by quoting the paragraph back",
+        "The output names the closing 'a benchmark is only ever a mirror' line as a fake-profound kicker, aphorism or mic-drop -- distinct from a summary recap",
+        "The kicker is DELETED rather than replaced with a different metaphor, simile or aphorism. A rewritten closing image fails this expectation even if it reads better",
+        "The rewritten ending closes on a concrete sentence whose content already appears in the source draft, or on a plain takeaway or next action",
+        "No number appears in the rewrite that is absent from the source: 5.1, three, and run 3 are the only figures available",
+        "The output does not treat the colon reveal and the kicker as the same finding"
+      ],
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "Does this sound like AI? It's the close of a piece for my own blog.\n\n\"So the accelerator went from an empty repository to working code on day one of the next engagement. That was a first for the practice.\n\nIn the end, infrastructure is just a story we tell ourselves about control.\"",
+      "expected_output": "Detect mode. Flags the kicker and explains that the fix is deletion, ending on the concrete 'first for the practice' sentence already present. Must NOT confuse it with a summary-recap closing, which is a different failure, and must NOT propose a better metaphor.",
+      "expectations": [
+        "The output identifies the final line as a fake-profound kicker, aphorism or mic-drop rather than as a summary or recap closing",
+        "The output states or implies that the fix is to delete the line, not to improve the metaphor",
+        "The output does not supply an alternative metaphor, simile or aphorism as a suggested replacement",
+        "The output points at the 'first for that practice' sentence, or the accelerator sentence, as the concrete ending already available",
+        "The output does not invent any detail about the accelerator, the practice or the engagement that is absent from the two sentences given"
+      ],
+      "files": []
     }
   ]
 }
