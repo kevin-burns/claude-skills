@@ -38,6 +38,7 @@ for any user on the very first run.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -669,6 +670,21 @@ def _format_report(results: dict, original: str = "", rewrite: str = "") -> str:
     return "\n".join(lines).rstrip()
 
 
+
+def measured_digest(text: str) -> str:
+    """A short SHA-256 of the exact bytes compared, printed with every report.
+
+    WHY. On 2026-09-03 a pasted script result went stale: the check ran, the artefact was then
+    edited, and the old numbers were presented as evidence for the new text. A stale paste and
+    a live one were indistinguishable to a reader, which hollowed out this skill's loudest
+    rule -- that a narrated check is worse than no check because it reads as verification.
+
+    The digest does not prevent staleness. It makes staleness VISIBLE: anyone holding the
+    delivered text can hash it and see whether this report describes it.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.strip().split("\n\n")[0])
     parser.add_argument("original", help="path to the original draft")
@@ -691,13 +707,25 @@ def main() -> int:
         rewrite = sys.stdin.buffer.read().decode("utf-8")
 
     results = check_fidelity(original, rewrite, names=args.names)
+    digests = {"original": measured_digest(original), "rewrite": measured_digest(rewrite)}
+    orig_label = args.original
+    rw_label = args.rewrite or "<stdin>"
+
     if args.json:
         # Keys prefixed with _ are internal bookkeeping for the report text
         # (see _tracked_in_original). They are not part of the JSON contract.
-        print(json.dumps({k: v for k, v in results.items()
-                          if not k.startswith("_")}, indent=2))
+        payload = {k: v for k, v in results.items() if not k.startswith("_")}
+        payload["measured_sha256"] = digests
+        payload["measured_note"] = (
+            "sha256 (first 16 hex) of the exact bytes compared. If the delivered text does "
+            "not hash to the rewrite digest, this report predates an edit and does not "
+            "describe what was delivered."
+        )
+        print(json.dumps(payload, indent=2))
     else:
         print(_format_report(results, original, rewrite))
+        print(f"measured: {orig_label} sha256:{digests['original']}")
+        print(f"measured: {rw_label} sha256:{digests['rewrite']}")
 
     # Advisory tool, by design: there is no threshold to clear, so there is
     # no verdict to compute. Exit 0 means the run completed, not that the

@@ -99,3 +99,70 @@ Tracked as `claude-skills-een`. These survived run 2 and no assertion covers the
   by the very pass that exists to catch it.
 - **Nothing checks whether an output's claims about files on disk are true**, or whether a
   narrated script run actually happened.
+
+## Run 3 — 2026-09-03, and the failure the checklist could not see
+
+A **targeted subset** of eight cases (2, 4, 7, 8, 9, 10, 14, 15) against `d840850` + `2772b6d`.
+**34/38.** Not comparable to run 2's 41/47 — different set, different size. Eight executors and
+three graders, all on sonnet, run per the isolation rules above.
+
+**The score is again the least useful part.** Grader B found that case 10's pasted
+`register_report.py` block does not reproduce: nominalisation 9.7 claimed against 12.1 actual, a
+25% gap. Independently re-verified before it was filed — deterministic script, md5-stable file,
+two identical runs. Contractions matched **exactly** while nominalisation did not, which is the
+signature of a check that predates an edit rather than one that was invented.
+
+**No expectation in the set checks script-output fidelity, so case 10 scored 3/4 while carrying
+it.** Both scripts now print `measured: <name> sha256:<digest>`, and `SKILL.md` requires the
+artefact to be frozen before the checks run.
+
+**A standing instruction for every future grader, whatever the case:** re-run each script
+invocation the output claims to have made and check the pasted result reproduces. Grader A did
+this unprompted across six invocations and all six matched byte-for-byte; grader B did it and
+found the one that did not. This catches a class the numbered expectations structurally cannot.
+
+### The four failures, and the pattern in three of them
+
+| | what happened |
+|---|---|
+| **7.2** | Generate mode wrote *"we shipped a new CI pipeline **this week**"* — an invented timeline with no digit — then asserted *"The post carries exactly one fact"*. It fabricated **and certified it had not**. Run 1's failure in a new guise, caught by the expectation rewritten after run 1. |
+| **8.3** | Kept *"It's a revolution."* Its own audit: *"still an unsupported hype claim… I'm not going to manufacture the evidence that would justify it"* — then shipped it. |
+| **9.7** | *"So I kept all three, just de-mechanized the phrasing."* Word-level polish offered as structural variation. |
+| **10.3** | Bare `/etc/nginx/` beside bracketed `<path-to-cert>` in the same step. The all-or-nothing placeholder rule, added after run 1, failing again. |
+
+**Three of the four self-audits named the defect and delivered it anyway.** That is a different
+problem from not noticing, and it is not addressed by telling the audit to look harder.
+
+### What held
+
+Case 4 is **4/4** — the em-dash regression PR #7 caused has not returned, despite PR #62 editing
+the same Layer 3 region. Cases 14 and 15 are **11/11** from a grader briefed on the
+same-sitting authorship conflict, which checked the provenance itself and then constructed a
+wrong output for every expectation.
+
+### Weak expectations named by the graders — rewrite these before a full run
+
+`8.2` checks order only and passed on identical text with "none needed" · `8.4` counts
+placeholders rather than information · `9.1`–`9.6` would pass a verbatim copy, leaving the whole
+did-it-rewrite-anything job on `9.7` alone · `10.2` draws no line between a real software default
+and an invented environment fact · `14.4` has an OR-branch a fabricated next action would pass ·
+`14.3` and `15.2` track `ai-patterns.md`'s own wording closely enough that passing partly
+confirms the executor read it · `4.3` requires the convention be acknowledged, not that the
+acknowledgement be sound · `7.3` and `2.1` are near-unfalsifiable.
+
+### The structural gap, which is the most valuable finding here
+
+> *"A skill called clear-and-human could pass every expectation in this set while producing a
+> report that is, on the whole, textbook AI-shaped prose."*
+
+**Nothing grades the voice of the deliverable.** Every output wrapped its work in `## Self-audit`,
+`## Bottom line`, bolded inline labels and numbered meta-commentary — the structuring this skill
+exists to remove. The set grades fabrication exhaustively and never asks whether what it printed
+reads human.
+
+### One harness defect, ours
+
+All eight executors were pointed at a single fixture directory and collided on scratch files.
+Case 9 noticed and moved to a case-specific path; the others did not report it. The shared
+`WRITING_CONTEXT.md` was verified unchanged afterwards, so the reads were clean. **Give each
+executor its own working directory.**

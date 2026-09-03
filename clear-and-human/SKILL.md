@@ -136,6 +136,20 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 
 ### Self-audit (the blader pass — run before presenting the final rewrite)
 
+**Freeze the artefact before you check it, and check the bytes you will actually deliver.**
+This ordering is the rule, not a suggestion, because breaking it is invisible: on 2026-09-03 an
+output ran `register_report.py`, then reworded one hedge during the audit, then pasted the
+earlier numbers as evidence for the reworded text. Contractions matched exactly and
+nominalisation was 25% out — the signature of a check that predates an edit — and nothing in the
+output showed it. A stale paste and a live one read identically.
+
+So: **write the deliverable to a file, run the checks against that file, and paste the artefact
+from that same file.** If you edit anything afterwards, every check is invalidated and re-runs.
+Both scripts now print a `measured: <name> sha256:<digest>` line for exactly this reason — the
+digest is of the bytes they measured, so a reader can hash what you delivered and see whether
+your report describes it. **Quote that line with the output; it is what makes the check
+checkable by someone other than you.**
+
 1. Ask yourself: "What still makes this read as AI-generated?" Answer in 2–4 honest bullets (rhythm too even? placeholder-ish specifics? slogan-y closer?).
 2. Then revise once more to fix exactly those tells. **A revised version must follow the audit.** If the audit names nothing worth fixing, say that explicitly — but an audit that ends the output is not a self-audit, it is a postscript.
 3. Run `scripts/fidelity_check.py <original> <rewrite>`. It reports any number, quote, URL or code span that appeared, vanished or changed. A number present in the rewrite but not the original is a fabrication.
