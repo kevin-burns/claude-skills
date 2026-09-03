@@ -43,6 +43,12 @@ Two optional scripts do the parts a model cannot do reliably by reading:
   a claim. Cut the boldface from *"the **single most important** build"* and the ranking leaves
   with the markup.
 
+  `--against <original>` adds a **REGISTER DRIFT** section: what the rewrite moved, per
+  feature. `fidelity_check.py` catches a rewrite that invented a *fact*; this catches one
+  that invented a *register*, which nothing else did. With `--baseline`, a row marked
+  **AWAY** means the rewrite ended up further from the author's own rate than the original
+  was — a comparison of two distances, not a threshold.
+
 ## "Isn't this just humanizer?"
 
 Fair question — [`blader/humanizer`](https://github.com/blader/humanizer) (MIT) is one of this

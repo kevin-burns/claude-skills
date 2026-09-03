@@ -398,7 +398,78 @@ def _feature_block(meta, draft_feats: dict, baseline_feats: dict | None) -> list
     return lines
 
 
-def format_report(draft: dict, stance: str, baseline: dict | None, label: str) -> str:
+ALL_META = PERSON_META + STIFFNESS_META
+
+
+def compute_drift(original: dict, rewrite: dict, baseline: dict | None) -> dict:
+    """Per-feature movement from the pre-rewrite text to the rewrite.
+
+    THE GAP THIS EXISTS TO CLOSE. `fidelity_check.py` catches a rewrite that invents a
+    FACT. Until this, nothing caught a rewrite that invented a REGISTER -- and Layer 3 of
+    the skill has a step, "restore contractions the draft expanded", that assumes there is
+    something to restore. Measured on a real corpus by a confirmed non-native English
+    writer: median contraction rate 2.9 per 1000 words, band 0.0-5.6, one published piece
+    at exactly 0.0. Running that step on her moves her away from herself, and no part of
+    the report said so.
+
+    `direction` is only populated when a baseline exists, because "away" is meaningless
+    without something to be away FROM. It is a comparison of two distances, not a
+    threshold: the question is whether the rewrite sits further from the author's own rate
+    than the original did.
+    """
+    out = {}
+    for key, _label, _unit, _cit in ALL_META:
+        o = original["features"][key]
+        r = rewrite["features"][key]
+        row = {"original": o, "rewrite": r, "delta": r - o}
+        if baseline is not None:
+            b = baseline["features"][key]
+            was, now = abs(o - b), abs(r - b)
+            if now > was:
+                row["direction"] = "away"
+            elif now < was:
+                row["direction"] = "toward"
+            else:
+                row["direction"] = "unchanged"
+        out[key] = row
+    return out
+
+
+def format_drift(drift: dict, has_baseline: bool) -> list[str]:
+    lines = [
+        "=" * 78,
+        "REGISTER DRIFT -- what the rewrite moved",
+        "Movement is not a defect. A rewrite is supposed to change the text, and",
+        "several of these features are exactly what it was asked to change. This",
+        "section reports the size and direction of the movement so an editor can",
+        "decide whether it was the movement they wanted. It sets no threshold and",
+        "returns no verdict, in either direction.",
+    ]
+    if has_baseline:
+        lines.append("With --baseline, each row also says whether the rewrite ended up")
+        lines.append("closer to the author's own rate than the original was, or further")
+        lines.append("from it. That is a comparison of two distances, not a limit.")
+    else:
+        lines.append("Without --baseline there is nothing to be 'away from', so no")
+        lines.append("direction is shown -- only the movement itself.")
+    lines.append("=" * 78)
+    for key, label, unit, _cit in ALL_META:
+        row = drift[key]
+        d = row["delta"]
+        delta = "--" if d == 0 else f"{'+' if d > 0 else ''}{_fmt_value(d, unit).strip()}"
+        lines.append(f"  {label:<62}")
+        line = (f"      {_fmt_value(row['original'], unit).strip():>12}"
+                f"  ->{_fmt_value(row['rewrite'], unit).strip():>12}"
+                f"   {delta:>12}")
+        if "direction" in row:
+            line += f"   {row['direction'].upper()}"
+        lines.append(line)
+    lines.append("")
+    return lines
+
+
+def format_report(draft: dict, stance: str, baseline: dict | None, label: str,
+                  drift: dict | None = None) -> str:
     lines = [f"register report -- {label} ({draft['n_words']} words)", ""]
 
     lines.append("=" * 78)
@@ -421,6 +492,9 @@ def format_report(draft: dict, stance: str, baseline: dict | None, label: str) -
     lines.append("=" * 78)
     lines.extend(_feature_block(STIFFNESS_META, draft["features"], baseline["features"] if baseline else None))
 
+    if drift is not None:
+        lines.extend(format_drift(drift, baseline is not None))
+
     if baseline is not None:
         note = f"(baseline: {baseline['n_docs']} document(s)"
         if baseline["n_skipped"]:
@@ -433,7 +507,8 @@ def format_report(draft: dict, stance: str, baseline: dict | None, label: str) -
     return "\n".join(lines)
 
 
-def to_json(draft: dict, stance: str, baseline: dict | None, label: str) -> dict:
+def to_json(draft: dict, stance: str, baseline: dict | None, label: str,
+            drift: dict | None = None) -> dict:
     out = {
         "document": label,
         "n_words": draft["n_words"],
@@ -451,6 +526,14 @@ def to_json(draft: dict, stance: str, baseline: dict | None, label: str) -> dict
         },
         "citations": {k: " ".join(c) for k, _, _, c in PERSON_META + STIFFNESS_META},
     }
+    if drift is not None:
+        out["drift"] = drift
+        out["drift_note"] = (
+            "movement from the pre-rewrite text to the rewrite, per feature. Movement is "
+            "not a defect -- a rewrite is meant to change the text. No threshold is applied "
+            "and no verdict is returned. 'direction' appears only with a baseline, and "
+            "compares two distances rather than testing a limit."
+        )
     if baseline is not None:
         out["baseline"] = {
             "n_docs": baseline["n_docs"],
@@ -474,6 +557,12 @@ def main() -> int:
         help="optional directory of the author's own writing; adds a comparison "
              "column. The report is complete without it.",
     )
+    parser.add_argument(
+        "--against", type=Path, default=None,
+        help="path to the PRE-REWRITE text. Adds a REGISTER DRIFT section reporting what "
+             "the rewrite moved, per feature. fidelity_check.py catches an invented fact; "
+             "this catches an invented register, which nothing else does.",
+    )
     parser.add_argument("--json", action="store_true", help="emit JSON instead of a table")
     args = parser.parse_args()
 
@@ -495,16 +584,31 @@ def main() -> int:
         print(f"REFUSING TO REPORT: {exc}", file=sys.stderr)
         return 2
 
+    original = None
+    if args.against is not None:
+        if not args.against.is_file():
+            parser.error(f"--against file not found: {args.against}")
+        try:
+            original = profile(args.against.read_text(encoding="utf-8"))
+        except ValueError as exc:
+            # Same refusal as for the draft, and it names WHICH document is short --
+            # otherwise the message is indistinguishable from the draft being short.
+            print(f"REFUSING TO REPORT: the --against original is too short -- {exc}",
+                  file=sys.stderr)
+            return 2
+
     baseline = None
     if args.baseline is not None:
         if not args.baseline.is_dir():
             parser.error(f"--baseline is not a directory: {args.baseline}")
         baseline = collect_baseline(args.baseline)
 
+    drift = compute_drift(original, draft, baseline) if original is not None else None
+
     if args.json:
-        print(json.dumps(to_json(draft, args.stance, baseline, label), indent=2))
+        print(json.dumps(to_json(draft, args.stance, baseline, label, drift), indent=2))
     else:
-        print(format_report(draft, args.stance, baseline, label))
+        print(format_report(draft, args.stance, baseline, label, drift))
     return 0
 
 
