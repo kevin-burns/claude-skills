@@ -449,3 +449,91 @@ def test_expanding_contractions_moves_contraction_rate_not_negation():
         "negation rate changed under contraction expansion -- if this ever "
         "becomes true, the citation block claiming it does not must be updated"
     )
+
+
+# --------------------------------------------------------------- --against (register drift)
+#
+# The gap these cover, from claude-skills-qyp: fidelity_check.py catches a rewrite that
+# fabricates a FACT. Nothing caught a rewrite that fabricates a REGISTER. Measured on a real
+# corpus by a confirmed non-native English writer -- median contraction rate 2.9 per 1000
+# words, one piece at exactly 0.0 -- where Layer 3's "restore contractions the draft expanded"
+# has nothing to restore and moves her further from herself with nothing reporting it.
+
+STIFF = "It is your livingroom dolling up as a venue and the support was not bad."
+LOOSE = "It's your living room dressed up as a venue and the support wasn't bad."
+
+
+def _drift_section(out: str) -> str:
+    i = out.upper().find("REGISTER DRIFT")
+    assert i >= 0, "no REGISTER DRIFT section in the report"
+    return out[i:]
+
+
+def test_against_reports_the_movement(tmp_path):
+    original = tmp_path / "original.md"
+    original.write_text(_pad(STIFF), encoding="utf-8")
+    rewrite = tmp_path / "rewrite.md"
+    rewrite.write_text(_pad(LOOSE), encoding="utf-8")
+    result = _run_cli([str(rewrite), "--against", str(original)])
+    assert result.returncode == 0, result.stderr
+    section = _drift_section(result.stdout)
+    assert "contraction" in section
+
+
+def test_against_does_not_judge_the_movement(tmp_path):
+    """No threshold and no verdict -- the same posture as the rest of this script,
+    which states outright that it reports numbers and does not judge them."""
+    original = tmp_path / "original.md"
+    original.write_text(_pad(STIFF), encoding="utf-8")
+    rewrite = tmp_path / "rewrite.md"
+    rewrite.write_text(_pad(LOOSE), encoding="utf-8")
+    section = _drift_section(_run_cli([str(rewrite), "--against", str(original)]).stdout).lower()
+    for verdict in ("too much", "too far", "excessive", "should be", "warning:", "problem"):
+        assert verdict not in section, f"the drift section delivered a verdict: {verdict!r}"
+
+
+def test_against_refuses_when_the_original_is_too_short(tmp_path):
+    original = tmp_path / "original.md"
+    original.write_text("Three words only.", encoding="utf-8")
+    rewrite = tmp_path / "rewrite.md"
+    rewrite.write_text(_pad(LOOSE), encoding="utf-8")
+    result = _run_cli([str(rewrite), "--against", str(original)])
+    assert result.returncode == 2
+    assert "REFUSING" in result.stderr
+    assert "original" in result.stderr.lower()
+
+
+def test_against_with_baseline_names_movement_away_from_the_author(tmp_path):
+    """The signal the bead asks for, and it is a comparison rather than a threshold:
+    the original sat near the author's own rate and the rewrite left it."""
+    base = tmp_path / "corpus"
+    base.mkdir()
+    (base / "a.md").write_text(_pad("It is a matter of record that the thing is not so."), encoding="utf-8")
+    (base / "b.md").write_text(_pad("It is well known that the venue is not large at all."), encoding="utf-8")
+    original = tmp_path / "original.md"
+    original.write_text(_pad(STIFF), encoding="utf-8")
+    rewrite = tmp_path / "rewrite.md"
+    rewrite.write_text(_pad(LOOSE), encoding="utf-8")
+    result = _run_cli([str(rewrite), "--against", str(original), "--baseline", str(base)])
+    assert result.returncode == 0, result.stderr
+    assert "AWAY" in _drift_section(result.stdout).upper()
+
+
+def test_against_json_carries_the_delta(tmp_path):
+    original = tmp_path / "original.md"
+    original.write_text(_pad(STIFF), encoding="utf-8")
+    rewrite = tmp_path / "rewrite.md"
+    rewrite.write_text(_pad(LOOSE), encoding="utf-8")
+    payload = json.loads(_run_cli([str(rewrite), "--against", str(original), "--json"]).stdout)
+    assert "drift" in payload
+    row = payload["drift"]["contraction"]
+    assert set(row) >= {"original", "rewrite", "delta"}
+    assert row["delta"] == row["rewrite"] - row["original"]
+
+
+def test_no_drift_section_without_against(tmp_path):
+    """The flag is opt-in; an ordinary run is unchanged."""
+    rewrite = tmp_path / "rewrite.md"
+    rewrite.write_text(_pad(LOOSE), encoding="utf-8")
+    result = _run_cli([str(rewrite)])
+    assert "REGISTER DRIFT" not in result.stdout.upper()
