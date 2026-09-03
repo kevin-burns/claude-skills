@@ -247,6 +247,14 @@ def coordinated_series(text: str, minimum: int = 3) -> list[tuple[int, int]]:
     restructure. A named example in a file the model reads becomes a blocklist of tokens rather
     than an illustration of a principle. State the principle; let the count do the rest.
 
+    SCOPE, MEASURED. Built for SHORT before/after comparison, which is what it is good at. On
+    2,160 words of published prose it flagged 33 series across ~146 sentences -- 23% -- and
+    roughly half were noise: an "and" inside a measurement range, commas around participial
+    phrases, a heading glued to the following sentence. One attempted guard broke a genuine
+    series ("AWS, Azure and GCP") and still missed its target, because telling a list from a
+    noun phrase needs a parser. So the noise is documented rather than chased. **Do not read a
+    count over a long document as a finding, and never use a row as a gate.**
+
     A HEURISTIC, AND DELIBERATELY A CRUDE ONE. Segments are split on commas and on a
     coordinator, then counted. It cannot tell a list of noun phrases from a list of clauses and
     it does not try -- a parser would be a dependency, and this only has to make a survival
@@ -258,7 +266,9 @@ def coordinated_series(text: str, minimum: int = 3) -> list[tuple[int, int]]:
     reports is whether the shape changed, which is a fact, and not whether it should have.
     """
     out = []
-    for i, sentence in enumerate(_SENTENCE_SPLIT.split(text.strip()), start=1):
+    # Normalise first, exactly as profile() does. Two functions in one module disagreeing
+    # about what counts as text is how YAML front matter came to be read as a series.
+    for i, sentence in enumerate(_SENTENCE_SPLIT.split(strip_noise(text).strip()), start=1):
         if "," not in sentence:
             continue
         parts = []
@@ -536,15 +546,27 @@ def format_series_block(before: list, after: list) -> list[str]:
         lines.append("  none in either document")
         lines.append("")
         return lines
+    rows = []
     for idx in sorted(set(b) | set(a)):
         if idx in b and idx in a and b[idx] == a[idx]:
-            lines.append(f"  sentence {idx}: {b[idx]}-item series  SURVIVED unchanged")
+            rows.append((2, f"  sentence {idx}: {b[idx]}-item series  SURVIVED unchanged"))
         elif idx in b and idx in a:
-            lines.append(f"  sentence {idx}: {b[idx]}-item -> {a[idx]}-item  changed")
+            rows.append((0, f"  sentence {idx}: {b[idx]}-item -> {a[idx]}-item  changed"))
         elif idx in b:
-            lines.append(f"  sentence {idx}: {b[idx]}-item series  BROKEN by the rewrite")
+            rows.append((0, f"  sentence {idx}: {b[idx]}-item series  BROKEN by the rewrite"))
         else:
-            lines.append(f"  sentence {idx}: {a[idx]}-item series  NEW in the rewrite")
+            rows.append((1, f"  sentence {idx}: {a[idx]}-item series  NEW in the rewrite"))
+
+    # Changed, broken and new first: those are the movement. Survivals are the long tail on a
+    # long document -- a real article measured 33 of them, most of them noise -- so they are
+    # capped rather than dumped. An unreadable wall trains a reader to skip the block.
+    CAP = 12
+    rows.sort(key=lambda r: r[0])
+    for _, line in rows[:CAP]:
+        lines.append(line)
+    if len(rows) > CAP:
+        lines.append(f"  ... and {len(rows) - CAP} more, most of them survivals. On a long "
+                     f"document this block is noisy by construction -- see the docstring.")
     lines.append("")
     return lines
 
