@@ -217,6 +217,18 @@ def strip_noise(text: str) -> str:
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
 _COORDINATOR = re.compile(r"\s+(?:and|or|nor)\s+", re.I)
 
+# A segment opening with one of these is not a coordinand -- it is sequenced or subordinated,
+# and that IS a change of shape. Added after the detector's first version failed a correct
+# rewrite: "verifies the account and provisions the workspace, THEN notifies the team lead"
+# was reported as a surviving three-item series, when turning a flat list into a 2+1 grouping
+# is exactly what the rule asks for. A check that fails an ideal output is as useless as one
+# that cannot fail.
+_NOT_A_COORDINAND = re.compile(
+    r"^(?:then|next|after|afterwards|before|once|while|so|because|which|who|whose|whom|"
+    r"whereas|although|though|since|unless|until|if|when|meanwhile|finally|therefore|thus)\b",
+    re.I,
+)
+
 
 def coordinated_series(text: str, minimum: int = 3) -> list[tuple[int, int]]:
     """Coordinated series of `minimum`+ items, as (1-based sentence number, item count).
@@ -251,6 +263,9 @@ def coordinated_series(text: str, minimum: int = 3) -> list[tuple[int, int]]:
         for chunk in sentence.split(","):
             parts.extend(_COORDINATOR.split(chunk))
         items = [p for p in (x.strip(" ;:-—–") for x in parts) if p]
+        # Drop segments that are sequenced or subordinated rather than coordinated. Only the
+        # flat "X, Y, and Z" shape is what the rule is about; "X and Y, then Z" is the fix.
+        items = [x for x in items if not _NOT_A_COORDINAND.match(x)]
         if len(items) >= minimum:
             out.append((i, len(items)))
     return out
@@ -507,10 +522,12 @@ def format_series_block(before: list, after: list) -> list[str]:
     a = dict(after)
     lines = [
         "COORDINATED SERIES -- shape, which is not rhythm",
-        "A three-item list whose words were swapped is the same list. This block",
-        "reports whether the shape changed; it does not say whether it should have.",
-        "A rule of three is not a defect -- ai-patterns.md flags it forced everywhere,",
-        "not present at all. Read the sentences it names.",
+        "A list whose words were swapped is the same list. This block reports",
+        "whether the shape changed; it does not say whether it should have.",
+        "EVERY ROW IS A POINTER, NOT A VERDICT. The detector splits on commas and",
+        "coordinators and cannot parse English -- go and read the sentence it names.",
+        "A rule of three is not a defect: ai-patterns.md flags it forced everywhere,",
+        "not present at all.",
         "",
     ]
     if not b and not a:

@@ -653,3 +653,39 @@ def test_drift_section_reports_a_surviving_series(tmp_path):
     out = _run_cli([str(rewrite), "--against", str(original)]).stdout
     assert "COORDINATED SERIES" in out.upper()
     assert "SURVIVED" in out.upper(), "a series present before and after must be called out"
+
+
+def test_a_sequenced_grouping_is_not_a_flat_series():
+    """The false positive that made the first version of this detector unusable.
+
+    Measured on a rewrite the skill had never seen, which restructured correctly:
+      before  verifies the account, provisions the workspace, and notifies the team lead
+      after   verifies the account and provisions the workspace, then notifies the team lead
+    A flat three-item list became a 2+1 grouping -- two coordinated actions and one
+    sequenced handoff. The detector reported that as a surviving three-item series, so a
+    CORRECT answer failed the check. A check that fails an ideal output is as useless as
+    one that cannot fail.
+    """
+    from register_report import coordinated_series
+    assert coordinated_series(
+        "The onboarding flow verifies the account and provisions the workspace, "
+        "then notifies the team lead.") == []
+
+
+def test_a_flat_list_is_still_caught_after_the_sequencing_fix():
+    """The other direction, so the fix is not suppression."""
+    from register_report import coordinated_series
+    assert [n for _, n in coordinated_series(
+        "The onboarding flow verifies the account, provisions the workspace, "
+        "and notifies the team lead.")] == [3]
+    # and the case-9 rewrite that genuinely did keep its coordination
+    assert [n for _, n in coordinated_series(
+        "Our service cuts costs and improves reliability, and onboarding gets faster too.")] == [3]
+
+
+def test_subordinated_clauses_do_not_count_as_coordinands():
+    from register_report import coordinated_series
+    assert coordinated_series(
+        "Our service cuts costs, which is what shortens onboarding.") == []
+    assert coordinated_series(
+        "It provisions the workspace and notifies the lead, so nobody waits.") == []

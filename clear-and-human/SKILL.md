@@ -164,15 +164,15 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 
    **Rhythm is length. Shape is syntax. They are different, and changing the first is not changing the second.** This distinction is here because an eval expectation — *"varies sentence structure rather than reproducing the input's flat parallel list"* — failed twice running, and the second time with a more convincing account of itself:
 
-   | | |
-   |---|---|
-   | original | "Our service reduces costs, improves reliability, and shortens onboarding." |
-   | rewrite | "Our service cuts costs, improves reliability, and speeds up onboarding." |
-   | claimed | *"So I kept all three, just de-mechanized the phrasing."* |
+   **A list whose words were changed is the same list.** Swapping the verbs in `X, Y, and Z` for near-synonyms, or moving which comma sits where, leaves the coordination exactly where it was. If you are asked to vary structure, one of three things has to happen:
 
-   Two verbs swapped for near-synonyms; the three-item coordination untouched. **A three-item list whose words were changed is the same list.** If you are asked to vary structure, one of three things has to happen: **split** the series so the items take different syntactic roles, **cut** it if the third item was only there for the cadence, or **keep it and say why** — three genuinely parallel things belong in a list, and `ai-patterns.md` flags the rule of three *forced everywhere*, not present at all.
+   - **split** it, so the items take different syntactic roles — `X and Y, then Z` is a different shape; `X, Y, and Z` with new verbs is not
+   - **cut** it, if the third item was only ever there for the cadence
+   - **keep it and say why**, taking the REFUSED exit — three genuinely parallel things belong in a list, and `ai-patterns.md` flags the rule of three *forced everywhere*, not present at all
 
-   **Do not argue this from memory.** `scripts/register_report.py <rewrite> --against <original>` prints a COORDINATED SERIES block that says whether a series survived, broke, changed or is new, by sentence. A row reading `SURVIVED unchanged` is the whole claim settled, and there is nothing left to narrate.
+   **Do not argue this from memory, and do not treat it as a phrase to avoid.** `scripts/register_report.py <rewrite> --against <original>` prints a COORDINATED SERIES block reporting, per sentence, whether a series survived, broke, changed count or is new. **A row saying `SURVIVED` is a pointer, not a verdict** — go and read that sentence and decide whether its shape actually changed. The heuristic is crude by design and will occasionally point at something fine.
+
+   > **Why there is no worked example here.** There was one, quoting a specific failing pair. A graded run then showed the model recognising the quoted strings and editing around *them* — avoiding the exact words while leaving the coordination intact — and describing that as a restructure. **A named example becomes a blocklist of tokens rather than an illustration of a principle**, so the principle is stated and the check is mechanical instead.
 3. Use simple constructions (is/are/has) instead of "serves as / stands as / boasts".
 4. Cut decorative emoji, mechanical boldface, and title-case headings. **Em-dashes and curly quotes are not on this list** — they are author-relative and model-specific, and `references/ai-patterns.md` holds the current rule with its evidence. Follow the reference, not a blanket cut. A graded eval caught this file and that one giving opposite instructions, and the reference was the better-reasoned of the two.
 5. **Add voice, carefully.** Opinions, mild uncertainty, first person where it fits, the occasional aside. In `technical` mode keep this conservative — a runbook doesn't need a personality, it needs to be right and unambiguous.
