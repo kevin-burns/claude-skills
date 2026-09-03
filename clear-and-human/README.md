@@ -20,6 +20,11 @@ scored report with every flag quoted verbatim and a concrete fix beside it.
 draft expanded, and runs a self-audit that has to name what still reads as machine-written
 before the final version — not after it.
 
+The self-audit ends on **`references/self-check.md`** — twenty-four numbered pass/fail
+questions covering fidelity, voice, patterns and substance, answered item by item. It exists
+because the prose version was skippable and got skipped: in a graded set of ten outputs, six
+narrated running `fidelity_check.py` and one pasted its output.
+
 Two optional scripts do the parts a model cannot do reliably by reading:
 
 - **`scripts/register_report.py`** prints where a draft sits on two axes — PERSON (first- and

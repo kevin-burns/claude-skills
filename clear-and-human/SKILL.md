@@ -31,7 +31,8 @@ If unclear, default to **Review** and offer the rewrite at the end.
    **Placeholders are all-or-nothing.** If any environment-specific value is bracketed, bracket every one. Half-marking is worse than none: a bracketed `<domain>` beside a bare path tells the reader the path is real.
 2. **Preserve meaning.** Change delivery, not substance. Never add or drop an argument during a rewrite. The trap is that several style rules remove information while appearing to remove only shape: cut the boldface off *"the **single most important** build"* and the ranking goes with it; tidy *"it is simultaneously A, B and C"* into a clean rule of three and the claim that they hold at once goes with it. The CLAIM WORDS section of `scripts/fidelity_check.py` lists the ranking, scope, comparison and requirement words a rewrite dropped, so this rule has something behind it other than your own attestation.
 3. **Match the intended voice**, not a generic "good writing" voice. Use the user's sample if provided (see Voice calibration). Absent a sample, default to neutral-factual, not marketing-operator.
-4. **Clean is not enough.** Text with zero AI tells but no opinion, no specifics, and uniform rhythm is still slop. Flag "clean but hollow" explicitly.
+4. **The portability test.** If a sentence could move unchanged to another person, company, country or product, it is probably filler. Cut it, or replace it with a fact, example, mechanism, consequence or judgement specific to this subject. This is the mechanism behind several rules stated separately below, which is why it is worth naming once on its own.
+5. **Clean is not enough.** Text with zero AI tells but no opinion, no specifics, and uniform rhythm is still slop. Flag "clean but hollow" explicitly.
 
 ## Voice calibration (optional but improves everything)
 
@@ -63,6 +64,8 @@ For the **technical** voice (default for docs): explain mechanics, show how it w
 ### Step A — Detect content type, then ask the stance
 
 Classify as one of: **docs** (README, runbook, ADR, PR/commit, API reference, technical explanation), **blog**, **youtube-script** (spoken explainer/tutorial narration), **linkedin**, **email**, **slack**. Detection cues and per-channel rules live in `references/channels.md`. State the detected type at the top of the report. If ambiguous, default to **docs** for technical input and **blog** otherwise, and say so.
+
+**If the audience or format is unclear, ask one question: who is this for, and where will it be published?** That is a different question from the stance one below and they are complementary — audience decides what can be assumed, stance decides who is speaking.
 
 Channel is not the whole story: a personal account and a product write-up can be the same channel and want opposite stances. Ask which one this is, or take it from `WRITING_CONTEXT.md` — never infer it, because a stiff impersonal draft and a correct impersonal draft look identical on person density. See the Stance section of `references/channels.md`. Person is context; stiffness is what you flag.
 
@@ -131,7 +134,8 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 2. Then revise once more to fix exactly those tells. **A revised version must follow the audit.** If the audit names nothing worth fixing, say that explicitly — but an audit that ends the output is not a self-audit, it is a postscript.
 3. Run `scripts/fidelity_check.py <original> <rewrite>`. It reports any number, quote, URL or code span that appeared, vanished or changed. A number present in the rewrite but not the original is a fabrication.
 4. Read the **CLAIM WORDS** section of that report before presenting anything. It lists the ranking, scope, comparison and requirement words the rewrite dropped or added — the loss that looks like style. A superlative that ranked its subject against everything else in the document, a "simultaneously" that said three things hold at once rather than in turn, a "must" softened to "should": each leaves with the shape it was carried in. **The script does not judge these; you have to.** For every row, go to the sentence it quotes and decide whether the claim survives without the word. If it doesn't, put the word back. Say which rows you checked and what you concluded — a row you did not open is a row you did not check.
-5. Present the final version. Optionally list the changes made.
+5. **Answer `references/self-check.md` item by item, by number.** Twenty-four pass/fail questions grouped as fidelity, voice, patterns and substance. It is deliberately more mechanical than the prose audit in step 1: a paragraph asking you to reflect is easy to narrate past, and the graded set shows that happening — six of ten outputs narrated running `fidelity_check.py` and one pasted its output. **The checklist is judgement and the script is measurement; neither substitutes for the other.**
+6. Present the final version. Optionally list the changes made.
 
 **Never certify what you did not check.** This is the rule the eval caught being broken, and it is the most damaging failure in the set because the reader trusts this line specifically. Two constraints:
 
