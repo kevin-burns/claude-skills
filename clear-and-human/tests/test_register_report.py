@@ -537,3 +537,50 @@ def test_no_drift_section_without_against(tmp_path):
     rewrite.write_text(_pad(LOOSE), encoding="utf-8")
     result = _run_cli([str(rewrite)])
     assert "REGISTER DRIFT" not in result.stdout.upper()
+
+
+# ------------------------------------------------------------------ measured-bytes provenance
+#
+# claude-skills-<P1>: a pasted register_report block went stale. The check was run, the text was
+# then edited, and the old numbers were presented as evidence for the new text. Contractions
+# matched exactly while nominalisation was 25% out -- the signature of a check that predates an
+# edit. Nothing in the output made that visible, so a stale paste and a real one are
+# indistinguishable to a reader.
+#
+# The fix is provenance, not exhortation: the report states a digest of the exact bytes it
+# measured, so anyone can hash the delivered text and see whether the block belongs to it.
+
+
+def test_report_states_a_digest_of_what_it_measured(tmp_path):
+    draft = tmp_path / "draft.md"
+    draft.write_text(_pad("The service doesn't fail silently and that's intentional."), encoding="utf-8")
+    out = _run_cli([str(draft)]).stdout
+    assert "measured:" in out, "the report does not say what bytes it measured"
+    import hashlib
+    want = hashlib.sha256(draft.read_bytes()).hexdigest()[:12]
+    assert want in out, "the digest in the report is not the digest of the measured file"
+
+
+def test_the_digest_changes_when_the_text_changes(tmp_path):
+    """The whole point: an edited artefact must not match a report run before the edit."""
+    draft = tmp_path / "draft.md"
+    body = _pad("The service doesn't fail silently and that's intentional.")
+    draft.write_text(body, encoding="utf-8")
+    before = _run_cli([str(draft)]).stdout
+    draft.write_text(body.replace("intentional", "deliberate"), encoding="utf-8")
+    after = _run_cli([str(draft)]).stdout
+
+    def digest(text):
+        line = next(x for x in text.splitlines() if "measured:" in x)
+        return line.split()[-1]
+
+    assert digest(before) != digest(after)
+
+
+def test_digest_is_present_in_json_too(tmp_path):
+    draft = tmp_path / "draft.md"
+    draft.write_text(_pad("The service doesn't fail silently and that's intentional."), encoding="utf-8")
+    payload = json.loads(_run_cli([str(draft), "--json"]).stdout)
+    assert "measured_sha256" in payload
+    import hashlib
+    assert payload["measured_sha256"].startswith(hashlib.sha256(draft.read_bytes()).hexdigest()[:12])

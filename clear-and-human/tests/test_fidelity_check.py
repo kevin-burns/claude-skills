@@ -448,9 +448,16 @@ def test_cli_json_output_is_valid_json_with_the_default_categories(tmp_path):
     result = _run_cli([str(original), str(rewrite), "--json"])
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
-    assert set(payload.keys()) == {"numbers", "quotes", "urls", "code", "claim_words"}
-    for section in payload.values():
-        assert set(section.keys()) == {"appeared", "vanished", "changed"}
+
+    # The JSON contract is five finding categories plus provenance. The provenance keys
+    # were added 2026-09-03 after a pasted report was found to have gone stale against an
+    # edited artefact -- see measured_digest() in the script. They are named here rather
+    # than allowed through by a loose check, so a future addition still has to be deliberate.
+    CATEGORIES = {"numbers", "quotes", "urls", "code", "claim_words"}
+    PROVENANCE = {"measured_sha256", "measured_note"}
+    assert set(payload.keys()) == CATEGORIES | PROVENANCE
+    for name in CATEGORIES:
+        assert set(payload[name].keys()) == {"appeared", "vanished", "changed"}
 
 
 def test_cli_exit_code_is_always_zero_even_with_findings(tmp_path):
@@ -546,3 +553,50 @@ def test_tracked_count_is_not_mistaken_for_a_category():
     assert "_tracked_in_original" in results
     report = _format_report(results)
     assert "_tracked" not in report
+
+
+# ------------------------------------------------------------------ measured-bytes provenance
+#
+# Same fix as register_report.py, same reason. A pasted check went stale after the artefact was
+# edited, and nothing in the output made that visible. The report now names a digest of the exact
+# bytes it compared, so a reader holding the delivered text can tell whether the block belongs
+# to it. This does not prevent staleness; it makes staleness visible, which is the only honest
+# thing a report can do about it.
+
+
+def test_report_states_a_digest_of_both_documents(tmp_path):
+    import hashlib
+    original = tmp_path / "original.md"
+    rewrite = tmp_path / "rewrite.md"
+    original.write_text("The team shipped it on Tuesday after 40 minutes of review.\n", encoding="utf-8")
+    rewrite.write_text("The team shipped it Tuesday, after 40 minutes of review.\n", encoding="utf-8")
+    out = _run_cli([str(original), str(rewrite)]).stdout
+    assert "measured:" in out
+    for f in (original, rewrite):
+        assert hashlib.sha256(f.read_bytes()).hexdigest()[:16] in out, f"no digest for {f.name}"
+
+
+def test_the_digest_changes_when_the_rewrite_changes(tmp_path):
+    original = tmp_path / "original.md"
+    rewrite = tmp_path / "rewrite.md"
+    original.write_text("The team shipped it on Tuesday after 40 minutes of review.\n", encoding="utf-8")
+    rewrite.write_text("The team shipped it Tuesday, after 40 minutes of review.\n", encoding="utf-8")
+    before = _run_cli([str(original), str(rewrite)]).stdout
+    rewrite.write_text("The team shipped it Tuesday, after 40 minutes of checking.\n", encoding="utf-8")
+    after = _run_cli([str(original), str(rewrite)]).stdout
+    assert before != after
+    def digests(text):
+        return [line for line in text.splitlines() if "measured:" in line]
+
+    assert digests(before) != digests(after)
+
+
+def test_digest_is_present_in_json_too(tmp_path):
+    import json as _json
+    original = tmp_path / "original.md"
+    rewrite = tmp_path / "rewrite.md"
+    original.write_text("The team shipped it on Tuesday after 40 minutes of review.\n", encoding="utf-8")
+    rewrite.write_text("The team shipped it Tuesday, after 40 minutes of review.\n", encoding="utf-8")
+    payload = _json.loads(_run_cli([str(original), str(rewrite), "--json"]).stdout)
+    assert "measured_sha256" in payload
+    assert set(payload["measured_sha256"]) >= {"original", "rewrite"}

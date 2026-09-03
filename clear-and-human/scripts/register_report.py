@@ -73,6 +73,7 @@ script is stdlib-only and self-contained.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import statistics
@@ -211,6 +212,24 @@ def strip_noise(text: str) -> str:
     text = re.sub(r"^[ \t]{4,}\S.*$", " ", text, flags=re.M)      # indented code
     text = re.sub(r"^#{1,6}\s+", "", text, flags=re.M)            # heading marks
     return re.sub(r"https?://\S+", " ", text)
+
+
+def measured_digest(text: str) -> str:
+    """A short SHA-256 of the exact bytes measured, printed with every report.
+
+    WHY THIS EXISTS. On 2026-09-03 a pasted register_report block went stale: the check was
+    run, the artefact was then edited, and the old numbers were presented as evidence for the
+    new text. Contractions matched exactly while nominalisation was 25% out -- the signature
+    of a check that predates an edit. Nothing in the output made that visible, so a stale
+    paste and a live one were indistinguishable to a reader, and the skill's loudest rule
+    ("a narrated check is worse than no check, because it reads as verification") had no
+    mechanism behind it.
+
+    A digest gives it one. Anyone holding the delivered text can hash it and see whether the
+    report belongs to it. This does not stop staleness; it makes staleness VISIBLE, which is
+    the only thing a report can honestly do about it.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 def profile(text: str) -> dict:
@@ -469,8 +488,11 @@ def format_drift(drift: dict, has_baseline: bool) -> list[str]:
 
 
 def format_report(draft: dict, stance: str, baseline: dict | None, label: str,
-                  drift: dict | None = None) -> str:
-    lines = [f"register report -- {label} ({draft['n_words']} words)", ""]
+                  drift: dict | None = None, digest: str | None = None) -> str:
+    lines = [f"register report -- {label} ({draft['n_words']} words)"]
+    if digest:
+        lines.append(f"measured: {label} sha256:{digest}")
+    lines.append("")
 
     lines.append("=" * 78)
     lines.append("AXIS 1 -- PERSON")
@@ -508,9 +530,13 @@ def format_report(draft: dict, stance: str, baseline: dict | None, label: str,
 
 
 def to_json(draft: dict, stance: str, baseline: dict | None, label: str,
-            drift: dict | None = None) -> dict:
+            drift: dict | None = None, digest: str | None = None) -> dict:
     out = {
         "document": label,
+        "measured_sha256": digest,
+        "measured_note": "sha256 (first 16 hex) of the exact bytes measured. If the delivered "
+                         "text does not hash to this, the report predates an edit and does not "
+                         "describe what was delivered.",
         "n_words": draft["n_words"],
         "person": {
             "stance": stance,
@@ -604,11 +630,12 @@ def main() -> int:
         baseline = collect_baseline(args.baseline)
 
     drift = compute_drift(original, draft, baseline) if original is not None else None
+    digest = measured_digest(text)
 
     if args.json:
-        print(json.dumps(to_json(draft, args.stance, baseline, label, drift), indent=2))
+        print(json.dumps(to_json(draft, args.stance, baseline, label, drift, digest), indent=2))
     else:
-        print(format_report(draft, args.stance, baseline, label, drift))
+        print(format_report(draft, args.stance, baseline, label, drift, digest))
     return 0
 
 
