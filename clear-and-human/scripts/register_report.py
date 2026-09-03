@@ -214,6 +214,48 @@ def strip_noise(text: str) -> str:
     return re.sub(r"https?://\S+", " ", text)
 
 
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+_COORDINATOR = re.compile(r"\s+(?:and|or|nor)\s+", re.I)
+
+
+def coordinated_series(text: str, minimum: int = 3) -> list[tuple[int, int]]:
+    """Coordinated series of `minimum`+ items, as (1-based sentence number, item count).
+
+    WHY THIS IS MEASURED RATHER THAN DESCRIBED. Expectation 9.7 -- "the rewrite varies
+    sentence structure rather than reproducing the input's flat parallel list" -- failed twice
+    in a row, and the second time with a more convincing account of itself. Original: "reduces
+    costs, improves reliability, and shortens onboarding". Rewrite: "cuts costs, improves
+    reliability, and speeds up onboarding". Two verbs swapped, the coordination untouched,
+    presented as structural variation on both occasions.
+
+    The instruction said "vary sentence rhythm". The model varied LENGTH -- a defensible
+    reading of rhythm -- and left SHAPE alone. Prose could not settle that argument, so this
+    counts the thing being argued about: a series that survives a rewrite shows up as the same
+    number in the same sentence, and there is nothing left to narrate.
+
+    A HEURISTIC, AND DELIBERATELY A CRUDE ONE. Segments are split on commas and on a
+    coordinator, then counted. It cannot tell a list of noun phrases from a list of clauses and
+    it does not try -- a parser would be a dependency, and this only has to make a survival
+    visible, not classify English. It over-counts a sentence with unrelated commas and
+    under-counts a series spanning a semicolon. Read the sentence it points at.
+
+    IT PASSES NO JUDGEMENT. A rule of three is not a defect; `ai-patterns.md` flags it "forced
+    everywhere", not present at all. Three genuinely parallel things belong in a list. What this
+    reports is whether the shape changed, which is a fact, and not whether it should have.
+    """
+    out = []
+    for i, sentence in enumerate(_SENTENCE_SPLIT.split(text.strip()), start=1):
+        if "," not in sentence:
+            continue
+        parts = []
+        for chunk in sentence.split(","):
+            parts.extend(_COORDINATOR.split(chunk))
+        items = [p for p in (x.strip(" ;:-—–") for x in parts) if p]
+        if len(items) >= minimum:
+            out.append((i, len(items)))
+    return out
+
+
 def measured_digest(text: str) -> str:
     """A short SHA-256 of the exact bytes measured, printed with every report.
 
@@ -454,6 +496,40 @@ def compute_drift(original: dict, rewrite: dict, baseline: dict | None) -> dict:
     return out
 
 
+def format_series_block(before: list, after: list) -> list[str]:
+    """Which coordinated series survived the rewrite, which broke, which are new.
+
+    'Survived' is the row that settles expectation 9.7's argument: a series in the same
+    sentence position with the same item count is the same shape, whatever was done to the
+    words inside it.
+    """
+    b = dict(before)
+    a = dict(after)
+    lines = [
+        "COORDINATED SERIES -- shape, which is not rhythm",
+        "A three-item list whose words were swapped is the same list. This block",
+        "reports whether the shape changed; it does not say whether it should have.",
+        "A rule of three is not a defect -- ai-patterns.md flags it forced everywhere,",
+        "not present at all. Read the sentences it names.",
+        "",
+    ]
+    if not b and not a:
+        lines.append("  none in either document")
+        lines.append("")
+        return lines
+    for idx in sorted(set(b) | set(a)):
+        if idx in b and idx in a and b[idx] == a[idx]:
+            lines.append(f"  sentence {idx}: {b[idx]}-item series  SURVIVED unchanged")
+        elif idx in b and idx in a:
+            lines.append(f"  sentence {idx}: {b[idx]}-item -> {a[idx]}-item  changed")
+        elif idx in b:
+            lines.append(f"  sentence {idx}: {b[idx]}-item series  BROKEN by the rewrite")
+        else:
+            lines.append(f"  sentence {idx}: {a[idx]}-item series  NEW in the rewrite")
+    lines.append("")
+    return lines
+
+
 def format_drift(drift: dict, has_baseline: bool) -> list[str]:
     lines = [
         "=" * 78,
@@ -488,7 +564,8 @@ def format_drift(drift: dict, has_baseline: bool) -> list[str]:
 
 
 def format_report(draft: dict, stance: str, baseline: dict | None, label: str,
-                  drift: dict | None = None, digest: str | None = None) -> str:
+                  drift: dict | None = None, digest: str | None = None,
+                  series: tuple | None = None) -> str:
     lines = [f"register report -- {label} ({draft['n_words']} words)"]
     if digest:
         lines.append(f"measured: {label} sha256:{digest}")
@@ -516,6 +593,9 @@ def format_report(draft: dict, stance: str, baseline: dict | None, label: str,
 
     if drift is not None:
         lines.extend(format_drift(drift, baseline is not None))
+        if series is not None:
+            lines.append("=" * 78)
+            lines.extend(format_series_block(series[0], series[1]))
 
     if baseline is not None:
         note = f"(baseline: {baseline['n_docs']} document(s)"
@@ -530,7 +610,8 @@ def format_report(draft: dict, stance: str, baseline: dict | None, label: str,
 
 
 def to_json(draft: dict, stance: str, baseline: dict | None, label: str,
-            drift: dict | None = None, digest: str | None = None) -> dict:
+            drift: dict | None = None, digest: str | None = None,
+            series: tuple | None = None) -> dict:
     out = {
         "document": label,
         "measured_sha256": digest,
@@ -552,6 +633,8 @@ def to_json(draft: dict, stance: str, baseline: dict | None, label: str,
         },
         "citations": {k: " ".join(c) for k, _, _, c in PERSON_META + STIFFNESS_META},
     }
+    if series is not None:
+        out["coordinated_series"] = {"original": series[0], "rewrite": series[1]}
     if drift is not None:
         out["drift"] = drift
         out["drift_note"] = (
@@ -631,11 +714,15 @@ def main() -> int:
 
     drift = compute_drift(original, draft, baseline) if original is not None else None
     digest = measured_digest(text)
+    series = None
+    if args.against is not None:
+        series = (coordinated_series(args.against.read_text(encoding="utf-8")),
+                  coordinated_series(text))
 
     if args.json:
-        print(json.dumps(to_json(draft, args.stance, baseline, label, drift, digest), indent=2))
+        print(json.dumps(to_json(draft, args.stance, baseline, label, drift, digest, series), indent=2))
     else:
-        print(format_report(draft, args.stance, baseline, label, drift, digest))
+        print(format_report(draft, args.stance, baseline, label, drift, digest, series))
     return 0
 
 

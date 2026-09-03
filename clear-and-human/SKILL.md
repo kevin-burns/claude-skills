@@ -161,6 +161,18 @@ Targets for dims 2–4 are 7–10 (8–10 for short formats). One-line justifica
 
 1. Replace every flagged pattern with natural language (see `references/ai-patterns.md` for before/after).
 2. Vary sentence rhythm — short lines mixed with longer ones. Uneven length reads as human; treat it as one signal among several, not a ranking (see `references/ai-patterns.md`, which records that the "loudest tell" claim had no source).
+
+   **Rhythm is length. Shape is syntax. They are different, and changing the first is not changing the second.** This distinction is here because an eval expectation — *"varies sentence structure rather than reproducing the input's flat parallel list"* — failed twice running, and the second time with a more convincing account of itself:
+
+   | | |
+   |---|---|
+   | original | "Our service reduces costs, improves reliability, and shortens onboarding." |
+   | rewrite | "Our service cuts costs, improves reliability, and speeds up onboarding." |
+   | claimed | *"So I kept all three, just de-mechanized the phrasing."* |
+
+   Two verbs swapped for near-synonyms; the three-item coordination untouched. **A three-item list whose words were changed is the same list.** If you are asked to vary structure, one of three things has to happen: **split** the series so the items take different syntactic roles, **cut** it if the third item was only there for the cadence, or **keep it and say why** — three genuinely parallel things belong in a list, and `ai-patterns.md` flags the rule of three *forced everywhere*, not present at all.
+
+   **Do not argue this from memory.** `scripts/register_report.py <rewrite> --against <original>` prints a COORDINATED SERIES block that says whether a series survived, broke, changed or is new, by sentence. A row reading `SURVIVED unchanged` is the whole claim settled, and there is nothing left to narrate.
 3. Use simple constructions (is/are/has) instead of "serves as / stands as / boasts".
 4. Cut decorative emoji, mechanical boldface, and title-case headings. **Em-dashes and curly quotes are not on this list** — they are author-relative and model-specific, and `references/ai-patterns.md` holds the current rule with its evidence. Follow the reference, not a blanket cut. A graded eval caught this file and that one giving opposite instructions, and the reference was the better-reasoned of the two.
 5. **Add voice, carefully.** Opinions, mild uncertainty, first person where it fits, the occasional aside. In `technical` mode keep this conservative — a runbook doesn't need a personality, it needs to be right and unambiguous.
@@ -203,6 +215,8 @@ checkable by someone other than you.**
 5. **Run `scripts/register_report.py <rewrite> --against <original>`** and read the REGISTER DRIFT section. `fidelity_check.py` catches a rewrite that invented a **fact**; this catches one that invented a **register**, which nothing else here does. Movement is not a defect — the rewrite was supposed to change the text. What you are looking for is movement you did not intend, and with `--baseline` a row marked **AWAY** means the rewrite ended up further from the author's own rate than the original was. Report what it says; it sets no threshold and returns no verdict.
 6. **Answer `references/self-check.md` item by item, by number.** Twenty-four pass/fail questions grouped as fidelity, voice, patterns and substance. It is deliberately more mechanical than the prose audit in step 1: a paragraph asking you to reflect is easy to narrate past, and the graded set shows that happening — six of ten outputs narrated running `fidelity_check.py` and one pasted its output. **The checklist is judgement and the script is measurement; neither substitutes for the other.**
 7. Present the final version. Optionally list the changes made.
+
+**If you offer the user more than one version, say which one every check measured.** A graded output presented two deliverables and pasted real, reproducing script results — but never said which version they described, so the evidence was sound and its referent was not. The `measured:` digest identifies the bytes; you have to identify the version. Check the one you are recommending, and say so.
 
 **Never certify what you did not check.** This is the rule the eval caught being broken, and it is the most damaging failure in the set because the reader trusts this line specifically. Two constraints:
 

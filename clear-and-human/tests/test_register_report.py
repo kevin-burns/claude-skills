@@ -584,3 +584,72 @@ def test_digest_is_present_in_json_too(tmp_path):
     assert "measured_sha256" in payload
     import hashlib
     assert payload["measured_sha256"].startswith(hashlib.sha256(draft.read_bytes()).hexdigest()[:12])
+
+
+# ------------------------------------------------------------- coordinated series (shape, not rhythm)
+#
+# Eval runs 3 and 4 both failed expectation 9.7 the same way, and the second time with better
+# self-justification. Original: "Our service reduces costs, improves reliability, and shortens
+# onboarding." Rewrite: "Our service cuts costs, improves reliability, and speeds up onboarding."
+# Two verbs swapped for near-synonyms, the three-item coordination untouched -- delivered as
+# structural variation both times.
+#
+# The instruction said "vary sentence rhythm". The model varied LENGTH, which is a defensible
+# reading of rhythm, and left SHAPE alone. Naming that distinction in prose was not enough the
+# first time, so it is measured here: a series that survives a rewrite is visible rather than
+# arguable.
+
+
+def test_finds_a_three_item_coordinated_series():
+    from register_report import coordinated_series
+    s = coordinated_series("Our service reduces costs, improves reliability, and shortens onboarding.")
+    assert [n for _, n in s] == [3]
+
+
+def test_finds_a_series_with_a_single_comma():
+    """'A, B and C' is a three-item series with one comma -- a comma count alone misses it."""
+    from register_report import coordinated_series
+    assert [n for _, n in coordinated_series("The estate spans AWS, Azure and GCP.")] == [3]
+
+
+def test_two_clauses_joined_by_and_are_not_a_series():
+    from register_report import coordinated_series
+    assert coordinated_series("It works, and it is fast.") == []
+
+
+def test_a_plain_sentence_has_no_series():
+    from register_report import coordinated_series
+    assert coordinated_series("The deploy takes four minutes.") == []
+
+
+def test_synonym_swap_leaves_the_series_intact_which_is_the_whole_point():
+    from register_report import coordinated_series
+    before = coordinated_series("Our service reduces costs, improves reliability, and shortens onboarding.")
+    after = coordinated_series("Our service cuts costs, improves reliability, and speeds up onboarding.")
+    assert before == after, "the measure must show that a synonym swap changed no structure"
+
+
+def test_a_genuine_restructure_removes_the_series():
+    from register_report import coordinated_series
+    after = coordinated_series(
+        "Our service cuts costs. It improves reliability too, which is what shortens onboarding.")
+    assert after == []
+
+
+def test_series_are_reported_per_sentence_with_their_position():
+    from register_report import coordinated_series
+    text = ("The deploy takes four minutes. "
+            "It cuts costs, improves reliability, and shortens onboarding.")
+    assert coordinated_series(text) == [(2, 3)]
+
+
+def test_drift_section_reports_a_surviving_series(tmp_path):
+    original = tmp_path / "original.md"
+    rewrite = tmp_path / "rewrite.md"
+    original.write_text(_pad("Our service reduces costs, improves reliability, and shortens onboarding."),
+                        encoding="utf-8")
+    rewrite.write_text(_pad("Our service cuts costs, improves reliability, and speeds up onboarding."),
+                       encoding="utf-8")
+    out = _run_cli([str(rewrite), "--against", str(original)]).stdout
+    assert "COORDINATED SERIES" in out.upper()
+    assert "SURVIVED" in out.upper(), "a series present before and after must be called out"
