@@ -689,3 +689,44 @@ def test_subordinated_clauses_do_not_count_as_coordinands():
         "Our service cuts costs, which is what shortens onboarding.") == []
     assert coordinated_series(
         "It provisions the workspace and notifies the lead, so nobody waits.") == []
+
+
+def test_coordinated_series_normalises_like_its_siblings(tmp_path):
+    """strip_noise() removes front matter, code, tables and links. profile() applies it;
+    coordinated_series() did not, so YAML front matter counted as a coordinated series.
+    Small in effect -- 33 hits to 32 on a real article -- and wrong in principle: two
+    functions in one module disagreeing about what counts as text."""
+    from register_report import coordinated_series
+    doc = ('---\ntags: [CI, PDF, ATS, Eleventy, Job Search]\n---\n\n'
+           'The build is green and the tests pass.')
+    assert coordinated_series(doc) == []
+
+
+def test_a_known_false_positive_is_documented_not_fixed():
+    """MEASURED AND ACCEPTED, not a bug to be fixed by more regex.
+
+    A smoke test on 2,160 words of published prose flagged 33 series across ~146 sentences --
+    23% -- and roughly half were noise of this kind: "Between 44mm and 48mm nothing in the
+    source moves, and both extractors change their answer at once." The "and" inside a
+    measurement range reads as a list separator to a comma-splitter.
+
+    An attempted guard (suppress a coordinator joining two short phrases) broke a genuine
+    series -- "AWS, Azure and GCP" -- and still missed this one. Telling a list from a noun
+    phrase needs a parser, which is a dependency this module will not take.
+
+    So the false positive is PINNED HERE rather than fixed, and the tool is scoped instead:
+    designed for short before/after comparison, noisy on long-form prose, and every row is a
+    pointer to a sentence a human reads. This test exists so the behaviour is a known
+    quantity rather than a surprise to the next reader."""
+    from register_report import coordinated_series
+    assert [n for _, n in coordinated_series(
+        "Between 44mm and 48mm nothing in the source moves, "
+        "and both extractors change their answer at once.")] == [3]
+
+
+def test_a_genuine_list_in_real_prose_is_still_found():
+    """The other direction. From the same article, correctly flagged."""
+    from register_report import coordinated_series
+    assert [n for _, n in coordinated_series(
+        "Title, meta description, og:title and og:description had drifted "
+        "three headline revisions behind the visible tagline.")] == [4]
