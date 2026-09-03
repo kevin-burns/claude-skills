@@ -63,6 +63,40 @@ Apply Strunk's constructive rules while drafting. Full detail in `references/ele
 
 For the **technical** voice (default for docs): explain mechanics, show how it works, name the tradeoff, reduce the reader's uncertainty. Calm and specific beats punchy and vague.
 
+### The fact ledger — generate mode has no other fabrication check, so it needs this one
+
+**`fidelity_check.py` cannot help you here and it is right not to try.** It diffs a rewrite
+against an original. In generate mode there is no original, so there is nothing to diff — and
+that leaves the self-audit certifying honesty against nothing, which turns *"I invented nothing"*
+into exactly the unfalsifiable assertion this skill forbids everywhere else.
+
+**That gap has a measured cost.** Across three eval runs the skill's worst failures are almost
+all generate mode: an invented claim about a CI pipeline, an invented filesystem path inside a
+rollback command, and *"we shipped a new CI pipeline **this week**"* — a timeline nobody
+supplied, followed by the output asserting *"the post carries exactly one fact."*
+
+**Note what those three have in common: not one contains a digit.** Any check built on diffing
+numbers would have passed all of them.
+
+**So before you present generated prose, write the ledger.** Every factual claim in the draft,
+and where it came from:
+
+| claim | source |
+|---|---|
+| deploy time went from 40 minutes to 6 | user's prompt |
+| the team is four engineers | `WRITING_CONTEXT.md` |
+| shipped *this week* | **nothing — cut it or bracket it** |
+
+Three sources are legitimate: `WRITING_CONTEXT.md`, the user's own message, and the user asked
+directly. **A claim with no source does not get softened or hedged — it is cut, or it becomes a
+bracketed placeholder.** Count dates, timelines, tool and product names, team sizes, and any
+statement about what did or did not change as claims. Those are the ones that slip through,
+because none of them looks like a number.
+
+Keep the ledger short and show it. Two or three rows is normal for a LinkedIn post; a runbook
+has more. **If writing it feels like overhead, that is the signal it is working** — it is the
+only place in generate mode where a fabrication has to be written down next to nothing.
+
 ---
 
 ## Layer 2 — Detect, score, report (review mode)
@@ -151,7 +185,19 @@ your report describes it. **Quote that line with the output; it is what makes th
 checkable by someone other than you.**
 
 1. Ask yourself: "What still makes this read as AI-generated?" Answer in 2–4 honest bullets (rhythm too even? placeholder-ish specifics? slogan-y closer?).
-2. Then revise once more to fix exactly those tells. **A revised version must follow the audit.** If the audit names nothing worth fixing, say that explicitly — but an audit that ends the output is not a self-audit, it is a postscript.
+2. **Every defect you named in step 1 takes one of exactly three exits, and you say which.** This step used to read "revise once more". That enforced *order* — something must come after the audit — and never enforced *change*; a graded output satisfied it by pasting identical text with "none needed".
+
+   | exit | what it means | what you must write |
+   |---|---|---|
+   | **FIXED** | the artefact changed | what changed |
+   | **REFUSED** | fixing it would require inventing something | what would have to be invented — and **leave a placeholder, not the defect** |
+   | **ESCALATED** | only the author can decide | ask the question; do **not** deliver the defect while asking |
+
+   **"Inherited from the source" is not an exit.** A graded output kept *"It's a revolution"* after writing *"still an unsupported hype claim… I'm not going to manufacture the evidence that would justify it"*, reasoning that it came from the input. That reasoning is wrong: **a rewrite that preserves an unsupported superlative has endorsed it**, because the reader cannot tell which sentences were examined and which were passed over. The right exit there was REFUSED — cut it, or bracket it.
+
+   This rule exists because the audit is not failing to *see*. In eval run 3, three of four failures named the defect accurately and shipped it anyway — *"So I kept all three, just de-mechanized the phrasing"*, said plainly about the structure it had been asked to vary. **Sharpening the detection instructions would target the one step that is already working.** A named defect with no stated exit is itself a failure of this step.
+
+   If the audit genuinely names nothing, say that explicitly — but an audit that ends the output is not a self-audit, it is a postscript.
 3. Run `scripts/fidelity_check.py <original> <rewrite>`. It reports any number, quote, URL or code span that appeared, vanished or changed. A number present in the rewrite but not the original is a fabrication.
 4. Read the **CLAIM WORDS** section of that report before presenting anything. It lists the ranking, scope, comparison and requirement words the rewrite dropped or added — the loss that looks like style. A superlative that ranked its subject against everything else in the document, a "simultaneously" that said three things hold at once rather than in turn, a "must" softened to "should": each leaves with the shape it was carried in. **The script does not judge these; you have to.** For every row, go to the sentence it quotes and decide whether the claim survives without the word. If it doesn't, put the word back. Say which rows you checked and what you concluded — a row you did not open is a row you did not check.
 5. **Run `scripts/register_report.py <rewrite> --against <original>`** and read the REGISTER DRIFT section. `fidelity_check.py` catches a rewrite that invented a **fact**; this catches one that invented a **register**, which nothing else here does. Movement is not a defect — the rewrite was supposed to change the text. What you are looking for is movement you did not intend, and with `--baseline` a row marked **AWAY** means the rewrite ended up further from the author's own rate than the original was. Report what it says; it sets no threshold and returns no verdict.

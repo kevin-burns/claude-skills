@@ -28,6 +28,11 @@ you did not actually look at is worse than an item skipped honestly.
 3. Is any specific *without a digit* invented — a claim about state, a file path, a filename,
    an authorial stance, or a measurement of the text itself? Both generate-mode failures in the
    graded set were numberless, which is how they got past every other check.
+3a. **Generate mode only: paste the fact ledger.** Every factual claim with its source —
+   `WRITING_CONTEXT.md`, the user's message, or the user asked. A row with no source must
+   already have been cut or bracketed. `fidelity_check.py` cannot run here, so this is the only
+   fabrication check generate mode has, and three of this skill's worst graded failures were
+   generate mode.
 4. If any environment-specific value is bracketed as a placeholder, is **every** one bracketed?
    Half-marking tells the reader the unmarked ones are real.
 5. Was an argument added or dropped? A rewrite changes delivery, not substance.
@@ -80,6 +85,13 @@ you did not actually look at is worse than an item skipped honestly.
     that is and where it publishes, ask now rather than guessing.
 
 ---
+
+**Every defect this list surfaces takes an exit — FIXED, REFUSED or ESCALATED — and you name
+which.** Writing a defect down is not addressing it. In the graded set, three of four failures
+described the problem accurately and delivered it anyway; the most quotable said *"still an
+unsupported hype claim… I'm not going to manufacture the evidence that would justify it"* and
+then shipped the claim. **A named defect with no stated exit counts as a failed item**, and
+"inherited from the source" is not an exit.
 
 **If any item fails, fix the draft and answer the failed items again.** Then present the final
 version. Never certify what you did not check: say what you checked and how, not that nothing
