@@ -134,13 +134,20 @@ def check_registry() -> list[tuple[str, bool]]:
     linux_x86 = backends.resolve("auto", system="linux", machine="x86_64")
     results.append(("resolve(auto, linux/x86_64).name == 'faster-whisper'", linux_x86.name == "faster-whisper"))
 
-    # 12: parakeet is the sole has_whisper_metrics exception.
-    parakeet_metrics = backends.REGISTRY["parakeet"].has_whisper_metrics
-    results.append(("REGISTRY['parakeet'].has_whisper_metrics is False", parakeet_metrics is False))
-    for name, info in backends.REGISTRY.items():
-        if name == "parakeet":
-            continue
-        results.append((f"REGISTRY[{name!r}].has_whisper_metrics is True", info.has_whisper_metrics is True))
+    # 12: pin WHICH backends lack Whisper's metrics, rather than assuming a
+    # single exception. The guard's strong rules cannot fire on these, so a new
+    # metric-free backend added silently would weaken the guard for it with
+    # nothing failing. This assertion caught exactly that when elevenlabs landed.
+    metric_free = {name for name, info in backends.REGISTRY.items() if not info.has_whisper_metrics}
+    results.append((
+        f"metric-free backends are exactly {{parakeet, elevenlabs}} (got {sorted(metric_free)})",
+        metric_free == {"parakeet", "elevenlabs"},
+    ))
+    for name in ("mlx-whisper", "faster-whisper", "groq", "openai"):
+        results.append((
+            f"REGISTRY[{name!r}].has_whisper_metrics is True",
+            backends.REGISTRY[name].has_whisper_metrics is True,
+        ))
 
     # 13: cost estimate rounds correctly for a priced network model, and is None
     # (not 0, not free) for a local backend -- callers must treat None as

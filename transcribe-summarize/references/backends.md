@@ -12,6 +12,7 @@ declared clean.
 | `parakeet` | **macOS verified**, others untested | `parakeet-mlx` (Apple Silicon) or `nemo_toolkit[asr]` | **partial — see below** | no |
 | `groq` | any | none — stdlib `urllib` | **full** | **yes** |
 | `openai` | any | none — stdlib `urllib` | **full** | **yes** |
+| `elevenlabs` (Scribe) | any | none — stdlib `http.client` | **partial** | **yes** |
 
 `--backend auto` resolves to `mlx-whisper` on Apple Silicon and `faster-whisper`
 everywhere else. **It never resolves to a network backend** — not as a default,
@@ -139,6 +140,17 @@ asked whether a segment's *midpoint* fell inside a silent span. It did, and real
 speech was suppressed. Two changes came out of that, and they are independent:
 beam decoding fixes the cause, and containment fixes the rule.
 
+### Measured on a real recording
+
+On the same 2m19s laptop-mic recording used for the other backends, scoring 12
+planted hard items: **Scribe 10/12** — behind OpenAI's 11 and ahead of every
+local backend (mlx-turbo 9, faster-whisper 9, mlx-large 8, parakeet 8). Decode
+20 s, cost $0.0073 for the 120 s actually sent after trimming.
+
+It recovered "Terragrunt", which only `large-v3` and OpenAI also managed, and it
+captured both halves of a spoken self-correction that `large-v3` lost. Segment
+count was 10 against 15–25 elsewhere — longer, more prose-like spans.
+
 ### Where this sits against how other tools do it
 
 Worth knowing, because it is not the common pattern. WhisperX and
@@ -167,6 +179,56 @@ The cross-platform NeMo path (`nemo_toolkit[asr]`) is **not** verified.
 on the MLX path only; whether NeMo's own decoder shows the same overrun is
 untested.
 
+## ElevenLabs Scribe: the only backend that knows who spoke
+
+Verified against the API reference 2026-09-04: `POST https://api.elevenlabs.io/v1/speech-to-text`,
+auth header `xi-api-key` (**not** bearer), `model_id=scribe_v2`, files to 3 GB, audio to 10 hours.
+
+Two things make it unlike everything else here:
+
+**It returns words, not segments.** There is no `segments` array at all — just
+`words[]` with `text`, `type`, `logprob`, `start`, `end`, `speaker_id`. The
+segmentation is ours, grouping on speaker change and a 1 s pause. Every other
+backend hands us segments.
+
+**It diarizes, up to 32 speakers.** No Whisper backend and not Parakeet returns
+any speaker field. This is the one place attribution is available at all.
+
+**Verified live on 2026-09-04**, not merely documented: two distinct voices came
+back as `speaker_0` and `speaker_1`; the same audio with `diarize=false` returned
+no speaker ids at all. `num_speakers=2` was not needed. Also confirmed against
+the live response: Whisper's three metrics really are absent and the per-word
+`logprob` really is present, so `has_whisper_metrics=False` is measured rather
+than assumed.
+
+A caution from getting this wrong once: the first live run reported ONE speaker
+and looked like an API failure. It was the test fixture — both voice clips were
+rendered with macOS `say`'s default voice, which on that machine is Daniel, so
+they were byte-identical. Scribe was right. If a diarization test ever reports
+one speaker, check the fixture actually contains two before blaming the vendor.
+
+That does **not** make attribution automatic. Scribe returns `speaker_0`,
+`speaker_1` — positional labels, not names. A person still maps labels to people,
+exactly as before, and `notes_check.py` still rejects a raw label in a notes
+document. What changes is that the mapping is now *possible from the transcript*
+rather than needing to be reconstructed from memory.
+
+**Quality metrics: partial.** Scribe gives a per-word `logprob` and none of
+Whisper's three segment metrics, so those stay `None` and the metric rules do not
+fire. The mean word logprob is recorded as `confidence` and used only to rank
+what a human should check — never to suppress. It is a log probability and so
+*looks* like `avg_logprob`, but it is computed differently, and this project does
+not threshold a number it has not calibrated. The backend-independent rules
+(`decoded_from_silence`, `repeated_token`) apply here as they do to Parakeet.
+
+**$0.22 per hour**, verified from elevenlabs.io/pricing/api on 2026-09-04 and
+flat across every plan tier — only the included hours differ, not the rate.
+Realtime is $0.39. That puts Scribe between Groq and OpenAI, and it is the only
+one of the four that diarizes.
+
+Diarization is on by default in the backend and is not currently exposed as a CLI
+flag; if you need it off, that is a small addition to `transcribe.py`.
+
 ## Network backends: cost and limits
 
 Per hour of audio, from the providers' own documentation:
@@ -175,6 +237,7 @@ Per hour of audio, from the providers' own documentation:
 |---|---|---|
 | groq | `whisper-large-v3` | 0.111 |
 | groq | `whisper-large-v3-turbo` | 0.04 |
+| elevenlabs | `scribe_v2` | 0.22 |
 | openai | `whisper-1` | 0.36 |
 
 Groq caps uploads at **25 MB** (free tier) and 100 MB (dev tier). The tool
@@ -199,6 +262,28 @@ say no.
 
 API keys are read from `GROQ_API_KEY` / `OPENAI_API_KEY` only. Never a flag,
 never printed, never written to the run manifest.
+
+## No backend removes filler — not even the hosted ones
+
+A common assumption is that the cloud models clean up speech and the local ones do not. Measured
+2026-09-04 on audio containing three "um", three "uh", one "er", plus "I mean" and "you know":
+
+| backend | filler kept | hedges kept |
+|---|---|---|
+| mlx-whisper turbo (local) | 5 | 2 |
+| faster-whisper (local) | 5 | 2 |
+| parakeet (local) | 5 | 2 |
+| **openai whisper-1 (hosted)** | **5** | **2** |
+
+Identical output, to the token. Whisper is trained to transcribe verbatim, and Parakeet behaves
+the same way. **Paying for a hosted model does not buy you disfluency removal.**
+
+That is not a defect. A transcript that silently drops words is worse than one that keeps them —
+you cannot tell what was removed. Cleanup belongs in a later pass that knows it is editing.
+
+In this skill that pass is the notes step, and it is where filler comes out. Products that appear
+to transcribe cleanly are doing the same thing: ASR first, then a second model that rewrites.
+**If you skip the notes step you have a verbatim transcript, and nothing has cleaned it.**
 
 ## Preparation is shared, and it matters more than the backend
 

@@ -55,6 +55,21 @@ Permitted:
 - Figures, dates and names, as spoken.
 - Who said what, where that was stated in the meeting.
 
+**Filler and disfluency are dropped in the notes, and kept in the transcript.** "Um", "uh",
+"er", "you know", "I mean", repeated false starts — none of that belongs in a written record of
+what was decided, and condensing a statement is not the same as changing it.
+
+Measured 2026-09-04, because the assumption runs the other way: **no transcription model removes
+filler, local or hosted.** mlx-whisper, faster-whisper, Parakeet and OpenAI's whisper-1 all
+returned the same five filler tokens and two hedges from the same audio. Whisper transcribes
+verbatim by design. So the transcript keeps them and this step is the only place they come out —
+if you skip the notes step, nothing has cleaned the text.
+
+The exception is a disfluency that carries meaning. A speaker correcting themselves — "sorry,
+that's not right, the second wave is the fourteenth" — is a fact about what was settled, not
+noise. Record what they landed on; do not silently drop the correction, and do not present the
+first version as though it stood.
+
 Forbidden — each of the following was cut by hand from a real document, and each is forbidden
 again here for the same reason:
 

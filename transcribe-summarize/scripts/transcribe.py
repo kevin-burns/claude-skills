@@ -250,6 +250,9 @@ def main() -> int:
     model = args.model or info.default_model
 
     try:
+        # Before the egress gate, not after: a file with no audio track would
+        # otherwise be uploaded and billed, or fail locally with a raw ffmpeg error.
+        audio.assert_has_audio(args.audio)
         duration = audio.probe_duration(args.audio)
     except audio.AudioError as exc:
         die(str(exc))

@@ -46,6 +46,18 @@ class Segment(TypedDict, total=False):
     compression_ratio: float | None
     no_speech_prob: float | None
 
+    # Speaker attribution, where the backend can produce it. Only ElevenLabs
+    # Scribe does; every Whisper backend and Parakeet return nothing here, and
+    # None means "this backend cannot tell you", not "one speaker".
+    # A raw label like "speaker_0" is a decoder artefact: useful in a transcript,
+    # forbidden in a notes document until a person maps it to a name.
+    speaker: str | None
+
+    # A backend-specific confidence, 0-1 or a mean log-probability depending on
+    # the engine. Recorded for review ranking, NEVER thresholded -- it is not on
+    # avg_logprob's calibrated scale.
+    confidence: float | None
+
     # Written by the quality guard, never by a backend.
     suppressed: bool
     suppressed_reason: str

@@ -108,6 +108,51 @@ only — the tool says so at run time. See `references/backends.md`.
 If the user asks why a stretch of transcript is missing, read the `.json`: the
 answer is there with the numbers that caused it.
 
+## Starting from a transcript you already have
+
+**Most meetings are already transcribed by the platform, and there is often no
+audio at all.** Teams and Zoom hand out a `.vtt` (sometimes `.srt`), and it is
+unreadable as prose: a cue every few seconds, sentences chopped across cues, the
+speaker's name repeated on every line, timecodes throughout.
+
+That is a supported entry point. Nothing is re-transcribed — the audio path is
+skipped entirely:
+
+```bash
+"$HOME/.claude/skills/transcribe-summarize/scripts/normalise_transcript.py" meeting.vtt
+# -> meeting.md, cues rejoined into paragraphs, speakers attributed, one anchor per paragraph
+```
+
+Then carry on exactly as if the transcript had been decoded here: read it, ask
+for the meeting facts, and write the notes under `references/notes-register.md`.
+
+`--no-speakers` drops attribution if the source labels are wrong or unwanted.
+
+**It is a format conversion and nothing more.** No words are changed, no filler
+removed, no grammar fixed. Deciding what was said is the summarising step and it
+has its own rules. If a user hands you a messy transcript and asks for it "tidied
+up", normalise the format here and do the judgement in the notes — do not quietly
+rewrite someone's words in a document that is supposed to record them.
+
+Speakers are kept in the transcript and forbidden in the notes, which is not a
+contradiction: a transcript is a working artefact and may carry provenance; the
+notes are a record and may not. `notes_check.py` will still reject a raw
+`Speaker 2` label in the notes.
+
+If someone passes a `.vtt` to `transcribe.py` it stops and points here rather
+than trying to decode it.
+
+## Video files
+
+`.mp4` is what a Teams or Zoom download actually is, and it works directly — no
+need to extract the audio first. Verified working: `.mp4`, `.mov`, `.mkv`,
+`.webm`, plus every audio container (`.m4a`, `.mp3`, `.wav`, `.flac`, `.opus`).
+ffmpeg pulls the audio track out; the video is ignored and never uploaded.
+
+A file with **no** audio track — a muted screen recording — is refused up front,
+before any network backend is offered it. That check runs before the egress gate
+specifically so a silent video is never uploaded and billed.
+
 ## Review is a step, not an optional extra
 
 **Transcription output is a draft. Say so, and make the user check it.**
@@ -154,11 +199,14 @@ this pipeline outside a Claude Code session; inside one it is a pointless upload
 
 ### Ask first — three things the audio cannot tell you
 
-**No backend here identifies speakers.** Whisper returns no speaker field, on any
-engine. Diarisation would need a separate gated model and a multi-GB install, and
-it would only ever produce `Speaker 1` / `Speaker 2` — which the register forbids
-as a decoder artefact anyway. So attribution comes from the user or it does not
-happen.
+**Almost no backend here identifies speakers.** Every Whisper engine and Parakeet
+return no speaker field at all. The one exception is `--backend elevenlabs`
+(Scribe), which diarizes up to 32 speakers — but it returns `speaker_0`,
+`speaker_1`, positional labels rather than names, and the register forbids a raw
+label in a notes document. So it tells you *how many* people spoke and *which
+lines belong together*; it still cannot tell you *who*. Attribution comes from the
+user either way — Scribe just makes the mapping possible from the transcript
+instead of from memory.
 
 Before writing notes, ask for:
 

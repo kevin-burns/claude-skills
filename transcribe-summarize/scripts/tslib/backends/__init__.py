@@ -105,6 +105,25 @@ REGISTRY: dict[str, BackendInfo] = {
             "Reads GROQ_API_KEY from the environment; never accepts a key as a flag."
         ),
     ),
+    "elevenlabs": BackendInfo(
+        name="elevenlabs",
+        kind="network",
+        pip_spec=None,
+        import_name=None,
+        # Scribe returns a per-word logprob and none of Whisper's three segment
+        # metrics, so the guard's metric rules cannot fire. Its backend-independent
+        # rules (decoded_from_silence, repeated_token) still apply.
+        has_whisper_metrics=False,
+        platforms=("any",),
+        default_model="scribe_v2",
+        notes=(
+            "The only backend here that can attribute speakers -- diarization for up to 32. "
+            "Returns words rather than segments, so segmentation is ours. Labels are "
+            "speaker_0/speaker_1, not names: a person still maps them, and notes_check "
+            "rejects a raw label in a notes document. Pricing is not published in the API "
+            "docs, so no cost estimate is offered for it."
+        ),
+    ),
     "openai": BackendInfo(
         name="openai",
         kind="network",
@@ -123,9 +142,15 @@ REGISTRY: dict[str, BackendInfo] = {
 # $/hour, derived from published per-minute or per-hour API pricing.
 # Groq figures are from Groq's own pricing page. OpenAI's whisper-1 is
 # $0.006/minute published, so $0.006 * 60 = $0.36/hour.
+# USD per hour of audio, from each provider's own published pricing. A model
+# missing here yields None from estimate_cost(), which callers must read as
+# "cannot estimate" and never as "free".
 COST_PER_HOUR_USD: dict[str, dict[str, float]] = {
     "groq": {"whisper-large-v3": 0.111, "whisper-large-v3-turbo": 0.04},
     "openai": {"whisper-1": 0.36},
+    # Verified 2026-09-04 from elevenlabs.io/pricing/api. Flat across every
+    # plan tier -- only the included hours differ, not the rate.
+    "elevenlabs": {"scribe_v2": 0.22, "scribe_v2_realtime": 0.39},
 }
 
 

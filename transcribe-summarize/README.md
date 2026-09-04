@@ -1,11 +1,66 @@
 # transcribe-summarize
 
+![transcribe-summarize](images/banner.webp)
+
+<!-- banner.png is the same image for anywhere WebP is not supported; images/README.md explains the set -->
+
 Transcribe audio on your own machine, on macOS, Windows or Linux. Optionally turn
 the result into meeting notes and a PDF.
 
 Nothing leaves your computer unless you name a network backend in the command,
 and when you do, the tool tells you what it is about to send and what it will
 cost before it sends it.
+
+## What it does
+
+| in | what happens | out |
+|---|---|---|
+| **audio** — `.mp3`, `.m4a`, `.wav`, `.flac`, `.opus` | normalise, trim silence, decode, filter inventions | transcript `.md` + `.srt` + `.json` |
+| **video** — `.mp4`, `.mov`, `.mkv`, `.webm` | ffmpeg takes the audio track; the video is ignored | same as above |
+| **an existing transcript** — `.vtt`, `.srt` from Teams or Zoom | cues rejoined, timecodes dropped, speakers attributed | readable `.md`, no transcription at all |
+| any of the above | you review, then Claude writes it up | meeting notes `.md` + `.pdf` |
+
+A Teams or Zoom download is an `.mp4` and works as-is — you do not extract the
+audio first. And if the platform already transcribed the meeting, skip the audio
+entirely: `normalise_transcript.py` turns the `.vtt` into prose and the notes step
+is identical.
+
+```bash
+./scripts/transcribe.py meeting.mp4                    # audio or video
+./scripts/normalise_transcript.py meeting.vtt          # an existing transcript
+```
+
+A file with **no** audio track — a muted screen recording — is refused before any
+upload is offered, so it is never sent or billed.
+
+**Sovereign by default.** The local path never touches the network. Whisper runs
+on your machine — `mlx-whisper` on Apple Silicon, `faster-whisper` elsewhere —
+and `--backend auto` has no code path to a hosted API, asserted across twelve
+platform combinations. Hosted backends exist and are reachable only by naming one
+in that invocation, after a disclosure of what will be sent and what it costs.
+
+## What it does NOT do
+
+Worth being explicit, because several of these are things people assume:
+
+- **It does not verify anything.** Output is a draft. Machine transcription is
+  confidently wrong in ways no threshold catches — measured here, `large-v3`
+  silently dropped a speaker correcting a figure, and *every* backend heard
+  "board pack" as "board packs up". A human has to read it.
+- **It does not remove filler by transcribing.** No model does — local or hosted.
+  Measured: mlx-whisper, faster-whisper, Parakeet and OpenAI all returned the
+  same "um"s. Filler comes out at the **notes** step, so a raw transcript is
+  verbatim and uncleaned.
+- **It does not identify who is speaking**, except on `--backend elevenlabs`,
+  and even there you get `speaker_0` / `speaker_1`, not names. Attendees are
+  something you tell it.
+- **It does not translate**, do real-time streaming, or handle multi-track audio.
+- **It does not edit your words.** The transcript is verbatim; judgement happens
+  in the notes, under a fixed register.
+- **It does not make a recording lawful.** Keeping provenance out of a document
+  changes what the document says, not what happened. Consent is yours to obtain.
+- **The quality guard is not equally strong everywhere.** Parakeet and ElevenLabs
+  return no Whisper metrics, so only the silence and repetition rules apply.
 
 ## Why this exists
 
@@ -95,6 +150,7 @@ Useful flags:
 | `parakeet` | mac / Windows / Linux | **repetition rule only** | no |
 | `groq` | any | full | **yes** |
 | `openai` | any | full | **yes** |
+| `elevenlabs` (Scribe) | any | partial | **yes** |
 
 `--backend auto` picks `mlx-whisper` on Apple Silicon and `faster-whisper`
 elsewhere. **It can never pick a network backend** — not as a default, not as a
@@ -118,6 +174,7 @@ were already cached, so no download time is included. Silence-trimming removed
 | backend | model | decode | accuracy | notable failure |
 |---|---|---|---|---|
 | `openai` | whisper-1 | 9.8 s | **11 / 12** | — |
+| `elevenlabs` | scribe_v2 | 20 s | **10 / 12** | "obviously" → "absolute" |
 | `mlx-whisper` | **large-v3-turbo** (now default) | 13.8 s | 9 / 12 | "Terragrunt" → "terror grunt" |
 | `faster-whisper` | large-v3 | 53.9 s | 9 / 12 | "Terragrunt", "the AKS ones" |
 | `parakeet` | parakeet-tdt-0.6b-v3 | 12.5 s | 8 / 12 | "Raghunathan", "Terragrunt" |
@@ -153,8 +210,19 @@ rather than a Systran repo — a different publisher from its other short names.
 Measured at 50.7 s here, barely faster than its large-v3, because the bottleneck
 is CPU inference rather than model size.)
 
-**Nothing recovered "board pack"** — all five heard "board packs up". Some errors
+**Nothing recovered "board pack"** — all six heard "board packs up". Some errors
 are in the audio, not the model.
+
+**Scribe was the best of the non-OpenAI backends**, and the only one besides
+`large-v3` and OpenAI to get "Terragrunt". It also transcribed the speaker's
+misread *and* the correction that followed it — "not nineteen nine point five…
+oh actually correction, that was ninety-nine point nine five" — where `large-v3`
+dropped the correction entirely. It produced the fewest, longest segments (10,
+against 15–25), which reads better as prose and matters if anything downstream
+assumes a segment is a fixed unit.
+
+Its diarization returned one speaker here, correctly: this is a single-speaker
+recording. Two voices were separated in a dedicated live test.
 
 **Proper nouns are what `--prompt` and `--replace` exist for**, and both work:
 
@@ -192,6 +260,24 @@ Two independent fixes came out of it:
   ([FluidAudio#128](https://github.com/FluidInference/FluidAudio/issues/128)).
   Measured here: the overrun fell from **+7.69 s to +0.73 s**, and decoding got
   slightly *faster*. Details in `references/backends.md`.
+
+## Cost, if you use a network backend
+
+Per hour of audio, from each provider's published pricing (verified 2026-09-04):
+
+| backend | model | $/hour | diarizes |
+|---|---|---|---|
+| `groq` | whisper-large-v3-turbo | **0.04** | no |
+| `groq` | whisper-large-v3 | 0.111 | no |
+| `elevenlabs` | scribe_v2 | 0.22 | **yes, up to 32** |
+| `openai` | whisper-1 | 0.36 | no |
+
+Silence-trimming happens *before* upload, so you are billed for the trimmed
+duration — measured at 12 s sent from a 47 s file. The disclosure block prints
+"up to" for that reason.
+
+A model with no published rate yields no estimate, and the disclosure says
+"unknown for this model". That means *cannot estimate*, never *free*.
 
 ## Sending audio to an API
 

@@ -88,6 +88,59 @@ def probe_duration(src: Path) -> float:
         raise AudioError(f"ffprobe returned no duration for {src.name}") from exc
 
 
+def audio_stream_count(src: Path) -> int:
+    """How many audio streams the file has. Zero is a real and common case.
+
+    A Teams or Zoom download is an .mp4, and video containers are accepted
+    precisely so those work without the user extracting anything first. But a
+    screen recording with the microphone muted is also an .mp4, and it decodes to
+    nothing.
+
+    Checked BEFORE the egress gate, because the two failure modes are both bad:
+    locally it produced a raw "Output file does not contain any stream" from
+    ffmpeg, and on a network backend it would have uploaded the file and billed
+    for it.
+    """
+    cmd = [
+        _tool("ffprobe"), "-v", "error",
+        "-select_streams", "a",
+        "-show_entries", "stream=index",
+        "-of", "csv=p=0",
+        str(src),
+    ]
+    result = _run(cmd)
+    if result.returncode != 0:
+        raise AudioError(f"ffprobe could not read {src.name}:\n{result.stderr.strip()}")
+    return len([line for line in result.stdout.splitlines() if line.strip()])
+
+
+# Text transcripts people hand over instead of audio. Naming them explicitly is
+# the difference between a useful error and a baffling one: told a .vtt "carries
+# only video", a user reasonably concludes the tool is broken.
+TRANSCRIPT_SUFFIXES = {".vtt", ".srt", ".txt", ".md", ".json", ".csv", ".docx", ".rtf", ".html"}
+
+
+def assert_has_audio(src: Path) -> None:
+    """Fail early and specifically when there is nothing to transcribe."""
+    if src.suffix.lower() in TRANSCRIPT_SUFFIXES:
+        raise AudioError(
+            f"{src.name} looks like a text transcript, not a recording.\n"
+            "This tool transcribes audio; it has nothing to decode here.\n"
+            "If you already have a transcript and want it written up as notes, that is the\n"
+            "summarising half of this skill -- see SKILL.md, 'Starting from a transcript you\n"
+            "already have'. No audio needed."
+        )
+
+    if audio_stream_count(src) == 0:
+        raise AudioError(
+            f"{src.name} has no audio track.\n"
+            "Video containers are supported, but this file carries only video "
+            "(a muted screen recording, or a video-only export).\n"
+            "Check with:  ffprobe -select_streams a -show_entries stream=codec_name "
+            f"-of csv=p=0 {src}"
+        )
+
+
 def decode_to_wav(src: Path, dest: Path) -> None:
     """Decode anything ffmpeg reads into 16 kHz mono PCM -- Whisper's native format.
 
