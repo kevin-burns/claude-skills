@@ -44,6 +44,7 @@
     "./source-snapshot",
     "./terraform-registry",
     "./terragrunt-skill",
+    "./transcribe-summarize",
     "./travel-planning",
     "./trilium-capture",
     "./use-linearis",
