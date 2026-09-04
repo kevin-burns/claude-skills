@@ -143,6 +143,12 @@ jobs:
         # CONTRIBUTING.md's decision rule says so explicitly.
         python: ['3.12', '3.13']
     steps:
+      # ffmpeg so audio-dependent tests actually execute rather than skipping.
+      # transcribe-summarize has nine that guard its timestamp mapping and its
+      # audio-preparation ordering; skipped tests read as green.
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:

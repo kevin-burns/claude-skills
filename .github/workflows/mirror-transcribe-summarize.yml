@@ -40,6 +40,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # ffmpeg, or nine tests silently skip. They are the regression guards for the
+      # worst defects this skill has had: timestamps mapping back to the original
+      # recording, duration read from the file rather than the last segment, and
+      # silence detected BEFORE loudnorm (which lifts room tone ~41 dB and hid every
+      # silent span on real audio). Without ffmpeg they report as skipped, which
+      # reads as green. A test that does not run is not a control.
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
