@@ -21,8 +21,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 23 skills + 9 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 23 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 27 skills + 9 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 27 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -54,7 +54,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than twenty-three.
+rather than twenty-seven.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
@@ -65,9 +65,30 @@ picked up with no second install.
 - **It copies.** A plugin install is a snapshot in the harness's cache, not a live link.
   Editing this repo afterwards changes nothing until you update.
 - **It costs context.** Every skill's description loads in every session so the model can
-  decide when to reach for one — about **5.9k tokens always-on** for the full set, before any
+  decide when to reach for one — about **7.2k tokens always-on** for the full set, before any
   skill fires. `claude plugin details claude-skills` prints the per-skill breakdown. If you
   want two or three of these, symlink those instead.
+
+## Standalone repos
+
+Three of these skills also live in a repo of their own, published from here on every merge.
+The reason is audience: someone looking for a Ghost publishing tool or a Terragrunt reference
+is not going to find it inside one person's collection of twenty-odd skills, and the competing
+tools for both are standalone. Each mirror is a working plugin in its own right.
+
+| skill | repo | who it is for |
+|---|---|---|
+| [ghost-publish](./ghost-publish) | [kevin-burns/ghost-publish](https://github.com/kevin-burns/ghost-publish) | Ghost users |
+| [terragrunt-skill](./terragrunt-skill) | [kevin-burns/terragrunt-skill](https://github.com/kevin-burns/terragrunt-skill) | Terragrunt users |
+| [transcribe-summarize](./transcribe-summarize) | [kevin-burns/transcribe-summarize](https://github.com/kevin-burns/transcribe-summarize) | anyone with recorded meetings who would rather not upload them |
+
+```bash
+claude plugin marketplace add kevin-burns/ghost-publish
+claude plugin install ghost-publish@ghost-publish
+```
+
+The mirrors are **generated**. Edit the skill here; never edit a mirror directly, or the next
+merge overwrites it.
 
 ## Skills
 
@@ -88,7 +109,7 @@ picked up with no second install.
 | [social-image-prep](./social-image-prep) | Resize and format images for social platforms | `sips` / [ImageMagick](https://imagemagick.org) / [Pillow](https://python-pillow.org) |
 | [terragrunt-skill](./terragrunt-skill) | Generate, validate, review, and debug Terragrunt 1.x configs (units, stacks, `autoinclude`, CAS, dependencies, AWS/Azure/GCP backends) — tracks current stable v1.1.0, incl. Azure backend gotchas and running only changed units at scale | — |
 | [terraform-registry](./terraform-registry) | Provider-agnostic CLI to search/inspect the Terraform Registry via its JSON API (no scraping) | [Terraform Registry](https://registry.terraform.io) API |
-| [transcribe-summarize](./transcribe-summarize) | Transcribe audio on-device (macOS/Windows/Linux), filter the segments Whisper invents over silence, and write it up as factual meeting notes + PDF; ffmpeg normalise/silence-trim beats model choice, and timestamps map back to the original recording. Groq/OpenAI are opt-in and disclosed before anything is sent | [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) / [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [ffmpeg](https://ffmpeg.org) |
+| [transcribe-summarize](./transcribe-summarize) | Transcribe audio on-device (macOS/Windows/Linux), filter the segments Whisper invents over silence, and write it up as factual meeting notes + PDF; ffmpeg normalise/silence-trim beats model choice, and timestamps map back to the original recording. Groq/OpenAI/ElevenLabs are opt-in and disclosed before anything is sent | [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) / [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [ffmpeg](https://ffmpeg.org) |
 | [source-snapshot](./source-snapshot) | Fetch external data once into pinned, provenance-stamped artifacts; resilient extractor fallback | [markitdown](https://github.com/microsoft/markitdown) / Defuddle / Readability |
 | [dev-fleet](./dev-fleet) | Orchestration playbook driving the agent fleet through build → verify → review → commit | — |
 | [report-builder](./report-builder) | Build self-contained single-page HTML reports/dashboards from data | [Jinja2](https://jinja.palletsprojects.com) / [Bootstrap 5](https://getbootstrap.com) / [Chart.js](https://www.chartjs.org) / [Plotly](https://plotly.com/javascript/) |
@@ -149,8 +170,18 @@ Several agents ship a deterministic behavioral eval under `agents/<name>/evals/`
 - **azadvertizer** — `uv` (stdlib-only script via `uv run`); network only for the one-time `fetch`. Caches to `$XDG_CACHE_HOME/azadvertizer`; all queries run offline. Data © Julian Hayward / [AzAdvertizer](https://www.azadvertizer.net) — cache, don't hammer; not republished here.
 - **trilium-capture** — a reachable Trilium instance (**v0.93.0+**) with its built-in MCP server at `/mcp`, authenticated with an ETAPI token as `Authorization: Bearer <token>`. Nothing to install: the server ships inside Trilium and shares its tool definitions with Trilium's own LLM chat — do **not** add a third-party Trilium MCP server. No scripts, no Python: the skill is conventions over tools Trilium already exposes. Optional: a short-memory store (e.g. Ogham) for the recall half of the split — without one, everything goes to Trilium.
 - **cv-cover-letter** — none to install. You supply the posting (any source, not just LinkedIn), the CV you are sending, and optionally `evidence-base.md` from `cv-evidence-base`. Uses `clear-and-human` for register where available, and web search to read a posting from a URL — otherwise paste the text. It never invents a metric and never diagnoses the employer; see its [README](./cv-cover-letter/README.md).
+- **cv-evidence-base** — **nothing to install.** `pyproject.toml` declares `dependencies = []`; the only dev dependency is `pytest`, for this repo's own tests. You supply the CV and the material it was compressed from. Pairs with `cv-and-human` and `cv-cover-letter`, which read the evidence base it produces.
+
+- **hook-and-human** — **nothing to install.** No scripts at all — the skill is prose. It leans on `clear-and-human` for register where that skill is present, and degrades to its own judgement where it is not.
+
+- **readability** — **nothing to install** beyond a Python you already have. `scripts/cohesion_report.py` is standard library only (`argparse`, `json`, `re`, `sys`, `pathlib`), so `uv run` or `python3` both work. The second half of the skill dispatches a fresh-context sub-agent to read the draft, which needs no package either. Runs after `clear-and-human`, not before.
+
+- **ghost-publish** — the `ghst` CLI installed separately and already authenticating (`npm i -g @tryghost/ghst`, then `GHOST_URL` and `GHOST_STAFF_ACCESS_TOKEN` in the environment). The skill's own scripts are **standard library only**, Python 3.12+, and never call Ghost — they read files and compare them. `ghst` is beta and the behaviour here was verified against **0.16.6**; `scripts/preflight.py` warns on version drift and names what to re-verify, with `--strict` for CI.
+
 - **travel-planning** — none to plan (pure instructions). Uses web search, if available, to ground cost estimates in typical/seasonal prices; degrades to a labeled estimate if a lookup fails. Optional: `report-builder` for an HTML version. It never books or reads live fares — see its [README](./travel-planning/README.md).
 - **business-plan** — `uv` for the stdlib financials helper (`scripts/financials.py`, no runtime deps, run via `uv run`). Uses web search, if available, to research and cite market/competitor facts; where research fails it falls back to labeled placeholders rather than inventing. Optional: `report-builder` for an HTML version. It never invents a market size, competitor price, or revenue figure — see its [README](./business-plan/README.md).
+
+- **transcribe-summarize** — `ffmpeg` and `ffprobe` on PATH (`brew install ffmpeg`, `winget install Gyan.FFmpeg`, `sudo apt install ffmpeg`). Everything else is standard library. Each backend brings its own dependency and only when you pick it, so installing the skill does not drag in every engine: `'mlx-whisper>=0.4.2'` (Apple Silicon, the default there), `'faster-whisper>=1.2'` (the default everywhere else), `'parakeet-mlx'` (opt-in). The network backends — Groq, OpenAI and ElevenLabs Scribe — need **no package at all** (stdlib HTTPS) and read their key from `GROQ_API_KEY` / `OPENAI_API_KEY` / `ELEVENLABS_API_KEY`, never from a flag. They are never selected automatically and state the provider, size, duration and cost before sending. Optional: a Chrome, Chromium or Edge binary for the notes PDF — without one you get the HTML and a plain message, not a failure.
 
 ## Contributing
 

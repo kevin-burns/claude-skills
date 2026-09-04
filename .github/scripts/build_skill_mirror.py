@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a standalone single-skill repo from this one.
 
-Two skills here have an audience outside this repo. Ghost writers looking for
+Three skills here have an audience outside this repo. Ghost writers looking for
 `ghost-publish`, and Terragrunt users looking for `terragrunt-skill`, will
 never find either inside a personal collection of twenty-odd skills, and the
 competing skills for both are standalone. So each gets its own repo for
