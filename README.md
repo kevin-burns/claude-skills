@@ -2,7 +2,7 @@
 
 ![claude-skills banner](images/banner.webp)
 
-Twenty-three [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
+Twenty-seven [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
 some bundle scripts, evals or reference files. Subagents live under [`agents/`](./agents).
 

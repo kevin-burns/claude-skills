@@ -56,3 +56,10 @@ docs/superpowers/
 # Prismor agent-registry state: a machine-local last_seen timestamp, regenerated
 # on every run. Nothing reads it across machines.
 .prismor/
+
+# Skill publishing runbook. LOCAL ONLY -- it names internal sequencing, token
+# handling and client-work context, and this repo is PUBLIC. Same reasoning as
+# transcribe-summarize/.gitignore:22. Untracked is the guarantee: CI checks out
+# only tracked files, and the mirror builder builds from a CI checkout, so a
+# file that is not tracked cannot reach a published repo either.
+/RUNBOOK.md
