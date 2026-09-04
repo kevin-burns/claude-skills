@@ -1,0 +1,190 @@
+name: mirror transcribe-summarize
+
+# `transcribe-summarize` is published as a standalone repo so people looking for local transcription can
+# find and install it without the other twenty-odd skills. That copy is a BUILD
+# ARTIFACT, never edited by hand: this repo stays the source of truth and the
+# mirror is regenerated here, so the two cannot drift.
+#
+# One-time setup before this can run:
+#   1. Create the empty target repo (default: kevin-burns/transcribe-summarize).
+#   2. Add a repo secret MIRROR_TRANSCRIBE_SUMMARIZE — a fine-grained PAT scoped to
+#      that ONE repository with Contents: read and write. Nothing else.
+# It is a DIFFERENT secret from the ghost mirror's MIRROR_TOKEN on purpose: one
+# token per target repo, so revoking one does not silently stop the other.
+# Without the secret the job skips rather than failing, so a fork or a
+# contributor's push never trips it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'transcribe-summarize/**'
+      - '.github/scripts/build_skill_mirror.py'
+      - '.github/workflows/mirror-transcribe-summarize.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-transcribe-summarize
+  cancel-in-progress: false
+
+env:
+  TARGET_REPO: kevin-burns/transcribe-summarize
+
+jobs:
+  mirror:
+    name: rebuild and push the standalone repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Is the mirror configured?
+        id: gate
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TRANSCRIBE_SUMMARIZE }}
+        run: |
+          if [ -z "${MIRROR_TOKEN}" ]; then
+            echo "MIRROR_TRANSCRIBE_SUMMARIZE is not set — skipping. This is expected on forks."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Build first, and run the skill's own checks against the BUILT tree
+      # rather than the source. A mirror that ships a broken copy is worse than
+      # no mirror, and this is the only place that difference shows up --
+      # notably the eval-grader tests, which reach into ../evals from tests/ and
+      # so only pass if the harness actually shipped.
+      - name: Build the mirror
+        if: steps.gate.outputs.configured == 'true'
+        # PYTHONDONTWRITEBYTECODE and no:cacheprovider matter here: the build
+        # strips caches, but running the suite INSIDE the built tree recreates
+        # them afterwards, and the ghost mirror's first real sync shipped five
+        # .pyc files to users because of it. The purge below is the backstop.
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 .github/scripts/build_skill_mirror.py --skill transcribe-summarize \
+            --root . --out /tmp/mirror
+          python3 -m pip install --quiet pytest
+          ( cd /tmp/mirror/transcribe-summarize && python3 -m pytest tests -q -p no:cacheprovider )
+          # The skill's own guards, run on the BUILT tree rather than the source: a
+          # file dropped by the builder shows up here as a passing check over a
+          # missing file, which is the failure a source-side run cannot see.
+          ( cd /tmp/mirror/transcribe-summarize/evals && python3 grade.py )
+          # Hazards specific to this skill, none covered by the generic scans below.
+          (
+            cd /tmp/mirror/transcribe-summarize
+            # 1. Internal working notes. Gitignored, so CI never has them -- but a
+            #    LOCAL build would, and they describe field testing on client audio.
+            for f in CLAUDE.md HANDOFF.md; do
+              if [ -e "$f" ]; then echo "::error::$f reached the mirror"; exit 1; fi
+            done
+            # 2. Audio, or anything derived from a recording. The point of the skill is
+            #    that recordings stay on the machine; one reaching a published repo is a
+            #    disclosure, not a build defect.
+            if find . -name '*.mp3' -o -name '*.m4a' -o -name '*.wav' -o -name '*.mp4' \
+                    -o -name '*.aiff' -o -name '*.srt' -o -name '*.vtt' | grep -q .; then
+              echo "::error::audio or transcript artefacts reached the mirror"; exit 1
+            fi
+            # 3. Every documented entry point must exist. The builder copies a tree; a
+            #    renamed or dropped script would publish a README that lies.
+            for f in SKILL.md README.md scripts/transcribe.py scripts/notes_check.py \
+                     scripts/render_pdf.py scripts/normalise_transcript.py \
+                     references/notes-register.md references/backends.md \
+                     images/banner.webp images/og-image.png; do
+              if [ ! -e "$f" ]; then echo "::error::$f is missing from the mirror"; exit 1; fi
+            done
+            echo "skill-specific mirror checks passed"
+          )
+          find /tmp/mirror \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} +
+          find /tmp/mirror -name '*.pyc' -delete
+          echo "tree to publish:"
+          find /tmp/mirror -type f | sed 's|/tmp/mirror/|  |' | sort
+
+      # THE LAST GATE BEFORE CONTENT LEAVES FOR A DIFFERENT REPO. The source repo is scanned
+      # twice -- a pre-commit hook over staged changes, and ci.yml over full history -- but
+      # neither covers this push, for two reasons:
+      #
+      #   * ORDERING. ci.yml and this workflow both fire on push to main, independently and
+      #     in parallel. Nothing makes this one wait for the secrets job, so a secret that
+      #     landed on main can reach a SECOND public repo before the first has reported.
+      #   * GENERATED FILES. The four plugin manifests do not exist in claude-skills; the
+      #     builder synthesises them. A full-history scan of the source cannot see a file
+      #     that has never been in it.
+      #
+      # Scanned as a DIRECTORY, not a git history: this tree has no history yet. That also
+      # means .gitleaksignore is not carried over, and does not need to be. Its one dismissal
+      # pins a Firebase web config inside excalidraw-diagram's vendored render engine, which
+      # was committed in 8380a5e, untracked in e0790d3, and now arrives from a pinned GitHub
+      # Release instead. The file is gitignored and absent from the working tree, so it exists
+      # only in HISTORY -- reachable by ci.yml's full-history scan and by nothing a directory
+      # scan can see. Any dismissal here would have to be argued on its own evidence.
+      #
+      # That release-asset shape is also why excalidraw-diagram is not a candidate for this
+      # mirror pattern as it stands: the builder copies the working tree, which does not
+      # contain the engine at all.
+      #
+      # --redact so a finding cannot print the secret into a PUBLIC build log, which would
+      # widen the exposure this step exists to catch.
+      - name: Scan the built tree for secrets
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          # Pinned to the same version as .pre-commit-config.yaml, ci.yml and the sibling
+          # mirror workflow. test_build_skill_mirror.py fails when those four disagree.
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+          gitleaks dir --redact --verbose /tmp/mirror
+
+      - name: Push to ${{ env.TARGET_REPO }}
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TRANSCRIBE_SUMMARIZE }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 \
+            "https://x-access-token:${MIRROR_TOKEN}@github.com/${TARGET_REPO}.git" /tmp/target
+
+          # Replace the tracked content wholesale, but never touch .git.
+          # --delete removes files the builder no longer produces, so a renamed
+          # reference cannot leave a stale copy behind for users.
+          rsync -a --delete --exclude '.git/' /tmp/mirror/ /tmp/target/
+
+          cd /tmp/target
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          # On the very first run the target repo has no commits, so HEAD is
+          # unborn and `git diff --cached` has nothing to compare against.
+          if git rev-parse --verify HEAD >/dev/null 2>&1 && git diff --cached --quiet; then
+            echo "mirror already matches source — nothing to push"
+            exit 0
+          fi
+
+          # Ordinary commit on top of history. Never force-push: the mirror's
+          # history is the record of what users actually installed.
+          git commit -m "sync transcribe-summarize from claude-skills@${SOURCE_SHA:0:7}
+
+          Generated by .github/workflows/mirror-transcribe-summarize.yml.
+          Source: https://github.com/${GITHUB_REPOSITORY}/commit/${SOURCE_SHA}
+          Do not edit this repository directly; changes are overwritten."
+          # Push to main explicitly. Cloning an EMPTY repo leaves HEAD on an
+          # unborn branch named from the runner's init.defaultBranch -- `master`
+          # on stock git -- so `git push origin HEAD` would create a second
+          # branch beside the repo's `main` default on the first run.
+          git push origin HEAD:refs/heads/main
+          echo "pushed to ${TARGET_REPO}"

@@ -63,6 +63,42 @@ class Mirror:
 
 
 MIRRORS: dict[str, Mirror] = {
+    "transcribe-summarize": Mirror(
+        skill="transcribe-summarize",
+        description=(
+            "Transcribe meetings on your own machine across macOS, Windows and Linux, then write "
+            "them up as factual notes. Filters the segments Whisper invents over silence, trims "
+            "and normalises the audio before decoding, and maps timestamps back to your own "
+            "recording. Hosted APIs are opt-in and say what they will send and cost first."
+        ),
+        display_name="Transcribe & Summarize",
+        audience="anyone with recorded meetings who would rather not upload them",
+        default_prompts=(
+            "Transcribe this recording and write it up as meeting notes",
+            "Turn this Teams .vtt transcript into notes -- there is no audio",
+            "Transcribe this locally, nothing leaves my machine",
+        ),
+        # Gitignored working state. CI never sees any of it, so CI would never
+        # catch it -- but a LOCAL build would ship all of it, which is the trap
+        # the terragrunt entry above documents.
+        exclude=(
+            # Internal working notes: the reasoning behind the skill, not
+            # documentation anyone installing it should read. They also describe
+            # field testing done on client recordings.
+            "CLAUDE.md",
+            "HANDOFF.md",
+            # Tool caches and generated fixtures.
+            ".ruff_cache",
+            ".pytest_cache",
+            "evals/.ruff_cache",
+            # Audio and anything derived from a recording. Belt and braces: the
+            # .gitignore already blocks these, and they must never reach a
+            # published repo even from a local build.
+            "transcripts",
+            "recordings",
+            "out",
+        ),
+    ),
     "ghost-publish": Mirror(
         skill="ghost-publish",
         description=(
