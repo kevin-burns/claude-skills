@@ -11,7 +11,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from job_feeds import BACKOFF_CEILING_SECONDS, RateLimiter, Store, fetch_all, main  # noqa: E402
+from job_feeds import (  # noqa: E402
+    BACKOFF_CEILING_SECONDS,
+    RateLimiter,
+    Store,
+    fetch_all,
+    main,
+    parse_xml,
+)
 from sources import SOURCES  # noqa: E402
 
 NOW = datetime(2026, 8, 5, 12, 0, 0, tzinfo=UTC)
@@ -892,3 +899,37 @@ class TestFetchReportsNoveltyAndWritesStateOnce(unittest.TestCase):
         self.assertIn("3 new", first)
         self.assertIn("0 new", second)
         self.assertIn("row(s)", second, "volume must still be reported")
+
+
+class ParseXmlRefusesEntityExpansion(unittest.TestCase):
+    """A feed body is remote and untrusted. MEASURED on 3.14.7 rather than
+    assumed: ElementTree refuses external entities but expands internal ones,
+    so the risk is a billion-laughs blow-up rather than XXE, and the fix is to
+    refuse the DOCTYPE that is the only way to define an entity."""
+
+    BOMB = (b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol">'
+            b'<!ENTITY lol2 "&lol;&lol;&lol;">]><lolz>&lol2;</lolz>')
+
+    def test_a_body_defining_entities_is_refused(self):
+        # Fails against the old code, which parsed this and expanded &lol2;.
+        with self.assertRaises(ValueError) as caught:
+            parse_xml(self.BOMB)
+        self.assertIn("DOCTYPE", str(caught.exception))
+
+    def test_the_refusal_does_not_depend_on_the_doctype_sitting_in_the_prolog(self):
+        # Scanning only up to the "first element" is defeatable: a comment
+        # containing a tag stops that search early.
+        sneaky = b'<?xml version="1.0"?><!-- <a> --><!DOCTYPE d [<!ENTITY e "x">]><d>&e;</d>'
+        with self.assertRaises(ValueError):
+            parse_xml(sneaky)
+
+    def test_an_ordinary_feed_still_parses(self):
+        # The direction that matters more: the guard must not break real feeds.
+        feed = (b'<?xml version="1.0"?><rss version="2.0"><channel>'
+                b'<item><title>Platform Engineer</title></item></channel></rss>')
+        root = parse_xml(feed)
+        self.assertEqual(root.find("./channel/item/title").text, "Platform Engineer")
+
+    def test_a_case_variant_doctype_is_not_a_way_round_it(self):
+        with self.assertRaises(ValueError):
+            parse_xml(b'<?xml version="1.0"?><!doctype d []><d/>')

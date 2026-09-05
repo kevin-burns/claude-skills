@@ -528,8 +528,43 @@ def http_open(url, headers):
         raise
 
 
+# Entity expansion, MEASURED on this interpreter rather than inherited from the
+# usual XXE story, because the two point at different fixes. On Python 3.14.7:
+#
+#   external entity  <!ENTITY x SYSTEM "file:///etc/passwd">  ->  REFUSED,
+#                    "undefined entity &x;". No file read, no SSRF.
+#   internal entity  <!ENTITY lol2 "&lol;&lol;&lol;">         ->  EXPANDED,
+#                    "&lol2;" becomes "lollollol".
+#
+# So the risk here is not disclosure, it is a billion-laughs blow-up: a feed we
+# do not control can define nested entities and cost the process exponential
+# memory. A DOCTYPE is the only way to define one, and no RSS or Atom feed needs
+# a DOCTYPE, so refusing it closes entity expansion outright.
+#
+# The whole body is scanned, not just the prolog. Scanning only the prolog is
+# defeatable -- a comment containing "<a>" makes a "first element" search stop
+# early and miss a DOCTYPE that follows. The cost is that a posting whose text
+# legitimately contains the literal "<!DOCTYPE" is refused; that is the safe
+# direction, it names the source, and a human can look.
+#
+# defusedxml solves this too and is the usual advice. It is a dependency, this
+# repo is stdlib-first, and a substring check is enough for the one property we
+# need.
+DOCTYPE_RE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
+
+
+def parse_xml(body):
+    """ElementTree, refusing any document that declares a DOCTYPE."""
+    if DOCTYPE_RE.search(body if isinstance(body, bytes) else body.encode()):
+        raise ValueError(
+            "feed declares a DOCTYPE. No RSS or Atom feed needs one, and it is the only "
+            "way to define the entities an expansion attack uses, so this is refused "
+            "rather than parsed.")
+    return ET.fromstring(body)
+
+
 def _parse(source, body):
-    return ET.fromstring(body) if source.name in RSS_SOURCES else json.loads(body)
+    return parse_xml(body) if source.name in RSS_SOURCES else json.loads(body)
 
 
 def _budget_remaining(headers):
