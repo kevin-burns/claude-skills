@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import shlex
 import statistics
 import subprocess
 import sys
@@ -100,10 +101,24 @@ def subprocess_scorer(scorer_cmd: str) -> Callable[[str], float]:
     `{cv}` in the command is replaced with the CV path. The command must print
     JSON to stdout; we look for a numeric 'total'/'total_score'/'overall' field,
     else the last number on the last non-empty line.
+
+    NOT a shell. The command is split into argv once, and `{cv}` is substituted
+    into the resulting ARGUMENTS rather than into the command string. That makes
+    the path a single argv element, so a CV filename containing shell
+    metacharacters -- `cv; rm -rf ~.md` is a legal filename -- is passed through
+    as text instead of executed. The previous version interpolated the path into
+    a string and ran it with `shell=True`, which turned any filename into
+    arbitrary code. Shell syntax in the command itself (pipes, redirection,
+    globs) is therefore not supported; it never was documented, and supporting
+    it would put the hole straight back.
     """
+    argv_template = shlex.split(scorer_cmd)
+    if not argv_template:
+        raise ValueError("--scorer-cmd is empty")
+
     def _scorer(cv_path: str) -> float:
-        cmd = scorer_cmd.replace("{cv}", cv_path)
-        out = subprocess.run(cmd, shell=True, capture_output=True, text=True,
+        argv = [part.replace("{cv}", cv_path) for part in argv_template]
+        out = subprocess.run(argv, capture_output=True, text=True,
                              timeout=600, check=False)
         text = out.stdout.strip()
         try:
@@ -208,7 +223,8 @@ def main() -> int:
     s = sub.add_parser("score", help="score a CV N times via a real critic")
     s.add_argument("--cv", required=True)
     s.add_argument("--scorer-cmd", required=True,
-                   help="shell command; '{cv}' is replaced with the CV path; "
+                   help="command and arguments (NOT a shell line -- no pipes or "
+                        "redirection); '{cv}' is replaced with the CV path; "
                         "must print the critic's JSON/score to stdout")
     s.add_argument("--runs", type=int, default=10)
     s.add_argument("--min-successful", type=int, default=5,
