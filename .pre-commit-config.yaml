@@ -142,6 +142,32 @@ repos:
     hooks:
       - id: actionlint
 
+  # Shell linting for the STANDALONE scripts. actionlint above already runs
+  # shellcheck, but only over `run:` blocks inside the two workflows -- the 15
+  # tracked .sh files were linted by nothing, and they include
+  # terragrunt-skill/scripts/run_ci_checks.sh and the two job-feeds sweep tests
+  # that drive a wrapper end to end.
+  #
+  # Added 2026-09-05 while the tree was already almost clean: shellcheck 0.11.0
+  # found two findings across all 15 files, both `ls` in a report line, and
+  # `bash -n` parsed every one. That is the cheapest this gate will ever be.
+  # A gate added against two findings costs one commit; a gate added against two
+  # hundred never gets added at all.
+  #
+  # Probed rather than assumed: an unquoted $var injected into a test script is
+  # rejected (SC2086), and the injection reverted.
+  #
+  # shellcheck-py, NOT koalaman/shellcheck-precommit. The upstream hook runs in
+  # Docker and fails outright when the daemon is not up -- tried here first, and
+  # it produced "Cannot connect to the Docker daemon" rather than a lint result.
+  # A gate that needs a container running is a gate that gets skipped. This one
+  # is a pip-installed binary and pins the same shellcheck version (0.11.0) that
+  # actionlint above bundles, so the two cannot disagree about what is a defect.
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
   # Structural checks, run here as well as in ci.yml. The hook is the point rather than a
   # duplicate: a plugin manifest that lists 22 skills for a repo containing 23 fails by
   # loading LESS, never by erroring, so nothing surfaces it until someone installs the

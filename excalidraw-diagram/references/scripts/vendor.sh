@@ -55,7 +55,12 @@ done
 
 echo ">> done."
 echo "   bundle: $(du -h "$VENDOR_DIR/excalidraw.mjs" | cut -f1)"
-echo "   fonts:  $(du -sh "$VENDOR_DIR/fonts" | cut -f1)  ($(ls "$VENDOR_DIR/fonts" | tr '\n' ' '))"
+fonts_landed=""
+for entry in "$VENDOR_DIR"/fonts/*; do
+  [ -e "$entry" ] || continue
+  fonts_landed="$fonts_landed$(basename "$entry") "
+done
+echo "   fonts:  $(du -sh "$VENDOR_DIR/fonts" | cut -f1)  ($fonts_landed)"
 
 # Update the integrity pin the render script reads.
 sha256_of() {

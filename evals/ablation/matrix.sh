@@ -24,4 +24,8 @@ for c in $CASES; do
   done
 done
 wait
-echo "matrix complete: $(ls "$HERE"/runs/*.json 2>/dev/null | grep -c json) result files"
+results=0
+for f in "$HERE"/runs/*.json; do
+  [ -e "$f" ] && results=$((results + 1))
+done
+echo "matrix complete: $results result files"

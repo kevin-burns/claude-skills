@@ -63,6 +63,23 @@ jobs:
       - name: actionlint
         run: actionlint -color
 
+      # actionlint above runs shellcheck, but only over `run:` blocks in these
+      # workflows. The 15 tracked .sh files were linted by nothing until
+      # 2026-09-05 -- including terragrunt-skill/scripts/run_ci_checks.sh and the
+      # two job-feeds sweep tests that drive a wrapper end to end.
+      #
+      # shellcheck is preinstalled on ubuntu-latest, so this needs no install
+      # step. `git ls-files` rather than a find: a script that is not tracked
+      # cannot reach anyone, and a scratch .sh in an untracked directory should
+      # not be able to fail the build.
+      - name: shellcheck (standalone scripts)
+        run: |
+          set -euo pipefail
+          shellcheck --version | grep version:
+          count="$(git ls-files '*.sh' '*.bash' | wc -l | tr -d ' ')"
+          printf 'linting %s script(s)\n' "$count"
+          git ls-files -z '*.sh' '*.bash' | xargs -0 shellcheck
+
   secrets:
     name: secrets (gitleaks, full history)
     runs-on: ubuntu-latest
