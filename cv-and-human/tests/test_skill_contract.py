@@ -140,8 +140,9 @@ def test_description_hands_open_positioning_questions_to_the_sibling():
     assert "cv-evidence-base" in description, (
         "cv-and-human no longer routes open positioning questions to "
         "cv-evidence-base within the first "
-        f"{LISTING_CAP} characters — re-run "
-        "docs/superpowers/specs/linkedin-router-harness/v3_check.py"
+        f"{LISTING_CAP} characters — re-run the routing harness at "
+        "docs/superpowers/specs/linkedin-router-harness/v3_check.py, which is "
+        "local-only and not in this repo (see this skill's README)"
     )
     assert "no target role" in description, (
         "the fork's discriminator ('no target role in mind') is gone from the "

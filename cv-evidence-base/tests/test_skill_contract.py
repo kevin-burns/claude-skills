@@ -238,7 +238,9 @@ def test_description_hands_document_operations_away():
     for operation in ["tailor", "ats", "de-slop", "linkedin"]:
         assert operation in description, (
             f"description no longer routes {operation!r} work away — "
-            "re-run docs/superpowers/specs/linkedin-router-harness/v3_check.py"
+            "re-run the routing harness at "
+            "docs/superpowers/specs/linkedin-router-harness/v3_check.py, which is "
+            "local-only and not in this repo (see this skill's README)"
         )
 
 
