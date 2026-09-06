@@ -114,7 +114,7 @@ Prose for humans, and telling whether a draft reads like one wrote it.
 |---|---|---|
 | [clear-and-human](./clear-and-human) | Construct, review, score, and rewrite prose so it reads human, not AI — with two optional stdlib scripts that measure register and check a rewrite invented nothing | — |
 | [readability](./readability) | Find where a reader falls off a draft — weak paragraph junctions, back-references with no antecedent nearby, terms used before they are explained — then dispatch a **fresh-context second reader** for the contradictions no script can see. Reports locations, never a grade level: the formulas were validated on schoolchildren and Navy trainees, and Redish (2000) reports their validity for adult technical readers is unknown | — |
-| [hook-and-human](./hook-and-human) | Write, punch up, and review persuasive marketing copy without fabricating | — |
+| [hook-and-human](./hook-and-human) | Write, punch up, and review persuasive marketing copy without fabricating. **The line against `clear-and-human`: persuasive intent.** Copy meant to convert — ads, hooks, growth posts, video titles — comes here; anything neutral and credibility-first goes there | — |
 
 ### Career and job search
 

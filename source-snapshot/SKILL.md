@@ -1,6 +1,6 @@
 ---
 name: source-snapshot
-description: Playbook for getting external data into the repo deterministically — fetch a web page, doc, or API/registry result once, extract and normalize it, and cache it as a pinned, provenance-stamped artifact that agents read instead of re-fetching live. Use when you need facts an LLM or agent will rely on (docs, library/API behavior, Terraform/provider registry data, prices, schemas) to be reproducible and offline-readable rather than varying per run. Also use when deciding whether to snapshot vs. fetch live, and which extractor to use for a given source. Pairs with fact-verifier (snapshots become its tier-1 sources) and markdown-converter.
+description: Playbook for getting external data into the repo deterministically — fetch a web page, doc, or API/registry result once, extract and normalize it, and cache it as a pinned, provenance-stamped artifact that agents read instead of re-fetching live. Use when you need facts an LLM or agent will rely on (docs, library/API behavior, Terraform/provider registry data, prices, schemas) to be reproducible and offline-readable rather than varying per run. Also use when deciding whether to snapshot vs. fetch live, and which extractor to use for a given source. Pairs with fact-verifier (snapshots become its tier-1 sources) and markdown-converter. The distinction is PERSISTENCE, not format: if you just want the contents of a file or page as Markdown once and do not need it pinned or re-read later, use markdown-converter instead.
 license: MIT
 ---
 

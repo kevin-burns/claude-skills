@@ -1,6 +1,6 @@
 ---
 name: markdown-converter
-description: Convert documents and files to Markdown using markitdown. Use when converting PDF, Word (.docx), PowerPoint (.pptx), Excel (.xlsx, .xls), HTML, CSV, JSON, XML, images (with EXIF/OCR), audio (with transcription), ZIP archives, YouTube URLs, Outlook (.msg), or EPubs to Markdown format for LLM processing or text analysis.
+description: Convert documents and files to Markdown using markitdown. Use when converting PDF, Word (.docx), PowerPoint (.pptx), Excel (.xlsx, .xls), HTML, CSV, JSON, XML, images (with EXIF/OCR), audio (with transcription), ZIP archives, YouTube URLs, Outlook (.msg), or EPubs to Markdown format for LLM processing or text analysis. This is a ONE-OFF conversion of a file or URL you already have. For fetching an external source ONCE and keeping it as a pinned, provenance-stamped artifact that agents re-read instead of re-fetching -- reproducible, offline, versioned -- use source-snapshot instead.
 license: MIT
 ---
 
