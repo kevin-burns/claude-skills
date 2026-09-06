@@ -278,8 +278,11 @@ class TestRateLimitStateIsScopedToTheDatabase(unittest.TestCase):
 
     def test_the_path_is_derived_from_the_database_location(self):
         from job_feeds import ratelimit_path_for
-        self.assertEqual(ratelimit_path_for("/tmp/x/jobs.db"),
-                         Path("/tmp/x/ratelimit.json"))
+        # Deliberately not /tmp: nothing here is opened, the directory is
+        # arbitrary, and a literal /tmp path trips bandit B108 for a risk this
+        # assertion does not take.
+        self.assertEqual(ratelimit_path_for("/srv/x/jobs.db"),
+                         Path("/srv/x/ratelimit.json"))
 
     def test_a_scratch_db_does_not_touch_the_real_state_file(self):
         from job_feeds import RATELIMIT_DEFAULT, ratelimit_path_for
