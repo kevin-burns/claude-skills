@@ -4,7 +4,19 @@
 
 Twenty-seven [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
-some bundle scripts, evals or reference files. Subagents live under [`agents/`](./agents).
+some bundle scripts, evals or reference files. A **subagent** is a different thing: a separate
+assistant, with its own tools and model, that the main session hands a self-contained job to
+and gets a report back from. Those live under [`agents/`](./agents).
+
+**You never call a skill by name.** It triggers automatically when what you ask matches a
+skill's description — you describe the task, the model picks the skill. That is true in every
+harness below, and it is why installing a skill is the whole of using it.
+
+**New here? Start with [`clear-and-human`](./clear-and-human)** — it needs nothing installed,
+and it is the one you will reach for most. [`readability`](./readability) pairs with it and
+also installs nothing. If you would rather see a skill drive a real tool, try
+[`markdown-converter`](./markdown-converter), which needs only `uv` and turns a PDF into
+Markdown in one step.
 
 The name says Claude because that is where they started and where the subagents run. **The
 skills themselves are the open Agent Skills format** and load unchanged in Claude Code, Codex
@@ -123,7 +135,6 @@ Getting finished material out of a file and into the place people read it.
 |---|---|---|
 | [ghost-publish](./ghost-publish) | Publish, update, schedule and verify Ghost posts from a markdown file — strips front matter Ghost would render as prose, and diffs what Ghost holds against the source in *both* directions | [ghst](https://github.com/TryGhost/ghst) (TryGhost, MIT) |
 | [markdown-converter](./markdown-converter) | Convert PDF/Office/HTML/media files to Markdown | [markitdown](https://github.com/microsoft/markitdown) (MS, MIT) |
-| [source-snapshot](./source-snapshot) | Fetch external data once into pinned, provenance-stamped artifacts; resilient extractor fallback | [markitdown](https://github.com/microsoft/markitdown) / Defuddle / Readability |
 | [report-builder](./report-builder) | Build self-contained single-page HTML reports/dashboards from data | [Jinja2](https://jinja.palletsprojects.com) / [Bootstrap 5](https://getbootstrap.com) / [Chart.js](https://www.chartjs.org) / [Plotly](https://plotly.com/javascript/) |
 
 ### Images and diagrams
@@ -143,7 +154,7 @@ Reference-grade answers about tools whose docs are large and change often.
 
 | Skill | What it does | Wraps |
 |---|---|---|
-| [terragrunt-skill](./terragrunt-skill) | Generate, validate, review, and debug Terragrunt 1.x configs (units, stacks, `autoinclude`, CAS, dependencies, AWS/Azure/GCP backends) — tracks current stable v1.1.0, incl. Azure backend gotchas and running only changed units at scale | — |
+| [terragrunt-skill](./terragrunt-skill) | Generate, validate, review, and debug Terragrunt 1.x configs (units, stacks, `autoinclude`, CAS, dependencies, AWS/Azure/GCP backends) — tracks current stable v1.1.0, incl. Azure backend gotchas and running only changed units at scale | nothing for the review itself; the bundled `scripts/validate.sh` drives `terragrunt` 1.x, plus `tflint` and `trivy` when present |
 | [terraform-registry](./terraform-registry) | Provider-agnostic CLI to search/inspect the Terraform Registry via its JSON API (no scraping) | [Terraform Registry](https://registry.terraform.io) API |
 | [azadvertizer](./azadvertizer) | Offline lookups over Azure Policy / Initiative / RBAC-Role metadata + cross-references | [AzAdvertizer](https://www.azadvertizer.net) CSV exports |
 
@@ -154,7 +165,7 @@ Day-to-day development: reviewing, tracking, and looking things up.
 | Skill | What it does | Wraps |
 |---|---|---|
 | [dev-fleet](./dev-fleet) | Orchestration playbook driving the agent fleet through build → verify → review → commit | — |
-| [ux-audit](./ux-audit) | Heuristic usability + accessibility audit of rendered web pages (Nielsen + WCAG 2.2) | — |
+| [ux-audit](./ux-audit) | Heuristic usability + accessibility audit of rendered web pages (Nielsen + WCAG 2.2) | a browser driver — [agent-browser](https://github.com/kevin-burns/agent-browser) or `playwright-cli`; without one it degrades to a flagged static-HTML audit |
 | [c7search](./c7search) | Fetch up-to-date library docs via the `c7search` CLI | [Context7](https://context7.com) API |
 | [use-linearis](./use-linearis) | Drive Linear.app from the CLI — issues, milestones, blocked-by relations, release filtering — plus the Linear↔Ogham dogfooding loop | [linearis](https://github.com/linearis-oss/linearis) CLI |
 
@@ -164,6 +175,7 @@ Turning something you heard or found into something you can search later.
 
 | Skill | What it does | Wraps |
 |---|---|---|
+| [source-snapshot](./source-snapshot) | Fetch external data once into pinned, provenance-stamped artifacts; resilient extractor fallback | [markitdown](https://github.com/microsoft/markitdown) / Defuddle / Readability |
 | [trilium-capture](./trilium-capture) | File findings, clipped material and long-form documents into a self-hosted Trilium Notes instance — per project, one **closed** label vocabulary, documents revised in place so Trilium's own revision history replaces keeping `.bak` copies. Searches before writing; decides what does *not* belong there; never retrieves, and never touches a note it didn't write | [Trilium Notes](https://github.com/TriliumNext/Trilium) — its **built-in** MCP server |
 | [transcribe-summarize](./transcribe-summarize) | Transcribe audio on-device (macOS/Windows/Linux), filter the segments Whisper invents over silence, and write it up as factual meeting notes + PDF; ffmpeg normalise/silence-trim beats model choice, and timestamps map back to the original recording. Groq/OpenAI/ElevenLabs are opt-in and disclosed before anything is sent | [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) / [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [ffmpeg](https://ffmpeg.org) |
 
@@ -181,7 +193,7 @@ Structuring a decision that has more moving parts than fit in your head.
 
 Every skill directory has its own **`README.md`** — a plain-English guide to **what it does, how to use it well, and, just as importantly, what it does _not_ do.** Read that first; a skill's boundaries matter as much as its capabilities, and knowing what a skill deliberately refuses (invent a price, book a trip, predict a fare) is what keeps its output trustworthy.
 
-A skill triggers **automatically** when your request matches its description — in Claude Code, claude.ai, Codex and OpenCode alike. You don't call it by name, you describe the task. Take the whole set or one directory (see [Install](#install)). This "what it does / what it doesn't do" README is the standard shape for every skill here — new skills ship one too (see [`CONTRIBUTING.md`](./CONTRIBUTING.md)).
+Take the whole set or one directory (see [Install](#install)). This "what it does / what it doesn't do" README is the standard shape for every skill here — new skills ship one too (see [`CONTRIBUTING.md`](./CONTRIBUTING.md)).
 
 ## Agents
 
