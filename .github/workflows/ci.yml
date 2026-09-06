@@ -80,6 +80,47 @@ jobs:
           printf 'linting %s script(s)\n' "$count"
           git ls-files -z '*.sh' '*.bash' | xargs -0 shellcheck
 
+      # bandit was not in CI at all until 2026-09-06, and that was the real gap.
+      # The 12 known MEDIUMs have been hand-audited twice and none is dangerous
+      # -- but nothing here would have caught a NEW one, which is the finding
+      # that would actually matter.
+      #
+      # BASELINED RATHER THAN FIXED, deliberately. B310 and B314 are blacklists
+      # on the CALL NAME, not data-flow checks. Every url in this repo is a
+      # literal https constant, and the one remote XML parse already refuses a
+      # DOCTYPE before parsing -- and none of that clears the finding, because
+      # only replacing the call does. Rewriting six working network paths, each
+      # carrying real 304/429/503 and gzip semantics, to satisfy a name check
+      # buys a clean report and no reduction in risk. Per-site reasoning is on
+      # bead claude-skills-hq0k.
+      #
+      # No `# nosec` anywhere: standing instruction. A baseline is the honest
+      # form of the same decision -- it sits in one reviewable file, and a new
+      # finding still fails the build.
+      #
+      # Scoped to TRACKED files. `bandit -r .` walks .venv and site-packages and
+      # reports 680k lines; -x does not exclude them.
+      #
+      # Severity floor is medium: the 1229 LOWs are almost all B101 asserts in
+      # tests, and baselining those would churn on every test edit.
+      - name: bandit (tracked python, baselined)
+        run: |
+          set -euo pipefail
+          git ls-files '*.py' | grep -v 'agents/.*/evals/fixtures' > /tmp/pyfiles.txt
+          printf 'scanning %s tracked python file(s)\n' "$(wc -l < /tmp/pyfiles.txt | tr -d ' ')"
+          # `|| true` because bandit exits non-zero merely for HAVING findings.
+          # The verdict comes from reading the report, never from this exit
+          # code -- bandit also exits 0 when it could not read its input at all.
+          # A read loop rather than `mapfile`: mapfile is bash 4+, and macOS
+          # ships bash 3.2, so anyone reproducing this step locally on a Mac
+          # would hit "command not found" while CI stayed green.
+          pyfiles=()
+          while IFS= read -r f; do pyfiles+=("$f"); done < /tmp/pyfiles.txt
+          uvx bandit@1.9.4 --severity-level medium \
+            -b .bandit-baseline.json -f json -o /tmp/bandit.json \
+            "${pyfiles[@]}" > /dev/null 2>&1 || true
+          python3 .github/scripts/check_bandit.py /tmp/bandit.json
+
   secrets:
     name: secrets (gitleaks, full history)
     runs-on: ubuntu-latest
