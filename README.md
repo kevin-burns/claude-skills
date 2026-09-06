@@ -19,8 +19,8 @@ also installs nothing. If you would rather see a skill drive a real tool, try
 Markdown in one step.
 
 The name says Claude because that is where they started and where the subagents run. **The
-skills themselves are the open Agent Skills format** and load unchanged in Claude Code, Codex
-and OpenCode — this repo ships a plugin manifest for the first two.
+skills themselves are the open Agent Skills format** and load unchanged in Claude Code, Codex,
+OpenCode and Kiro — this repo ships a plugin manifest for Claude Code and Codex.
 
 All MIT (see [`LICENSE`](./LICENSE)). Skills wrapping an external tool carry a **Provenance**
 note crediting the upstream project and its licence — MIT covers the skill content, not the
@@ -61,6 +61,7 @@ frontmatter (`tools`, `model`), which Codex doesn't read. The skills travel, the
 ```bash
 ln -s "$(pwd)/clear-and-human" ~/.claude/skills/clear-and-human     # Claude Code, OpenCode
 ln -s "$(pwd)/clear-and-human" ~/.agents/skills/clear-and-human     # Codex, OpenCode
+ln -s "$(pwd)/clear-and-human" ~/.kiro/skills/clear-and-human       # Kiro
 ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 ```
 
@@ -71,6 +72,28 @@ rather than twenty-seven.
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
 picked up with no second install.
+
+### Kiro — take the skills, leave the agents
+
+[Kiro](https://kiro.dev/docs/skills/) reads the same Agent Skills format from
+`~/.kiro/skills/` (global) and `.kiro/skills/` (per workspace), with the workspace copy
+winning when both define a skill of the same name. Symlink whichever you want, as above, or
+use **Agent Steering & Skills → + → Import a skill**, which takes a GitHub URL or a local
+folder. Kiro also lets you invoke a skill explicitly by typing `/` and its name, which the
+other harnesses here do not.
+
+**Do not try to install [`agents/`](./agents) into Kiro.** Kiro has its own sub-agents and
+its own directory for them, and it does not read Claude Code's `agents/*.md`: those declare
+`tools` and `model` in frontmatter, while Kiro configures agents through its own settings
+with different keys. Nothing here will work as a Kiro sub-agent, and the failure would be a
+silent one — the files are simply ignored. The skills travel to Kiro; the fleet does not, the
+same as with Codex.
+
+Kiro's **Powers** are its plugin shape — a directory with a `plugin.json` manifest bundling
+skills, MCP servers and steering files, installable from its marketplace or a GitHub URL.
+This repo does **not** ship one: the manifest's required fields are not published, and a
+manifest that is wrong fails silently rather than loudly. Symlink or import the skills
+instead.
 
 ### Two things worth knowing before installing the plugin
 
