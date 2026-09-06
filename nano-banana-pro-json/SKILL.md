@@ -1,6 +1,6 @@
 ---
 name: nano-banana-pro-json
-description: Generate and edit images using Google's Nano Banana Pro (Gemini 3 Pro Image) API. Use when the user asks to generate, create, edit, modify, change, alter, or update images. Also use when user references an existing image file and asks to modify it in any way (e.g., "modify this image", "change the background", "replace X with Y"). Also use for logo and brand-identity design ("design a logo", "brand mark / wordmark / icon", "brand identity") via references/logo-brand-identity.md; for product & marketing images ("product shot", "e-commerce photo", "hero image", "lifestyle photo", "ad creative", "packaging mockup") via references/product-marketing.md; and for infographics & explanatory diagrams ("infographic", "explainer graphic", "process diagram", "comparison graphic") via references/infographics-diagrams.md. Supports simple prompts, style presets (cinematic, film, fashion, studio), recipes for logos / product-marketing / infographics, JSON-configured camera/lighting/composition parameters, photorealistic enhancement, aspect ratios, and WebP output. This is the default image generation skill. DO NOT read image files first - use --input-image parameter directly.
+description: Generate and edit images using Google's Nano Banana Pro (Gemini 3 Pro Image) API. Use when the user asks to generate, create, edit, modify, change, alter or update an image, or points at an existing image file and asks to change it ("change the background", "replace X with Y"). Covers logo and brand-identity design ("design a logo", "brand mark", "wordmark", "icon", "brand identity"); product and marketing images ("product shot", "e-commerce photo", "hero image", "lifestyle photo", "ad creative", "packaging mockup"); and illustrated infographics and explanatory graphics ("infographic", "explainer graphic", "comparison graphic"). Style presets (cinematic, film, fashion, studio), aspect ratios (1:1, 4:3, 16:9, 9:16, 3:2, 2:3, 4:5) and WebP output. This is the default skill for generating and editing raster images.
 license: MIT
 ---
 
@@ -17,6 +17,8 @@ uv run ~/.claude/skills/nano-banana-pro-json/scripts/generate_image.py --prompt 
 ```
 
 **Important:** Always run from the user's current working directory so images save where the user is working.
+
+**Do not read an image file before editing it.** Pass its path to `--input-image` and let the script send it. Reading it first spends the whole file through the context window and changes nothing about the result.
 
 **If `uv` isn't found** (`uv: command not found` — non-interactive shells often drop `~/.local/bin` or the Homebrew bin from PATH), resolve it and call it explicitly rather than giving up. This script needs uv (third-party deps: `google-genai`, `pillow`), so plain `python3` is not a fallback here:
 
