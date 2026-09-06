@@ -185,3 +185,26 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      # check-conventions above enforces the SHAPE of a description -- its
+      # length, its charset, the absence of XML tags. This enforces its MEANING:
+      # the phrases an earlier measurement pinned, and the sibling boundaries
+      # two skills depend on.
+      #
+      # Added 2026-09-06, the day a description edit passed every local gate and
+      # turned main red. check-conventions was green because the description was
+      # the right length; cv-and-human/tests/test_skill_contract.py was red
+      # because two of the four LinkedIn trigger phrases it pins -- phrases a
+      # routing harness had scored 54/54 -- had been compressed away. That suite
+      # ran only in CI.
+      #
+      # Not file-scoped, and that is deliberate: cv-and-human's contract asserts
+      # on its NEIGHBOURS' descriptions, so editing clear-and-human can break
+      # cv-and-human's suite. A hook scoped to staged files would miss exactly
+      # that. Under two seconds for the whole set.
+      - id: skill-contract-tests
+        name: Skill description contracts
+        entry: python3 .github/scripts/run_contract_tests.py
+        language: system
+        pass_filenames: false
+        always_run: true

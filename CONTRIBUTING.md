@@ -125,6 +125,44 @@ The hooks fix some things in place (trailing whitespace, final newlines, ruff's 
 fixes). When a commit is rejected because a hook rewrote a file, re-stage and commit
 again. Do not reach for `--no-verify`.
 
+## The description field, and its two different limits
+
+The `description` is the whole routing surface. It loads in **every** session, for every
+skill, whether or not that skill ever fires — so a sentence added here is a cost paid
+forever, and the field is the one nobody re-reads once it is written. Two separate limits
+apply to it, they are easy to conflate, and both are real.
+
+| limit | value | what it actually is | enforced by |
+|---|---|---|---|
+| **frontmatter validation** | **1024** chars | the maximum length of the `description` field itself, per the [Agent Skills specification](https://agentskills.io/specification) and [Anthropic's authoring guidance](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices). Kiro's docs state the same number. | `check_conventions.py`, on every commit |
+| **skill-listing truncation** | **1536** chars | the point at which Claude Code truncates the combined `description` + `when_to_use` text *in the skill listing* to reduce context usage ([docs](https://code.claude.com/docs/en/skills.md)) | `cv-and-human/tests/test_skill_contract.py` |
+
+They measure different things, so neither replaces the other. 1024 is a validation rule: over
+it, the frontmatter is out of spec in every harness. 1536 is a rendering behaviour: past it the
+text still exists in the file but the router never sees it — **truncation, not an error**, so
+nothing fails loudly. A description once sat 280 characters over the listing cap with a routing
+carve-out in the discarded tail, and every routing assertion still passed, because they read
+the file rather than the listing.
+
+Since 1024 is the stricter of the two, staying inside it satisfies both.
+
+The other rules `check_conventions.py` enforces, all from the same two sources: `name` is at
+most 64 characters, lowercase `a-z0-9` separated by single hyphens, must match the directory
+name, and must not contain the reserved words `anthropic` or `claude`; `description` must be
+non-empty and must not contain XML-looking tags, because it is injected into the system prompt
+verbatim; `compatibility`, if present, is at most 500 characters.
+
+**Before shortening a description, find out what guards it.** `grep` the skill's `tests/` for
+the phrases you are about to remove. Some are pinned by a measured routing result rather than
+by taste — `cv-and-human` pins four LinkedIn trigger phrases a harness scored 54/54 — and
+removing one narrows what the router sends there without anything looking wrong. The
+`skill-contract-tests` hook runs those suites on every commit for exactly this reason; it was
+added the day a description edit passed every other local gate and turned CI red.
+
+Trim capability statements and repeated trigger words instead. A phrase whose every significant
+word already appears earlier in the same description adds no routing surface, and a sentence
+describing what the skill does once it fires belongs in the body.
+
 ## General skill conventions
 
 - Each skill lives in its own directory with a `SKILL.md` (`name` + `description` frontmatter).
