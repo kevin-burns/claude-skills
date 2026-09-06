@@ -92,33 +92,88 @@ merge overwrites it.
 
 ## Skills
 
+Grouped by what you would be trying to do. Every skill appears in exactly one group.
+
+### Writing and editing
+
+Prose for humans, and telling whether a draft reads like one wrote it.
+
 | Skill | What it does | Wraps |
 |---|---|---|
 | [clear-and-human](./clear-and-human) | Construct, review, score, and rewrite prose so it reads human, not AI — with two optional stdlib scripts that measure register and check a rewrite invented nothing | — |
 | [readability](./readability) | Find where a reader falls off a draft — weak paragraph junctions, back-references with no antecedent nearby, terms used before they are explained — then dispatch a **fresh-context second reader** for the contradictions no script can see. Reports locations, never a grade level: the formulas were validated on schoolchildren and Navy trainees, and Redish (2000) reports their validity for adult technical readers is unknown | — |
 | [hook-and-human](./hook-and-human) | Write, punch up, and review persuasive marketing copy without fabricating | — |
+
+### Career and job search
+
+The documents an application is made of, and the feeds that find the roles.
+
+| Skill | What it does | Wraps |
+|---|---|---|
 | [cv-and-human](./cv-and-human) | Tailor a CV — or a LinkedIn profile (job-seeker lens) — to pass automated HR/ATS screening and Recruiter search while staying truthful and human — keyword/JD matching, parseability, de-slop, optional red-team | — |
 | [cv-cover-letter](./cv-cover-letter) | Draft a cover letter from a job posting and your own CV: every claim traces to something you actually said, arithmetic-derived claims are flagged rather than asserted, and it **stops when the evidence stops** instead of filling a word count. Triages the posting's stated hard requirements first, so it can tell you not to apply **before** you spend the hour. Works standalone; markedly better after `cv-evidence-base`, which holds the facts a CV compresses away | — |
 | [cv-evidence-base](./cv-evidence-base) | Interrogate a CV to recover the evidence that never made it onto the page, and grade which roles you are genuinely credible for — including the ones you are not. Runs *before* `cv-and-human`, when there is no target role yet | — |
-| [frontier-rounds](./frontier-rounds) | Interview you in breadth-first rounds until a design is settled — the whole frontier per round with a recommended answer on every question, rather than one question at a time. Produces decisions, not deliverables | — |
-| [c7search](./c7search) | Fetch up-to-date library docs via the `c7search` CLI | [Context7](https://context7.com) API |
-| [markdown-converter](./markdown-converter) | Convert PDF/Office/HTML/media files to Markdown | [markitdown](https://github.com/microsoft/markitdown) (MS, MIT) |
+| [job-feeds](./job-feeds) | Aggregate nine sanctioned public job feeds from eight publishers (JSON APIs + RSS) into one deduplicated SQLite store, match them against your career lanes, and render a filterable self-contained HTML report — no scraping, no auth, no LinkedIn | [Arbeitnow](https://www.arbeitnow.com) / [Jobicy](https://jobicy.com) / [Remotive](https://remotive.com) / [Remote OK](https://remoteok.com) / [Working Nomads](https://www.workingnomads.com) / [4 Day Week](https://4dayweek.io) / [We Work Remotely](https://weworkremotely.com) / [Python.org Jobs](https://www.python.org/jobs/) |
+
+### Publishing and documents
+
+Getting finished material out of a file and into the place people read it.
+
+| Skill | What it does | Wraps |
+|---|---|---|
 | [ghost-publish](./ghost-publish) | Publish, update, schedule and verify Ghost posts from a markdown file — strips front matter Ghost would render as prose, and diffs what Ghost holds against the source in *both* directions | [ghst](https://github.com/TryGhost/ghst) (TryGhost, MIT) |
+| [markdown-converter](./markdown-converter) | Convert PDF/Office/HTML/media files to Markdown | [markitdown](https://github.com/microsoft/markitdown) (MS, MIT) |
+| [source-snapshot](./source-snapshot) | Fetch external data once into pinned, provenance-stamped artifacts; resilient extractor fallback | [markitdown](https://github.com/microsoft/markitdown) / Defuddle / Readability |
+| [report-builder](./report-builder) | Build self-contained single-page HTML reports/dashboards from data | [Jinja2](https://jinja.palletsprojects.com) / [Bootstrap 5](https://getbootstrap.com) / [Chart.js](https://www.chartjs.org) / [Plotly](https://plotly.com/javascript/) |
+
+### Images and diagrams
+
+Making a picture, and making it the right size and format for where it goes.
+
+| Skill | What it does | Wraps |
+|---|---|---|
 | [nano-banana-pro-json](./nano-banana-pro-json) | Generate/edit images (Gemini 3 Pro Image) with structured JSON control + photographic style presets, plus recipes for logos (with a free raster→SVG trace), product/e-commerce shots, and infographics — each with honest boundaries | Google Gemini image API |
+| [excalidraw-diagram](./excalidraw-diagram) | Generate Excalidraw diagrams that argue visually, with a render→view→fix loop (engine fetched once from a pinned, sha256-verified release, then offline) and optional cloud-icon (AWS/Azure/GCP) ingestion | [Excalidraw](https://github.com/excalidraw/excalidraw) (MIT; engine fetched at first render, fonts vendored); design forked from [coleam00](https://github.com/coleam00/excalidraw-diagram-skill); icon approach from [awesome-copilot](https://github.com/github/awesome-copilot) (MIT) |
 | [convert-to-webp](./convert-to-webp) | Convert images to WebP for web projects | [libwebp](https://developers.google.com/speed/webp) `cwebp` / macOS `sips` |
 | [social-image-prep](./social-image-prep) | Resize and format images for social platforms | `sips` / [ImageMagick](https://imagemagick.org) / [Pillow](https://python-pillow.org) |
+
+### Cloud and infrastructure
+
+Reference-grade answers about tools whose docs are large and change often.
+
+| Skill | What it does | Wraps |
+|---|---|---|
 | [terragrunt-skill](./terragrunt-skill) | Generate, validate, review, and debug Terragrunt 1.x configs (units, stacks, `autoinclude`, CAS, dependencies, AWS/Azure/GCP backends) — tracks current stable v1.1.0, incl. Azure backend gotchas and running only changed units at scale | — |
 | [terraform-registry](./terraform-registry) | Provider-agnostic CLI to search/inspect the Terraform Registry via its JSON API (no scraping) | [Terraform Registry](https://registry.terraform.io) API |
-| [transcribe-summarize](./transcribe-summarize) | Transcribe audio on-device (macOS/Windows/Linux), filter the segments Whisper invents over silence, and write it up as factual meeting notes + PDF; ffmpeg normalise/silence-trim beats model choice, and timestamps map back to the original recording. Groq/OpenAI/ElevenLabs are opt-in and disclosed before anything is sent | [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) / [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [ffmpeg](https://ffmpeg.org) |
-| [source-snapshot](./source-snapshot) | Fetch external data once into pinned, provenance-stamped artifacts; resilient extractor fallback | [markitdown](https://github.com/microsoft/markitdown) / Defuddle / Readability |
-| [dev-fleet](./dev-fleet) | Orchestration playbook driving the agent fleet through build → verify → review → commit | — |
-| [report-builder](./report-builder) | Build self-contained single-page HTML reports/dashboards from data | [Jinja2](https://jinja.palletsprojects.com) / [Bootstrap 5](https://getbootstrap.com) / [Chart.js](https://www.chartjs.org) / [Plotly](https://plotly.com/javascript/) |
-| [ux-audit](./ux-audit) | Heuristic usability + accessibility audit of rendered web pages (Nielsen + WCAG 2.2) | — |
-| [job-feeds](./job-feeds) | Aggregate nine sanctioned public job feeds from eight publishers (JSON APIs + RSS) into one deduplicated SQLite store, match them against your career lanes, and render a filterable self-contained HTML report — no scraping, no auth, no LinkedIn | [Arbeitnow](https://www.arbeitnow.com) / [Jobicy](https://jobicy.com) / [Remotive](https://remotive.com) / [Remote OK](https://remoteok.com) / [Working Nomads](https://www.workingnomads.com) / [4 Day Week](https://4dayweek.io) / [We Work Remotely](https://weworkremotely.com) / [Python.org Jobs](https://www.python.org/jobs/) |
 | [azadvertizer](./azadvertizer) | Offline lookups over Azure Policy / Initiative / RBAC-Role metadata + cross-references | [AzAdvertizer](https://www.azadvertizer.net) CSV exports |
+
+### Engineering workflow
+
+Day-to-day development: reviewing, tracking, and looking things up.
+
+| Skill | What it does | Wraps |
+|---|---|---|
+| [dev-fleet](./dev-fleet) | Orchestration playbook driving the agent fleet through build → verify → review → commit | — |
+| [ux-audit](./ux-audit) | Heuristic usability + accessibility audit of rendered web pages (Nielsen + WCAG 2.2) | — |
+| [c7search](./c7search) | Fetch up-to-date library docs via the `c7search` CLI | [Context7](https://context7.com) API |
 | [use-linearis](./use-linearis) | Drive Linear.app from the CLI — issues, milestones, blocked-by relations, release filtering — plus the Linear↔Ogham dogfooding loop | [linearis](https://github.com/linearis-oss/linearis) CLI |
-| [excalidraw-diagram](./excalidraw-diagram) | Generate Excalidraw diagrams that argue visually, with a render→view→fix loop (engine fetched once from a pinned, sha256-verified release, then offline) and optional cloud-icon (AWS/Azure/GCP) ingestion | [Excalidraw](https://github.com/excalidraw/excalidraw) (MIT; engine fetched at first render, fonts vendored); design forked from [coleam00](https://github.com/coleam00/excalidraw-diagram-skill); icon approach from [awesome-copilot](https://github.com/github/awesome-copilot) (MIT) |
+
+### Knowledge and capture
+
+Turning something you heard or found into something you can search later.
+
+| Skill | What it does | Wraps |
+|---|---|---|
 | [trilium-capture](./trilium-capture) | File findings, clipped material and long-form documents into a self-hosted Trilium Notes instance — per project, one **closed** label vocabulary, documents revised in place so Trilium's own revision history replaces keeping `.bak` copies. Searches before writing; decides what does *not* belong there; never retrieves, and never touches a note it didn't write | [Trilium Notes](https://github.com/TriliumNext/Trilium) — its **built-in** MCP server |
+| [transcribe-summarize](./transcribe-summarize) | Transcribe audio on-device (macOS/Windows/Linux), filter the segments Whisper invents over silence, and write it up as factual meeting notes + PDF; ffmpeg normalise/silence-trim beats model choice, and timestamps map back to the original recording. Groq/OpenAI/ElevenLabs are opt-in and disclosed before anything is sent | [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) / [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [ffmpeg](https://ffmpeg.org) |
+
+### Planning and decisions
+
+Structuring a decision that has more moving parts than fit in your head.
+
+| Skill | What it does | Wraps |
+|---|---|---|
+| [frontier-rounds](./frontier-rounds) | Interview you in breadth-first rounds until a design is settled — the whole frontier per round with a recommended answer on every question, rather than one question at a time. Produces decisions, not deliverables | — |
 | [travel-planning](./travel-planning) | Turn a trip into a paced day-by-day itinerary + a reconciled budget (Markdown); grounds cost estimates in typical/seasonal prices (labeled, sourced) — no booking, no live fares | — |
 | [business-plan](./business-plan) | Build a realistic business plan (full plan + one-pager + investor summary) where every number is researched-and-cited, user-supplied, or computed from your assumptions — never invented; ends with an honest go/no-go/reshape verdict | — |
 
