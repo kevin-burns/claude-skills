@@ -325,6 +325,43 @@ def check_reference_counts(skill):
                      f"{name} claims {claimed} for `{handle}`, file has {actual}")
 
 
+def check_skills_group_index():
+    """The group index under '## Skills' must match the '###' headings below it.
+
+    Added with the index itself, 2026-09-06. It is a hand-maintained mirror of
+    the structure, and this README has shipped a stale count three times -- so
+    the index ships with the check that keeps it honest rather than relying on
+    anyone to remember. Anchors are compared too: a renamed group leaves a link
+    that resolves to nothing, which looks fine until someone clicks it.
+    """
+    readme = ROOT / "README.md"
+    if not readme.exists():
+        return None
+    text = readme.read_text(encoding="utf-8")
+    try:
+        start = text.index("## Skills\n")
+        end = text.index("### Using these skills")
+    except ValueError:
+        return fail("README.md", "the Skills section markers moved; the group-index check is blind")
+    section = text[start:end]
+    headings = re.findall(r"^### (.+)$", section, re.M)
+    index_line = next((line for line in section.splitlines()
+                       if line.startswith("[") and "](#" in line), None)
+    if index_line is None:
+        return fail("README.md", "the Skills group index is missing")
+    linked = re.findall(r"\[([^\]]+)\]\(#([^)]+)\)", index_line)
+    names = [n for n, _ in linked]
+    if names != headings:
+        fail("README.md",
+             f"the Skills group index does not match the headings.\n"
+             f"      index:    {names}\n      headings: {headings}")
+    for name, target in linked:
+        expected = name.lower().replace(" ", "-")
+        if target != expected:
+            fail("README.md", f"group index anchor for {name!r} is #{target}, expected #{expected}")
+    return None
+
+
 def main():
     skills = skill_dirs()
     if not skills:
@@ -339,6 +376,7 @@ def main():
         check_reference_counts(skill)
 
     check_catalog()
+    check_skills_group_index()
     check_manifest_lists_every_skill(skills)
 
     for path in [ROOT / "README.md", ROOT / "CONTRIBUTING.md"]:

@@ -129,6 +129,8 @@ merge overwrites it.
 
 Grouped by what you would be trying to do. Every skill appears in exactly one group.
 
+[Writing and editing](#writing-and-editing) · [Career and job search](#career-and-job-search) · [Publishing and documents](#publishing-and-documents) · [Images and diagrams](#images-and-diagrams) · [Cloud and infrastructure](#cloud-and-infrastructure) · [Engineering workflow](#engineering-workflow) · [Knowledge and capture](#knowledge-and-capture) · [Planning and decisions](#planning-and-decisions)
+
 ### Writing and editing
 
 Prose for humans, and telling whether a draft reads like one wrote it.
