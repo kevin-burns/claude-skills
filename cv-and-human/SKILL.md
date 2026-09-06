@@ -1,24 +1,6 @@
 ---
 name: cv-and-human
-description: >
-  Tailor and polish a CV/resume - or a LinkedIn profile - to maximise its score in
-  applicant tracking systems (ATS) and LinkedIn recruiter search, for both JD-matching
-  and JD-less screeners. Use this whenever the user wants to optimise, tailor, rewrite,
-  or "ATS-proof" a CV or resume, asks why their resume isn't getting past automated
-  screening, wants a keyword/gap analysis against a job description, wants to remove
-  AI-generated texture from / de-slop / humanize a CV or LinkedIn profile, or wants to
-  check whether a CV parses cleanly. ALSO use for the LinkedIn PROFILE as a career
-  document: "optimise my LinkedIn profile", "rewrite my LinkedIn headline", "my
-  LinkedIn About section", "the experience bullets on my LinkedIn profile", "why am I
-  not showing up in recruiter searches", "make my LinkedIn match my CV", "personal
-  brand positioning". Trigger even with no job description, as long as the user names
-  something to be DONE to the document - tailored, ATS-proofed, parse-checked,
-  de-slopped. Do NOT use when the user has no target role in mind and is asking an open
-  question about themselves - what roles they are credible for, what evidence they are
-  missing, whether they are pigeonholed, or "does this look OK" over a bare CV - that
-  is cv-evidence-base, which recovers the material this skill then tailors. Do NOT use
-  for writing a LinkedIn POST or other social content - that is hook-and-human
-  (persuasive) or clear-and-human (neutral).
+description: > Tailor and polish a CV/resume - or a LinkedIn profile - to maximise its score in applicant tracking systems (ATS) and LinkedIn recruiter search. Use this whenever the user wants to optimise, tailor, rewrite, or "ATS-proof" a CV or resume, asks why it is not getting past automated screening, wants a keyword/gap analysis against a job description, wants to de-slop or humanize a CV or LinkedIn profile, or wants to check whether a CV parses cleanly. ALSO use for the LinkedIn PROFILE as a career document - headline, About section, experience bullets, recruiter-search visibility, personal brand positioning. Trigger even with no job description, provided something is to be DONE to the document. Do NOT use when the user has no target role and is asking an open question about themselves - what roles they are credible for, what evidence they are missing, whether they are pigeonholed - that is cv-evidence-base. For a LinkedIn POST or other social content use hook-and-human (persuasive) or clear-and-human (neutral).
 ---
 
 # CV and Human

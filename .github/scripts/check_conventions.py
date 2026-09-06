@@ -46,6 +46,32 @@ def skill_dirs():
     return sorted(p for p in ROOT.iterdir() if p.is_dir() and (p / "SKILL.md").exists())
 
 
+# Published limits, not house style. Both the open Agent Skills specification
+# (agentskills.io/specification) and Anthropic's own skill-authoring guidance
+# state these, and Kiro's docs repeat them -- so a description over the cap is
+# out of spec in EVERY harness, not merely untidy.
+#
+# Checked 2026-09-06: five skills were over the description cap, by up to 433
+# characters, and one had an XML tag in its description. None of that was
+# visible, because the field that breaks the rule is also the field nobody
+# reads once it is written. A description is the always-on cost of a skill --
+# it loads in every session whether or not the skill fires -- so growth here is
+# a tax that compounds silently. That is what this check is for.
+NAME_MAX = 64
+DESCRIPTION_MAX = 1024
+COMPATIBILITY_MAX = 500
+# Anthropic reserves these in the name field.
+RESERVED_NAME_WORDS = ("anthropic", "claude")
+
+
+def _frontmatter_field(block, field):
+    """A frontmatter value, folded to one line. Values here routinely wrap, so
+    a line-anchored match would measure the first line and pass a 1400-character
+    description."""
+    match = re.search(rf"^{field}:\s*(.*?)(?=\n[a-z_-]+:|\Z)", block, re.S | re.M)
+    return " ".join(match.group(1).split()) if match else None
+
+
 def check_frontmatter(skill):
     """name must match the directory, or the skill cannot be invoked by path."""
     text = (skill / "SKILL.md").read_text(encoding="utf-8")
@@ -58,8 +84,35 @@ def check_frontmatter(skill):
         fail(skill.name, "SKILL.md frontmatter has no 'name:'")
     elif name.group(1) != skill.name:
         fail(skill.name, f"frontmatter name is {name.group(1)!r}, directory is {skill.name!r}")
-    if not re.search(r"^description:", block, re.M):
+    else:
+        value = name.group(1)
+        if len(value) > NAME_MAX:
+            fail(skill.name, f"name is {len(value)} chars, the limit is {NAME_MAX}")
+        if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", value):
+            fail(skill.name, "name must be lowercase a-z0-9 separated by single hyphens")
+        for word in RESERVED_NAME_WORDS:
+            if word in value.lower():
+                fail(skill.name, f"name contains the reserved word {word!r}")
+
+    description = _frontmatter_field(block, "description")
+    if description is None:
         fail(skill.name, "SKILL.md frontmatter has no 'description:'")
+    elif not description:
+        fail(skill.name, "description is empty")
+    else:
+        if len(description) > DESCRIPTION_MAX:
+            fail(skill.name,
+                 f"description is {len(description)} chars, the limit is {DESCRIPTION_MAX} "
+                 f"({len(description) - DESCRIPTION_MAX} over). Move detail into the body or "
+                 f"a references/ file -- the description is loaded in every session.")
+        if re.search(r"<[a-zA-Z/][^>]*>", description):
+            fail(skill.name, "description contains an XML-looking tag; it is injected into "
+                             "the system prompt verbatim and both specs forbid it")
+
+    compatibility = _frontmatter_field(block, "compatibility")
+    if compatibility and len(compatibility) > COMPATIBILITY_MAX:
+        fail(skill.name,
+             f"compatibility is {len(compatibility)} chars, the limit is {COMPATIBILITY_MAX}")
     return None
 
 
