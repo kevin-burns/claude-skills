@@ -36,13 +36,13 @@ linear --help
 linear issues --help          # per-subcommand flags
 ```
 
-## Gotchas (the ones that cost time — re-verified against 2026.6.0 on 2026-08-05)
+## Gotchas (the ones that cost time — re-verified against 2026.8.0 on 2026-09-22)
 
 **1. Flag asymmetry between `issues create`/`update` and `issues list`.** Create/update take `--project-milestone <ms>`; list takes `--milestone <name>` (and requires `--project`). Same concept, two flag names. Likewise `--label` (singular, comma-separated) on list vs `--labels` on create/update.
 
-**2. ~~Milestone create is broken.~~ Fixed in 2026.6.0** ([#223](https://github.com/linearis-oss/linearis/issues/223), [#228](https://github.com/linearis-oss/linearis/issues/228))**.** It used to return `Variable "$projectId" of required type "String!" was not provided` even with `--project` set, so the workaround was to create milestones in the web UI. The project id is now passed correctly — an invalid project yields a clean `Project "X" not found` instead of the variable error. `milestones` also gained `read` and `update`. Note there is still **no `milestones delete`**, so a mistyped milestone has to be cleaned up in the web UI; that is why the fix above was probed with a deliberately invalid project rather than by creating a throwaway.
+**2. ~~Milestone create is broken.~~ Fixed in 2026.6.0** ([#223](https://github.com/linearis-oss/linearis/issues/223), [#228](https://github.com/linearis-oss/linearis/issues/228))**.** It used to return `Variable "$projectId" of required type "String!" was not provided` even with `--project` set, so the workaround was to create milestones in the web UI. The project id is now passed correctly — an invalid project yields a clean JSON error instead of the variable error (`Entity not found: Project` on 2026.8.0; the wording was `Project "X" not found` on 2026.6.0, so match on `"error"`, not on the message). `milestones` also gained `read` and `update`. Note there is still **no `milestones delete`**, so a mistyped milestone has to be cleaned up in the web UI; that is why the fix above was probed with a deliberately invalid project rather than by creating a throwaway.
 
-**3. ~~Labels can't be created via CLI.~~ Fixed in 2026.6.0** ([#117](https://github.com/linearis-oss/linearis/issues/117))**.** `linear labels` now has `create`, `read`, `update` and `delete` alongside `list`. Still true, and still the expensive part: a nonexistent label name passed to `issues create` fails with `Label "X" not found` and **no issue is created** — so create the label first, or the whole call is a no-op.
+**3. ~~Labels can't be created via CLI.~~ Fixed in 2026.6.0** ([#117](https://github.com/linearis-oss/linearis/issues/117))**.** `linear labels` now has `create`, `read`, `update` and `delete` alongside `list`. Still true on 2026.6.0, and the expensive part: a nonexistent label name passed to `issues create` fails with `Label "X" not found` and **no issue is created** — so create the label first, or the whole call is a no-op. *(The verbs were re-checked on 2026.8.0; the no-op behaviour was not re-probed, because doing so safely needs a real team and risks creating a stray issue.)*
 
 **4. The stored token isn't a raw Personal API Key.** Copying `~/.linearis/token` into a `curl` `Authorization: Bearer …` header returns 401. Don't bypass the CLI by hitting GraphQL directly — fix `linearis` or stay on its surface.
 
@@ -57,13 +57,20 @@ linear issues list --project "myproject-abcdef012345"                  # Project
 
 Same on `milestones list --project`. Use the display name or the full UUID.
 
-**6. Query-complexity ceiling.** `linear projects list` with no filter returns `Query too complex — complexity 13950 / 10000`. Use `--limit 5` or filter down. Not a linearis bug as such — it is Linear's own GraphQL cost limit — but tracked upstream as [#276](https://github.com/linearis-oss/linearis/issues/276) (open), which reports it firing even on a one-project workspace.
+**6. ~~Query-complexity ceiling.~~ Fixed upstream on 2026-08-06** ([#276](https://github.com/linearis-oss/linearis/issues/276), via PR #284; 2026.7.0 is the first stable release after it)**.** On 2026.6.0, `linear projects list` with no filter returned `Query too complex — complexity 13950 / 10000` even on a one-project workspace, and the workaround was `--limit 5`. On 2026.8.0 it returns normally with no `--limit`. If you are pinned below 2026.7.0, the workaround still applies.
 
-**7. Fetching one issue is `read`, not `get` — and `get` is never coming.** `linear issues read <issue>` returns the full record including the description. Asking for `get` fails with `error: too many arguments for 'issues'. Expected 0 arguments but got 2`, which reads like a flag problem rather than a wrong verb and sends you hunting through `--help` for the wrong thing.
+**7. Fetching one issue is `read`, not `get` — and `get` is never coming.** `linear issues read <issue>` returns the full record including the description. Asking for `get` used to fail with `error: too many arguments for 'issues'. Expected 0 arguments but got 2`, which read like a flag problem rather than a wrong verb. On 2026.8.0 it fails honestly — see below.
 
-This is a well-worn trap, not a local quirk: upstream [#48](https://github.com/linearis-oss/linearis/issues/48) reports LLMs reaching for `issues get` with exactly this error, and was closed **NOT_PLANNED** — aliases are a deliberate no, so do not wait for it. The recovery problem it describes is tracked separately as [#281](https://github.com/linearis-oss/linearis/issues/281) (open): malformed commands emit plain-text on stderr while valid-command errors emit the JSON envelope, both exit 1, so an agent cannot tell "I called it wrong" from "that issue doesn't exist".
+This is a well-worn trap, not a local quirk: upstream [#48](https://github.com/linearis-oss/linearis/issues/48) reports LLMs reaching for `issues get` with exactly this error, and was closed **NOT_PLANNED** — aliases are a deliberate no, so do not wait for it. The recovery problem it describes — [#281](https://github.com/linearis-oss/linearis/issues/281) — **was fixed upstream on 2026-08-06** (PR #288). Before that, malformed commands printed plain text and both kinds of failure exited 1, so an agent could not tell "I called it wrong" from "that issue doesn't exist".
 
-Practical consequence: **a non-JSON error means you got the verb or arity wrong, not that the entity is missing.** Related verbs on the same object: `search <query>` (full-text), `archive` / `unarchive` / `delete <issue>`.
+**How to tell them apart now, measured on 2026.8.0 — use the exit code, not the shape of the output.** Every error is JSON, so "non-JSON means wrong verb" no longer fires at all:
+
+| you did | exit | body |
+|---|---|---|
+| used a verb that doesn't exist (`issues get`) | **2** | `{"error": "UNKNOWN_COMMAND", "available_commands": [...]}` |
+| asked for an entity that doesn't exist | 1 | `{"error": "Issue with identifier \"X\" not found"}` |
+
+`available_commands` is the useful part — it lists the real verbs, so read it instead of guessing again. The issues surface grew a lot between 2026.6.0 and 2026.8.0 (`batch`, `relations`, comments and reactions among them); this skill still documents only the sharp edges, so check `linear issues --help` before assuming a recipe below is the only way.
 
 **8. Sub-collections come back as `{nodes: […]}`, not bare arrays.** `issues read` returns `labels`, `comments`, `children` and `relations` each wrapped in a `nodes` key, while `issues list` returns its results under a top-level `nodes`. So `jq '[.labels[].name]'` fails with `Cannot index array with string "name"` — it needs `jq '[.labels.nodes[].name]'`. Cheap way to avoid guessing:
 
@@ -72,7 +79,7 @@ linear issues read ENG-227 | jq 'keys'          # what fields exist
 linear issues read ENG-227 | jq '.labels'       # what shape a given field is
 ```
 
-**Version pin:** every gotcha above was re-verified against **2026.6.0** on 2026-08-05. Two of the eight had already gone stale by then (2 and 3 — both told you to go and use the web UI for something the CLI had since learned to do), so check before trusting:
+**Version pin:** every gotcha above was re-verified against **2026.8.0** on 2026-09-22. Two of the eight had moved since the 2026.6.0 check (6 and 7 — both fixed upstream on 2026-08-06 while this file still called them open), so check before trusting:
 
 ```bash
 linear --version; npm view linearis version    # drifted? re-verify 1-8 before relying on them
@@ -84,7 +91,7 @@ linear --version; npm view linearis version    # drifted? re-verify 1-8 before r
 
 This skill is public and carries **no real IDs**. Team, project and milestone UUIDs are not credentials — nobody can act on them without your auth — but they describe a private tracker, so they live in a local file instead. Every example here uses obvious placeholders (`00000000-proj-…`, `abcdef012345`, `ENG-123`).
 
-**Do not resolve IDs by querying at session start.** That reinstates exactly the discovery tax this skill exists to remove, and burns calls against the complexity ceiling in gotcha 6. Source the file instead — zero API calls:
+**Do not resolve IDs by querying at session start.** That reinstates exactly the discovery tax this skill exists to remove — and on releases before 2026.7.0 it also hit the complexity ceiling in gotcha 6. Source the file instead — zero API calls:
 
 ```bash
 source ~/.config/dotfiles/env.sh
