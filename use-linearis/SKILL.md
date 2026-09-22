@@ -38,6 +38,12 @@ linear issues --help          # per-subcommand flags
 
 ## Gotchas (the ones that cost time — re-verified against 2026.8.0 on 2026-09-22)
 
+Run the preflight first. It reads `linear --version`, compares it with the release these gotchas were checked on, and names all eight if the two differ. No API call, no network unless you pass `--latest`:
+
+```bash
+python3 ~/.claude/skills/use-linearis/scripts/preflight.py --latest
+```
+
 **1. Flag asymmetry between `issues create`/`update` and `issues list`.** Create/update take `--project-milestone <ms>`; list takes `--milestone <name>` (and requires `--project`). Same concept, two flag names. Likewise `--label` (singular, comma-separated) on list vs `--labels` on create/update.
 
 **2. ~~Milestone create is broken.~~ Fixed in 2026.6.0** ([#223](https://github.com/linearis-oss/linearis/issues/223), [#228](https://github.com/linearis-oss/linearis/issues/228))**.** It used to return `Variable "$projectId" of required type "String!" was not provided` even with `--project` set, so the workaround was to create milestones in the web UI. The project id is now passed correctly — an invalid project yields a clean JSON error instead of the variable error (`Entity not found: Project` on 2026.8.0; the wording was `Project "X" not found` on 2026.6.0, so match on `"error"`, not on the message). `milestones` also gained `read` and `update`. Note there is still **no `milestones delete`**, so a mistyped milestone has to be cleaned up in the web UI; that is why the fix above was probed with a deliberately invalid project rather than by creating a throwaway.
@@ -79,11 +85,7 @@ linear issues read ENG-227 | jq 'keys'          # what fields exist
 linear issues read ENG-227 | jq '.labels'       # what shape a given field is
 ```
 
-**Version pin:** every gotcha above was re-verified against **2026.8.0** on 2026-09-22. Two of the eight had moved since the 2026.6.0 check (6 and 7 — both fixed upstream on 2026-08-06 while this file still called them open), so check before trusting:
-
-```bash
-linear --version; npm view linearis version    # drifted? re-verify 1-8 before relying on them
-```
+**Version pin:** lives in `scripts/preflight.py` as `VERIFIED` and `VERIFIED_ON`, not in this sentence. It was a sentence until 2026-09-22 — and on 2026-08-05 that sentence already admitted two of eight gotchas had gone stale, then went stale itself when #276 and #281 closed upstream and nothing noticed for six weeks. The preflight at the top of this section is the check; bump the constant only after re-running 1-8.
 
 ---
 
