@@ -30,6 +30,7 @@
     "./convert-to-webp",
     "./cv-and-human",
     "./cv-cover-letter",
+    "./interview-panel",
     "./cv-evidence-base",
     "./dev-fleet",
     "./excalidraw-diagram",

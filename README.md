@@ -33,8 +33,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 27 skills + 9 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 27 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 28 skills + 9 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 28 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -67,7 +67,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than twenty-seven.
+rather than twenty-eight.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
@@ -150,6 +150,7 @@ The documents an application is made of, and the feeds that find the roles.
 | [cv-and-human](./cv-and-human) | Tailor a CV — or a LinkedIn profile (job-seeker lens) — to pass automated HR/ATS screening and Recruiter search while staying truthful and human — keyword/JD matching, parseability, de-slop, optional red-team | — |
 | [cv-cover-letter](./cv-cover-letter) | Draft a cover letter from a job posting and your own CV: every claim traces to something you actually said, arithmetic-derived claims are flagged rather than asserted, and it **stops when the evidence stops** instead of filling a word count. Triages the posting's stated hard requirements first, so it can tell you not to apply **before** you spend the hour. Works standalone; markedly better after `cv-evidence-base`, which holds the facts a CV compresses away | — |
 | [cv-evidence-base](./cv-evidence-base) | Interrogate a CV to recover the evidence that never made it onto the page, and grade which roles you are genuinely credible for — including the ones you are not. Runs *before* `cv-and-human`, when there is no target role yet | — |
+| [interview-panel](./interview-panel) | Rehearse a panel interview by roleplay. A Head of Cloud and a Head of HR ask one question at a time from a sourced 50-question bank and follow up on what you actually said, with no coaching mid-run. A fresh reviewer then debriefs the transcript against your evidence base and quotes the evidence you left out | — |
 | [job-feeds](./job-feeds) | Aggregate nine sanctioned public job feeds from eight publishers (JSON APIs + RSS) into one deduplicated SQLite store, match them against your career lanes, and render a filterable self-contained HTML report — no scraping, no auth, no LinkedIn | [Arbeitnow](https://www.arbeitnow.com) / [Jobicy](https://jobicy.com) / [Remotive](https://remotive.com) / [Remote OK](https://remoteok.com) / [Working Nomads](https://www.workingnomads.com) / [4 Day Week](https://4dayweek.io) / [We Work Remotely](https://weworkremotely.com) / [Python.org Jobs](https://www.python.org/jobs/) |
 
 ### Publishing and documents

@@ -29,6 +29,7 @@
     "./convert-to-webp",
     "./cv-and-human",
     "./cv-cover-letter",
+    "./interview-panel",
     "./cv-evidence-base",
     "./dev-fleet",
     "./excalidraw-diagram",
@@ -53,7 +54,7 @@
   "interface": {
     "displayName": "Kevin Burns' Skills",
     "shortDescription": "Twenty-seven skills that each say what they will not do.",
-    "longDescription": "Writing and CV work (clear-and-human, hook-and-human, readability, cv-and-human, cv-evidence-base, cv-cover-letter), cloud and IaC (terragrunt-skill, terraform-registry, azadvertizer), docs and research (c7search, markdown-converter, source-snapshot), publishing and capture (ghost-publish, trilium-capture, transcribe-summarize), images and diagrams (nano-banana-pro-json, convert-to-webp, social-image-prep, excalidraw-diagram), reports and audits (report-builder, ux-audit), agent tooling (dev-fleet, frontier-rounds, use-linearis), planning (travel-planning, business-plan), and job search (job-feeds). Every skill ships a stated boundary — what it refuses to do and why — because a tool that will invent a number to fill a gap is worse than one that stops. MIT licensed.",
+    "longDescription": "Writing and CV work (clear-and-human, hook-and-human, readability, cv-and-human, cv-evidence-base, cv-cover-letter, interview-panel), cloud and IaC (terragrunt-skill, terraform-registry, azadvertizer), docs and research (c7search, markdown-converter, source-snapshot), publishing and capture (ghost-publish, trilium-capture, transcribe-summarize), images and diagrams (nano-banana-pro-json, convert-to-webp, social-image-prep, excalidraw-diagram), reports and audits (report-builder, ux-audit), agent tooling (dev-fleet, frontier-rounds, use-linearis), planning (travel-planning, business-plan), and job search (job-feeds). Every skill ships a stated boundary — what it refuses to do and why — because a tool that will invent a number to fill a gap is worse than one that stops. MIT licensed.",
     "developerName": "Kevin Burns",
     "category": "Productivity",
     "capabilities": [
