@@ -208,3 +208,14 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      # The same bandit gate CI runs, from the same script, so a B310 fails here and not
+      # on main. Added 2026-09-24, the day a new urlopen passed every hook above and
+      # turned CI red. Runs when a Python file is staged; it scans all tracked Python,
+      # not only the staged files, because the baseline is repo-wide. About 3 seconds.
+      - id: bandit
+        name: bandit (baselined, same script as CI)
+        entry: bash .github/scripts/run_bandit.sh
+        language: system
+        types: [python]
+        pass_filenames: false

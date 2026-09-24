@@ -104,22 +104,8 @@ jobs:
       # Severity floor is medium: the 1229 LOWs are almost all B101 asserts in
       # tests, and baselining those would churn on every test edit.
       - name: bandit (tracked python, baselined)
-        run: |
-          set -euo pipefail
-          git ls-files '*.py' | grep -v 'agents/.*/evals/fixtures' > /tmp/pyfiles.txt
-          printf 'scanning %s tracked python file(s)\n' "$(wc -l < /tmp/pyfiles.txt | tr -d ' ')"
-          # `|| true` because bandit exits non-zero merely for HAVING findings.
-          # The verdict comes from reading the report, never from this exit
-          # code -- bandit also exits 0 when it could not read its input at all.
-          # A read loop rather than `mapfile`: mapfile is bash 4+, and macOS
-          # ships bash 3.2, so anyone reproducing this step locally on a Mac
-          # would hit "command not found" while CI stayed green.
-          pyfiles=()
-          while IFS= read -r f; do pyfiles+=("$f"); done < /tmp/pyfiles.txt
-          uvx bandit@1.9.4 --severity-level medium \
-            -b .bandit-baseline.json -f json -o /tmp/bandit.json \
-            "${pyfiles[@]}" > /dev/null 2>&1 || true
-          python3 .github/scripts/check_bandit.py /tmp/bandit.json
+        # The step body is .github/scripts/run_bandit.sh, shared with the pre-commit hook.
+        run: bash .github/scripts/run_bandit.sh
 
   secrets:
     name: secrets (gitleaks, full history)
