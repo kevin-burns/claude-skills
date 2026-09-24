@@ -25,7 +25,10 @@ import sys
 import urllib.request
 from datetime import date
 
-URL = os.environ.get("TRILIUM_MCP_URL", "http://10.10.14.232:8080/mcp")
+# No default: a homelab address is a fact about one network, and this repo is public.
+URL = os.environ.get("TRILIUM_MCP_URL")
+if not URL:
+    sys.exit("TRILIUM_MCP_URL is not set, e.g. http://<trilium-host>:8080/mcp")
 KEY = os.environ.get("TRILLIUM_ETAPI_KEY")
 if not KEY:
     sys.exit("TRILLIUM_ETAPI_KEY is not set; source ~/.config/dotfiles/env.sh first")
