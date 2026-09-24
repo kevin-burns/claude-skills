@@ -1,8 +1,8 @@
 # Interview Panel — Debrief Rubric
 
-What an independent reviewer scores from a saved transcript of a completed panel session,
+What an independent reviewer looks for in a saved transcript of a completed panel session,
 against the candidate's evidence base. This runs *after* the roleplay, never during it — the
-panel in `personas.md` does not coach mid-run; this is where the coaching happens.
+panel (see `panel-rules.md`) does not coach mid-run; this is where the coaching happens.
 
 ## Hard rule: no invented facts
 
@@ -20,9 +20,9 @@ says "no matching evidence found in the evidence base" — it does not invent on
 Every claim the reviewer makes about what the candidate could have said must cite the specific
 line or entry in the evidence base it came from.
 
-## Per-answer scoring
+## Per-answer review
 
-For each question the candidate answered, score:
+For each question the candidate answered, look at:
 
 **Structure (situation → action → result).**
 Does the answer identify a specific situation, what the candidate actually did, and what
@@ -33,7 +33,7 @@ own contribution never isolated.
 **Specificity.**
 Does the answer name a real, concrete detail — a decision, a number, a timeframe, a named
 mechanism — or does it stay at the level of general principle? An answer can be well-structured
-and still score poorly here if every noun in it could apply to any situation.
+and still fall short here if every noun in it could apply to any situation.
 
 **Directness.**
 Does the answer actually answer the question asked, or does it pivot to a more comfortable
@@ -42,7 +42,7 @@ of the one that was.
 
 **Length.**
 Flag answers that ran long enough to trigger the panel's rambling interruption (per
-`personas.md`, roughly 2 minutes) and never reached a landing point unassisted. Also flag
+the persona files, roughly 2 minutes) and never reached a landing point unassisted. Also flag
 answers that were too short to demonstrate the competency being tested, even if technically
 on-topic.
 
@@ -53,12 +53,12 @@ exact evidence-base line and note it as evidence left on the table. If the candi
 strongest available example, say so explicitly — this comparison should surface both directions,
 not only gaps.
 
-## Per-session scoring
+## Per-session review
 
 **Topic coverage.**
-Using the `topic` field from `bank.md`, list which topics were actually asked in this session
+Using each question's `topic` field, list which topics were actually asked in this session
 and which strong-answer criteria were met versus missed, per topic. A session that never touched
-`risk-security` or `finops` should say so plainly, not be silently scored as if those topics
+`risk-security` or `finops` should say so plainly, not be silently reviewed as if those topics
 didn't exist.
 
 **Consistency across answers.**
@@ -69,36 +69,56 @@ handling a peer disagreement (conflict). Note any answer that contradicts an ear
 both.
 
 **How the candidate handled each seat.**
-Score the Head of Cloud portion and the Head of HR portion separately — a candidate can be
+Describe each seat's portion separately — a candidate can be
 strong in one seat and weak in the other, and averaging them together hides that. Note any
-difference in how the candidate handled pushback from each persona (per `personas.md`'s
+difference in how the candidate handled pushback from each persona (per that seat's persona file's
 interruption and vague-answer behavior).
 
 **Questions the candidate asked at the end.**
-Evaluate against Q50's strong-answer criteria: specific and researched versus generic, at least
+Evaluate against the closing-questions rubric in the bank, or failing that: specific and researched versus generic, at least
 one substantive question versus logistics-only, engagement with the answer given versus reading
 from a list.
+
+## Stance: a learning tool, not a grade
+
+The debrief is for reflection. **No answer is marked wrong, incorrect, failed or passed.** For
+each answer that fell short, say three things plainly:
+
+- **What you said.** Quote or closely paraphrase the transcript.
+- **What the panel was listening for.** Take this from the question's `strong answer contains`
+  and, where the question has one, its `why they ask`. Explain *why* that matters to this seat,
+  so the candidate learns the intent and not only the checklist.
+- **The step from one to the other.** One concrete change, ideally drawn from the evidence base
+  ("the landing-zone migration would have answered this: …").
+
+This is not permission to soften. A missed point is still named as missed, and in the same
+words the panel would have used to judge it. What changes is the frame: an explanation of what
+was expected replaces a verdict. Strengths get the same treatment: say *why* it landed, so the
+candidate can do it on purpose next time.
 
 ## Output format
 
 The debrief must produce, in this order:
 
-1. **Top 3 strengths** — each tied to a specific question and a specific thing the candidate
-   said, not a general impression.
-2. **Top 3 fixes** — each actionable and specific: what to change about a specific type of
-   answer, not "be more confident."
-3. **Per-question table** — one row per question asked, columns: question ID and title, seat,
-   topic, structure score, specificity score, directness, one-line note.
-4. **Evidence left on the table** — a list of moments where the evidence base had a stronger or
-   more specific example than the one the candidate used, each with the exact evidence-base
-   citation (line or entry) the candidate could have drawn on. If none, say so explicitly rather
-   than omitting the section.
-5. **3 answers to rehearse again** — the three specific questions (by ID) most worth practicing
-   before a real panel, with a one-line reason each tied to what actually happened in the
-   transcript.
+1. **What landed.** Three moments, each tied to a specific question and a specific thing the
+   candidate said, and why each worked for that seat.
+2. **Three things to work on.** Each is specific and actionable: what to change about a kind
+   of answer, not "be more confident".
+3. **Question by question.** One entry per question asked: question ID and title, seat, what
+   you said (1–2 lines), what the panel was listening for (1–2 lines), and the step between
+   them. Where the answer covered it, say so and move on.
+4. **Evidence left on the table.** Moments where the evidence base held a stronger or more
+   specific example than the one used, each with the exact evidence-base citation. If there
+   are none, say so; do not omit the section.
+5. **Reflection prompts.** Three to five questions for the candidate to answer in their own
+   words before the next run, e.g. "Which answer would you give differently if the Head of
+   Cloud asked it again, and what would you open with?" These are for them to think through,
+   not for the reviewer to answer.
+6. **Three answers to rehearse again.** The questions (by ID) most worth another pass, each
+   with a one-line reason tied to what actually happened in the transcript.
 
 ## What this rubric does not do
 
-It does not score the candidate against a hypothetical ideal candidate, does not compare the
-candidate to other candidates, and does not predict a hiring outcome. It scores what happened in
+It does not grade the candidate against a hypothetical ideal candidate, does not compare the
+candidate to other candidates, and does not predict a hiring outcome. It reviews what happened in
 this specific transcript against what's actually available in the evidence base — nothing more.

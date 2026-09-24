@@ -1,6 +1,6 @@
 ---
 name: interview-panel
-description: Rehearse a panel job interview by roleplay. Two interviewers (a Head of Cloud and a Head of HR) ask one question at a time and follow up on what the candidate actually said. They stay in character with no coaching until the end. Then an independent reviewer debriefs the saved transcript against the candidate's own evidence base, naming the evidence they left out. Use when the user wants a mock interview, interview practice, a roleplay interviewer, a panel rehearsal, or prep for a hiring-manager or leadership interview on cloud strategy, vision, project management or behavioural questions. Takes a private brief file describing the company, seats, topics and level. Not for writing a CV or cover letter (cv-and-human, cv-cover-letter).
+description: Rehearse a panel job interview by roleplay. Two to four interviewers from six seats (Head of Cloud, Head of HR, Head of Engineering, Lead Engineer, a Principal peer running system-design scenarios, a Leadership-Principles bar raiser) ask one question at a time and follow up on what the candidate actually said, staying in character with no coaching. Then an independent reviewer debriefs the saved transcript against the candidate's own evidence base: what each seat was listening for and the evidence left out, as a learning tool, not a grade. Use for a mock interview, interview practice, a roleplay interviewer, a panel rehearsal, or prep for a hiring-manager or leadership interview for Lead, Staff or Principal cloud, platform or software roles. Takes a private brief (company, seats, topics, level) and optionally a private question bank. Not for writing a CV or cover letter (cv-and-human, cv-cover-letter).
 license: MIT
 ---
 
@@ -15,23 +15,34 @@ already decided what a good answer sounds like and will mark its own expectation
 
 1. **A brief**, a private markdown file the user passes by path. It holds the company, the
    seats and what each one cares about, topics, level (lead or principal), JD paths, the
-   evidence-base path, known facts the panel may probe, and a runs directory. **This skill never
-   stores a brief, a name or a transcript in its own directory.** The skill is public; the brief
-   is not.
-2. **`references/bank.md`**: 50 sourced questions with a rubric per question. Validate after
-   any edit with `python3 scripts/check_bank.py`.
-3. **`references/personas.md`**: how each seat behaves.
-4. **`references/debrief-rubric.md`**: what the reviewer scores.
+   evidence-base path, known facts the panel may probe, and a runs directory. It may also name
+   a **private bank** (`bank:` line) written in the same block format, for questions specific
+   to one employer. **This skill never stores a brief, a name, a private bank or a transcript in
+   its own directory.** The skill is public; those are not.
+2. **`references/banks/<seat>.md`**: one sourced bank per seat. Each question has a type
+   (behavioural, situational, scenario, technical, strategic), a rubric, and either a cited
+   source with an evidence quote from that page, or `source: none (common practice)`.
+   Validate after any edit with `python3 scripts/check_bank.py --verify`.
+3. **`references/personas/<seat>.md`**: how each seat behaves; **`references/panel-rules.md`**:
+   the rules every seat follows, and how to seat and time a panel.
+4. **`references/debrief-rubric.md`**: what the reviewer looks for, and its stance: explain
+   what was expected, never mark an answer wrong.
+
+**The seats:** `head-of-cloud`, `head-of-hr`, `head-of-engineering`, `lead-engineer`,
+`principal-peer` (a system-design scenario round) and `bar-raiser` (behavioural questions in
+the Leadership Principles style). The brief picks two to four.
 
 If no brief is given, ask for one, and offer to write it with the user from a job description.
 Do not run a panel on generic defaults without saying so.
 
 ## Before the run
 
-- Read the brief, both personas and the bank. Read the JDs the brief points to.
+- Read the brief, `panel-rules.md`, and the persona and bank for each seat the brief names,
+  plus the private bank if it names one. Read the JDs the brief points to.
 - **Pick 8–10 questions** for a 45-minute run. Cover every topic the brief names, and split them
-  about 60/40 between the seats as `personas.md` describes. Prefer questions at the brief's
-  level. You may reword a bank question to fit the company, but keep its rubric.
+  between the seats as `panel-rules.md` describes. **Draw from the private bank first**, then
+  fill from the public seat banks. Prefer questions at the brief's level. You may reword a bank
+  question to fit the company, but keep its rubric.
 - If the brief names angles specific to this interview (a hiring-manager seat, a known gap),
   make sure at least one question tests each.
 - **Use a real interviewer's name only if the brief marks it confirmed.** Otherwise use the seat
@@ -45,9 +56,10 @@ Do not run a panel on generic defaults without saying so.
 - **Follow up on what they said**, not on the next item on the list: a vague claim, a missing
   "what did *you* decide", a number with no source. Two follow-ups at most, then move on.
 - **No coaching, no praise, no scoring mid-run.** A strong answer gets the next question, as it
-  would in a real interview. The personas file describes how each seat reacts to rambling and to
-  vague answers. Follow it.
-- Hand over between seats the way `personas.md` describes.
+  would in a real interview. Each persona file describes how that seat reacts to rambling and
+  to vague answers. Follow it.
+- Hand over between seats the way `panel-rules.md` describes. A scenario seat runs one design
+  problem and changes a constraint with each follow-up.
 - **Never invent facts about the company** beyond the brief and the JDs. If the candidate asks
   something the brief can't answer, answer the way a real panel would ("we can come back to that")
   rather than making something up.
@@ -61,18 +73,21 @@ Do not run a panel on generic defaults without saying so.
    answers; the reviewer judges what was said.
 2. **Dispatch the debrief to a fresh subagent**, `general-purpose` with `model: opus`, at high
    effort. Pass only the file paths: the transcript, `references/debrief-rubric.md`, the
-   evidence base and the brief. Do not pass your own impressions. The brief is:
+   evidence base, the brief, and the bank files the questions came from. Do not pass your own impressions. The brief is:
 
    ```
    Debrief a mock interview. Read the rubric at <rubric> and follow its output format
    and its hard rule on invented facts. Transcript: <transcript>. Candidate's evidence
    base: <evidence>. Interview brief: <brief>. For every "evidence left on the table"
-   item, quote the evidence-base line. Write the debrief to <transcript minus .md>-debrief.md
-   and reply with its top 3 fixes.
+   item, quote the evidence-base line. Never mark an answer wrong: explain what
+   was expected. Write the debrief to <transcript minus .md>-debrief.md and reply
+   with its three things to work on.
    ```
 
-3. Show the user the path and the top three fixes. If an earlier run exists, point out what
-   changed since then. Don't argue with the debrief; the reason for handing it off is that you
+3. Show the user the path, what landed, and the three things to work on. The debrief is a
+   learning tool: it explains what the panel was listening for rather than marking answers
+   wrong (see the Stance section of `debrief-rubric.md`). If an earlier run exists, point out
+   what changed since then. Don't argue with the debrief; the reason for handing it off is that you
    are not the judge.
 
 ## Modes

@@ -8,10 +8,13 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 import check_bank  # noqa: E402
 
+SEATS = {"head-of-cloud", "head-of-hr"}
+
 GOOD = """\
-### Q01 A title
+### HC01 A title
 - seat: head-of-cloud
 - topic: strategy
+- type: strategic
 - level: both
 - question: Why?
 - strong answer contains:
@@ -20,18 +23,27 @@ GOOD = """\
   - no reason
 - follow-ups:
   - and then?
-- source: https://example.org/x (retrieved 2026-09-23)
+- source: https://example.org/x (retrieved 2026-09-24)
+- source-type: answer
+- evidence: "a sentence that is on the page"
 """
 
 
-def test_the_bundled_bank_is_valid():
-    """The real file, not a fixture: this is the check that matters."""
+def problems(text):
+    return check_bank.problems(check_bank.parse(text), SEATS)
+
+
+def test_the_bundled_banks_are_valid():
+    """The real files, not a fixture: this is the check that matters."""
     assert check_bank.main([]) == 0
 
 
-def test_the_bundled_bank_covers_both_seats():
-    blocks = check_bank.parse(check_bank.DEFAULT.read_text())
-    assert {b["seat"] for b in blocks.values()} == check_bank.SEATS
+def test_every_persona_has_a_bank_and_every_bank_seat_a_persona():
+    seats = check_bank.seats_defined()
+    banked = set()
+    for f in check_bank.BANKS.glob("*.md"):
+        banked |= {b["seat"] for b in check_bank.parse(f.read_text()).values()}
+    assert seats and seats == banked
 
 
 # The terms this skill must never contain are the user's own: a candidate, an employer, a
@@ -54,33 +66,67 @@ def test_no_private_term_appears_anywhere_in_the_skill():
 
 
 def test_a_complete_block_passes():
-    assert check_bank.problems(check_bank.parse(GOOD)) == []
+    assert problems(GOOD) == []
 
 
-def test_a_block_with_no_source_fails():
-    text = GOOD.replace("- source: https://example.org/x (retrieved 2026-09-23)\n", "")
-    assert any("'source'" in p for p in check_bank.problems(check_bank.parse(text)))
+def test_a_url_source_without_an_evidence_quote_fails():
+    """Presence is not support: the rule the first bank broke 20 times."""
+    text = GOOD.replace('- evidence: "a sentence that is on the page"\n', "")
+    assert any("evidence quote" in p for p in problems(text))
+
+
+def test_an_unsourced_rubric_is_allowed_when_it_says_so():
+    text = (GOOD.replace("https://example.org/x (retrieved 2026-09-24)", "none (common practice)")
+                .replace("source-type: answer", "source-type: none")
+                .replace('- evidence: "a sentence that is on the page"\n', ""))
+    assert problems(text) == []
+
+
+def test_source_none_with_a_real_source_type_fails():
+    text = GOOD.replace("https://example.org/x (retrieved 2026-09-24)", "none (common practice)")
+    assert any("source is none" in p for p in problems(text))
 
 
 def test_a_source_without_a_retrieval_date_fails():
-    text = GOOD.replace(" (retrieved 2026-09-23)", "")
-    assert any("retrieved" in p for p in check_bank.problems(check_bank.parse(text)))
+    assert any("retrieved" in p for p in problems(GOOD.replace(" (retrieved 2026-09-24)", "")))
 
 
 def test_an_empty_list_field_fails():
-    text = GOOD.replace("  - no reason\n", "")
-    assert any("red flags" in p for p in check_bank.problems(check_bank.parse(text)))
+    assert any("red flags" in p for p in problems(GOOD.replace("  - no reason\n", "")))
 
 
-def test_an_unknown_seat_fails():
-    text = GOOD.replace("head-of-cloud", "head-of-sales")
-    assert any("unknown seat" in p for p in check_bank.problems(check_bank.parse(text)))
+def test_a_seat_with_no_persona_fails():
+    assert any("no persona" in p for p in problems(GOOD.replace("head-of-cloud", "head-of-sales")))
+
+
+def test_an_unknown_type_fails():
+    assert any("unknown type" in p for p in problems(GOOD.replace("type: strategic", "type: vibes")))
 
 
 def test_a_duplicate_id_fails():
-    assert any("duplicate" in p for p in check_bank.problems(check_bank.parse(GOOD + GOOD)))
+    assert any("duplicate" in p for p in problems(GOOD + GOOD))
 
 
 def test_an_empty_file_fails_rather_than_passing():
     """A pass over nothing is not evidence."""
-    assert check_bank.problems(check_bank.parse("")) == ["no question blocks found"]
+    assert problems("") == ["no question blocks found"]
+
+
+def test_verify_finds_a_quote_and_rejects_a_missing_one():
+    cache = {"https://example.org/x": check_bank._norm("Intro. A sentence that is on the page. End.")}
+    blocks = check_bank.parse(GOOD)
+    assert check_bank.verify(blocks, cache) == ([], [])
+    blocks["HC01"]["evidence"] = '"a sentence the page never says"'
+    assert check_bank.verify(blocks, cache)[1] == ["HC01: quote not found on https://example.org/x"]
+
+
+def test_verify_reports_an_unreachable_page_apart_from_a_verdict():
+    cache = {"https://example.org/x": OSError("blocked")}
+    unreachable, unsupported = check_bank.verify(check_bank.parse(GOOD), cache)
+    assert unreachable and not unsupported
+
+
+def test_verify_normalises_curly_quotes_and_dashes():
+    cache = {"https://example.org/x": check_bank._norm("It’s a sentence — on the page")}
+    blocks = check_bank.parse(GOOD.replace("a sentence that is on the page", "It's a sentence - on the page"))
+    assert check_bank.verify(blocks, cache) == ([], [])
