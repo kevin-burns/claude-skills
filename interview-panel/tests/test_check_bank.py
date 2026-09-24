@@ -1,12 +1,13 @@
-import sys
+import importlib.util
 from pathlib import Path
 
 import pytest
 
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(SCRIPTS_DIR))
-
-import check_bank  # noqa: E402
+# Loaded by path rather than via sys.path, so the import sits where imports belong.
+_spec = importlib.util.spec_from_file_location("check_bank", SCRIPTS_DIR / "check_bank.py")
+check_bank = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(check_bank)
 
 SEATS = {"head-of-cloud", "head-of-hr"}
 
@@ -130,3 +131,18 @@ def test_verify_normalises_curly_quotes_and_dashes():
     cache = {"https://example.org/x": check_bank._norm("It’s a sentence — on the page")}
     blocks = check_bank.parse(GOOD.replace("a sentence that is on the page", "It's a sentence - on the page"))
     assert check_bank.verify(blocks, cache) == ([], [])
+
+
+def test_a_non_https_source_is_refused_before_any_connection():
+    """The B310 failure mode, removed rather than suppressed: file:// cannot be fetched."""
+    for url in ("file:///etc/passwd", "http://example.org/x", "ftp://example.org/x"):
+        with pytest.raises(ValueError, match="must be https"):
+            check_bank._https_get(url)
+
+
+def test_the_script_never_calls_urlopen():
+    import ast
+    tree = ast.parse((SCRIPTS_DIR / "check_bank.py").read_text())
+    names = {n.attr if isinstance(n, ast.Attribute) else getattr(n, "id", None)
+             for n in ast.walk(tree) if isinstance(n, (ast.Attribute, ast.Name))}
+    assert "urlopen" not in names

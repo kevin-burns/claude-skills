@@ -23,10 +23,11 @@ does a persona with no bank. Exit 0 when valid, 1 otherwise. Stdlib only.
 import argparse
 import collections
 import html
+import http.client
 import re
 import sys
 import unicodedata
-import urllib.request
+import urllib.parse
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parent.parent
@@ -117,17 +118,39 @@ def _norm(text):
     return " ".join(re.sub(r"[^\w\s']", " ", text.lower()).split())
 
 
+def _https_get(url, redirects=5):
+    """GET over HTTPS only. `HTTPSConnection`, not `urlopen`: it speaks no other scheme, so a
+    `file://` or `http://` source in a bank cannot become a local read or a clear-text fetch
+    (bandit B310), and a redirect to one is refused rather than followed."""
+    for _ in range(redirects + 1):
+        parts = urllib.parse.urlsplit(url)
+        if parts.scheme != "https" or not parts.hostname:
+            raise ValueError(f"source must be https: {url}")
+        path = urllib.parse.urlunsplit(("", "", parts.path or "/", parts.query, ""))
+        conn = http.client.HTTPSConnection(parts.hostname, parts.port, timeout=30)
+        try:
+            conn.request("GET", path, headers={"User-Agent": "interview-panel check_bank"})
+            resp = conn.getresponse()
+            if resp.status in (301, 302, 303, 307, 308) and resp.getheader("Location"):
+                url = urllib.parse.urljoin(url, resp.getheader("Location"))
+                continue
+            if resp.status != 200:
+                raise OSError(f"HTTP {resp.status}")
+            return resp.read().decode("utf-8", errors="ignore")
+        finally:
+            conn.close()
+    raise OSError("too many redirects")
+
+
 def _page_text(url, cache):
     if url not in cache:
-        req = urllib.request.Request(url, headers={"User-Agent": "interview-panel check_bank"})
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:  # noqa: S310 - https URLs from the bank
-                raw = r.read().decode("utf-8", errors="ignore")
+            raw = _https_get(url)
             raw = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", raw)
             # alt and title text is page content too: a diagram's caption can carry the claim.
             raw = re.sub(r"""<[^>]*?\b(?:alt|title)\s*=\s*["']([^"']*)["'][^>]*>""", r" \1 ", raw)
             cache[url] = _norm(re.sub(r"<[^>]+>", " ", raw))
-        except Exception as e:  # noqa: BLE001 - any fetch failure is reported, not raised
+        except (OSError, ValueError, http.client.HTTPException) as e:
             cache[url] = e
     return cache[url]
 
