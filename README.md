@@ -143,7 +143,7 @@ Prose for humans, and telling whether a draft reads like one wrote it.
 
 ### Career and job search
 
-The documents an application is made of, and the feeds that find the roles.
+The documents an application is made of, the feeds that find the roles, and rehearsing the interview they lead to.
 
 | Skill | What it does | Wraps |
 |---|---|---|
