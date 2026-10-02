@@ -1,6 +1,7 @@
 ---
 name: nano-banana-pro-json
-description: Generate and edit images using Google's Nano Banana Pro (Gemini 3 Pro Image) API. Use when the user asks to generate, create, edit, modify, change, alter or update an image, or points at an existing image file and asks to change it ("change the background", "replace X with Y"). Covers logo and brand-identity design ("design a logo", "brand mark", "wordmark", "icon", "brand identity"); product and marketing images ("product shot", "e-commerce photo", "hero image", "lifestyle photo", "ad creative", "packaging mockup"); and illustrated infographics and explanatory graphics ("infographic", "explainer graphic", "comparison graphic"). Style presets (cinematic, film, fashion, studio), aspect ratios (1:1, 4:3, 16:9, 9:16, 3:2, 2:3, 4:5) and WebP output. This is the default skill for generating and editing raster images.
+description: >-
+  Generate and edit raster images with Google's Nano Banana Pro (Gemini 3 Pro Image): create an image, or change an existing one ("change the background", "replace X with Y"). Covers logos and brand marks, product and marketing shots, hero images, ad creative, packaging mockups and illustrated infographics, with style presets, aspect ratios and WebP output. The default skill for generating or editing an image.
 license: MIT
 ---
 

@@ -1,14 +1,7 @@
 ---
 name: frontier-rounds
-description: >
-  Interview the user in breadth-first rounds until a design is settled, asking every question
-  whose prerequisites are already answered in one batch rather than one at a time. Use when a
-  plan, design, spec or decision needs stress-testing before work starts; when the user says
-  "grill me", "stress-test this", "poke holes in this", "what am I missing", "interrogate this
-  plan", "ask me what you need to know"; or when another skill needs a structured elicitation
-  pass. Produces settled decisions, not deliverables. For open-ended idea generation use
-  superpowers:brainstorming instead — this is for a design that already exists and needs
-  pinning down.
+description: >-
+  Interview the user in breadth-first rounds until a design is settled, asking every question whose prerequisites are already answered in one batch. Use to stress-test a plan, design, spec or decision before work starts: "grill me", "poke holes in this", "what am I missing", "interrogate this plan". Produces settled decisions, not deliverables. Open-ended idea generation is superpowers:brainstorming.
 license: MIT
 allowed-tools: Read, Grep, Glob, AskUserQuestion, Agent
 ---

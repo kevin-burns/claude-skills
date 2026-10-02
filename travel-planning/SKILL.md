@@ -1,15 +1,7 @@
 ---
 name: travel-planning
-description: >
-  Turn a trip request into a structured, editable travel plan — a day-by-day itinerary plus a
-  reconciled budget — as a Markdown document. Use this whenever the user wants to plan a trip,
-  vacation, or holiday: "help me plan a week in Portugal", "build an itinerary for 5 days in
-  Tokyo with my kids", "map out a road trip", "we have $3k for a long weekend, what can we do",
-  "organize my Japan trip", or any request to structure travel across days and a budget — even
-  if they don't say the word "itinerary". This is a reasoning-and-structuring skill: it plans,
-  paces, and budgets, and will do a best-effort web lookup to anchor cost estimates in typical or
-  seasonal prices (labeled, sourced, not live quotes). It does NOT make bookings, transact, or read
-  real-time seat/room inventory — steer those to the actual booking sites and keep planning.
+description: >-
+  Turn a trip request into an editable travel plan: a day-by-day itinerary plus a reconciled budget, as Markdown. Use whenever the user wants to plan a trip, holiday or road trip ("plan a week in Portugal", "5 days in Tokyo with my kids", "we have $3k for a long weekend"), even without the word itinerary. Anchors costs in sourced typical or seasonal prices, not live quotes. Does not book or check live availability.
 ---
 
 # Travel Planning

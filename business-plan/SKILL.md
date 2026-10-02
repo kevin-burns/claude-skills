@@ -1,15 +1,7 @@
 ---
 name: business-plan
-description: >
-  Build a realistic, investor-credible business plan from a founder's idea — full narrative plan,
-  a one-page summary, and a ~300-word investor pitch — as an editable Markdown document. Use this
-  whenever the user wants to plan, pitch, or pressure-test a venture: "write a business plan for
-  my [idea]", "is my startup idea worth building", "build my go-to-market", "size this market",
-  "do a competitor teardown", "make me an investor one-pager", "3-year financials for my SaaS",
-  "should I raise for this". This skill's defining feature is honesty: it researches-and-cites
-  market/competitor facts, computes financials from YOUR assumptions, marks anything unknown as a
-  validate-this placeholder, and never invents a market size, a competitor's pricing, or a revenue
-  number. It ends every plan with a straight go / no-go / reshape verdict, not cheerleading.
+description: >-
+  Build an honest, investor-credible business plan from a founder's idea: full plan, one-page summary and a short investor pitch, as editable Markdown. Use to plan, pitch or pressure-test a venture: "write a business plan for my idea", "is this worth building", size a market, competitor teardown, go-to-market, 3-year financials, "should I raise". Cites sources, computes from the user's assumptions, never invents a number, and ends with a go / no-go / reshape verdict.
 ---
 
 # Business Plan

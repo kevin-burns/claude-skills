@@ -1,6 +1,7 @@
 ---
 name: report-builder
-description: Build self-contained, single-page HTML reports and dashboards from data using Python + Jinja2 + Bootstrap 5 with Chart.js or Plotly. Use whenever the task is to produce an HTML report, data dashboard, metrics page, status page, or any single-file web artifact rendered from data — even if the user only says "report", "dashboard", "summary page", "visualize this", or hands you a CSV/DataFrame/JSON and wants it shown. Covers the render harness (Jinja2 autoescape discipline, passing data to JS safely with tojson), the Chart.js-vs-Plotly decision, Bootstrap 5 layout, and producing a portable single file. Pairs with markdown-converter (to ingest source docs) and is read by code-builder when it implements front-end report work.
+description: >-
+  Build a self-contained single-page HTML report or dashboard from data with Python, Jinja2, Bootstrap 5 and Chart.js or Plotly. Use whenever the task is an HTML report, dashboard, metrics or status page, or "visualize this" for a CSV, DataFrame or JSON. Covers safe Jinja2 autoescaping, passing data to JS with tojson, choosing Chart.js or Plotly, and shipping one portable file.
 license: MIT
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: ux-audit
-description: Heuristic usability and accessibility audit of existing web pages — load a rendered page, evaluate it against Nielsen's 10 usability heuristics + WCAG 2.2 (A/AA) + responsive behavior + the page's own goal, and return prioritized findings with a concrete fix for each. Use whenever the task is to review, audit, critique, or "find usability/UX problems" on one or more web pages, do an accessibility (a11y) check, assess responsiveness, or propose usability fixes — even if the user just says "is this page any good", "what's wrong with this UI", "make this more usable", or hands you a URL/screenshot. This is a review/audit method, not a design-decision debate (that's design-council) and not functional testing (that's webapp-testing). Read by the ux-auditor agent, which renders each page with a browser driver and fans out one auditor per page.
+description: >-
+  Heuristic usability and accessibility audit of existing web pages: render the page and check it against Nielsen's 10 heuristics, WCAG 2.2 A/AA, responsive behaviour and the page's own goal, returning prioritised findings each with a fix. Use to review or critique a page, run an a11y check, or answer "what's wrong with this UI" or "is this page any good" from a URL or screenshot. Not a design debate (design-council) or functional testing.
 license: MIT
 ---
 

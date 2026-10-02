@@ -1,6 +1,7 @@
 ---
 name: dev-fleet
-description: Orchestration playbook for driving the development agent fleet (code-builder, fact-verifier, coherence-checker, code-reviewer) through a build → verify → cohere → review → commit pipeline with explicit, deterministic hand-offs. Use when implementing a non-trivial change where correctness and fact-accuracy matter and you want the steps to actually run in order rather than hoping the orchestrator delegates. Also use when deciding which fleet agent to dispatch for a task, or when wiring a new agent into the pipeline. Covers how to pass context between agents, the fact-gate and coherence-gate before commit, the loop-back semantics on each gate, and handing off to commit-pr.
+description: >-
+  Drive the development agent fleet (code-builder, fact-verifier, coherence-checker, code-reviewer) through build, verify, cohere, review and commit with explicit hand-offs. Use for a non-trivial change where correctness and fact accuracy matter and the steps must actually run in order, when choosing which fleet agent to dispatch, or when wiring a new agent into the pipeline.
 license: MIT
 ---
 

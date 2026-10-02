@@ -1,16 +1,7 @@
 ---
 name: job-feeds
-description: >
-  Aggregate sanctioned public job feeds into one deduplicated local database, match
-  postings against the user's career lanes, and render a filterable self-contained HTML
-  report. Use whenever the user wants to search or monitor job boards - "find me remote
-  platform engineering roles", "what jobs came up this week", "check the job boards",
-  "aggregate job listings", "what's new since I last looked" - or wants a report of
-  current openings across multiple sites. Covers nine documented JSON APIs and RSS
-  feeds from eight publishers (Arbeitnow, Jobicy, Remotive, Remote OK, Working
-  Nomads, 4 Day Week, We Work Remotely, Python.org Jobs), weighted towards the German and EU-remote market. NOT for
-  LinkedIn - that needs a signed-in session and is a separate tool. This skill never
-  scrapes HTML, never works around a block, and never republishes what it collects.
+description: >-
+  Aggregate sanctioned public job boards (Arbeitnow, Jobicy, Remotive, Remote OK, Working Nomads, 4 Day Week, We Work Remotely, Python.org) into one deduplicated local database, match postings to the user's career lanes, and render a filterable HTML report. Use to search or monitor job boards: "find me remote platform roles", "what jobs came up this week", "what's new since I last looked". Not LinkedIn; never scrapes HTML.
 ---
 
 # job-feeds

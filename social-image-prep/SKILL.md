@@ -1,6 +1,7 @@
 ---
 name: social-image-prep
-description: Resize and format images for social media platforms. Use when the user needs to prepare an image for LinkedIn, Bluesky, Reddit, Hacker News, or other social platforms. Triggers on "resize for linkedin", "image for social", "prepare image for posting", "social media image", "resize for bluesky", or any request to optimize an image for a specific social platform.
+description: >-
+  Resize and format an image for a social platform: LinkedIn, Bluesky, Reddit, Hacker News and others. Use for "resize for LinkedIn", "image for social", "prepare this image for posting", or any request to fit an image to a specific platform's dimensions.
 license: MIT
 ---
 

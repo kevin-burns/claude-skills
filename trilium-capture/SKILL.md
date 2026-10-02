@@ -1,6 +1,7 @@
 ---
 name: trilium-capture
-description: Write findings, clipped material and long-form documents into a self-hosted Trilium Notes instance over its native MCP — filed under a project, labelled with a controlled vocabulary, and revised in place rather than duplicated. Use when the user says to store, capture, save or file something in Trilium; when a research finding or an article should outlive the session; or when a document produced with the user (a plan, a draft, a report) should live in their notes instead of on one machine. Do NOT use for short recallable facts an agent needs mid-task — those belong in Ogham shared memory.
+description: >-
+  Write findings, clipped material and long documents into a self-hosted Trilium Notes instance over its native MCP, filed under a project, labelled from a controlled vocabulary, and revised in place rather than duplicated. Use when the user says to store, capture, save or file something in Trilium, or a finding, article, plan or draft should outlive the session. Short facts an agent needs mid-task belong in Ogham shared memory instead.
 ---
 
 # Trilium capture

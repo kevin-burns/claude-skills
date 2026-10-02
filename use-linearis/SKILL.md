@@ -1,6 +1,7 @@
 ---
 name: use-linearis
-description: Use when running Linear.app operations from the command line — creating, updating, archiving, listing, or filtering issues, setting project milestones, or wiring blocked-by relations via the `linearis` CLI (binaries `linear` and `linearis`, JSON output) instead of an MCP or the web UI. Triggers on any Linear issue/project/milestone task in a terminal, and on syncing Kevin's Ogham roadmap with its shared-memory database. Covers generic install/auth setup, the CLI's sharp edges, and the local env.sh split that keeps workspace identifiers out of the repo. Not a full reference — that's `linear help` per command.
+description: >-
+  Run Linear.app operations from the terminal with the `linearis` CLI (binaries `linear` and `linearis`, JSON output) instead of an MCP or the web UI: create, update, archive, list or filter issues, set project milestones, wire blocked-by relations. Covers install and auth, the CLI's sharp edges, and keeping workspace identifiers out of the repo.
 license: MIT
 ---
 
