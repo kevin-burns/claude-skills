@@ -114,6 +114,8 @@ Apply the universal pattern list in `references/ai-patterns.md` to all content, 
 
 Optionally run `scripts/register_report.py <draft>` to get measured rates for the stiffness features instead of judging them by eye — it prints the citation behind each one and no verdict. Useful when a draft reads as formal but you can't say which feature is doing it.
 
+Both scripts (`register_report.py`, `fidelity_check.py`) are stdlib only, with no packages or binaries to install. Run them as `uv run ~/.claude/skills/clear-and-human/scripts/<script>.py` (resolve `uv` first if it is off PATH), or `python3 <path>`.
+
 ### Step C — Score (1–10, four dimensions)
 
 AI-Likeness is always present (lower is better, target 1–3). The other three vary by channel:

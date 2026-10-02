@@ -22,7 +22,8 @@ already decided what a good answer sounds like and will mark its own expectation
 2. **`references/banks/<seat>.md`**: one sourced bank per seat. Each question has a type
    (behavioural, situational, scenario, technical, strategic), a rubric, and either a cited
    source with an evidence quote from that page, or `source: none (common practice)`.
-   Validate after any edit with `python3 scripts/check_bank.py --verify`.
+   Validate after any edit with `python3 scripts/check_bank.py --verify`. Stdlib only, so
+   `python3` is enough and nothing needs installing; `--verify` fetches each source, so it needs network.
 3. **`references/personas/<seat>.md`**: how each seat behaves; **`references/panel-rules.md`**:
    the rules every seat follows, and how to seat and time a panel.
 4. **`references/debrief-rubric.md`**: what the reviewer looks for, and its stance: explain

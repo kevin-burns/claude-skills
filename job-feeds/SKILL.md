@@ -33,7 +33,8 @@ automatically. Do not strip them.
 
 ## Setup
 
-The script is stdlib-only, so `python3` works as well as `uv`. Define the function at the
+The script is stdlib-only (no packages, no binaries; network needed to fetch) and needs **Python 3.11 or newer**
+(`from datetime import UTC`), so `python3` works as well as `uv`. Define the function at the
 **start of each command block** — shell state does not persist between calls, and a
 relative path will not resolve from another repo:
 
