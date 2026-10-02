@@ -1,6 +1,7 @@
 ---
 name: terraform-registry
-description: Provider-agnostic CLI for targeted search and inspection of the Terraform Registry via its JSON API — any provider (AWS, GCP/google, Azure/azurerm, GitLab, OpenStack, Kubernetes, ...). Use to find modules by keyword, inspect a module's inputs/outputs/versions, or look up a resource type's attributes, WITHOUT web-scraping or dumping pages into context — it fetches the JSON payload, strips it locally, and returns only what you asked for. Caches every payload as a provenance-stamped snapshot so repeat calls are offline and token-free. Use whenever you need accurate, current Terraform module/provider facts for writing or reviewing IaC.
+description: >-
+  Search and inspect the Terraform Registry through its JSON API for any provider (AWS, azurerm, google, Kubernetes, GitLab and others): find modules by keyword, read a module's inputs, outputs and versions, or a resource type's attributes, without scraping pages. Use whenever current Terraform module or provider facts are needed for writing or reviewing IaC.
 license: MIT
 ---
 

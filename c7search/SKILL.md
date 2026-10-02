@@ -1,6 +1,7 @@
 ---
 name: c7search
-description: Retrieve up-to-date documentation and code examples for any software library, framework, or API via the Context7 service, using the `c7search` CLI. Use this skill whenever looking up how to use a library or framework, finding current code examples for a specific API or feature, verifying the correct signature or usage of a library function, or checking library behavior that may have changed since the training cutoff — even when the user doesn't name Context7 or c7search explicitly. `c7search` is a single Go binary wrapping Context7's public v2 API with on-disk caching, retries, and predictable exit codes.
+description: >-
+  Look up current, version-correct documentation and code examples for any library, framework or API through Context7 (the `c7search` CLI) instead of answering from memory. Use whenever the user asks how to use a library, wants a current code example, asks for the current or latest API or signature, or the answer may have changed since the training cutoff, even if they never name Context7.
 license: MIT
 ---
 

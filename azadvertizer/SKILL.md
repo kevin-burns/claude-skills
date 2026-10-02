@@ -1,6 +1,7 @@
 ---
 name: azadvertizer
-description: Deterministic, offline-first lookups over Azure Policy, Policy Initiative, and RBAC Role metadata sourced from AzAdvertizer's CSV exports — including the cross-references that exist nowhere else in one place (which roles a policy uses, which initiatives include a policy, which policies a role is used by). Use whenever you need accurate current facts about an Azure built-in policy, initiative/policy-set, or RBAC role — definitions, effects, allowed effect values, categories, role actions/dataActions, or the policy↔role and policy↔initiative relationships — for writing or reviewing Azure IaC, governance, or landing-zone work. Fetches each CSV once into a provenance-stamped cache and answers queries offline; stdlib only, JSON envelope output. Pairs with terragrunt-skill, azure-architect, and fact-verifier (snapshots become tier-1 sources).
+description: >-
+  Offline lookups over Azure Policy, policy initiative and RBAC role metadata from AzAdvertizer's CSV exports, including cross-references found nowhere else in one place: which roles a policy uses, which initiatives include a policy, which policies use a role. Use whenever accurate current facts about an Azure built-in policy, initiative or role (effects, categories, actions, dataActions) are needed for Azure IaC, governance or landing-zone work.
 license: MIT
 ---
 
