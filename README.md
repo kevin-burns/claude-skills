@@ -221,6 +221,32 @@ Every skill directory has its own **`README.md`** — a plain-English guide to *
 
 Take the whole set or one directory (see [Install](#install)). This "what it does / what it doesn't do" README is the standard shape for every skill here — new skills ship one too (see [`CONTRIBUTING.md`](./CONTRIBUTING.md)).
 
+### On Haiku, or with many skills installed
+
+Claude picks a skill by reading its description in a listing that Claude Code caps at 1% of the
+model's context window. When the listing is over that cap, every skill keeps its name but the
+least-used ones lose their description, and Claude rarely chooses a skill it can only see by
+name.
+
+Haiku's smaller context window makes this bite. Measured with `claude plugin eval` on
+2026-10-02, with only this plugin installed: Haiku showed descriptions for 16 of 41 listed
+skills and fired the right skill in 2 of 8 routing cases, while Sonnet saw every description
+and fired the right one in all 9. The descriptions here are already short; at Haiku's budget
+they would have to be cut to a sentence each.
+
+If you run Haiku, or have many other skills installed, raise the budget in your Claude Code
+`settings.json` (default `0.01`):
+
+```json
+{
+  "skillListingBudgetFraction": 0.02
+}
+```
+
+`/doctor` shows how much context the listing uses and which skills contribute most. You can
+also invoke any skill by name (`/clear-and-human`, or `/claude-skills:clear-and-human` when installed as the plugin), which works whatever the budget.
+See [Skill descriptions are cut short](https://code.claude.com/docs/en/skills#skill-descriptions-are-cut-short).
+
 ## Agents
 
 Subagents for software-development work, coordinated by the `dev-fleet` skill. Each is a `*.md` with frontmatter (`name`, `description`, `tools`, `model`) and a system-prompt body. Architecture and rationale: [`docs/agent-fleet-architecture.md`](./docs/agent-fleet-architecture.md).
