@@ -66,6 +66,9 @@ def test_description_carries_the_linkedin_profile_triggers():
         "rewrite my linkedin headline",
         "recruiter search",
         "make my linkedin match my cv",
+        # Measured 2026-10-02: cutting this phrase sent "personal brand positioning on
+        # LinkedIn" to cv-evidence-base in 1 of 3 reps (bucket A 21/21 -> 20/21).
+        "personal brand positioning",
     ]:
         assert phrase in description, f"description no longer carries trigger: {phrase!r}"
 

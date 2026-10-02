@@ -1,14 +1,7 @@
 ---
 name: cv-cover-letter
-description: >
-  Draft a cover letter from a job posting and the applicant's own CV and evidence base, making
-  only claims that trace to something they actually said, and stopping when the evidence stops
-  rather than filling a word count. Use when the user asks for a cover letter, a covering letter,
-  a letter of application, a motivation letter or an Anschreiben; when they want an existing
-  draft checked for claims it cannot support; or when they ask whether a posting is worth
-  applying to before writing one. Runs on any posting — a URL, a pasted advert, an email — not
-  only LinkedIn. Do NOT use for the CV itself (cv-and-human) or for recovering what someone has
-  done in the first place (cv-evidence-base).
+description: >-
+  Draft a cover letter, covering letter, motivation letter or Anschreiben from a job posting and the applicant's own CV and evidence base, making only claims that trace to what they said and stopping when the evidence stops. Also checks an existing draft for unsupported claims, or whether a posting is worth applying to. Any posting source, not only LinkedIn. The CV itself is cv-and-human; recovering what someone has done is cv-evidence-base.
 ---
 
 # Cover letter, from evidence

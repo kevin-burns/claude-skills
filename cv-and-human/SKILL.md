@@ -1,7 +1,7 @@
 ---
 name: cv-and-human
 description: >-
-  Tailor and polish a CV/resume - or a LinkedIn profile - to maximise its score in applicant tracking systems (ATS) and LinkedIn recruiter search. Use this whenever the user wants to optimise, tailor, rewrite, or "ATS-proof" a CV or resume, asks why it is not getting past automated screening, wants a keyword/gap analysis against a job description, wants to de-slop or humanize a CV or LinkedIn profile, or wants to check whether a CV parses cleanly. ALSO use for the LinkedIn PROFILE as a career document - "rewrite my LinkedIn headline", the About section, experience bullets, personal brand positioning, "make my LinkedIn match my CV". Trigger even with no job description, provided something is to be DONE to the document. Do NOT use when the user has no target role and is asking an open question about themselves - what roles they are credible for, what evidence they are missing, whether they are pigeonholed - that is cv-evidence-base. For a LinkedIn POST use hook-and-human or clear-and-human.
+  Tailor, rewrite or ATS-proof a CV/resume, or a LinkedIn profile, for applicant tracking systems and LinkedIn recruiter search: keyword/gap analysis against a job description, why a CV fails automated screening, parse checks, de-slopping. Also the LinkedIn profile itself: "rewrite my LinkedIn headline", About section, experience bullets, personal brand positioning, "make my LinkedIn match my CV". Needs something to DO to the document. No target role, an open question about what they are credible for: cv-evidence-base. A LinkedIn post: hook-and-human or clear-and-human.
 ---
 
 # CV and Human

@@ -1,7 +1,7 @@
 ---
 name: cv-evidence-base
 description: >-
-  Interrogates a CV or resume to recover the evidence that never made it onto the page, and works out which roles the person is genuinely credible for. Use this whenever the user has NO target role in mind and is asking an open question about themselves: what roles they could realistically go for, whether they are pitching themselves right, whether they are pigeonholed, why they get no callbacks or interviews, what they are missing, or what their CV says about them. Use it when they hand over a CV with no clear instruction - "does this look OK", "am I positioned right". ALSO use for a career change, a step up, going freelance or contracting, or restarting a job search after a long gap. Do NOT use when the user names something to be DONE to the document - tailor it to this job description, ATS-proof it, keyword/gap analysis, check it parses, de-slop it, or anything about a LinkedIn profile's headline, About section or recruiter-search keywords. That is cv-and-human.
+  Interrogate a CV to recover evidence that never made it onto the page and work out which roles the person is genuinely credible for. Use when there is NO target role and the question is open: what could I go for, am I pitching myself right, am I pigeonholed, why no callbacks, what am I missing, "does this look OK"; also a career change, step up, going freelance or a restart after a gap. Do NOT use to tailor to a job description, ATS-proof, de-slop or rework a LinkedIn profile: that is cv-and-human.
 ---
 
 # CV evidence base
