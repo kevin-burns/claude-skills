@@ -1,0 +1,151 @@
+# Design patterns reference
+
+Multi-zoom structure, the visual pattern library, and rendering-style defaults for Excalidraw diagrams. Linked from `SKILL.md`.
+
+## Contents
+
+- [Multi-Zoom Architecture](#multi-zoom-architecture)
+- [Visual Pattern Library](#visual-pattern-library)
+- [Modern Aesthetics](#modern-aesthetics)
+
+## Multi-Zoom Architecture
+
+Comprehensive diagrams operate at multiple zoom levels simultaneously. Think of it like a map that shows both the country borders AND the street names.
+
+### Level 1: Summary Flow
+A simplified overview showing the full pipeline or process at a glance. Often placed at the top or bottom of the diagram.
+
+*Example*: `Input → Processing → Output` or `Client → Server → Database`
+
+### Level 2: Section Boundaries
+Labeled regions that group related components. These create visual "rooms" that help viewers understand what belongs together.
+
+*Example*: Grouping by responsibility (Backend / Frontend), by phase (Setup / Execution / Cleanup), or by team (User / System / External)
+
+### Level 3: Detail Inside Sections
+Evidence artifacts, code snippets, and concrete examples within each section. This is where the educational value lives.
+
+*Example*: Inside a "Backend" section, you might show the actual API response format, not just a box labeled "API Response"
+
+**For comprehensive diagrams, aim to include all three levels.** The summary gives context, the sections organize, and the details teach.
+
+### Bad vs Good
+
+| Bad (Displaying) | Good (Arguing) |
+|------------------|----------------|
+| 5 equal boxes with labels | Each concept has a shape that mirrors its behavior |
+| Card grid layout | Visual structure matches conceptual structure |
+| Icons decorating text | Shapes that ARE the meaning |
+| Same container for everything | Distinct visual vocabulary per concept |
+| Everything in a box | Free-floating text with selective containers |
+
+### Simple vs Comprehensive (Know Which You Need)
+
+| Simple Diagram | Comprehensive Diagram |
+|----------------|----------------------|
+| Generic labels: "Input" → "Process" → "Output" | Specific: shows what the input/output actually looks like |
+| Named boxes: "API", "Database", "Client" | Named boxes + examples of actual requests/responses |
+| "Events" or "Messages" label | Timeline with real event/message names from the spec |
+| "UI" or "Dashboard" rectangle | Mockup showing actual UI elements and content |
+| ~30 seconds to explain | ~2-3 minutes of teaching content |
+| Viewer learns the structure | Viewer learns the structure AND the details |
+
+**Simple diagrams** are fine for abstract concepts, quick overviews, or when the audience already knows the details. **Comprehensive diagrams** are needed for technical architectures, tutorials, educational content, or when you want the diagram itself to teach.
+
+## Visual Pattern Library
+
+### Fan-Out (One-to-Many)
+Central element with arrows radiating to multiple targets. Use for: sources, PRDs, root causes, central hubs.
+```
+        ○
+       ↗
+  □ → ○
+       ↘
+        ○
+```
+
+### Convergence (Many-to-One)
+Multiple inputs merging through arrows to single output. Use for: aggregation, funnels, synthesis.
+```
+  ○ ↘
+  ○ → □
+  ○ ↗
+```
+
+### Tree (Hierarchy)
+Parent-child branching with connecting lines and free-floating text (no boxes needed). Use for: file systems, org charts, taxonomies.
+```
+  label
+  ├── label
+  │   ├── label
+  │   └── label
+  └── label
+```
+Use `line` elements for the trunk and branches, free-floating text for labels.
+
+### Spiral/Cycle (Continuous Loop)
+Elements in sequence with arrow returning to start. Use for: feedback loops, iterative processes, evolution.
+```
+  □ → □
+  ↑     ↓
+  □ ← □
+```
+
+### Cloud (Abstract State)
+Overlapping ellipses with varied sizes. Use for: context, memory, conversations, mental states.
+
+### Assembly Line (Transformation)
+Input → Process Box → Output with clear before/after. Use for: transformations, processing, conversion.
+```
+  ○○○ → [PROCESS] → □□□
+  chaos              order
+```
+
+### Side-by-Side (Comparison)
+Two parallel structures with visual contrast. Use for: before/after, options, trade-offs.
+
+### Gap/Break (Separation)
+Visual whitespace or barrier between sections. Use for: phase changes, context resets, boundaries.
+
+### Lines as Structure
+Use lines (type: `line`, not arrows) as primary structural elements instead of boxes:
+- **Timelines**: Vertical or horizontal line with small dots (10-20px ellipses) at intervals, free-floating labels beside each dot
+- **Tree structures**: Vertical trunk line + horizontal branch lines, with free-floating text labels (no boxes needed)
+- **Dividers**: Thin dashed lines to separate sections
+- **Flow spines**: A central line that elements relate to, rather than connecting boxes
+
+```
+Timeline:           Tree:
+  ●─── Label 1        │
+  │                   ├── item
+  ●─── Label 2        │   ├── sub
+  │                   │   └── sub
+  ●─── Label 3        └── item
+```
+
+Lines + free-floating text often creates a cleaner result than boxes + contained text.
+
+## Modern Aesthetics
+
+For clean, professional diagrams:
+
+### Roughness
+- `roughness: 0` — Clean, crisp edges. Use for modern/technical diagrams.
+- `roughness: 1` — Hand-drawn, organic feel. Use for brainstorming/informal diagrams.
+
+**Default to 0** for most professional use cases.
+
+### Stroke Width
+- `strokeWidth: 1` — Thin, elegant. Good for lines, dividers, subtle connections.
+- `strokeWidth: 2` — Standard. Good for shapes and primary arrows.
+- `strokeWidth: 3` — Bold. Use sparingly for emphasis (main flow line, key connections).
+
+### Opacity
+**Always use `opacity: 100` for all elements.** Use color, size, and stroke width to create hierarchy instead of transparency.
+
+### Small Markers Instead of Shapes
+Instead of full shapes, use small dots (10-20px ellipses) as:
+- Timeline markers
+- Bullet points
+- Connection nodes
+- Visual anchors for free-floating text
