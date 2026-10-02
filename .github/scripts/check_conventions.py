@@ -19,6 +19,9 @@ Exits non-zero on any failure.
 import json
 import pathlib
 import re
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -362,6 +365,20 @@ def check_skills_group_index():
     return None
 
 
+def check_reference_contents():
+    """Every reference file over 100 lines carries a current generated contents list.
+
+    Anthropic's skill best practices: reference files longer than 100 lines need
+    a table of contents at the top, because Claude may preview a file with a
+    partial read. Added 2026-10-02 (claude-skills-b9nk.1), when 35 files had
+    none. The list is generated, so this fails on a stale list as well as a
+    missing one. Fix with: python3 .github/scripts/reference_toc.py
+    """
+    import reference_toc  # same directory; stdlib only
+    for path, why in reference_toc.problems(ROOT):
+        fail(str(path.relative_to(ROOT)), why + " -- run .github/scripts/reference_toc.py")
+
+
 def main():
     skills = skill_dirs()
     if not skills:
@@ -377,6 +394,7 @@ def main():
 
     check_catalog()
     check_skills_group_index()
+    check_reference_contents()
     check_manifest_lists_every_skill(skills)
 
     for path in [ROOT / "README.md", ROOT / "CONTRIBUTING.md"]:

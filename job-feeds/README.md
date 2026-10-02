@@ -67,7 +67,7 @@ than failing at you. **Asking Claude to write the config is the better path**, b
 lanes are regexes and they are the part people get wrong; the starter exists for when you
 are working alone at a shell.
 
-Python 3.9+ and standard library only, so `python3` works. If you prefer `uv`, or need it
+Python 3.11+ and standard library only, so `python3` works where it is 3.11 or newer (macOS ships 3.9). If you prefer `uv`, or need it
 resolved when it is off PATH, [`SKILL.md`](./SKILL.md) has that variant — use one or the
 other, not both.
 
@@ -171,7 +171,7 @@ rows are, so a wrong-country result announces itself instead of looking like a q
 
 ## Requirements
 
-- Python 3.9 or newer. Standard library only — no third-party packages, so `python3`
+- Python 3.11 or newer (the script imports `datetime.UTC`). Standard library only — no third-party packages, so `python3`
   works as a runner alongside `uv`.
 - macOS, Linux, or **WSL** — WSL is Linux as far as this is concerned, and the code is pure standard library with no shell-outs and no platform-specific paths. Config and database live under `~/.config/job-feeds/`, which on WSL means your WSL home, not `C:\Users\...`.
 - No API keys, no accounts, no authentication of any kind. Every source is public.
