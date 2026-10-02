@@ -379,6 +379,43 @@ def check_reference_contents():
         fail(str(path.relative_to(ROOT)), why + " -- run .github/scripts/reference_toc.py")
 
 
+def description_yaml_problem(frontmatter):
+    """Why `description` is not valid YAML, or None. Stdlib only, so it checks the two
+    shapes that actually broke here rather than parsing YAML.
+
+    Added 2026-10-02 (claude-skills-b9nk): SEVEN skills had a description a strict YAML
+    parser rejects. Four wrote `description: > text` on one line (a block indicator must
+    end its line), so Claude Code's lenient parser kept a literal '>' at the start of
+    what every model reads. Three had an unquoted value containing ': '. Claude Code
+    tolerated all seven; a strict harness drops the description entirely. The regex
+    reader above saw nothing wrong, which is why none of it was caught.
+    """
+    lines = frontmatter.split("\n")
+    for i, line in enumerate(lines):
+        if not line.startswith("description:"):
+            continue
+        value = line[len("description:"):].strip()
+        if re.match(r"^[>|][-+]?\s+\S", value):
+            return "block indicator ('>' or '|') must end its line; put the text on the next line, indented"
+        if value[:1] in (">", "|", '"', "'"):
+            return None
+        text = " ".join([value] + [cont.strip() for cont in lines[i + 1:] if cont.startswith((" ", "\t"))])
+        if ": " in text or " #" in text:
+            return ("unquoted description contains ': ' or ' #', which strict YAML rejects; "
+                    "use a folded block (description: >-)")
+        return None
+    return None
+
+
+def check_description_yaml(skill):
+    text = (skill / "SKILL.md").read_text(encoding="utf-8")
+    match = re.match(r"^---\n(.*?)\n---", text, re.S)
+    if match:
+        problem = description_yaml_problem(match.group(1))
+        if problem:
+            fail(f"{skill.name}/SKILL.md", problem)
+
+
 def main():
     skills = skill_dirs()
     if not skills:
@@ -386,6 +423,7 @@ def main():
 
     for skill in skills:
         check_frontmatter(skill)
+        check_description_yaml(skill)
         check_readme(skill)
         check_relative_script_paths(skill)
         check_shipped_json(skill)
