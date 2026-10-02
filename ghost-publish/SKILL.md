@@ -351,7 +351,7 @@ Email fires on the **publish transition**, not on create — so the newsletter f
 ```bash
 ghst post publish <post-id>                                    # no email
 ghst post publish <post-id> --newsletter weekly                # sends email now
-ghst post schedule <post-id> --at 2026-09-01T06:00:00Z         # publishes then, no email
+ghst post schedule <post-id> --at <future-UTC-ISO-8601>        # e.g. 2099-01-01T06:00:00Z; publishes then, no email
 ghst post unschedule <post-id>
 ```
 
