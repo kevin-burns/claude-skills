@@ -1,3 +1,8 @@
+---
+type: llm
+weight: 1
+---
+
 # Grader — did `hook-and-human` handle this?
 
 This is a **routing** check. Grade which skill's behaviour the response shows, not how

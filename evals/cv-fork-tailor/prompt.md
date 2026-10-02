@@ -1,3 +1,8 @@
+---
+max_turns: 10
+allowed_tools: [Read, Glob, Grep, Skill]
+---
+
 Here is my CV and the job description for a Platform Engineering Lead role at a
 mid-size fintech. Get the CV through their screening — I think they use Workday.
 

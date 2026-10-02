@@ -63,3 +63,6 @@ docs/superpowers/
 # only tracked files, and the mirror builder builds from a CI checkout, so a
 # file that is not tracked cannot reach a published repo either.
 /RUNBOOK.md
+
+# claude plugin eval run output: transcripts and reports, local paths inside. Summaries go in evals/README.md.
+evals/results/

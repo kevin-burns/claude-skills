@@ -1,3 +1,8 @@
+---
+type: llm
+weight: 1
+---
+
 # Grader — did nothing fire?
 
 This is a **negative** routing check. The correct behaviour is that no skill in this

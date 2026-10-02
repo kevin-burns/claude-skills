@@ -8,21 +8,44 @@ Twelve of the 21 name a sibling by **bare name** inside their own description �
 `source-snapshot`. Nobody has measured whether those cross-references survive namespacing.
 Tracked as `claude-skills-0kt`.
 
-## Read this before trusting anything here
+## First real run, 2026-10-02 (claude-skills-b9nk.5)
 
-**These have never been run.** `claude plugin eval` is in early access and is not available
-on this account — `claude plugin eval init` returns *"`plugin eval` is currently in early
-access"* and refuses to scaffold. So the case layout below follows what
-`claude plugin eval --help` documents, and **the layout itself is unverified**.
+`claude plugin eval` is now generally available, and the suite has run. **The case layout the
+section below guessed was wrong**: every prompt.md and grader needs YAML front matter (prompt:
+`max_turns`, `allowed_tools`; grader: `type`, `weight`). Without it the loader rejects the case
+with `graders: Required`. Both are fixed, and each case now also carries a `fired.md`
+`tool_used: Skill` grader, because the first run showed the no-plugin arm passing the `llm`
+routing grader too. That grader alone could not say whether the skill fired.
 
-That matters more than usual in this repo. Three manifest schemas were guessed and shipped
-this week; two of them failed **silently** — the Claude `agents` field accepted valid file
-paths and loaded zero agents, and a `marketplace.json` with the wrong `source` shape
-registered successfully and listed no plugins. Neither raised an error. Assume the same is
-possible here until a run proves otherwise.
+Three runs per arm, per model. "Fired" = how many of the 3 with-plugin runs invoked the right
+skill (for `negative-no-skill`, how many invoked none):
 
-`prompt.md` + `graders/*.md` was chosen over `case.yaml` deliberately: it is the form with
-the fewest fields to get wrong.
+| case | Haiku fired | Sonnet fired | Opus fired |
+|---|---|---|---|
+| cv-fork-evidence | 0/3 | 3/3 | 3/3 |
+| cv-fork-tailor | 0/3 | 3/3 | 3/3 |
+| docs-fork-convert | 0/3 | 3/3 | 3/3 |
+| docs-fork-library (`c7search`) | 0/3 | **0/3** | **0/3** |
+| iac-fork-registry | 3/3 | 3/3 | 3/3 |
+| negative-no-skill (none should fire) | 3/3 | 3/3 | 3/3 |
+| writing-fork-neutral | 0/3 | 3/3 | 3/3 |
+| writing-fork-persuasive | 0/3 | 3/3 | 3/3 |
+
+What it says:
+
+- **On Haiku the skills almost never fire** (1 of 7 positive cases). Anthropic's per-model
+  question for Haiku is "does the Skill provide enough guidance?", and for routing the answer
+  here is no.
+- **On Sonnet and Opus routing is right on 6 of 7**, and no false positives.
+  **`c7search` never fires on any model**: its description loses to answering from memory.
+- **The `llm` routing scores are not yet trustworthy.** Some cases fire 3/3 and still score 0,
+  for example iac-fork-registry on Sonnet and Opus. `allowed_tools` was set to
+  `[Read, Glob, Grep, Skill]`, so a skill that needs Bash to run its CLI fires and then cannot
+  do its job. The tool set per case is the next fix, before reading Δ.
+- Cost of the three-model run as the tool reports it: Haiku $1.38, Sonnet $3.12, Opus $6.91.
+
+Run with the logged-in credential: `env -u ANTHROPIC_API_KEY claude plugin eval . --model <m>`.
+A stale `ANTHROPIC_API_KEY` in the environment makes every run fail with a 401.
 
 ## Running them, when access lands
 

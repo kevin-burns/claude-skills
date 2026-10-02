@@ -1,3 +1,8 @@
+---
+max_turns: 10
+allowed_tools: [Read, Glob, Grep, Skill]
+---
+
 Read this runbook section and tell me whether it reads like a machine wrote it.
 
 "In order to facilitate the restoration process, it is important to note that the
