@@ -1,6 +1,7 @@
 ---
 name: readability
-description: Check whether a draft is actually readable by locating where a reader falls off — weak paragraph junctions, back-references with no antecedent nearby, and terms used before they are explained — then dispatch a fresh-context second reader to catch contradictions and repetition that no script can see. Use this whenever the user asks whether something is readable, clear, hard to follow, confusing, well-structured or "does this flow"; whenever they ask for a readability check or score, a Flesch or grade-level reading, or a second opinion; and as the last review pass before publishing a blog post, README, ADR, runbook or long technical explanation. Also trigger on "where does this lose people", "is this too dense", "cohesion", "flow check". Reports locations and never a grade level — if the user explicitly wants a Flesch or Gunning Fog number, use this skill and explain why it is not computed. For AI texture, voice and register use clear-and-human instead; for a CV use cv-and-human.
+description: >-
+  Find where a reader falls off a draft: weak paragraph junctions, back-references with no antecedent, terms used before they are explained, plus a fresh second reader for contradictions. Use when asked whether something is readable, clear, hard to follow or "does this flow", for a readability check or Flesch score (reports locations, never a grade level), or as the last pass before publishing a post, README or runbook. AI texture and voice are clear-and-human.
 ---
 
 # Readability

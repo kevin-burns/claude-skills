@@ -1,7 +1,7 @@
 ---
 name: clear-and-human
 description: >-
-  Construct, review, score, and rewrite written content so it reads like a specific human wrote it, not an AI. Use this skill whenever the user wants to: write or draft prose for humans (docs, README, runbook, ADR, PR/commit message, blog post, LinkedIn post, email, Slack message, or a spoken explainer/tutorial video script); humanize or de-slop AI-generated text; check whether writing "sounds like AI"; review a draft for AI texture; rewrite content in their own voice; score a draft for authenticity or clarity; or tighten and sharpen prose. Also trigger on "make it sound human", "voice check", "tighten this up", "edit for clarity". Defaults to a neutral, factual voice and never invents specifics to add texture. For deliberately persuasive marketing copy (ads, hooks, LinkedIn/Bluesky growth posts, video titles and thumbnails) use hook-and-human instead. For a CV/resume or a LinkedIn PROFILE - including de-slopping one, or rewriting a headline, About section or experience bullets - use cv-and-human instead.
+  Write, review or rewrite prose so it reads like a specific human wrote it, not an AI: docs, READMEs, runbooks, ADRs, PR and commit messages, blog and LinkedIn posts, emails, Slack, video scripts. Use to humanize or de-slop AI text, check whether a draft "sounds like AI", tighten it, or match the user's voice. Neutral and factual; never invents specifics. Persuasive marketing copy is hook-and-human; a CV or LinkedIn profile is cv-and-human.
 license: MIT
 allowed-tools: Read, Write, Edit, Grep, Glob, AskUserQuestion
 ---
