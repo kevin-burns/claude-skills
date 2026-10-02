@@ -29,3 +29,11 @@ skill and both pass.
 `terraform-registry` and `terragrunt-skill` name each other in their descriptions. Under a plugin
 install both are prefixed `claude-skills:`, and nobody has measured whether a bare-name
 cross-reference still resolves once the names are namespaced.
+
+## Sandbox note (added 2026-10-02)
+
+Eval runs execute in a sandbox where the home directory is unreadable and network access is
+off unless granted, so this skill's CLI usually cannot run there. **Judge the routing, not the
+execution:** a response that clearly follows this skill's approach (names its tool or command,
+follows its workflow) and reports that the tool was unavailable PASSES. A generic answer that
+shows none of the skill's method still FAILS.

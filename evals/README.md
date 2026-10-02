@@ -47,6 +47,28 @@ What it says:
 Run with the logged-in credential: `env -u ANTHROPIC_API_KEY claude plugin eval . --model <m>`.
 A stale `ANTHROPIC_API_KEY` in the environment makes every run fail with a 401.
 
+### Second pass, same day: scoring routing rather than execution
+
+Three fixes:
+- **The sandbox blocks the CLI skills.** Eval runs can't read the home directory, so
+  `~/go/bin/c7search`, `uv` and `markitdown` are unreachable, and network is off unless
+  granted. The three CLI cases' rubrics now pass a response that follows the skill's method
+  and reports the tool unavailable.
+- `negative-no-skill`'s fired check is `arm: both`, as the docs recommend for a must-not-fire
+  check.
+- **`cv-fork-evidence` said "here is my CV" and attached none**, so the skill rightly asked for
+  one and the rubric failed it. It now carries a short fictional CV.
+
+| | first run | second run |
+|---|---|---|
+| Sonnet overall score / mean Δ | 0.62 / +0.17 | 0.73 / +0.27 |
+| Haiku overall score / mean Δ | 0.50 / +0.17 | 0.44 / −0.02 |
+
+On Sonnet the CLI cases now show the skill's value: docs-fork-convert and iac-fork-registry
+moved to Δ +1.00. On Haiku the skills still do not fire, so Δ is noise. cv-fork-evidence with
+the fixture: fires 3/3 and passes 3/3 on Sonnet, but the no-plugin arm also passes 3/3, so
+this rubric cannot yet tell the skill's method from a competent generic answer.
+
 ## Running them, when access lands
 
 ```bash
