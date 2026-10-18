@@ -7,9 +7,10 @@ Part of [claude-skills](../README.md).
 
 ## What it does
 
-[AzAdvertizer](https://www.azadvertizer.net) publishes Azure governance metadata as
-downloadable CSV exports. There is **no API**. This skill fetches those CSVs once,
-validates them, caches them with provenance, and then answers queries entirely offline.
+[AzAdvertizer](https://www.azadvertizer.net) publishes Azure governance metadata in one
+combined, normalised JSON file (`skillData/polPolsetRole.json`, refreshed daily).
+This skill fetches it once, validates it, caches it with provenance, and then answers
+queries entirely offline.
 
 The unique value is the **cross-references** AzAdvertizer computes, which raw Azure
 sources do not give you together:
@@ -40,22 +41,23 @@ rather than a hard failure mid-query.
   authority matters, prefer Azure's own sources — `az policy definition list`,
   `az role definition list`, the `Azure/azure-policy` repo. Use this skill for the
   *enriched, cross-referenced* view.
-- **It does not scrape.** The site serves no JSON; scraping its HTML would defeat the
-  entire design. If a call fails, fix the runner or the path — never fall back to fetching
+- **It does not scrape.** Scraping the site's HTML would defeat the entire design. If a call fails, fix the runner or the path — never fall back to fetching
   pages. Every fact surfaced must come from the helper's JSON envelope.
 - **It does not write or apply Azure configuration.** Read-only lookups.
-- **It does not survive schema drift silently.** The source is undocumented and
-  unversioned; column names and file slugs can change without notice. The helper pins a
-  per-CSV schema and **refuses to overwrite a good cache on drift**. A fetch failing with
-  "schema drift" means upstream changed and the field map needs updating — that is the
-  design working, not a bug.
+- **It does not survive schema drift silently.** The file is versioned (`v`), but its
+  fields can still change. The helper pins the version and every field it reads, and
+  **refuses to overwrite a good cache on drift**. A fetch failing with "schema drift"
+  means upstream changed and the pinned fields need updating — that is the design
+  working, not a bug.
+- **Descriptions are not verbatim.** Upstream turns commas into semicolons; quote
+  Microsoft's own definition when the wording matters.
 
 ## Requirements
 
 - `uv` preferred (it pins the right Python via inline metadata). The script is stdlib-only
   and needs **Python ≥ 3.12**, so plain `python3` works if it is new enough.
 - Network access on first fetch and on weekly refresh; everything else is offline.
-- No Azure credentials, no subscription, no `az login` — this reads published CSVs.
+- No Azure credentials, no subscription, no `az login` — this reads a published file.
 
 Run the helper by **absolute path**, and note the shell function is called `azadv`, **not
 `az`** — `az` is the Azure CLI, which you almost certainly have installed in this context,
@@ -63,13 +65,15 @@ and shadowing it would be its own bug. [`SKILL.md`](./SKILL.md) has the recipe.
 
 ## Worth knowing
 
-**Cache aggressively.** This is a free personal project by one person, and the initiatives
-CSV is roughly 14 MB. Never fetch per query. The cache lives in
-`$XDG_CACHE_HOME/azadvertizer`; fetches are gzipped on the wire, atomic (temp→rename), and
-validated against a header schema and a row floor before replacing anything.
+**Cache aggressively.** This is a free personal project by one person, and the data file
+is about 7.7 MB uncompressed. Never fetch per query. The cache lives in
+`$XDG_CACHE_HOME/azadvertizer`; fetches are gzipped on the wire, atomic (temp→rename),
+conditional on the stored ETag, and validated (format version, every pinned field, row
+floors) before replacing anything.
 
 **Output is a stable JSON envelope** with `ok`, `data`, a `provenance` block
-(`source_url`, `fetched_at`, `sha256`, `rows`, `snapshot_age_days`, `stale`), `warnings`
+(`source_url`, `fetched_at`, `generated`, `etag`, `sha256`, `counts`, `snapshot_age_days`,
+`stale`), `warnings`
 and `error`. Exit codes: `0` ok, `1` not found, `2` usage, `3` cache missing, `4`
 fetch/schema/row-floor error. Cell values are sanitised on output — a leading `=`, `+`,
 `-` or `@` is prefixed with `'` so results are safe to paste into a spreadsheet.
@@ -80,4 +84,5 @@ Data © Julian Hayward / [AzAdvertizer](https://www.azadvertizer.net). Snapshots
 provenance-stamped mirrors for local use — do not republish them as your own.
 
 Tests: `cd evals && uv run python grade.py` — offline, and it covers the fail-safe
-behaviour (schema drift and row-floor failures must not overwrite a good cache).
+behaviour (drift, version, non-JSON and row-floor failures must not overwrite a good
+cache) and pins the two lookups the CSV parser got wrong.

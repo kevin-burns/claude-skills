@@ -1,15 +1,17 @@
 ---
 name: azadvertizer
 description: >-
-  Offline lookups over Azure Policy, policy initiative and RBAC role metadata from AzAdvertizer's CSV exports, including cross-references found nowhere else in one place: which roles a policy uses, which initiatives include a policy, which policies use a role. Use whenever accurate current facts about an Azure built-in policy, initiative or role (effects, categories, actions, dataActions) are needed for Azure IaC, governance or landing-zone work.
+  Offline lookups over Azure Policy, policy initiative and RBAC role metadata from AzAdvertizer's published data file, including cross-references found nowhere else in one place: which roles a policy uses, which initiatives include a policy, which policies use a role. Use whenever accurate current facts about an Azure built-in policy, initiative or role (effects, categories, actions, dataActions) are needed for Azure IaC, governance or landing-zone work.
 license: MIT
 ---
 
 # azadvertizer
 
 [AzAdvertizer](https://www.azadvertizer.net) (by Julian Hayward) tracks Azure governance
-capabilities — Policies, Initiatives (policy sets), and RBAC Roles — and publishes them as
-**downloadable CSV exports**. There is **no API**. This skill turns those CSVs into
+capabilities — Policies, Initiatives (policy sets), and RBAC Roles — and publishes them in
+**one combined, normalised JSON file**:
+`https://www.azadvertizer.net/skillData/polPolsetRole.json` (~1 MB gzip, ~7.7 MB raw,
+refreshed daily, ETag set). There is no query API. This skill turns that file into
 deterministic offline lookups: fetch once, validate, cache with provenance, then query
 without touching the network.
 
@@ -33,7 +35,7 @@ a least-privilege review. The common shapes:
    `get initiative <id>` or `rel policy-initiatives <policyId>`. Typical for compliance
    set-building (NIST, CIS, ALZ) and landing-zone governance.
 3. **"What actions does this RBAC role grant, and which policies rely on it?"** →
-   `get role <id|name> --split` then `rel role-policies <id>`. Typical for least-privilege
+   `get role <id|name>` then `rel role-policies <id>`. Typical for least-privilege
    and custom-role design.
 4. **"Find candidate policies by category/effect."** → `search policy --where
    policyCategory=… --where policyEffect=…`. Typical when assembling or auditing a set.
@@ -49,11 +51,16 @@ source).
 
 ## Honest caveats (read before relying on it)
 
-- **Undocumented, unversioned source.** Column names/file slugs can change without notice.
-  The helper pins a per-CSV schema and **refuses to overwrite a good cache on drift** —
-  if a fetch starts failing with "schema drift", the upstream changed; update the field map.
-- **It's a free personal project.** Cache aggressively; never fetch the 14 MB initiatives
-  file per query. Snapshots are point-in-time — refresh on a cadence, not live-per-run.
+- **Versioned, but it can still change.** The file carries a format version (`v`) and a
+  `schema` description. The helper pins `v = 1` plus every field it reads, checked on every
+  entity, and **refuses to overwrite a good cache on drift** — if a fetch starts failing
+  with "schema drift", the upstream changed; update the pinned fields.
+- **It's a free personal project.** Cache aggressively; never fetch the file per query.
+  Snapshots are point-in-time — refresh on a cadence, not live-per-run. A refresh sends the
+  stored ETag; on 2026-10-18 the server answered 200 rather than 304 to a conditional GET,
+  so expect a full download each week.
+- **Descriptions have commas turned into semicolons** (upstream, in both the old CSVs and
+  the JSON). Quote a description from Microsoft's own definition, not from here.
 - **Second-hand data.** Treat snapshots as provenance-stamped mirrors, not ground truth.
 - **Attribution.** Data © Julian Hayward / AzAdvertizer. Don't republish it as your own.
 
@@ -82,8 +89,7 @@ UV="$(command -v uv || ls "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" /opt/homeb
 azadv() { "$UV" run "$HOME/.claude/skills/azadvertizer/scripts/azadvertizer.py" "$@"; }   # use the announced base dir
 
 azadv status                # offline; confirms the runner + path resolve and shows cache state
-azadv fetch                 # downloads policy, role, initiative CSVs into the cache
-azadv fetch --only policy   # or just one
+azadv fetch                 # downloads policies, roles and initiatives (one file) into the cache
 ```
 
 The script is stdlib-only and needs Python ≥3.12, so if (and only if) uv is genuinely not
@@ -92,13 +98,14 @@ installed you can swap the runner for plain python3 — same arguments:
 
 If a call fails with `command not found` (uv unresolved) or `No such file or directory` (wrong
 path), fix the runner/path — re-resolve uv as above, or use the announced base directory.
-**Do not** fall back to fetching azadvertizer.net's pages directly: the site serves **no
-JSON**, and scraping its HTML defeats the entire point of this skill. Every fact you surface
+**Do not** fall back to fetching azadvertizer.net's pages or the data file directly:
+the helper validates the file and stamps provenance, and scraping the HTML defeats the
+entire point of this skill. Every fact you surface
 must come from the helper's JSON envelope, full stop.
 
 Cache lives in `$XDG_CACHE_HOME/azadvertizer` (override with `--cache-dir`). Fetch is
 gzip-on-the-wire, decompressed-at-rest, **atomic** (temp→rename), and **validated**
-(header schema + row floor) before it replaces anything. No third-party dependencies —
+(format version, every pinned field, row floors) before it replaces anything. No third-party dependencies —
 `uv run` handles the stdlib-only script.
 
 ## Query (all offline, JSON envelope)
@@ -110,7 +117,7 @@ carry over between tool calls).
 ```bash
 # exact lookup by id OR name
 azadv get policy 7ca8c8ac-3a6e-493d-99ba-c5fa35347ff2
-azadv get role "Contributor" --split          # --split expands list-valued cells
+azadv get role "Contributor"                  # list fields are always arrays
 azadv get initiative <initiativeId>            # grouped: initiative meta + member policies
 
 # substring search (case-insensitive, repeatable --where COL=SUBSTR)
@@ -149,8 +156,10 @@ Every command prints one JSON object:
   "ok": true,
   "command": "rel",
   "data": { "...": "command-specific" },
-  "provenance": { "source_url": "...", "fetched_at": "...", "sha256": "...",
-                  "rows": 4512, "snapshot_age_days": 2.1, "stale": false },
+  "provenance": { "source_url": "...", "fetched_at": "...", "generated": "...",
+                  "etag": "...", "sha256": "...",
+                  "counts": { "policies": 4574, "roles": 986, "initiatives": 249 },
+                  "snapshot_age_days": 2.1, "stale": false },
   "warnings": [],
   "error": null
 }
@@ -168,26 +177,29 @@ state so you can fetch the next page deterministically without re-scanning blind
 When `has_more` is true a warning also spells out the next call. Loop until `next_offset` is
 `null`; an `--offset` past the end returns an empty page with `has_more: false` (not an error).
 
-## The field map (why parsing is non-obvious)
+## The field map
 
-List-valued cells use **different delimiters per file** — verified against real rows, and
-the single most important thing to get right:
+Output keeps the **column names of the CSV exports** this skill read until 2026-10
+(`policyName`, `policyEffect`, `policyRolesUsed`, `RoleActions`, `UsedInPolicy`,
+`initiativeId` …), so `--where` and `--fields` work as before and consumers don't change.
+Three differences:
 
-| File | List delimiter | Notes |
-|---|---|---|
-| policy | `; ` (semicolon-space) | `cloudEnvs` uses bare `;` |
-| role | `, ` (comma-space) | applies to **all** role list columns |
-| initiative | `; ` / `;` | mostly denormalized scalars |
+- **List fields are always arrays.** `--split` is still accepted and does nothing.
+- **Cross-references are `[{name, id}]`** (`policyUsedInPolicySet` adds `source`, the
+  initiative's type), resolved against the same snapshot. Effects use one spelling each.
+- **`policyPreview` / `policyDeprecated` are booleans**; `--where policyDeprecated=false`
+  matches them as text.
 
-`Name (guid)` columns (`policyRolesUsed`, `policyUsedInPolicySet`, role `UsedInPolicy`) are
-split **anchored on the closing `)`** so names containing the delimiter don't over-split.
-Role `*DataActions` of literal `"empty"` parse to `[]`. The authoritative map (columns,
-delimiters, keys, row floors, expected headers) lives in `DATASETS` at the top of
-`scripts/azadvertizer.py` — update it there if the upstream drifts.
+Why the CSVs went: their per-file list delimiters broke two lookups. `policyUsedInPolicySet`
+entries end in `) BuiltIn;`, so `rel policy-initiatives` returned one item where a policy
+was in many (1,723 of 4,574 policies on 2026-10-18), and an unused role's ` ()` came back as
+one blank item (938 roles). The evals pin both. The pinned shape lives in `TOP_KEYS`,
+`ENTITY_FIELDS` and `MEMBER_FIELDS` at the top of `scripts/azadvertizer.py`.
 
 ## Scaling up (deliberately deferred)
 
-This dataset is tiny (~22k rows total), so the query path is a stdlib `csv` linear scan —
+This dataset is small (~22k entities and members), so the query path is stdlib dict
+lookups and a linear scan for `search` —
 no pandas/polars/DuckDB. If genuine **cross-file relational** queries become a real need
 ("policies in category X used by initiatives that also grant role Y"), the documented
 escalation is stdlib **`sqlite3`** (build a DB on ingest) — still zero third-party
@@ -199,13 +211,14 @@ dependencies. Don't add it speculatively.
 MVP) and published at [azadvertizer.net](https://www.azadvertizer.net).** AzAdvertizer is
 his free, community-driven project; the policy/role/initiative metadata and — crucially —
 the enrichment and cross-references are his work, not this skill's. This skill only
-*fetches and caches his published CSV exports*; it does **not** redistribute them (no CSV
-data is committed to this repo beyond tiny test fixtures).
+*fetches and caches the data file he publishes*; it does **not** redistribute it
+(nothing is committed to this repo beyond a tiny test fixture).
 
 Provenance is tracked end to end so any fact can be traced back to its source:
 
-- Each cached snapshot writes a `*.meta.json` with `source_url`, `fetched_at` (UTC),
-  `sha256`, `rows`/`cols`, and an `attribution` string crediting AzAdvertizer.
+- Each cached snapshot writes a `*.meta.json` with `source_url`, `fetched_at` (UTC), the
+  file's own `generated` time, `etag`, `sha256`, per-entity `counts`, and the
+  `attribution` string the file itself carries.
 - Every query echoes that provenance (plus `snapshot_age_days` / `stale`) in the JSON
   envelope, so downstream consumers (`fact-verifier`, `report-builder`, `azure-architect`)
   cite the snapshot, not a guess.
@@ -221,5 +234,6 @@ it uniquely provides.
 
 - `scripts/azadvertizer.py` — the stdlib CLI (fetch/status/get/search/rel) + field map.
 - `evals/` — offline behavioral eval (`cd evals && uv run python grade.py`): lookups, relationship
-  parsing, grouping, staleness, sanitization, and the ingest fail-safe (schema-drift and
-  row-floor refusal, atomic write) against committed fixtures.
+  resolution, grouping, staleness, sanitization, the two CSV-era regressions, and the
+  ingest fail-safe (drift, version, non-JSON and row-floor refusal, atomic write, 304)
+  against a committed fixture.

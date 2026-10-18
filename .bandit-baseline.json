@@ -1513,26 +1513,6 @@
   },
   "results": [
     {
-      "code": "176     })\n177     with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310 (https only, fixed host)\n178         raw = resp.read()\n",
-      "col_offset": 9,
-      "end_col_offset": 48,
-      "filename": "./azadvertizer/scripts/azadvertizer.py",
-      "issue_confidence": "HIGH",
-      "issue_cwe": {
-        "id": 22,
-        "link": "https://cwe.mitre.org/data/definitions/22.html"
-      },
-      "issue_severity": "MEDIUM",
-      "issue_text": "Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.",
-      "line_number": 177,
-      "line_range": [
-        177
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen",
-      "test_id": "B310",
-      "test_name": "blacklist"
-    },
-    {
       "code": "79         req = urllib.request.Request(url, headers={\"User-Agent\": \"excalidraw-diagram-skill\"})\n80         with os.fdopen(fd, \"wb\") as out, urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_S) as resp:\n81             while True:\n",
       "col_offset": 41,
       "end_col_offset": 96,

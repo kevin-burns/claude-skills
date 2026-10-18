@@ -1,0 +1,15 @@
+{
+  "dataset": "polPolsetRole",
+  "source_url": "https://www.azadvertizer.net/skillData/polPolsetRole.json",
+  "fetched_at": "2020-01-01T00:00:00+00:00",
+  "generated": "2026-10-18T14:52:27Z",
+  "etag": null,
+  "sha256": "fixture",
+  "counts": {
+    "policies": 14,
+    "roles": 7,
+    "initiatives": 17,
+    "members": 21
+  },
+  "attribution": "fixture slice of AzAdvertizer data (generated 2026-10-18T14:52:27Z)"
+}

@@ -56,12 +56,13 @@ repos:
       - id: check-json
       - id: check-toml
 
-      # MEASURED: 3 text files lack a final newline, all of them
+      # MEASURED when enabled: 3 text files lacked a final newline, all of them
       # azadvertizer/evals/fixtures/*.meta.json.
       #
       # CHECKED BEFORE ENABLING, because this repo hashes some fixtures: the .meta.json
       # files are NOT hashed — their own sha256 field is the literal string "fixture" —
-      # and azadvertizer hashes the .csv payloads, which all already end in a newline.
+      # and azadvertizer hashes only freshly downloaded bytes, never a committed fixture
+      # (since 2026-10-18 the payload is polPolsetRole.json, not three .csv files).
       # The job-feeds fixtures are read with read_bytes() and immediately parsed as
       # JSON or XML, where a trailing newline is inert.
       #
