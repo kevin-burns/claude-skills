@@ -49,8 +49,8 @@ rather than a hard failure mid-query.
   **refuses to overwrite a good cache on drift**. A fetch failing with "schema drift"
   means upstream changed and the pinned fields need updating — that is the design
   working, not a bug.
-- **Descriptions are not verbatim.** Upstream turns commas into semicolons; quote
-  Microsoft's own definition when the wording matters.
+- **Descriptions are second-hand.** They come from the definitions (commas intact since
+  the 2026-10-19 file), but quote Microsoft's own definition when the wording matters.
 
 ## Requirements
 

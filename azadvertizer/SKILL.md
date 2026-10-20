@@ -57,10 +57,11 @@ source).
   with "schema drift", the upstream changed; update the pinned fields.
 - **It's a free personal project.** Cache aggressively; never fetch the file per query.
   Snapshots are point-in-time — refresh on a cadence, not live-per-run. A refresh sends the
-  stored ETag; on 2026-10-18 the server answered 200 rather than 304 to a conditional GET,
-  so expect a full download each week.
-- **Descriptions have commas turned into semicolons** (upstream, in both the old CSVs and
-  the JSON). Quote a description from Microsoft's own definition, not from here.
+  stored ETag and the server answers 304 when the file has not changed (fixed upstream on
+  2026-10-19; before that it always sent the full file).
+- **Names and descriptions come from the definitions** since the 2026-10-19 file, commas
+  included. Snapshots fetched before then have commas turned into semicolons; `fetch --force`
+  replaces one.
 - **Second-hand data.** Treat snapshots as provenance-stamped mirrors, not ground truth.
 - **Attribution.** Data © Julian Hayward / AzAdvertizer. Don't republish it as your own.
 
