@@ -86,6 +86,26 @@ and `error`. Exit codes: `0` ok, `1` not found, `2` usage, `3` cache missing, `4
 fetch/schema/row-floor error. Cell values are sanitised on output — a leading `=`, `+`,
 `-` or `@` is prefixed with `'` so results are safe to paste into a spreadsheet.
 
+## History
+
+- **2026-10-20 — Entra roles, API permissions and resource types.** A second cached
+  source, `vscode/index.json`, adds `entra-role`, `api-permission` and `resource-type`.
+  Its rows are positional, so the field order is pinned against the file's own schema
+  block. Every row now carries a page link checked against the live site. The data was
+  cross-checked against Microsoft Learn's Entra built-in roles and Graph permissions
+  references; the differences are listed in [`SKILL.md`](./SKILL.md).
+- **2026-10-20 — Upstream fixes picked up.** The data file now keeps commas in names and
+  descriptions, spells types as its schema says (`ALZ`, not `Custom - ALZ`), and answers a
+  conditional GET with 304.
+- **2026-10-18 — One JSON file instead of three CSVs.** The skill reads
+  `skillData/polPolsetRole.json`. This fixed two cross-reference bugs in the CSV parse:
+  `rel policy-initiatives` returned one initiative for 1,723 of 4,574 policies, and an
+  unused role returned a blank item instead of an empty list (938 roles).
+- **2026-06-15 — Paginated search** (`--limit` / `--offset`) and a helper invocation that
+  never falls back to scraping the site.
+- **2026-06-11 — First release:** offline lookups over Azure Policy, Initiative and RBAC
+  Role metadata and their cross-references.
+
 ## Attribution
 
 Data © Julian Hayward / [AzAdvertizer](https://www.azadvertizer.net). Snapshots are
