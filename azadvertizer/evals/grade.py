@@ -5,13 +5,14 @@
 """Behavioral eval for the azadvertizer skill — fully offline.
 
 Two layers:
-  1. CLI checks: call main() in-process against the committed fixture (a real slice of
-     skillData/polPolsetRole.json plus one synthetic formula-injection policy) and assert on
+  1. CLI checks: call main() in-process against the committed fixtures (real slices of
+     skillData/polPolsetRole.json, plus one synthetic formula-injection policy, and of
+     vscode/index.json) and assert on
      the JSON envelope (lookup, search, cross-references, grouping, staleness, sanitization,
      error/exit codes). Two checks pin the bugs the CSV parser had.
   2. Ingest fail-safe checks: monkeypatch the network and assert fetch_one refuses to
      overwrite a good cache on drift / row-floor / non-JSON, writes atomically on success,
-     and keeps the file on a 304.
+     and keeps the file on a 304; for the index, that a changed field order is refused.
 
 Exit 0 if all pass, 1 otherwise.
 """
@@ -175,10 +176,74 @@ check("formula-injection desc neutralized", env["data"]["policyDescription"].sta
 code, env = run(C + ["get", "policy", "does-not-exist"])
 check("not-found exit 1 + ok false", code == 1 and env["ok"] is False)
 
+# --- K2. index datasets: Entra roles, API permissions, resource types ---
+GA = "62e90394-69f5-4237-9190-012177145e10"
+code, env = run(C + ["status"])
+check("status lists the index source with counts",
+      ((env["data"]["sources"].get("index") or {}).get("counts") or {}).get("entraRoles") == 2,
+      str(env["data"].get("sources", {}).get("index")))
+code, env = run(C + ["get", "entra-role", "Global Administrator"])
+d = env.get("data") or {}
+check("entra-role by name: positional row decoded",
+      env["ok"] and d.get("entraRoleId") == GA and d.get("privileged") is True
+      and d.get("entraOpsClassification") == "ControlPlane" and d.get("permissionsTotal") == 317,
+      str(d))
+code, env = run(C + ["get", "entra-role", GA.upper()])
+check("entra-role by id, case-insensitive", env["ok"] and env["data"]["entraRoleName"]
+      == "Global Administrator")
+code, env = run(C + ["get", "entra-role", "88d8e3e3-8f55-4a1e-953a-9b9898b8876b"])
+check("non-privileged role is privileged=false", env["ok"] and env["data"]["privileged"] is False)
+
+code, env = run(C + ["get", "api-permission", "User.Read.All"])
+rows = env.get("data") or []
+graph = {r["permissionType"]: r for r in rows if r["appName"] == "Microsoft Graph"}
+check("api-permission by value: every app and id",
+      env["ok"] and len(rows) == 11 and len({r["permissionId"] for r in rows}) == 10,
+      f"{len(rows)} rows")
+check("Graph User.Read.All: Application + Delegated, admin consent, level 3",
+      set(graph) == {"Application", "Delegated"}
+      and graph["Application"]["permissionId"] == "df021288-bdef-4463-88db-98f22de89214"
+      and all(r["adminConsentRequired"] is True and r["graphPrivilegeLevel"] == 3
+              for r in graph.values()), str(graph)[:300])
+code, env = run(C + ["get", "api-permission", "user.read.all"])
+check("api-permission value lookup is case-insensitive", env["ok"] and len(env["data"]) == 11)
+code, env = run(C + ["get", "api-permission", "df021288-bdef-4463-88db-98f22de89214"])
+check("one permission id shared by two apps -> two rows",
+      env["ok"] and {r["appName"] for r in env["data"]}
+      == {"Microsoft Graph", "Office 365 SharePoint Online"}, str(env.get("data"))[:200])
+code, env = run(C + ["search", "api-permission", "--where", "appName=Microsoft Graph"])
+check("search api-permission flattens per app", env["ok"]
+      and env["provenance"]["matched"] == 2, str(env["provenance"].get("matched")))
+code, env = run(C + ["get", "api-permission", "Not.A.Permission"])
+check("unknown api-permission -> exit 1", code == 1 and env["ok"] is False)
+
+code, env = run(C + ["get", "resource-type", "Microsoft.KeyVault/vaults"])
+d = env.get("data") or {}
+check("resource-type by mixed-case name: API versions",
+      env["ok"] and d.get("latestStableApiVersion") == "2026-05-15"
+      and d.get("latestPreviewApiVersion") == "2026-06-01-preview", str(d))
+code, env = run(C + ["get", "resource-type", "microsoft.network/virtualnetworks/subnets"])
+check("nested resource-type page uses underscores",
+      env["ok"] and env["data"]["page"].endswith(
+          "/azresourcetypes/microsoft.network_virtualnetworks_subnets.html"))
+code, env = run(C + ["search", "resource-type", "--where", "resourceType=resilience"])
+check("a type with no API version keeps null, not a string",
+      env["ok"] and env["data"][0]["latestStableApiVersion"] is None, str(env.get("data")))
+code, env = run(C + ["get", "initiative", "enforce-guardrails-apim"])
+check("initiative page keeps the original-case id",
+      env["data"]["page"].endswith("/azpolicyinitiativesadvertizer/Enforce-Guardrails-APIM.html"))
+
 # --- L. cache missing + --offline -> exit 3 (won't auto-fetch when offline) ---
 with tempfile.TemporaryDirectory() as empty:
     code, env = run(["--cache-dir", empty, "--offline", "get", "policy", "x"])
     check("cache-missing+offline exit 3", code == 3 and env["ok"] is False, env.get("error", ""))
+with tempfile.TemporaryDirectory() as only_core:  # core cached, index not: index reads exit 3
+    for f in ("polPolsetRole.json", "polPolsetRole.meta.json"):
+        (Path(only_core) / f).write_bytes((FIX / f).read_bytes())
+    code, env = run(["--cache-dir", only_core, "--offline", "get", "entra-role", "x"])
+    check("index missing+offline exit 3, core unaffected", code == 3, env.get("error", ""))
+    code, env = run(["--cache-dir", only_core, "--offline", "get", "policy", DINE_POLICY])
+    check("core still answers without the index", code == 0 and env["ok"])
 
 # ============ Ingest fail-safe unit checks (monkeypatched network) ============
 
@@ -194,9 +259,14 @@ def make_doc(n_pol=2100, n_role=450, n_ini=120):
             "initiatives": {f"i{i}": dict(ini) for i in range(n_ini)}}
 
 
-def serve(body, status=200, etag='"e1"'):
+def serve(body, status=200, etag='"e1"', paths=None):
     raw = body if isinstance(body, bytes) else json.dumps(body).encode()
-    return lambda etag_in=None: (status, raw, etag)
+
+    def fake(etag_in=None, path=None):
+        if paths is not None:
+            paths.append(path)
+        return status, raw, etag
+    return fake
 
 
 orig_download = az._download
@@ -247,7 +317,7 @@ with tempfile.TemporaryDirectory() as tmp:
     before = (root / DATA).read_bytes()
     seen_etag = []
 
-    def not_modified(etag_in=None):
+    def not_modified(etag_in=None, path=None):
         seen_etag.append(etag_in)
         return 304, b"", '"e1"'
 
@@ -285,13 +355,64 @@ with tempfile.TemporaryDirectory() as tmp:
     root = Path(tmp)
     _seed(root, datetime.now(UTC).isoformat())  # fresh -> within 7d
 
-    def _boom(etag_in=None):
+    def _boom(etag_in=None, path=None):
         raise AssertionError("network should not be touched for a fresh snapshot")
 
     az._download = _boom
     code, env = run(["--cache-dir", str(root), "get", "policy", DINE_POLICY])
     check("fresh snapshot: no refresh, no network", env["ok"] and code == 0,
           str(env.get("error")))
+
+# R. index ingest: a valid index is written under its own name; drift is refused
+
+
+def make_index():
+    fx = json.loads((FIX / "vscodeIndex.json").read_text(encoding="utf-8"))
+    for ent, floor in az.INDEX_FLOORS.items():
+        sample = next(iter(fx[ent].values()))
+        fx[ent] = {f"k{i}": json.loads(json.dumps(sample)) for i in range(floor)}
+    return fx
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    asked = []
+    az._download = serve(make_index(), paths=asked)
+    r = az.fetch_one(root, force=True, source="index")
+    m = az.load_meta(root, az.INDEX_SLUG) or {}
+    check("index: fetched from vscode/index.json into its own file",
+          r["ok"] and asked == [az.INDEX_PATH] and (root / "vscodeIndex.json").exists()
+          and not (root / DATA).exists() and m.get("counts", {}).get("entraRoles") == 100,
+          r.get("error", ""))
+
+    (root / "vscodeIndex.json").write_text("sentinel")
+    moved = make_index()
+    moved["schema"]["entraRoles"] = "[privileged (1 / 0), displayName, EntraOps classification, " \
+                                    "permissionsTotal, description (220 chars)]"
+    az._download = serve(moved)
+    r = az.fetch_one(root, force=True, source="index")
+    check("index: reordered fields refused, cache kept",
+          not r["ok"] and "field order" in r.get("error", "")
+          and (root / "vscodeIndex.json").read_text() == "sentinel", r.get("error", ""))
+
+    short = make_index()
+    short["entraRoles"]["k3"] = short["entraRoles"]["k3"][:4]
+    az._download = serve(short)
+    r = az.fetch_one(root, force=True, source="index")
+    check("index: a short row refused", not r["ok"] and "5-field" in r.get("error", ""),
+          r.get("error", ""))
+
+    code = make_index()
+    first = next(iter(code["apiPermissions"]))
+    code["apiPermissions"][first][0][3] = "zz"
+    az._download = serve(code)
+    r = az.fetch_one(root, force=True, source="index")
+    check("index: unknown permission type code refused",
+          not r["ok"] and "'zz'" in r.get("error", ""), r.get("error", ""))
+
+    az._download = serve(dict(make_index(), resourceTypes={}))
+    r = az.fetch_one(root, force=True, source="index")
+    check("index: row floor refused", not r["ok"] and "row floor" in r.get("error", ""))
 
 az._download = orig_download
 

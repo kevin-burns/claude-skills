@@ -1,7 +1,7 @@
 ---
 name: azadvertizer
 description: >-
-  Offline lookups over Azure Policy, policy initiative and RBAC role metadata from AzAdvertizer's published data file, including cross-references found nowhere else in one place: which roles a policy uses, which initiatives include a policy, which policies use a role. Use whenever accurate current facts about an Azure built-in policy, initiative or role (effects, categories, actions, dataActions) are needed for Azure IaC, governance or landing-zone work.
+  Offline lookups over AzAdvertizer's published Azure data: Policy, policy initiative and RBAC role metadata with cross-references found nowhere else in one place (which roles a policy uses, which initiatives include a policy, which policies use a role), plus Entra ID roles, API permissions (Microsoft Graph and other first-party apps) and resource types with their latest API versions. Use whenever accurate current facts about an Azure built-in policy, initiative, RBAC or Entra role, Graph permission or resource API version are needed for Azure IaC, governance or landing-zone work.
 license: MIT
 ---
 
@@ -11,8 +11,10 @@ license: MIT
 capabilities — Policies, Initiatives (policy sets), and RBAC Roles — and publishes them in
 **one combined, normalised JSON file**:
 `https://www.azadvertizer.net/skillData/polPolsetRole.json` (~1 MB gzip, ~7.7 MB raw,
-refreshed daily, ETag set). There is no query API. This skill turns that file into
-deterministic offline lookups: fetch once, validate, cache with provenance, then query
+refreshed daily, ETag set). A second, compact file,
+`https://www.azadvertizer.net/vscode/index.json`, adds **Entra ID roles, API permissions
+and resource types with their latest API versions**. There is no query API. This skill turns
+those files into deterministic offline lookups: fetch once, validate, cache with provenance, then query
 without touching the network.
 
 The unique value is the **cross-references** AzAdvertizer computes that raw Azure sources
@@ -39,6 +41,13 @@ a least-privilege review. The common shapes:
    and custom-role design.
 4. **"Find candidate policies by category/effect."** → `search policy --where
    policyCategory=… --where policyEffect=…`. Typical when assembling or auditing a set.
+5. **"Which API version should this resource use?"** → `get resource-type
+   Microsoft.KeyVault/vaults`. Typical when pinning an `azapi` or Bicep resource type.
+6. **"Is this Graph permission Application or Delegated, and does it need admin
+   consent?"** → `get api-permission User.Read.All`. Typical when reviewing an app
+   registration or a workload identity's grants.
+7. **"Is this Entra role privileged?"** → `get entra-role "Global Administrator"` —
+   privileged flag and EntraOps tier (ControlPlane / ManagementPlane / UserAccess).
 
 The lifecycle is **fetch once, query many, refresh weekly — automatically**. Read commands
 (`get`/`search`/`rel`) **auto-refresh a snapshot older than one week** (the default
@@ -62,6 +71,18 @@ source).
 - **Names and descriptions come from the definitions** since the 2026-10-19 file, commas
   included. Snapshots fetched before then have commas turned into semicolons; `fetch --force`
   replaces one.
+- **The index is positional, so its field order is pinned.** `vscode/index.json` rows are
+  arrays; the helper refuses a file whose own `schema` text for an entity differs from the
+  pinned string, rather than read every value one column off.
+- **Index text is truncated upstream.** Entra role descriptions stop at 220 characters and
+  permission display names at 120.
+- **A `null` API version means the index has none**, not that no API exists. 8,255 of
+  12,379 resource types have no stable version on 2026-10-19, mostly operation-status and
+  diagnostic sub-types; the main types (`microsoft.web/sites`, `microsoft.keyvault/vaults`)
+  carry one.
+- **Page links only where checked.** Policy, initiative, role and resource-type rows carry a
+  `page` URL; Entra role and API permission rows do not, because the published pattern for
+  those answered 404 on 2026-10-20.
 - **Second-hand data.** Treat snapshots as provenance-stamped mirrors, not ground truth.
 - **Attribution.** Data © Julian Hayward / AzAdvertizer. Don't republish it as your own.
 
@@ -120,12 +141,17 @@ carry over between tool calls).
 azadv get policy 7ca8c8ac-3a6e-493d-99ba-c5fa35347ff2
 azadv get role "Contributor"                  # list fields are always arrays
 azadv get initiative <initiativeId>            # grouped: initiative meta + member policies
+azadv get entra-role "Global Administrator"   # privileged flag, EntraOps tier, permission count
+azadv get api-permission User.Read.All        # every app and id with that value (a list)
+azadv get resource-type Microsoft.KeyVault/vaults   # latest stable + preview API version
 
 # substring search (case-insensitive, repeatable --where COL=SUBSTR)
 azadv search policy --where policyCategory=Storage --where policyEffect=Deny \
    --fields policyName,policyEffect,policyId --limit 20
 azadv search role --name "Reader"
 azadv search initiative --name "NIST"
+azadv search api-permission --where appName="Microsoft Graph" --where permissionType=Application
+azadv search resource-type --where resourceType=microsoft.network/ --fields resourceType,latestStableApiVersion
 
 # pagination: searches can match a lot (e.g. "Defender" -> 100+ policies). search returns at
 # most --limit rows (default 50) starting at --offset (default 0); page with --offset:
@@ -191,6 +217,20 @@ Three differences:
 - **`policyPreview` / `policyDeprecated` are booleans**; `--where policyDeprecated=false`
   matches them as text.
 
+The three index datasets have no legacy names, so their columns are new:
+
+| dataset | columns |
+|---|---|
+| `entra-role` | `entraRoleId`, `entraRoleName`, `privileged` (bool), `entraOpsClassification`, `permissionsTotal`, `entraRoleDescription` |
+| `api-permission` | `permissionId`, `permissionValue`, `permissionDisplayName`, `permissionType` (Application / Delegated / Resource-specific (application)), `adminConsentRequired` (bool), `graphPrivilegeLevel` (Graph only, else null), `appId`, `appName` |
+| `resource-type` | `resourceType` (lower-cased `namespace/type`), `resourceTypeName`, `latestStableApiVersion`, `latestPreviewApiVersion` (only when newer than stable), `providerDisplayName`, `operationsCount`, `policyAliasesCount`, `page` |
+
+`api-permission` is one row per app the permission id belongs to: one value such as
+`User.Read.All` is ten ids across seven apps, and 64 ids are shared by two apps. `get
+api-permission` therefore returns a list. The index's pinned shape lives in `INDEX_SCHEMA`,
+`INDEX_ROW_LEN` and `PERMISSION_TYPES`; each source is cached in its own file, so a failed
+index fetch never touches the policy data.
+
 Why the CSVs went: their per-file list delimiters broke two lookups. `policyUsedInPolicySet`
 entries end in `) BuiltIn;`, so `rel policy-initiatives` returned one item where a policy
 was in many (1,723 of 4,574 policies on 2026-10-18), and an unused role's ` ()` came back as
@@ -234,7 +274,9 @@ it uniquely provides.
 ## Tooling
 
 - `scripts/azadvertizer.py` — the stdlib CLI (fetch/status/get/search/rel) + field map.
+  `fetch --only core|index` refreshes one source.
 - `evals/` — offline behavioral eval (`cd evals && uv run python grade.py`): lookups, relationship
   resolution, grouping, staleness, sanitization, the two CSV-era regressions, and the
-  ingest fail-safe (drift, version, non-JSON and row-floor refusal, atomic write, 304)
-  against a committed fixture.
+  ingest fail-safe (drift, version, non-JSON and row-floor refusal, atomic write, 304),
+  and for the index the decoded columns and the refusal of a reordered field list, against
+  committed fixtures.

@@ -1,15 +1,17 @@
 # azadvertizer
 
 Deterministic, offline lookups over Azure **Policy**, **Initiative** and **RBAC Role**
-metadata — including the cross-references that exist nowhere else in one place.
+metadata — including the cross-references that exist nowhere else in one place — plus
+**Entra ID roles**, **API permissions** and **resource-type API versions**.
 
 Part of [claude-skills](../README.md).
 
 ## What it does
 
 [AzAdvertizer](https://www.azadvertizer.net) publishes Azure governance metadata in one
-combined, normalised JSON file (`skillData/polPolsetRole.json`, refreshed daily).
-This skill fetches it once, validates it, caches it with provenance, and then answers
+combined, normalised JSON file (`skillData/polPolsetRole.json`, refreshed daily), and a
+compact index (`vscode/index.json`) with Entra roles, API permissions and resource types.
+This skill fetches each once, validates it, caches it with provenance, and then answers
 queries entirely offline.
 
 The unique value is the **cross-references** AzAdvertizer computes, which raw Azure
@@ -28,6 +30,11 @@ assignment to work, and this tells you which role — before you write the
 Also: `get policy|role|initiative <id|name>` for definitions, effects, allowed effects and
 role actions; `search <type> --where COL=SUBSTR` for finding candidates by category or
 effect, with `--limit`/`--offset` paging.
+
+From the index: `get resource-type Microsoft.KeyVault/vaults` for the latest stable and
+preview API version, `get api-permission User.Read.All` for whether a permission is
+Application or Delegated and needs admin consent, on every app that defines it, and `get
+entra-role <id|name>` for whether a directory role is privileged.
 
 **Freshness is automatic.** Read commands auto-refresh a snapshot older than a week
 (`--max-age-days 7`), so facts do not silently rot and you rarely call `fetch` yourself.
@@ -48,7 +55,8 @@ rather than a hard failure mid-query.
   fields can still change. The helper pins the version and every field it reads, and
   **refuses to overwrite a good cache on drift**. A fetch failing with "schema drift"
   means upstream changed and the pinned fields need updating — that is the design
-  working, not a bug.
+  working, not a bug. The index's rows are positional arrays, so its field order is pinned
+  as well.
 - **Descriptions are second-hand.** They come from the definitions (commas intact since
   the 2026-10-19 file), but quote Microsoft's own definition when the wording matters.
 
@@ -85,4 +93,5 @@ provenance-stamped mirrors for local use — do not republish them as your own.
 
 Tests: `cd evals && uv run python grade.py` — offline, and it covers the fail-safe
 behaviour (drift, version, non-JSON and row-floor failures must not overwrite a good
-cache) and pins the two lookups the CSV parser got wrong.
+cache), pins the two lookups the CSV parser got wrong, and refuses an index whose field
+order changed.

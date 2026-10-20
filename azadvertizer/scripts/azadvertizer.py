@@ -8,14 +8,17 @@ AzAdvertizer (https://www.azadvertizer.net, by Julian Hayward) publishes Azure P
 Policy Initiative and RBAC Role metadata, enriched with cross-references (which roles a
 policy uses, which initiatives include a policy, which policies use a role) that exist
 nowhere else in one place. It also publishes them as one combined, normalised JSON,
-skillData/polPolsetRole.json (~1 MB gzip, ~7.7 MB raw, refreshed daily, ETag set).
+skillData/polPolsetRole.json (~1 MB gzip, ~7.7 MB raw, refreshed daily, ETag set), and a
+compact index, vscode/index.json, that adds Entra ID roles, API permissions (Microsoft Graph
+and every other first-party app) and resource types with their latest API versions.
 
-This helper fetches that file ONCE into a provenance-stamped local cache (gzip on the wire,
+This helper fetches each file ONCE into a provenance-stamped local cache (gzip on the wire,
 decompressed at rest), validates it against a pinned shape, and answers lookups offline.
 Stdlib only — no third-party dependencies. Output is a JSON envelope.
 
 Design notes:
-- The dataset is small (~22k entities and members); dict lookups are the whole job.
+- The datasets are small (~22k entities and members, ~16k index rows); dict lookups are the
+  whole job.
 - The risk is reliability, not speed: an upstream that can change shape without notice. So
   ingest is atomic, shape-validated, and a stale snapshot is surfaced loudly in the
   envelope (never silently served as fresh).
@@ -29,10 +32,11 @@ Design notes:
   unused role's " ()" parsed as one blank item for 938 roles. The JSON carries ids as arrays.
 
 Usage:
-  azadvertizer fetch [--force] [--cache-dir DIR]
+  azadvertizer fetch [--force] [--only core|index] [--cache-dir DIR]
   azadvertizer status [--cache-dir DIR]
-  azadvertizer get <policy|role|initiative> <id|name> [--cache-dir DIR]
-  azadvertizer search <policy|role|initiative> [--where COL=SUBSTR]... [--name S]
+  azadvertizer get <policy|role|initiative|entra-role|api-permission|resource-type> <id|name>
+                   [--cache-dir DIR]
+  azadvertizer search <dataset> [--where COL=SUBSTR]... [--name S]
                       [--limit N] [--offset N] [--fields a,b,c] [--cache-dir DIR]
   azadvertizer rel <policy-roles|policy-initiatives|role-policies|initiative-policies> <id>
                    [--cache-dir DIR]
@@ -58,6 +62,8 @@ BASE = f"https://{HOST}"
 DATA_PATH = "/skillData/polPolsetRole.json"
 SOURCE_URL = BASE + DATA_PATH
 SLUG = "polPolsetRole"
+INDEX_PATH = "/vscode/index.json"
+INDEX_SLUG = "vscodeIndex"
 USER_AGENT = "azadvertizer-skill/2.0 (+https://github.com/kevin-burns/claude-skills)"
 # Default freshness window. Azure governance metadata changes slowly, so a weekly refresh
 # keeps facts current without hammering AzAdvertizer. Read commands auto-refresh a snapshot
@@ -81,13 +87,58 @@ MEMBER_FIELDS = ("ref", "policy", "effect", "allowedEffects", "fixedEffect")
 # Truncation guard: counts seen on 2026-10-18 were 4,574 / 986 / 249.
 FLOORS = {"policies": 2000, "roles": 400, "initiatives": 100}
 
-# Dataset name (CLI) -> entity key in the file, id column and name column in the output.
-DATASETS: dict[str, dict] = {
-    "policy": {"entity": "policies", "key": "policyId", "name_col": "policyName"},
-    "role": {"entity": "roles", "key": "RoleId", "name_col": "RoleName"},
-    "initiative": {"entity": "initiatives", "key": "initiativeId",
-                   "name_col": "initiativeName"},
+# ---- Pinned shape of vscode/index.json. Its rows are positional arrays, so the field order
+# is pinned too: the file's own schema text for each entity must match these strings exactly.
+# A reordered or added column changes that text, and the fetch is refused rather than read
+# with every value shifted one place.
+INDEX_TOP_KEYS = ("v", "generated", "schema", "entraRoles", "apiPermissions",
+                  "apiPermissionNames", "apps", "resourceTypes")
+INDEX_SCHEMA = {
+    "entraRoles": "[displayName, privileged (1 / 0), EntraOps classification, "
+                  "permissionsTotal, description (220 chars)]",
+    "apiPermissions": "permission id -> [[appId, appName, value, permission type code, "
+                      "adminConsentRequired (1 / 0), displayName (120 chars), "
+                      "graphPrivilegeLevel], ...] (one entry per app the id belongs to)",
+    "apps": "[appName, permissionCount]",
+    "resourceTypes": "[displayName, latestStableApiVersion, latestPreviewApiVersion (only when "
+                     "newer than the stable one), providerDisplayName, operationsCount, "
+                     "policyAliasesCount]",
 }
+INDEX_ROW_LEN = {"entraRoles": 5, "apps": 2, "resourceTypes": 6}
+API_ENTRY_LEN = 7
+PERMISSION_TYPES = {"ar": "Application", "oa": "Delegated",
+                    "rs": "Resource-specific (application)"}
+# Truncation guard: counts seen on 2026-10-19 were 145 / 2,802 / 187 / 12,379.
+INDEX_FLOORS = {"entraRoles": 100, "apiPermissions": 1500, "apps": 100, "resourceTypes": 8000}
+
+# Dataset name (CLI) -> source file, entity key in the file, id column and name column.
+DATASETS: dict[str, dict] = {
+    "policy": {"source": "core", "entity": "policies", "key": "policyId",
+               "name_col": "policyName"},
+    "role": {"source": "core", "entity": "roles", "key": "RoleId", "name_col": "RoleName"},
+    "initiative": {"source": "core", "entity": "initiatives", "key": "initiativeId",
+                   "name_col": "initiativeName"},
+    "entra-role": {"source": "index", "entity": "entraRoles", "key": "entraRoleId",
+                   "name_col": "entraRoleName"},
+    "api-permission": {"source": "index", "entity": "apiPermissions", "key": "permissionId",
+                       "name_col": "permissionValue"},
+    "resource-type": {"source": "index", "entity": "resourceTypes", "key": "resourceType",
+                      "name_col": "resourceTypeName"},
+}
+# Page links, only for the patterns checked against the live site (2026-10-20). The Entra role
+# and API permission patterns in the index's schema block answered 404, so those rows carry
+# no link rather than a guessed one.
+PAGES = {
+    "policy": "/azpolicyadvertizer/{}.html",
+    "initiative": "/azpolicyinitiativesadvertizer/{}.html",
+    "role": "/azrolesadvertizer/{}.html",
+    "resource-type": "/azresourcetypes/{}.html",
+}
+
+
+def page(name, ident):
+    return BASE + PAGES[name].format(ident)
+
 INITIATIVE_COLS = (
     "initiativeId", "initiativeName", "initiativeDescription", "initiativeCategory",
     "initiativeVersion", "initiativeType", "initiativeCloudEnvs", "initiativeAzUSGov",
@@ -121,24 +172,25 @@ def cache_root(args) -> Path:
     return Path(base) / "azadvertizer"
 
 
-def data_path(root: Path) -> Path:
-    return root / f"{SLUG}.json"
+def data_path(root: Path, slug: str = SLUG) -> Path:
+    return root / f"{slug}.json"
 
 
-def meta_path(root: Path) -> Path:
-    return root / f"{SLUG}.meta.json"
+def meta_path(root: Path, slug: str = SLUG) -> Path:
+    return root / f"{slug}.meta.json"
 
 
 # ----------------------------- fetch / ingest -----------------------------
-def _download(etag: str | None = None) -> tuple[int, bytes, str | None]:
-    """GET the data file. Returns (status, body, etag). http.client rather than urlopen:
-    the host and scheme are fixed here, so there is no URL a caller could redirect."""
+def _download(etag: str | None = None, path: str = DATA_PATH) -> tuple[int, bytes, str | None]:
+    """GET a data file. Returns (status, body, etag). http.client rather than urlopen:
+    the host and scheme are fixed here, so there is no URL a caller could redirect.
+    The server gzips whether or not it is asked to, so the header is sent and honoured."""
     headers = {"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"}
     if etag:
         headers["If-None-Match"] = etag
     conn = http.client.HTTPSConnection(HOST, timeout=90)
     try:
-        conn.request("GET", DATA_PATH, headers=headers)
+        conn.request("GET", path, headers=headers)
         resp = conn.getresponse()
         raw = resp.read()
         if resp.status == 200 and resp.getheader("Content-Encoding") == "gzip":
@@ -177,17 +229,66 @@ def validate(doc) -> str | None:
     return None
 
 
-def fetch_one(root: Path, force: bool = True) -> dict:
-    old = load_meta(root) or {}
-    have = data_path(root).exists()
+def validate_index(doc) -> str | None:
+    """None if vscode/index.json has the pinned shape, else a reason. Every row is checked."""
+    if not isinstance(doc, dict):
+        return "schema drift: top level is not an object"
+    missing = [k for k in INDEX_TOP_KEYS if k not in doc]
+    if missing:
+        return f"schema drift: missing top-level keys {missing}"
+    if doc["v"] != FORMAT_VERSION:
+        return f"schema drift: format v{doc['v']}, pinned v{FORMAT_VERSION}"
+    schema = doc["schema"] if isinstance(doc["schema"], dict) else {}
+    for ent, text in INDEX_SCHEMA.items():
+        if schema.get(ent) != text:
+            return f"schema drift: {ent} field order changed: {schema.get(ent)!r}"
+    if (schema.get("codes") or {}).get("permissionType") != PERMISSION_TYPES:
+        return "schema drift: permission type codes changed"
+    for ent, floor in INDEX_FLOORS.items():
+        rows = doc[ent]
+        if not isinstance(rows, dict):
+            return f"schema drift: {ent} is not an object keyed by id"
+        if len(rows) < floor:
+            return (f"row floor: {ent} has {len(rows)}, expected >= {floor} "
+                    f"(possible truncated download)")
+    for ent, width in INDEX_ROW_LEN.items():
+        for eid, row in doc[ent].items():
+            if not isinstance(row, list) or len(row) != width:
+                return f"schema drift: {ent}[{eid}] is not a {width}-field row"
+    for pid, entries in doc["apiPermissions"].items():
+        for e in entries if isinstance(entries, list) else [None]:
+            if not isinstance(e, list) or len(e) != API_ENTRY_LEN:
+                return f"schema drift: apiPermissions[{pid}] entry is not {API_ENTRY_LEN} fields"
+            if e[3] not in PERMISSION_TYPES:
+                return f"schema drift: apiPermissions[{pid}] has type code {e[3]!r}"
+    if not isinstance(doc["apiPermissionNames"], dict):
+        return "schema drift: apiPermissionNames is not an object"
+    return None
+
+
+# Source name -> where it lives, its cache slug, its validator and the entities it counts.
+SOURCES = {
+    "core": {"path": DATA_PATH, "slug": SLUG, "validate": validate,
+             "counted": tuple(ENTITY_FIELDS)},
+    "index": {"path": INDEX_PATH, "slug": INDEX_SLUG, "validate": validate_index,
+              "counted": tuple(INDEX_FLOORS)},
+}
+
+
+def fetch_one(root: Path, force: bool = True, source: str = "core") -> dict:
+    src = SOURCES[source]
+    slug = src["slug"]
+    old = load_meta(root, slug) or {}
+    have = data_path(root, slug).exists()
     try:
-        status, raw, etag = _download(None if force or not have else old.get("etag"))
+        status, raw, etag = _download(None if force or not have else old.get("etag"),
+                                      src["path"])
     except Exception as exc:  # network — keep any existing snapshot
         return {"ok": False, "error": f"download failed: {exc}", "kept_existing": have}
     if status == 304 and have:
         old["fetched_at"] = datetime.now(UTC).isoformat()
         old["not_modified"] = True
-        meta_path(root).write_text(json.dumps(old, indent=2))
+        meta_path(root, slug).write_text(json.dumps(old, indent=2))
         return {"ok": True, "not_modified": True, "counts": old.get("counts")}
     if status != 200:
         return {"ok": False, "error": f"download failed: HTTP {status}", "kept_existing": have}
@@ -195,42 +296,42 @@ def fetch_one(root: Path, force: bool = True) -> dict:
         doc = json.loads(raw.decode("utf-8-sig"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         return {"ok": False, "error": f"schema drift: not JSON ({exc})", "kept_existing": have}
-    problem = validate(doc)
+    problem = src["validate"](doc)
     if problem:
         return {"ok": False, "error": problem, "kept_existing": have}
 
     root.mkdir(parents=True, exist_ok=True)
-    tmp = data_path(root).with_suffix(".json.tmp")
+    tmp = data_path(root, slug).with_suffix(".json.tmp")
     with open(tmp, "wb") as f:  # atomic: temp -> fsync -> replace
         f.write(raw)
         f.flush()
         os.fsync(f.fileno())
-    os.replace(tmp, data_path(root))
-    counts = {ent: len(doc[ent]) for ent in ENTITY_FIELDS}
+    os.replace(tmp, data_path(root, slug))
+    counts = {ent: len(doc[ent]) for ent in src["counted"]}
     meta = {
-        "dataset": SLUG, "source_url": SOURCE_URL,
+        "dataset": slug, "source_url": BASE + src["path"],
         "fetched_at": datetime.now(UTC).isoformat(),
         "generated": doc.get("generated"), "etag": etag,
         "sha256": hashlib.sha256(raw).hexdigest(), "counts": counts,
         "attribution": doc.get("attribution")
         or "Data from AzAdvertizer (Julian Hayward), https://www.azadvertizer.net",
     }
-    meta_path(root).write_text(json.dumps(meta, indent=2))
+    meta_path(root, slug).write_text(json.dumps(meta, indent=2))
     return {"ok": True, "counts": counts}
 
 
 # ----------------------------- load + provenance -----------------------------
-def load_meta(root: Path) -> dict | None:
-    mp = meta_path(root)
+def load_meta(root: Path, slug: str = SLUG) -> dict | None:
+    mp = meta_path(root, slug)
     if not mp.exists():
         return None
     return json.loads(mp.read_text())
 
 
-def snapshot_provenance(root: Path, max_age_days: int | None):
-    meta = load_meta(root)
+def snapshot_provenance(root: Path, max_age_days: int | None, slug: str = SLUG):
+    meta = load_meta(root, slug)
     if not meta:
-        return None, ["no snapshot cached — run: azadvertizer fetch"]
+        return None, [f"no {slug} snapshot cached — run: azadvertizer fetch"]
     prov = dict(meta)
     warns = []
     try:
@@ -247,10 +348,10 @@ def snapshot_provenance(root: Path, max_age_days: int | None):
     return prov, warns
 
 
-def load_doc(root: Path) -> dict:
-    dp = data_path(root)
+def load_doc(root: Path, slug: str = SLUG) -> dict:
+    dp = data_path(root, slug)
     if not dp.exists():
-        raise FileNotFoundError(SLUG)
+        raise FileNotFoundError(slug)
     return json.loads(dp.read_text(encoding="utf-8-sig"))
 
 
@@ -276,6 +377,7 @@ def policy_row(doc, pid):
         "policyUsedInPolicySetCount": len(p["initiatives"]),
         "policyUsedInPolicySet": [_ref(doc, "initiatives", i, True) for i in p["initiatives"]],
         "dateAdded": p["added"], "cloudEnvs": p["clouds"], "azUSGovVersion": p["usGovVersion"],
+        "page": page("policy", pid),
     }
 
 
@@ -287,6 +389,7 @@ def role_row(doc, rid):
         "RoleDataActions": r["dataActions"], "RoleNotDataActions": r["notDataActions"],
         "UsedInPolicyCount": len(r["policies"]),
         "UsedInPolicy": [_ref(doc, "policies", p) for p in r["policies"]],
+        "page": page("role", rid),
     }
 
 
@@ -297,7 +400,7 @@ def initiative_meta(doc, iid):
         "initiativeDescription": i["description"], "initiativeCategory": i["category"],
         "initiativeVersion": i["version"], "initiativeType": i["type"],
         "initiativeCloudEnvs": i["clouds"], "initiativeAzUSGov": i["usGov"],
-        "initiativeVersionAzUSGov": i["usGovVersion"],
+        "initiativeVersionAzUSGov": i["usGovVersion"], "page": page("initiative", iid),
     }
 
 
@@ -317,19 +420,78 @@ def initiative_full(doc, iid):
     return sanitize(meta)
 
 
-ROW_BUILDERS = {"policy": policy_row, "role": role_row, "initiative": initiative_meta}
+def entra_role_row(doc, rid):
+    name, privileged, tier, total, desc = doc["entraRoles"][rid]
+    return {
+        "entraRoleId": rid, "entraRoleName": name, "privileged": bool(privileged),
+        "entraOpsClassification": tier, "permissionsTotal": total,
+        "entraRoleDescription": desc,
+    }
+
+
+def api_permission_rows(doc, pid):
+    """One row per app the permission id belongs to (64 ids are shared by two apps)."""
+    out = []
+    for app_id, app_name, value, kind, consent, display, graph_level in doc["apiPermissions"][pid]:
+        out.append({
+            "permissionId": pid, "permissionValue": value, "permissionDisplayName": display,
+            "permissionType": PERMISSION_TYPES[kind], "adminConsentRequired": bool(consent),
+            "graphPrivilegeLevel": graph_level, "appId": app_id, "appName": app_name,
+        })
+    return out
+
+
+def resource_type_row(doc, key):
+    name, stable, preview, provider, ops, aliases = doc["resourceTypes"][key]
+    return {
+        "resourceType": key, "resourceTypeName": name, "latestStableApiVersion": stable,
+        "latestPreviewApiVersion": preview, "providerDisplayName": provider,
+        "operationsCount": ops, "policyAliasesCount": aliases,
+        "page": page("resource-type", key.replace("/", "_")),
+    }
+
+
+ROW_BUILDERS = {"policy": policy_row, "role": role_row, "initiative": initiative_meta,
+                "entra-role": entra_role_row, "resource-type": resource_type_row}
+
+
+def iter_rows(doc, name):
+    """Every row of a dataset in file order; api-permission yields one row per (id, app)."""
+    for eid in doc[DATASETS[name]["entity"]]:
+        if name == "api-permission":
+            yield from api_permission_rows(doc, eid)
+        else:
+            yield ROW_BUILDERS[name](doc, eid)
+
+
+def _name_of(doc, name, eid):
+    row = doc[DATASETS[name]["entity"]][eid]
+    return row.get("name") if isinstance(row, dict) else row[0]
 
 
 def find_id(doc, name, ident):
-    """Exact match on id (case-insensitive: ALZ initiative ids vary in case) or on name."""
+    """Exact match on id (case-insensitive: ALZ initiative ids vary in case, the index keys
+    are lower-cased) or on the display name."""
     ent = doc[DATASETS[name]["entity"]]
     if ident in ent:
         return ident
     low = ident.lower()
-    for eid, row in ent.items():
-        if eid.lower() == low or row.get("name") == ident:
+    for eid in ent:
+        if eid.lower() == low or (name != "api-permission" and _name_of(doc, name, eid) == ident):
             return eid
     return None
+
+
+def find_permission_ids(doc, ident):
+    """A permission id, or a permission value such as User.Read.All. One value is usually
+    several ids: Application and Delegated variants, and the same name on other apps."""
+    if ident.lower() in doc["apiPermissions"]:
+        return [ident.lower()]
+    names = doc["apiPermissionNames"]
+    if ident in names:
+        return list(names[ident])
+    low = ident.lower()
+    return [pid for value, ids in names.items() if value.lower() == low for pid in ids]
 
 
 # ----------------------------- sanitization -----------------------------
@@ -364,17 +526,24 @@ def _text(value) -> str:
 # ----------------------------- commands -----------------------------
 def cmd_fetch(args) -> int:
     root = cache_root(args)
-    if not args.force and data_path(root).exists() and not args.refresh:
-        r = {"ok": True, "skipped": "already cached (use --force)"}
-    else:
-        r = fetch_one(root, force=args.force)
     warns = []
-    if args.only:
-        warns.append("--only is ignored: policies, roles and initiatives are one file now")
-    env = envelope("fetch", data={"cache_dir": str(root), "result": r}, warnings=warns)
-    if not r["ok"]:
+    wanted = list(SOURCES)
+    if args.only in SOURCES:
+        wanted = [args.only]
+    elif args.only:
+        warns.append(f"--only {args.only!r} ignored: the sources are {', '.join(SOURCES)}")
+    results = {}
+    for name in wanted:
+        if not args.force and data_path(root, SOURCES[name]["slug"]).exists() \
+                and not args.refresh:
+            results[name] = {"ok": True, "skipped": "already cached (use --force)"}
+        else:
+            results[name] = fetch_one(root, force=args.force, source=name)
+    env = envelope("fetch", data={"cache_dir": str(root), "result": results}, warnings=warns)
+    failed = {n: r.get("error") for n, r in results.items() if not r["ok"]}
+    if failed:
         env["ok"] = False
-        env["error"] = r.get("error")
+        env["error"] = "; ".join(f"{n}: {e}" for n, e in failed.items())
         return emit(env, 4)
     return emit(env, 0)
 
@@ -382,11 +551,17 @@ def cmd_fetch(args) -> int:
 def cmd_status(args) -> int:
     root = cache_root(args)
     prov, warns = snapshot_provenance(root, args.max_age_days)
+    sources = {"core": prov}
+    for name, src in SOURCES.items():
+        if name != "core":
+            sources[name], w = snapshot_provenance(root, args.max_age_days, src["slug"])
+            warns += w
     return emit(envelope("status", data={"cache_dir": str(root), "cached": prov is not None,
-                                         "provenance": prov}, warnings=warns), 0)
+                                         "provenance": prov, "sources": sources},
+                         warnings=warns), 0)
 
 
-def _maybe_refresh(args, root, prov, warns):
+def _maybe_refresh(args, root, prov, warns, source="core"):
     """Auto-refresh a missing or stale snapshot unless --offline.
 
     Default freshness is one week (--max-age-days). Within that window nothing refreshes, so
@@ -404,9 +579,9 @@ def _maybe_refresh(args, root, prov, warns):
                 args.cmd, warnings=warns,
                 error="cache missing and --offline set — run: azadvertizer fetch"), 3)
         return prov, warns + ["--offline: serving stale snapshot without refresh"], None
-    r = fetch_one(root, force=missing)
+    r = fetch_one(root, force=missing, source=source)
     if r["ok"]:
-        prov2, w2 = snapshot_provenance(root, args.max_age_days)
+        prov2, w2 = snapshot_provenance(root, args.max_age_days, SOURCES[source]["slug"])
         reason = "missing" if missing else f"older than {args.max_age_days}d"
         return prov2, w2 + [f"auto-refreshed ({reason})"], None
     if missing:
@@ -416,14 +591,15 @@ def _maybe_refresh(args, root, prov, warns):
     return prov, warns + [f"auto-refresh failed ({r.get('error')}); serving stale snapshot"], None
 
 
-def _get_doc(args):
+def _get_doc(args, source="core"):
     root = cache_root(args)
-    prov, warns = snapshot_provenance(root, args.max_age_days)
-    prov, warns, err = _maybe_refresh(args, root, prov, warns)
+    slug = SOURCES[source]["slug"]
+    prov, warns = snapshot_provenance(root, args.max_age_days, slug)
+    prov, warns, err = _maybe_refresh(args, root, prov, warns, source)
     if err is not None:
         return None, None, warns, err
     try:
-        doc = load_doc(root)
+        doc = load_doc(root, slug)
     except FileNotFoundError:
         return None, None, warns, emit(
             envelope(args.cmd, error="data file missing — run: azadvertizer fetch"), 3)
@@ -432,9 +608,16 @@ def _get_doc(args):
 
 def cmd_get(args) -> int:
     name = args.dataset
-    doc, prov, warns, err = _get_doc(args)
+    doc, prov, warns, err = _get_doc(args, DATASETS[name]["source"])
     if err is not None:
         return err
+    if name == "api-permission":
+        ids = find_permission_ids(doc, args.id)
+        if not ids:
+            return emit(envelope(args.cmd, provenance=prov, warnings=warns,
+                                 error=f"no api-permission with id or value == {args.id!r}"), 1)
+        rows = [row for pid in ids for row in api_permission_rows(doc, pid)]
+        return emit(envelope(args.cmd, data=sanitize(rows), provenance=prov, warnings=warns), 0)
     eid = find_id(doc, name, args.id)
     if eid is None:
         return emit(envelope(args.cmd, provenance=prov, warnings=warns,
@@ -446,7 +629,7 @@ def cmd_get(args) -> int:
 
 def cmd_search(args) -> int:
     name = args.dataset
-    doc, prov, warns, err = _get_doc(args)
+    doc, prov, warns, err = _get_doc(args, DATASETS[name]["source"])
     if err is not None:
         return err
     preds = []
@@ -458,10 +641,8 @@ def cmd_search(args) -> int:
     if args.name:
         preds.append((DATASETS[name]["name_col"], args.name.lower()))
     fields = args.fields.split(",") if args.fields else None
-    build = ROW_BUILDERS[name]
     out = []
-    for eid in doc[DATASETS[name]["entity"]]:
-        row = build(doc, eid)
+    for row in iter_rows(doc, name):
         if all(sub in _text(row.get(col)).lower() for col, sub in preds):
             out.append(sanitize({k: row[k] for k in fields if k in row} if fields else row))
     total = len(out)
@@ -530,7 +711,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     f = sub.add_parser("fetch", help="download + validate + cache the data file")
-    f.add_argument("--only", help="ignored (kept so older invocations still parse)")
+    f.add_argument("--only", help="fetch one source: core (policies, roles, initiatives) or "
+                                  "index (Entra roles, API permissions, resource types)")
     f.add_argument("--force", action="store_true", help="re-download even if cached")
     f.add_argument("--refresh", action="store_true",
                    help="re-check if cached (conditional on the stored ETag)")

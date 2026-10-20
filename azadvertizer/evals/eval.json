@@ -1,6 +1,6 @@
 {
   "skill_name": "azadvertizer",
-  "note": "Offline behavioral eval. Run: cd evals && uv run python grade.py (exits non-zero on any failure). The fixture is a small real slice of skillData/polPolsetRole.json (generated 2026-10-18) plus one synthetic formula-injection policy; meta.json carries a fixed ancient fetch date so the staleness assertion is deterministic.",
+  "note": "Offline behavioral eval. Run: cd evals && uv run python grade.py (exits non-zero on any failure). The fixtures are small real slices of skillData/polPolsetRole.json (generated 2026-10-19), plus one synthetic formula-injection policy, and of vscode/index.json; meta.json carries a fixed ancient fetch date so the staleness assertion is deterministic.",
   "evals": [
     {
       "id": 0,
@@ -71,6 +71,16 @@
       "id": 13,
       "name": "no-refresh-fresh",
       "asserts": "within the freshness window no network is touched"
+    },
+    {
+      "id": 14,
+      "name": "index-datasets",
+      "asserts": "entra-role, api-permission and resource-type decode their positional rows; api-permission by value returns every app and id; resource-type lookup is case-insensitive; a null API version stays null; index missing offline exits 3 without affecting core"
+    },
+    {
+      "id": 15,
+      "name": "index-ingest-failsafe",
+      "asserts": "index is written to its own file; a reordered field list, a short row, an unknown permission type code and a row-floor breach are refused and keep the cache"
     }
   ]
 }

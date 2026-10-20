@@ -1,0 +1,270 @@
+{
+ "v": 1,
+ "generated": "2026-10-19T19:05:22Z",
+ "site": "https://www.azadvertizer.net",
+ "schema": {
+  "keys": "every map is keyed by the lower-cased id (policies / initiatives: the definition name, roles / entraRoles / apiPermissions / apps: the GUID, resourceTypes: namespace/type)",
+  "policies": "[id, displayName, category, type code, state code, effect (the default, or the fixed effect), version, effectKind]",
+  "initiatives": "[id, displayName, category, type (BuiltIn / ALZ / AMBA), state (GA / Preview / Deprecated), version, policyCount]",
+  "roles": "[displayName, description (220 chars), actions count, notActions count, dataActions count, notDataActions count, hasCategory (1 / 0)]",
+  "entraRoles": "[displayName, privileged (1 / 0), EntraOps classification, permissionsTotal, description (220 chars)]",
+  "apiPermissions": "permission id -> [[appId, appName, value, permission type code, adminConsentRequired (1 / 0), displayName (120 chars), graphPrivilegeLevel], ...] (one entry per app the id belongs to)",
+  "apiPermissionNames": "permission value (e.g. User.Read.All) -> [permission ids]",
+  "apps": "[appName, permissionCount]",
+  "resourceTypes": "[displayName, latestStableApiVersion, latestPreviewApiVersion (only when newer than the stable one), providerDisplayName, operationsCount, policyAliasesCount]",
+  "namespaces": "the provider namespaces as written",
+  "codes": {
+   "type": {
+    "a": "BuiltIn",
+    "as": "Static",
+    "b": "ALZ",
+    "c": "AMBA",
+    "d": "Community"
+   },
+   "state": {
+    "g": "GA",
+    "p": "Preview",
+    "d": "Deprecated",
+    "ld": "likely deprecated"
+   },
+   "effectKind": {
+    "p": "parameter default",
+    "f": "fixed in the rule"
+   },
+   "permissionType": {
+    "ar": "Application",
+    "oa": "Delegated",
+    "rs": "Resource-specific (application)"
+   }
+  },
+  "pages": {
+   "policy": "azpolicyadvertizer/<id>.html",
+   "initiative": "azpolicyinitiativesadvertizer/<id>.html",
+   "role": "azrolesadvertizer/<id>.html",
+   "entraRole": "azentraidrolesadvertizer/<id>.html",
+   "apiPermission": "azentraidapipermissionsadvertizer/<id>.html",
+   "resourceType": "azresourcetypes/<namespace_type>.html"
+  }
+ },
+ "entraRoles": {
+  "62e90394-69f5-4237-9190-012177145e10": [
+   "Global Administrator",
+   1,
+   "ControlPlane",
+   317,
+   "Can manage all aspects of Microsoft Entra ID and Microsoft services that use Microsoft Entra identities."
+  ],
+  "88d8e3e3-8f55-4a1e-953a-9b9898b8876b": [
+   "Directory Readers",
+   0,
+   "ManagementPlane",
+   55,
+   "Can read basic directory information. Commonly used to grant directory read access to applications and guests."
+  ]
+ },
+ "apiPermissions": {
+  "df021288-bdef-4463-88db-98f22de89214": [
+   [
+    "00000003-0000-0000-c000-000000000000",
+    "Microsoft Graph",
+    "User.Read.All",
+    "ar",
+    1,
+    "Read all users' full profiles",
+    3
+   ],
+   [
+    "00000003-0000-0ff1-ce00-000000000000",
+    "Office 365 SharePoint Online",
+    "User.Read.All",
+    "ar",
+    1,
+    "Read user profiles",
+    null
+   ]
+  ],
+  "a154be20-db9c-4678-8ab7-66f6cc099a59": [
+   [
+    "00000003-0000-0000-c000-000000000000",
+    "Microsoft Graph",
+    "User.Read.All",
+    "oa",
+    1,
+    "Read all users' full profiles",
+    3
+   ]
+  ],
+  "bf24470f-10c1-436d-8d53-7b997eb473be": [
+   [
+    "00000002-0000-0ff1-ce00-000000000000",
+    "Office 365 Exchange Online",
+    "User.Read.All",
+    "ar",
+    1,
+    "Read all users' full profiles",
+    null
+   ]
+  ],
+  "a833834a-4cf1-4732-8acf-bbcfa13fb610": [
+   [
+    "fc780465-2017-40d4-a0c5-307022471b92",
+    "WindowsDefenderATP",
+    "User.Read.All",
+    "ar",
+    1,
+    "Read user profiles",
+    null
+   ]
+  ],
+  "9ee66b54-9cf0-41b8-87da-d62f8c21222b": [
+   [
+    "9ea1ad79-fdb6-4f9a-8bc3-2b70f96e34c7",
+    "Bing",
+    "User.Read.All",
+    "oa",
+    1,
+    "Read all users' full profiles",
+    null
+   ]
+  ],
+  "07c496ee-38d1-46df-b73d-45e1ff46d11e": [
+   [
+    "394866fc-eedb-4f01-8536-3ff84b16be2a",
+    "Microsoft People Cards Service",
+    "User.Read.All",
+    "oa",
+    0,
+    "Access to log on",
+    null
+   ]
+  ],
+  "eb665d05-7f76-4d1b-b176-1cfc814e668d": [
+   [
+    "00000002-0000-0ff1-ce00-000000000000",
+    "Office 365 Exchange Online",
+    "User.Read.All",
+    "oa",
+    1,
+    "Read all users' full profiles",
+    null
+   ]
+  ],
+  "0cea5a30-f6f8-42b5-87a0-84cc26822e02": [
+   [
+    "00000003-0000-0ff1-ce00-000000000000",
+    "Office 365 SharePoint Online",
+    "User.Read.All",
+    "oa",
+    1,
+    "Read user profiles",
+    null
+   ]
+  ],
+  "c582532d-9d9e-43bd-a97c-2667a28ce295": [
+   [
+    "00000002-0000-0000-c000-000000000000",
+    "Windows Azure Active Directory",
+    "User.Read.All",
+    "oa",
+    1,
+    "Read all users' full profiles",
+    null
+   ]
+  ],
+  "ffd6563e-842b-4cfc-b349-06006e0473a3": [
+   [
+    "fc780465-2017-40d4-a0c5-307022471b92",
+    "WindowsDefenderATP",
+    "User.Read.All",
+    "oa",
+    1,
+    "Read user profiles",
+    null
+   ]
+  ]
+ },
+ "apiPermissionNames": {
+  "User.Read.All": [
+   "df021288-bdef-4463-88db-98f22de89214",
+   "a154be20-db9c-4678-8ab7-66f6cc099a59",
+   "bf24470f-10c1-436d-8d53-7b997eb473be",
+   "a833834a-4cf1-4732-8acf-bbcfa13fb610",
+   "9ee66b54-9cf0-41b8-87da-d62f8c21222b",
+   "07c496ee-38d1-46df-b73d-45e1ff46d11e",
+   "eb665d05-7f76-4d1b-b176-1cfc814e668d",
+   "0cea5a30-f6f8-42b5-87a0-84cc26822e02",
+   "c582532d-9d9e-43bd-a97c-2667a28ce295",
+   "ffd6563e-842b-4cfc-b349-06006e0473a3"
+  ]
+ },
+ "apps": {
+  "00000003-0000-0000-c000-000000000000": [
+   "Microsoft Graph",
+   1669
+  ],
+  "00000003-0000-0ff1-ce00-000000000000": [
+   "Office 365 SharePoint Online",
+   49
+  ],
+  "00000002-0000-0ff1-ce00-000000000000": [
+   "Office 365 Exchange Online",
+   84
+  ],
+  "fc780465-2017-40d4-a0c5-307022471b92": [
+   "WindowsDefenderATP",
+   59
+  ],
+  "9ea1ad79-fdb6-4f9a-8bc3-2b70f96e34c7": [
+   "Bing",
+   15
+  ],
+  "394866fc-eedb-4f01-8536-3ff84b16be2a": [
+   "Microsoft People Cards Service",
+   15
+  ],
+  "00000002-0000-0000-c000-000000000000": [
+   "Windows Azure Active Directory",
+   19
+  ]
+ },
+ "resourceTypes": {
+  "microsoft.keyvault/vaults": [
+   "Key Vault",
+   "2026-05-15",
+   "2026-06-01-preview",
+   "Microsoft Key Vault",
+   6,
+   55
+  ],
+  "microsoft.storage/storageaccounts": [
+   "Storage Accounts",
+   "2026-09-01",
+   null,
+   "Microsoft Storage",
+   20,
+   201
+  ],
+  "microsoft.network/virtualnetworks/subnets": [
+   "Virtual Network Subnet",
+   "2026-05-01",
+   null,
+   "Microsoft Network",
+   9,
+   799
+  ],
+  "microsoft.aad/locations/resiliencehostsoperationstatuses": [
+   null,
+   null,
+   "2026-01-01-preview",
+   "Domain Services Resource Provider",
+   0,
+   0
+  ]
+ },
+ "namespaces": [
+  "Microsoft.AAD",
+  "Microsoft.KeyVault",
+  "Microsoft.Network",
+  "Microsoft.Storage"
+ ]
+}

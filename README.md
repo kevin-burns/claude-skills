@@ -182,7 +182,7 @@ Reference-grade answers about tools whose docs are large and change often.
 |---|---|---|
 | [terragrunt-skill](./terragrunt-skill) | Generate, validate, review, and debug Terragrunt 1.x configs (units, stacks, `autoinclude`, CAS, dependencies, AWS/Azure/GCP backends) — tracks current stable v1.1.0, incl. Azure backend gotchas and running only changed units at scale | nothing for the review itself; the bundled `scripts/validate.sh` drives `terragrunt` 1.x, plus `tflint` and `trivy` when present |
 | [terraform-registry](./terraform-registry) | Provider-agnostic CLI to search/inspect the Terraform Registry via its JSON API (no scraping) | [Terraform Registry](https://registry.terraform.io) API |
-| [azadvertizer](./azadvertizer) | Offline lookups over Azure Policy / Initiative / RBAC-Role metadata + cross-references | [AzAdvertizer](https://www.azadvertizer.net) skill data file (JSON) |
+| [azadvertizer](./azadvertizer) | Offline lookups over Azure Policy / Initiative / RBAC-Role metadata + cross-references, Entra roles, API permissions and resource-type API versions | [AzAdvertizer](https://www.azadvertizer.net) skill data file + index (JSON) |
 
 ### Engineering workflow
 
