@@ -80,9 +80,27 @@ source).
   12,379 resource types have no stable version on 2026-10-19, mostly operation-status and
   diagnostic sub-types; the main types (`microsoft.web/sites`, `microsoft.keyvault/vaults`)
   carry one.
-- **Page links only where checked.** Policy, initiative, role and resource-type rows carry a
-  `page` URL; Entra role and API permission rows do not, because the published pattern for
-  those answered 404 on 2026-10-20.
+- **Page links are the checked ones, not the schema's.** Every row carries a `page` URL,
+  each pattern verified live on 2026-10-20. For Entra roles and API permissions the index's
+  schema block names `azentraidrolesadvertizer/` and `azentraidapipermissionsadvertizer/`,
+  which 404; the helper uses `azentraidroles/` and `azentraidapipermissions/`, which the
+  site itself links.
+- **Checked against Microsoft Learn on 2026-10-20** (the Entra built-in roles reference and
+  the Graph permissions reference, from their GitHub sources):
+  - *Entra roles:* all 136 roles on Learn are present with the same template ids, and the
+    `privileged` flag matches Learn's PRIVILEGED label on every one (35 privileged). The
+    index has 9 more: roles Learn lists as deprecated or "not shown because it can't be
+    used" (Guest User, Device Users, …). Two names are older than Learn's: `Azure AD
+    Joined Device Local Administrator` is now `Microsoft Entra Joined Device Local
+    Administrator`, and `Customer LockBox` is `Customer Lockbox`. Descriptions are the
+    directory's own text, which differs from Learn's summary in 16 roles.
+  - *Graph permissions:* every id on Learn is present with the same value, Application or
+    Delegated type and admin-consent flag; display names differ only in apostrophes and
+    spacing. The index has 65 Graph entries whose ids are not on Learn (63 of them not named
+    there at all): newer permissions from the live service principal, ahead of the docs.
+  - *Not on Learn at all,* so not checked: `entraOpsClassification` (the EntraOps model,
+    Cloud-Architekt/AzurePrivilegedIAM) and `graphPrivilegeLevel` (Graph only; null on 315
+    Graph entries).
 - **Second-hand data.** Treat snapshots as provenance-stamped mirrors, not ground truth.
 - **Attribution.** Data © Julian Hayward / AzAdvertizer. Don't republish it as your own.
 
@@ -221,12 +239,15 @@ The three index datasets have no legacy names, so their columns are new:
 
 | dataset | columns |
 |---|---|
-| `entra-role` | `entraRoleId`, `entraRoleName`, `privileged` (bool), `entraOpsClassification`, `permissionsTotal`, `entraRoleDescription` |
-| `api-permission` | `permissionId`, `permissionValue`, `permissionDisplayName`, `permissionType` (Application / Delegated / Resource-specific (application)), `adminConsentRequired` (bool), `graphPrivilegeLevel` (Graph only, else null), `appId`, `appName` |
+| `entra-role` | `entraRoleId`, `entraRoleName`, `privileged` (bool), `entraOpsClassification`, `permissionsTotal`, `entraRoleDescription`, `page` |
+| `api-permission` | `permissionId`, `permissionValue`, `permissionDisplayName`, `permissionType` (Application / Delegated / Resource-specific (application)), `adminConsentRequired` (bool), `graphPrivilegeLevel` (Graph only, else null), `appId`, `appName`, `page` |
 | `resource-type` | `resourceType` (lower-cased `namespace/type`), `resourceTypeName`, `latestStableApiVersion`, `latestPreviewApiVersion` (only when newer than stable), `providerDisplayName`, `operationsCount`, `policyAliasesCount`, `page` |
 
-`api-permission` is one row per app the permission id belongs to: one value such as
-`User.Read.All` is ten ids across seven apps, and 64 ids are shared by two apps. `get
+`api-permission` is one row per entry: one value such as `User.Read.All` is ten ids across
+seven apps. 64 ids have two entries: 12 are shared by two apps, and 52 are one app using
+the same GUID for its Application and Delegated permission (Graph's `User.Export.All`,
+which Microsoft's permissions reference lists the same way). Filter on `permissionType`
+when the distinction matters. `get
 api-permission` therefore returns a list. The index's pinned shape lives in `INDEX_SCHEMA`,
 `INDEX_ROW_LEN` and `PERMISSION_TYPES`; each source is cached in its own file, so a failed
 index fetch never touches the policy data.

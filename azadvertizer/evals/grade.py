@@ -193,6 +193,8 @@ check("entra-role by id, case-insensitive", env["ok"] and env["data"]["entraRole
       == "Global Administrator")
 code, env = run(C + ["get", "entra-role", "88d8e3e3-8f55-4a1e-953a-9b9898b8876b"])
 check("non-privileged role is privileged=false", env["ok"] and env["data"]["privileged"] is False)
+check("entra-role page uses azentraidroles/ (the schema's pattern 404s)",
+      env["data"]["page"].endswith("/azentraidroles/88d8e3e3-8f55-4a1e-953a-9b9898b8876b.html"))
 
 code, env = run(C + ["get", "api-permission", "User.Read.All"])
 rows = env.get("data") or []
@@ -207,6 +209,9 @@ check("Graph User.Read.All: Application + Delegated, admin consent, level 3",
               for r in graph.values()), str(graph)[:300])
 code, env = run(C + ["get", "api-permission", "user.read.all"])
 check("api-permission value lookup is case-insensitive", env["ok"] and len(env["data"]) == 11)
+check("api-permission page uses azentraidapipermissions/",
+      graph["Application"]["page"].endswith(
+          "/azentraidapipermissions/df021288-bdef-4463-88db-98f22de89214.html"))
 code, env = run(C + ["get", "api-permission", "df021288-bdef-4463-88db-98f22de89214"])
 check("one permission id shared by two apps -> two rows",
       env["ok"] and {r["appName"] for r in env["data"]}

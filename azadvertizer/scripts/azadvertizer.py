@@ -125,14 +125,17 @@ DATASETS: dict[str, dict] = {
     "resource-type": {"source": "index", "entity": "resourceTypes", "key": "resourceType",
                       "name_col": "resourceTypeName"},
 }
-# Page links, only for the patterns checked against the live site (2026-10-20). The Entra role
-# and API permission patterns in the index's schema block answered 404, so those rows carry
-# no link rather than a guessed one.
+# Page links, each checked against the live site on 2026-10-20 with a made-up id as the 404
+# control. The index's schema block names the Entra role and API permission pages
+# azentraidrolesadvertizer/ and azentraidapipermissionsadvertizer/; both 404. The site's own
+# grid script (js/agGrid-entraIdRoles_v3.3.0.js) links azentraidroles/, which resolves.
 PAGES = {
     "policy": "/azpolicyadvertizer/{}.html",
     "initiative": "/azpolicyinitiativesadvertizer/{}.html",
     "role": "/azrolesadvertizer/{}.html",
     "resource-type": "/azresourcetypes/{}.html",
+    "entra-role": "/azentraidroles/{}.html",
+    "api-permission": "/azentraidapipermissions/{}.html",
 }
 
 
@@ -425,18 +428,21 @@ def entra_role_row(doc, rid):
     return {
         "entraRoleId": rid, "entraRoleName": name, "privileged": bool(privileged),
         "entraOpsClassification": tier, "permissionsTotal": total,
-        "entraRoleDescription": desc,
+        "entraRoleDescription": desc, "page": page("entra-role", rid),
     }
 
 
 def api_permission_rows(doc, pid):
-    """One row per app the permission id belongs to (64 ids are shared by two apps)."""
+    """One row per entry: 64 ids carry two. 12 are shared by two apps; 52 are one app using
+    the same GUID for its Application and Delegated permission (Graph's User.Export.All is
+    one, and Microsoft's permissions reference lists it that way)."""
     out = []
     for app_id, app_name, value, kind, consent, display, graph_level in doc["apiPermissions"][pid]:
         out.append({
             "permissionId": pid, "permissionValue": value, "permissionDisplayName": display,
             "permissionType": PERMISSION_TYPES[kind], "adminConsentRequired": bool(consent),
             "graphPrivilegeLevel": graph_level, "appId": app_id, "appName": app_name,
+            "page": page("api-permission", pid),
         })
     return out
 
