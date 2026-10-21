@@ -135,6 +135,17 @@ check("policy-initiatives returns all 15, distinct ids",
       f"{len(its)} items: {str(its[:1])[:200]}")
 check("policy-initiatives carries the source type", all(i.get("source") for i in its))
 
+# --- F3. initiative-policies: the member list, and the graph walks back to it ---
+INIT = "0d1b56c6-6d1f-4a5d-8695-b15efbea6b49"
+code, env = run(C + ["rel", "initiative-policies", INIT])
+mem = (env.get("data") or {}).get("policies") or []
+check("initiative-policies lists 5 resolved members, policyCount agrees",
+      env["ok"] and env["data"]["policyCount"] == len(mem) == 5
+      and all(m["policyId"] and m["policyName"] for m in mem), str(mem[:1])[:200])
+back = [run(C + ["rel", "policy-initiatives", m["policyId"]])[1] for m in mem]
+check("each member policy lists the initiative back",
+      all(e["ok"] and INIT in {i["id"] for i in e["data"]["items"]} for e in back))
+
 # --- G. role get: actions arrays; an empty list stays [] ---
 code, env = run(C + ["get", "role", "Contributor"])
 d = env["data"]
