@@ -88,6 +88,10 @@ fetch/schema/row-floor error. Cell values are sanitised on output — a leading 
 
 ## History
 
+- **2026-10-21 — API permission links are per app.** They now point at
+  `azentraidapipermissions/<appId>_<permissionId>.html`. The bare permission id forwards to
+  the Microsoft Graph permission, so earlier links were wrong for every other app. The index's
+  schema block now lists the same patterns the helper uses.
 - **2026-10-20 — Entra roles, API permissions and resource types.** A second cached
   source, `vscode/index.json`, adds `entra-role`, `api-permission` and `resource-type`.
   Its rows are positional, so the field order is pinned against the file's own schema

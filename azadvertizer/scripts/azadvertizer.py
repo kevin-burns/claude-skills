@@ -125,22 +125,22 @@ DATASETS: dict[str, dict] = {
     "resource-type": {"source": "index", "entity": "resourceTypes", "key": "resourceType",
                       "name_col": "resourceTypeName"},
 }
-# Page links, each checked against the live site on 2026-10-20 with a made-up id as the 404
-# control. The index's schema block names the Entra role and API permission pages
-# azentraidrolesadvertizer/ and azentraidapipermissionsadvertizer/; both 404. The site's own
-# grid script (js/agGrid-entraIdRoles_v3.3.0.js) links azentraidroles/, which resolves.
+# Page links, each checked against the live site with a made-up id as the 404 control, and
+# matching the index's schema block since its 2026-10-20 publish. An API permission page is
+# per app, <appId>_<permissionId>: the bare <permissionId>.html forwards to the Microsoft
+# Graph permission, which is the wrong page for every other app (checked 2026-10-21).
 PAGES = {
     "policy": "/azpolicyadvertizer/{}.html",
     "initiative": "/azpolicyinitiativesadvertizer/{}.html",
     "role": "/azrolesadvertizer/{}.html",
     "resource-type": "/azresourcetypes/{}.html",
     "entra-role": "/azentraidroles/{}.html",
-    "api-permission": "/azentraidapipermissions/{}.html",
+    "api-permission": "/azentraidapipermissions/{}_{}.html",
 }
 
 
-def page(name, ident):
-    return BASE + PAGES[name].format(ident)
+def page(name, *ident):
+    return BASE + PAGES[name].format(*ident)
 
 INITIATIVE_COLS = (
     "initiativeId", "initiativeName", "initiativeDescription", "initiativeCategory",
@@ -442,7 +442,7 @@ def api_permission_rows(doc, pid):
             "permissionId": pid, "permissionValue": value, "permissionDisplayName": display,
             "permissionType": PERMISSION_TYPES[kind], "adminConsentRequired": bool(consent),
             "graphPrivilegeLevel": graph_level, "appId": app_id, "appName": app_name,
-            "page": page("api-permission", pid),
+            "page": page("api-permission", app_id, pid),
         })
     return out
 

@@ -209,13 +209,17 @@ check("Graph User.Read.All: Application + Delegated, admin consent, level 3",
               for r in graph.values()), str(graph)[:300])
 code, env = run(C + ["get", "api-permission", "user.read.all"])
 check("api-permission value lookup is case-insensitive", env["ok"] and len(env["data"]) == 11)
-check("api-permission page uses azentraidapipermissions/",
-      graph["Application"]["page"].endswith(
-          "/azentraidapipermissions/df021288-bdef-4463-88db-98f22de89214.html"))
+check("api-permission page is per app: azentraidapipermissions/<appId>_<permissionId>",
+      graph["Application"]["page"].endswith("/azentraidapipermissions/"
+          "00000003-0000-0000-c000-000000000000_df021288-bdef-4463-88db-98f22de89214.html"))
 code, env = run(C + ["get", "api-permission", "df021288-bdef-4463-88db-98f22de89214"])
 check("one permission id shared by two apps -> two rows",
       env["ok"] and {r["appName"] for r in env["data"]}
       == {"Microsoft Graph", "Office 365 SharePoint Online"}, str(env.get("data"))[:200])
+check("a shared id links each app to its own page, not the Graph one",
+      env["ok"] and all(r["page"].endswith(f"/{r['appId']}_{r['permissionId']}.html")
+                        for r in env["data"])
+      and len({r["page"] for r in env["data"]}) == 2, str(env.get("data"))[:200])
 code, env = run(C + ["search", "api-permission", "--where", "appName=Microsoft Graph"])
 check("search api-permission flattens per app", env["ok"]
       and env["provenance"]["matched"] == 2, str(env["provenance"].get("matched")))

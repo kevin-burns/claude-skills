@@ -80,19 +80,19 @@ source).
   12,379 resource types have no stable version on 2026-10-19, mostly operation-status and
   diagnostic sub-types; the main types (`microsoft.web/sites`, `microsoft.keyvault/vaults`)
   carry one.
-- **Page links are the checked ones, not the schema's.** Every row carries a `page` URL,
-  each pattern verified live on 2026-10-20. For Entra roles and API permissions the index's
-  schema block names `azentraidrolesadvertizer/` and `azentraidapipermissionsadvertizer/`,
-  which 404; the helper uses `azentraidroles/` and `azentraidapipermissions/`, which the
-  site itself links.
+- **Page links are checked live.** Every row carries a `page` URL, each pattern verified
+  against the site with a made-up id as the 404 control. An API permission page is per app,
+  `azentraidapipermissions/<appId>_<permissionId>.html`; the bare `<permissionId>.html`
+  forwards to the Microsoft Graph permission, so it is the wrong page for any other app.
 - **Checked against Microsoft Learn on 2026-10-20** (the Entra built-in roles reference and
   the Graph permissions reference, from their GitHub sources):
   - *Entra roles:* all 136 roles on Learn are present with the same template ids, and the
     `privileged` flag matches Learn's PRIVILEGED label on every one (35 privileged). The
     index has 9 more: roles Learn lists as deprecated or "not shown because it can't be
-    used" (Guest User, Device Users, …). Two names are older than Learn's: `Azure AD
-    Joined Device Local Administrator` is now `Microsoft Entra Joined Device Local
-    Administrator`, and `Customer LockBox` is `Customer Lockbox`. Descriptions are the
+    used" (Guest User, Device Users, …). Two names differ from Learn's: the index has `Azure AD
+    Joined Device Local Administrator` and `Customer LockBox` where Learn has `Microsoft
+    Entra Joined Device Local Administrator` and `Customer Lockbox`. The index's names are
+    what the directory returns; Learn's newer names are not served by any endpoint. Descriptions are the
     directory's own text, which differs from Learn's summary in 16 roles.
   - *Graph permissions:* every id on Learn is present with the same value, Application or
     Delegated type and admin-consent flag; display names differ only in apostrophes and
