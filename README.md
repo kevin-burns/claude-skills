@@ -294,6 +294,8 @@ Several agents ship a deterministic behavioral eval under `agents/<name>/evals/`
 
 - **hook-and-human** — **nothing to install.** No scripts at all — the skill is prose. It leans on `clear-and-human` for register where that skill is present, and degrades to its own judgement where it is not.
 
+- **interview-panel** — **nothing to install** for the roleplay itself. `scripts/check_bank.py` validates the question banks and is standard library only (`python3`); its `--verify` mode fetches each cited source to find the quoted evidence, so that one needs network. You supply the interview brief, which stays outside the skill.
+
 - **python-drill** — **nothing to install**: Python 3.10+, standard library only. Progress lives in `~/.local/share/python-drill/` (override with `PYTHON_DRILL_HOME`), outside the skill. Optional `uv` for pandas coding tasks and the three SQLAlchemy practice scripts. Ships no book content; the curriculum cites chapters as further reading.
 
 - **readability** — **nothing to install** beyond a Python you already have. `scripts/cohesion_report.py` is standard library only (`argparse`, `json`, `re`, `sys`, `pathlib`), so `uv run` or `python3` both work. The second half of the skill dispatches a fresh-context sub-agent to read the draft, which needs no package either. Runs after `clear-and-human`, not before.
