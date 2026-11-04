@@ -2,7 +2,7 @@
 
 ![claude-skills banner](images/banner.webp)
 
-Twenty-seven [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
+Twenty-nine [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
 some bundle scripts, evals or reference files. A **subagent** is a different thing: a separate
 assistant, with its own tools and model, that the main session hands a self-contained job to
@@ -33,8 +33,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 28 skills + 9 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 28 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 29 skills + 9 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 29 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -67,7 +67,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than twenty-eight.
+rather than twenty-nine.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
@@ -100,7 +100,7 @@ instead.
 - **It copies.** A plugin install is a snapshot in the harness's cache, not a live link.
   Editing this repo afterwards changes nothing until you update.
 - **It costs context.** Every skill's description loads in every session so the model can
-  decide when to reach for one — about **7.2k tokens always-on** for the full set, before any
+  decide when to reach for one — about **5.0k tokens always-on** for the full set, before any
   skill fires. `claude plugin details claude-skills` prints the per-skill breakdown. If you
   want two or three of these, symlink those instead.
 
@@ -151,6 +151,7 @@ The documents an application is made of, the feeds that find the roles, and rehe
 | [cv-cover-letter](./cv-cover-letter) | Draft a cover letter from a job posting and your own CV: every claim traces to something you actually said, arithmetic-derived claims are flagged rather than asserted, and it **stops when the evidence stops** instead of filling a word count. Triages the posting's stated hard requirements first, so it can tell you not to apply **before** you spend the hour. Works standalone; markedly better after `cv-evidence-base`, which holds the facts a CV compresses away | — |
 | [cv-evidence-base](./cv-evidence-base) | Interrogate a CV to recover the evidence that never made it onto the page, and grade which roles you are genuinely credible for — including the ones you are not. Runs *before* `cv-and-human`, when there is no target role yet | — |
 | [interview-panel](./interview-panel) | Rehearse a panel interview by roleplay. Two to four interviewers from six seats (Head of Cloud, Head of HR, Head of Engineering, Lead Engineer, a Principal peer running system-design scenarios, a Leadership-Principles bar raiser) ask one question at a time from 122 sourced questions and follow up on what you actually said. A fresh reviewer then debriefs the transcript against your evidence base, explaining what each seat was listening for rather than marking answers wrong | — |
+| [python-drill](./python-drill) | A Python refresher and interview drill coach: predict-the-output quick-fires, coding tasks run against tests written before the problem is shown, and code-reading rounds (*would it run, what does it print, what would you change*) on scripts generated fresh each time, with spaced repetition on the topics you miss. Every answer is checked by **running the code**, and every miss is explained by tracing the deciding line with real values | — |
 | [job-feeds](./job-feeds) | Aggregate nine sanctioned public job feeds from eight publishers (JSON APIs + RSS) into one deduplicated SQLite store, match them against your career lanes, and render a filterable self-contained HTML report — no scraping, no auth, no LinkedIn | [Arbeitnow](https://www.arbeitnow.com) / [Jobicy](https://jobicy.com) / [Remotive](https://remotive.com) / [Remote OK](https://remoteok.com) / [Working Nomads](https://www.workingnomads.com) / [4 Day Week](https://4dayweek.io) / [We Work Remotely](https://weworkremotely.com) / [Python.org Jobs](https://www.python.org/jobs/) |
 
 ### Publishing and documents
@@ -292,6 +293,8 @@ Several agents ship a deterministic behavioral eval under `agents/<name>/evals/`
 - **cv-evidence-base** — **nothing to install.** `pyproject.toml` declares `dependencies = []`; the only dev dependency is `pytest`, for this repo's own tests. You supply the CV and the material it was compressed from. Pairs with `cv-and-human` and `cv-cover-letter`, which read the evidence base it produces.
 
 - **hook-and-human** — **nothing to install.** No scripts at all — the skill is prose. It leans on `clear-and-human` for register where that skill is present, and degrades to its own judgement where it is not.
+
+- **python-drill** — **nothing to install**: Python 3.10+, standard library only. Progress lives in `~/.local/share/python-drill/` (override with `PYTHON_DRILL_HOME`), outside the skill. Optional `uv` for pandas coding tasks and the three SQLAlchemy practice scripts. Ships no book content; the curriculum cites chapters as further reading.
 
 - **readability** — **nothing to install** beyond a Python you already have. `scripts/cohesion_report.py` is standard library only (`argparse`, `json`, `re`, `sys`, `pathlib`), so `uv run` or `python3` both work. The second half of the skill dispatches a fresh-context sub-agent to read the draft, which needs no package either. Runs after `clear-and-human`, not before.
 

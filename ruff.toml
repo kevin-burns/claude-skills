@@ -32,6 +32,11 @@ extend-exclude = [
     # destroy the evals. Exclude, never per-file-ignore: the point is that the
     # code is wrong.
     "agents/*/evals/fixtures",
+
+    # Same kind of material: python-drill's fixed practice scripts are code-reading
+    # exercises whose whole point is a planted bug (mutable default, late binding,
+    # f-string SQL). `--fix` would quietly answer the exercise.
+    "python-drill/fixtures/scenarios",
 ]
 
 [lint]

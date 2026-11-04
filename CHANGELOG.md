@@ -11,6 +11,32 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-11-04
+
+### Added — `python-drill`, a Python refresher and interview drill coach
+
+For someone who writes enough Python to ship automation and has lost the basics a coding test
+asks for. Reach for it with "python drill", "review round", "string drill" or "mock coding
+round". Modes: a ~15-minute daily drill (predict-the-output quick-fires, small coding tasks, one
+code-reading item), a review round in the read-a-script interview format (*would it run, walk me
+through it, what does it print, what would you change*), a string drill (`split()[n]`,
+`line[9:]`, `strip` against `removeprefix`, `find`'s -1 trap) and a mock coding round.
+Spaced repetition over 64 topics; every miss is explained by tracing the deciding line with
+real values.
+
+**Answers are checked by running the code, never from the model's memory.** Quick-fires are run
+before they are asked, coding tasks run against tests written before the problem is shown, and
+`scripts/make_variant.py` generates code-reading exercises from eight families with randomised
+inputs and planted problems, runs each one for its real output, and never hands out the same
+exercise twice.
+
+**What it won't do:** teach from scratch, ship book content (chapters are cited as further
+reading only), or be used during a real interview. Its fixed practice scripts carry deliberate
+bugs, so they join the agent eval fixtures in `ruff.toml`'s exclude and the bandit gate's
+filter: `--fix` would answer the exercise.
+
+---
+
 ## 2026-08-14
 
 ### Added — `ghost-publish` learns the two cards markdown cannot express

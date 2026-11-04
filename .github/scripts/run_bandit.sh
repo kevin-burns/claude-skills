@@ -10,7 +10,8 @@ pyfiles_list="$(mktemp)"
 report="$(mktemp)"
 trap 'rm -f "$pyfiles_list" "$report"' EXIT
 
-git ls-files '*.py' | grep -v 'agents/.*/evals/fixtures' > "$pyfiles_list"
+# Deliberately broken exercise material, same reason as ruff.toml's extend-exclude.
+git ls-files '*.py' | grep -v -e 'agents/.*/evals/fixtures' -e 'python-drill/fixtures/scenarios' > "$pyfiles_list"
 printf 'scanning %s tracked python file(s)\n' "$(wc -l < "$pyfiles_list" | tr -d ' ')"
 
 # `|| true` because bandit exits non-zero merely for HAVING findings. The verdict comes

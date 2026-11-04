@@ -1,0 +1,5 @@
+order_id,customer,amount,date
+1001,Acme GmbH,120.50,2026-01-05
+1002,Bolt Ltd,"1,200.00",2026-01-06
+1003,Acme GmbH,,2026-01-07
+1004,Cara AG,80,2026-13-01
