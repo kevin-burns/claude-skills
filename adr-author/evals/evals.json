@@ -1,6 +1,6 @@
 {
   "skill_name": "adr-author",
-  "_comment": "One-shot cases: each prompt carries the author's answers. Run from inside the named fixture repo (evals/build_fixtures.py). Every case also expects: no invented rationale, no git add/commit/push run, and no tool vocabulary in any record written.",
+  "_comment": "One-shot cases: each prompt carries the author's answers. Run from inside the named fixture repo (evals/build_fixtures.py). Every case also expects: no invented rationale, no git add/commit/push run, no tool vocabulary in any record written, and every figure in a written record (number, date, percentage, duration, count, amount) appears in the prompt or the fixture repository, except the record's own Date line and record numbers.",
   "evals": [
     {
       "id": "W1",
