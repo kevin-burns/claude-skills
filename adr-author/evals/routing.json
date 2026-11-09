@@ -10,7 +10,8 @@
     "Can you turn this decision into a proper decision record: services must not share database schemas.",
     "Amend ADR 7: the rule about caching only applies to read endpoints, not writes.",
     "Add a decision record explaining why we deliberately use raw SQL instead of an ORM in reports/.",
-    "Document the architecture decision we made yesterday to split notifications into its own service."
+    "Document the architecture decision we made yesterday to split notifications into its own service.",
+    "The backfill_invoice_ids job in billing/invoice.py reads ledger.db directly. It is a one-off migration that will be deleted next month; ADR 3 is still right. Handle it."
   ],
   "should_not": [
     "Does this README section sound like an AI wrote it? Tighten it up.",

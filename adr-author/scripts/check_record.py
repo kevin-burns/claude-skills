@@ -230,7 +230,7 @@ _FIGURE = re.compile(
 )
 _EXEMPT_LINE = re.compile(r"^\W*(date|status|supersedes|superseded|deciders)\b", re.IGNORECASE)
 _RECORD_REF = re.compile(r"\b(?:ADR[-\s]?|records?\s+)\d+\b", re.IGNORECASE)
-_EDIT_DATE = re.compile(r"^\W*(amended|exception)\b[^:]*?\d{4}-\d{2}-\d{2}", re.IGNORECASE)
+_EDIT_DATE = re.compile(r"^\W*(amended|exception)\b.{0,30}?\d{4}-\d{2}-\d{2}", re.IGNORECASE)
 
 
 def _figure_text(text: str) -> str:
@@ -269,12 +269,24 @@ def unsourced_figures(record_text: str, sources: str) -> list[Finding]:
             for key, shown in sorted(_figures(record_text).items(), key=lambda kv: kv[1]) if key not in known]
 
 
+def committed_text(record: Path, ref: str = "HEAD") -> str | None:
+    """The record as committed at ref, or None when git cannot show it (new file, no repo)."""
+    try:
+        out = subprocess.run(["git", "show", f"{ref}:./{record.name}"], cwd=record.parent,
+                             capture_output=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return out.decode("utf-8", errors="replace").replace("\r\n", "\n")
+
+
 def _read_text(path: Path) -> str:
     return path.read_bytes().decode("utf-8", errors="replace").replace("\r\n", "\n")
 
 
-def compare(draft: str, final: str, confirmed: frozenset[str] = frozenset()) -> list[Finding]:
-    """What changed between the approved draft and the final record, beyond confirmed names."""
+def compare(draft: str, final: str, confirmed: frozenset[str] = frozenset(),
+            label: str = "the approved draft") -> list[Finding]:
+    """What changed between a baseline text (the approved draft, or the committed record) and the final
+    record, beyond confirmed names."""
     found = []
     draft_spans, final_spans = set(_CODE_SPAN.findall(draft)), set(_CODE_SPAN.findall(final))
     final_numbers = set(_NUMBER.findall(final))
@@ -283,21 +295,22 @@ def compare(draft: str, final: str, confirmed: frozenset[str] = frozenset()) -> 
     )
     for item in dict.fromkeys(vanished):
         found.append(Finding("vanished", None,
-                             f"'{item}' was in the approved draft and is gone from the final record."))
+                             f"'{item}' was in {label} and is gone from the final record."))
     before, after = _claim_counts(draft), _claim_counts(final)
     if before != after:
         changes = ", ".join(f"'{w}' {before[w]} -> {after[w]}" for w in CLAIM_WORDS if before[w] != after[w])
         found.append(Finding("claim-word-changed", None,
-                             f"Words that set how strong the decision is changed ({changes}). "
+                             f"Compared with {label}, words that set how strong the decision is "
+                             f"changed ({changes}). "
                              "Was that intended?"))
     draft_figures = set(_figures(draft))
     for key, shown in sorted(_figures(final).items(), key=lambda kv: kv[1]):
         if key not in draft_figures:
             found.append(Finding("new-figure", None,
-                                 f"'{shown}' was added after the draft was approved. Where does it come from?"))
+                                 f"'{shown}' is not in {label}. Where does it come from?"))
     for span in sorted(final_spans - draft_spans - confirmed):
         found.append(Finding("unconfirmed-name", None,
-                             f"'{span}' was added after the draft was approved and was not confirmed."))
+                             f"'{span}' is not in {label} and was not confirmed."))
     return found
 
 
@@ -309,6 +322,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--intended", nargs="*", default=[], help="names of code that does not exist yet")
     parser.add_argument("--against", type=Path, help="the draft the author approved")
     parser.add_argument("--confirmed", nargs="*", default=[], help="names the author confirmed")
+    parser.add_argument("--baseline", nargs="?", const="HEAD", metavar="REF",
+                        help="amend mode: compare with the record as committed at REF (default HEAD); "
+                             "the committed text also counts as a source for figures")
     parser.add_argument("--sources", nargs="*", type=Path, default=[],
                         help="the author's own words (interview notes); every figure must appear in them")
     parser.add_argument("--json", action="store_true")
@@ -317,17 +333,32 @@ def main(argv: list[str] | None = None) -> int:
         print(f"cannot read {args.record}", file=sys.stderr)
         return 2
     findings = check(args.record, args.repo, args.adr_dir or args.record.parent, frozenset(args.intended))
+    baseline = None
+    if args.baseline:
+        baseline = committed_text(args.record, args.baseline)
+        if baseline is None:
+            print(f"{args.record} is not tracked at {args.baseline}; for a new record use --against "
+                  "with the approved draft", file=sys.stderr)
+            return 2
+        findings += compare(baseline, _read_text(args.record), frozenset(args.confirmed),
+                            label="the committed record")
     if args.sources:
         missing = [p for p in args.sources if not p.is_file()]
         if missing:
             print(f"cannot read {missing[0]}", file=sys.stderr)
             return 2
-        notes = "\n".join(_read_text(p) for p in args.sources)
+        notes = "\n".join([*(_read_text(p) for p in args.sources), baseline or ""])
         findings += unsourced_figures(_read_text(args.record), notes)
     if args.against:
         if not args.against.is_file():
             print(f"cannot read {args.against}", file=sys.stderr)
             return 2
+        if args.against.stat().st_mtime > args.record.stat().st_mtime:
+            print(f"{args.against} is newer than the record, so it was made from the record; the comparison "
+                  "would prove nothing. Save the approved draft before writing the record.", file=sys.stderr)
+            return 2
+        if _read_text(args.against) == _read_text(args.record):
+            print("The record is identical to the approved draft; no revision was made.")
         findings += compare(_read_text(args.against), _read_text(args.record), frozenset(args.confirmed))
     if args.json:
         print(json.dumps([asdict(f) for f in findings], indent=2))

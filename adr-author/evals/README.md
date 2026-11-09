@@ -13,7 +13,7 @@ Three kinds of evidence, each graded by something other than the skill's author.
 
 1. Build the fixtures somewhere temporary:
    `python3 adr-author/evals/build_fixtures.py "$(mktemp -d)"`
-2. For each case, open a session inside its `fixture` repository and send the `prompt`, twice: once
+2. Run `adr-author/evals/run_cases.sh adr-author/evals/runs/<date>`, or by hand: for each case, open a session inside its `fixture` repository and send the `prompt`, twice: once
    with the skill installed and once without it (the baseline).
 3. Run `scripts/check_record.py` on every record written, with `--repo` set to the fixture.
 4. Grade every record with the reader grader prompt.

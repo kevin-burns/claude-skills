@@ -58,3 +58,7 @@ def test_cli_sources_flag(tmp_path):
     out = subprocess.run([sys.executable, c.__file__, str(rec), "--repo", str(tmp_path), "--sources", str(notes),
                           "--json"], capture_output=True, text=True, check=False)
     assert {f["kind"] for f in json.loads(out.stdout)} >= {"unsourced-figure"}
+
+
+def test_amended_line_date_is_exempt():
+    assert figures_of("Status: Accepted\nAmended: 2026-11-09. Batch jobs may read.\n", "") == []

@@ -29,9 +29,12 @@ where a person reads them.
 4. **Short interview.** Ask only for what is missing: the context and forces, the decision, what it
    rules out, the consequences, the alternatives worth remembering. One batch of questions at a
    time; never re-ask what the author already said.
-5. **Keep the author's words.** Save what the author said about the decision, verbatim, to a notes
-   file outside the repository (for example `/tmp/adr-notes.md`). The self-check uses it to prove
-   every figure in the record came from the author.
+5. **Keep the author's words.** Make one scratch directory for this record, outside the
+   repository, and print its path:
+   `D="$(mktemp -d "${TMPDIR:-/tmp}/adr-author.XXXXXX")"; echo "$D"`. Shell state does not survive
+   between commands, so reuse the printed path, never a fixed name another record may have used.
+   Save what the author said about the decision, verbatim, to `$D/notes.md`. The self-check uses it
+   to prove every figure in the record came from the author.
 
 ## Every fact needs a source
 
@@ -69,30 +72,30 @@ in Considered Options and never bind. `references/writing-guide.md` has the full
 - Status is **Proposed** unless the author says the team has accepted it.
 - Never invent rationale, constraints, consequences or alternatives. A gap becomes a question, or a
   visible placeholder such as `[CONSEQUENCE NEEDED]` in the draft (developer-kit adr-drafting).
-- Show the path, title, status, full draft and source list. Write the file only after the author
-  approves. **If the request already approves** the draft ("approve it as you show it"), that counts
+- Show the path, title, status, full draft and source list. **Show the full draft as text in your
+  reply**, not only inside the command that writes it: the author approves what they can read.
+  Write the file only after the author approves. **If the request already approves** the draft ("approve it as you show it"), that counts
   as approval: show the draft and write it in the same turn. Treat that wording the same way every
   time.
 - **Never write a record that still has a placeholder** unless the author says to. Ask the open
   questions first; if the author says "leave it", drop the sentence rather than ship the gap.
-- **Save the approved draft** to a file outside the repository (for example
-  `/tmp/adr-approved-draft.md`) before you write the record. The comparison below is only worth
-  anything if the draft was saved first.
+- **Save the approved draft** to `$D/approved-draft.md` before you write the record. The
+  comparison below is only worth anything if the draft was saved first; the script refuses a draft
+  file that is newer than the record.
 
 ## Self-check, then a second look
 
 Run the self-check on the written file. It uses no model and no network.
 
 ```bash
-UV="$(command -v uv || ls "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv 2>/dev/null | head -1)"
-check_record() { "$UV" run "$HOME/.claude/skills/adr-author/scripts/check_record.py" "$@"; }
-
-check_record docs/adr/0007-billing-reads-ledger-through-api.md --repo . --sources /tmp/adr-notes.md
-check_record docs/adr/0007-billing-reads-ledger-through-api.md --repo . --sources /tmp/adr-notes.md --intended PlannedName
+CHECK="$(find "$PWD/.claude" "$HOME/.claude" "$HOME/.codex" -path '*adr-author/scripts/check_record.py' 2>/dev/null | head -1)"
+echo "$CHECK"
+python3 "$CHECK" docs/adr/0007-billing-reads-ledger-through-api.md --repo . --sources "$D/notes.md"
+python3 "$CHECK" docs/adr/0007-billing-reads-ledger-through-api.md --repo . --sources "$D/notes.md" --intended PlannedName
 ```
 
-Without `uv`, run the same file with `python3` (3.12 or later). If the skill is installed somewhere
-else, use that directory's `scripts/check_record.py`.
+It needs Python 3.12 or later and nothing else; `uv run` works too. If `find` prints nothing, the
+skill is installed somewhere else: use that directory's `scripts/check_record.py`.
 
 It reports, in plain words: figures (numbers, dates, percentages, durations, counts, amounts) that
 are not in the author's notes; decision sentences that hedge ("should", "prefer") and so decide
@@ -106,13 +109,13 @@ draft and show the author the diff for a **second approval**; the first approval
 revisions:
 
 ```bash
-check_record docs/adr/0007-billing-reads-ledger-through-api.md --repo . --against /tmp/adr-approved-draft.md --confirmed ledger/api.py Ledger
+python3 "$CHECK" docs/adr/0007-billing-reads-ledger-through-api.md --repo . --against "$D/approved-draft.md" --confirmed ledger/api.py Ledger
 ```
 
 It reports anything that vanished, any figure that appeared, any change to a word that sets the
 decision's strength (must, never, only, all...), and any name added without confirmation. Never
 create the "approved draft" file from the record you just wrote; that compares the record with
-itself.
+itself. When editing a record that is already committed, use `--baseline` instead (see amend mode).
 
 ## Amend mode: when the code turned out to be right
 

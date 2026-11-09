@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 SKILL = Path(__file__).resolve().parents[1]
-TEXT_SUFFIXES = {".md", ".py", ".json", ".txt", ".toml", ".yaml", ".yml"}
+TEXT_SUFFIXES = {".md", ".py", ".json", ".txt", ".toml", ".yaml", ".yml", ".sh"}
 
 PERSONAL = [
     re.compile(r"/Users/"),

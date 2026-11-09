@@ -68,3 +68,81 @@ def test_cli_against_reports_both_passes(tmp_path):
     found = {f["kind"] for f in json.loads(result.stdout)}
     assert {"hedge", "claim-word-changed"} <= found
     assert result.returncode == 1
+
+
+def _git(repo, *args):
+    import os
+    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1",
+               GIT_AUTHOR_NAME="T", GIT_AUTHOR_EMAIL="t@example.invalid",
+               GIT_COMMITTER_NAME="T", GIT_COMMITTER_EMAIL="t@example.invalid")
+    subprocess.run(["git", "-c", "commit.gpgsign=false", *args], cwd=repo, env=env, check=True,
+                   capture_output=True)
+
+
+def _committed_record(tmp_path):
+    adr = tmp_path / "docs" / "adr"
+    adr.mkdir(parents=True)
+    rec = adr / "0001-x.md"
+    rec.write_text("# 1. X\n\nStatus: Accepted\n\n## Context\n\nTwo outages.\n\n" + DRAFT, encoding="utf-8")
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "x")
+    return rec
+
+
+def _cli(*args):
+    return subprocess.run([sys.executable, c.__file__, *map(str, args)], capture_output=True, text=True,
+                          check=False)
+
+
+def test_baseline_reads_committed_record(tmp_path):
+    rec = _committed_record(tmp_path)
+    rec.write_text(rec.read_text().replace("never calls", "may call"), encoding="utf-8")
+    result = _cli(rec, "--repo", tmp_path, "--baseline", "--json")
+    found = json.loads(result.stdout)
+    changed = [f for f in found if f["kind"] == "claim-word-changed"]
+    assert changed and "committed record" in changed[0]["message"]
+
+
+def test_baseline_counts_committed_text_as_a_source(tmp_path):
+    rec = _committed_record(tmp_path)
+    notes = tmp_path / "notes.md"
+    notes.write_text("batch jobs may read", encoding="utf-8")
+    result = _cli(rec, "--repo", tmp_path, "--baseline", "--sources", notes, "--json")
+    assert "unsourced-figure" not in {f["kind"] for f in json.loads(result.stdout)}
+
+
+def test_baseline_on_untracked_record_exits_2(tmp_path):
+    rec = _committed_record(tmp_path)
+    new = rec.parent / "0002-y.md"
+    new.write_text("# 2. Y\n\nStatus: Proposed\n", encoding="utf-8")
+    result = _cli(new, "--repo", tmp_path, "--baseline")
+    assert result.returncode == 2
+    assert "--against" in result.stderr
+
+
+def test_against_refuses_newer_draft(tmp_path):
+    import os
+
+    rec = tmp_path / "0001-x.md"
+    rec.write_text("# 1. X\n\nStatus: Proposed\n\n" + DRAFT, encoding="utf-8")
+    draft = tmp_path / "draft.md"
+    draft.write_text(rec.read_text(), encoding="utf-8")
+    os.utime(rec, (1_000_000, 1_000_000))
+    os.utime(draft, (2_000_000, 2_000_000))
+    result = _cli(rec, "--repo", tmp_path, "--against", draft)
+    assert result.returncode == 2
+    assert "newer than the record" in result.stderr
+
+
+def test_against_identical_says_so(tmp_path):
+    import os
+
+    draft = tmp_path / "draft.md"
+    draft.write_text("# 1. X\n\nStatus: Proposed\n\n" + DRAFT.replace("`200ms`", "200 ms"), encoding="utf-8")
+    rec = tmp_path / "0001-x.md"
+    rec.write_text(draft.read_text(), encoding="utf-8")
+    os.utime(draft, (1_000_000, 1_000_000))
+    os.utime(rec, (2_000_000, 2_000_000))
+    result = _cli(rec, "--repo", tmp_path, "--against", draft)
+    assert "identical to the approved draft" in result.stdout

@@ -90,7 +90,7 @@
     {
       "id": "A2",
       "fixture": "overtaken",
-      "prompt": "The backfill_invoice_ids job in billing/invoice.py reads ledger.db directly. It is a one-off migration that will be deleted next month; ADR 3 is still right. Handle it.",
+      "prompt": "The backfill_invoice_ids job in billing/invoice.py reads ledger.db directly. It is a one-off migration that will be deleted next month; ADR 3 is still right. Record the exception.",
       "expected_output": "An exception recorded the team's way, or proposed and asked; record 3's decision untouched.",
       "expectations": [
         "Treats it as a one-off exception, not a change to the decision",

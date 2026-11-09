@@ -15,15 +15,15 @@ sys.path.insert(0, str(HERE / "evals"))
 import make_routing_cases as m
 
 
-def test_routing_json_has_ten_and_ten():
+def test_routing_json_has_eleven_and_ten():
     data = json.loads((HERE / "evals" / "routing.json").read_text(encoding="utf-8"))
-    assert len(data["should_trigger"]) == 10
+    assert len(data["should_trigger"]) == 11
     assert len(data["should_not"]) == 10
 
 
-def test_twenty_cases_written(tmp_path):
+def test_twenty_one_cases_written(tmp_path):
     written = m.write_cases(tmp_path)
-    assert len(written) == 20
+    assert len(written) == 21
     assert all((p / "prompt.md").is_file() and (p / "graders" / "fired.md").is_file() for p in written)
 
 

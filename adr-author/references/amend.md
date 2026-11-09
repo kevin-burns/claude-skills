@@ -36,6 +36,18 @@ first two are usually the honest answers; an exception that keeps recurring is a
 
 ## After any of the three
 
-Run the self-check on every record you touched, compare each with its approved draft, and show the
-author the diff before it is final. List the files changed and suggest a commit message; do not
-commit.
+Run the self-check on every record you touched. An edited record is compared with its committed
+version, which the skill cannot forge because it never commits:
+
+```bash
+python3 "$CHECK" docs/adr/0003-billing-reads-the-ledger-through-its-api.md --repo . --baseline --sources "$D/notes.md" --confirmed ledger.db
+```
+
+`--baseline` reports anything that vanished, any figure or name that is new, and any change to
+must, never, only or all. The committed text also counts as a source, so figures that were already
+in the record are not flagged again. A brand-new superseding record is not committed yet: compare
+it with its saved draft using `--against`, as in write mode.
+
+The checks cannot see a sentence that was reworded without touching a name, figure or claim word.
+So also show the author `git diff` of every record you touched, and point out any change they did
+not ask for. List the files changed and suggest a commit message; do not commit.
