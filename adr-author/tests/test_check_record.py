@@ -175,3 +175,9 @@ def test_cli_exit_codes_and_json(tmp_path):
     missing = subprocess.run([sys.executable, str(script), str(tmp_path / "nope.md")],
                              capture_output=True, text=True, check=False)
     assert missing.returncode == 2
+
+
+def test_dotted_module_name_matches_its_file(tmp_path):
+    root = repo(tmp_path, {"ledger/db.py": "def rows(t):\n    return []\n", "pkg/sub/__init__.py": ""})
+    assert c.name_exists("ledger.db", root, root / "docs" / "adr")
+    assert c.name_exists("pkg.sub", root, root / "docs" / "adr")

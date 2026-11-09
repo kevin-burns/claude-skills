@@ -81,6 +81,10 @@ def name_exists(name: str, repo: Path, exclude: Path) -> bool:
             return True
     elif (repo / name).exists():
         return True
+    if re.fullmatch(r"\w+(?:\.\w+)+", name):
+        as_path = repo / name.replace(".", "/")
+        if as_path.with_suffix(".py").exists() or as_path.is_dir():
+            return True
     pattern = re.compile(r"(?<![\w])" + re.escape(name) + r"(?![\w])")
     exclude = exclude.resolve()
     for path in _candidate_files(repo):
