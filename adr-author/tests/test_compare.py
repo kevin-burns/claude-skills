@@ -145,4 +145,4 @@ def test_against_identical_says_so(tmp_path):
     os.utime(draft, (1_000_000, 1_000_000))
     os.utime(rec, (2_000_000, 2_000_000))
     result = _cli(rec, "--repo", tmp_path, "--against", draft)
-    assert "identical to the approved draft" in result.stdout
+    assert "identical to the approved draft" in result.stderr

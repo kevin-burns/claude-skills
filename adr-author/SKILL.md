@@ -38,6 +38,10 @@ where a person reads them.
 
 ## Every fact needs a source
 
+Context must say what goes wrong without the decision: the harm it prevents. "Newcomers keep
+writing to the table directly" says what happens, not what it breaks; ask the author what it
+breaks before writing, and never supply a harm yourself.
+
 A record is evidence for the people who read it later. Every factual claim in it must come from
 the author's words or from the repository: an incident, a number, a date, a duration, a cost, a
 count, "we tried X", "this caused Y". Show a short source list with the draft, one line per claim:
@@ -59,7 +63,8 @@ silently (Addy Osmani's documentation-and-adrs). Only with no existing records, 
 
 For each decision sentence, search the repository for the names it means: a module, a function or
 class, a path, a configuration key. **Propose them and let the author confirm.** Use only confirmed
-names, and put each one where the rule is, in Decision or Consequences; a name that appears only in
+names (pass only those to `--confirmed`; the script checks them against your notes of the
+author's words), and put each one where the rule is, in Decision or Consequences; a name that appears only in
 Context is not part of the decision. A sentence with no confirmed name stays as the author wrote it and goes in the report. A
 decision about code that does not exist yet keeps its intended names and says they are planned.
 
@@ -73,7 +78,8 @@ in Considered Options and never bind. `references/writing-guide.md` has the full
 - Never invent rationale, constraints, consequences or alternatives. A gap becomes a question, or a
   visible placeholder such as `[CONSEQUENCE NEEDED]` in the draft (developer-kit adr-drafting).
 - Show the path, title, status, full draft and source list. **Show the full draft as text in your
-  reply**, not only inside the command that writes it: the author approves what they can read.
+  reply, before the command that writes the record**, not only inside that command: the author
+  approves what they can read. Never say a draft was shown when it was not.
   Write the file only after the author approves. **If the request already approves** the draft ("approve it as you show it"), that counts
   as approval: show the draft and write it in the same turn. Treat that wording the same way every
   time.
@@ -81,14 +87,15 @@ in Considered Options and never bind. `references/writing-guide.md` has the full
   questions first; if the author says "leave it", drop the sentence rather than ship the gap.
 - **Save the approved draft** to `$D/approved-draft.md` before you write the record. The
   comparison below is only worth anything if the draft was saved first; the script refuses a draft
-  file that is newer than the record.
+  file that is newer than the record. Never sleep, touch or copy files to get past a check; a check
+  you had to trick has told you something, so report it instead.
 
 ## Self-check, then a second look
 
 Run the self-check on the written file. It uses no model and no network.
 
 ```bash
-CHECK="$(find "$PWD/.claude" "$HOME/.claude" "$HOME/.codex" -path '*adr-author/scripts/check_record.py' 2>/dev/null | head -1)"
+CHECK="$( { for f in "$PWD/.claude/skills/adr-author/scripts/check_record.py" "$HOME/.claude/skills/adr-author/scripts/check_record.py" "$HOME/.agents/skills/adr-author/scripts/check_record.py"; do [ -f "$f" ] && echo "$f"; done; find -L "$HOME/.claude" "$HOME/.agents" "$HOME/.codex" -path '*adr-author/scripts/check_record.py' 2>/dev/null; } | head -1)"
 echo "$CHECK"
 python3 "$CHECK" docs/adr/0007-billing-reads-ledger-through-api.md --repo . --sources "$D/notes.md"
 python3 "$CHECK" docs/adr/0007-billing-reads-ledger-through-api.md --repo . --sources "$D/notes.md" --intended PlannedName

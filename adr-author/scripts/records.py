@@ -41,6 +41,9 @@ class Record:
     superseded_by: int | None
     supersedes: tuple[int, ...]
     sections: dict[str, list[tuple[int, str]]] = field(default_factory=dict)
+    # Repos that name records by date link them by file, not number ("Supersedes: 2026-01-10-x.md").
+    superseded_by_file: str | None = None
+    supersedes_files: tuple[str, ...] = ()
 
 
 def section_role(heading: str) -> str:
@@ -107,7 +110,16 @@ def _status_word(value: str) -> str | None:
     return None
 
 
+def _file_refs(value: str) -> tuple[str, ...]:
+    """Record files a header line points at: Markdown link targets or bare `name.md` tokens."""
+    targets = re.findall(r"\]\(([^)\s]+\.md)\)", value) or re.findall(r"([\w./-]+\.md)\b", value)
+    return tuple(Path(t).name for t in targets)
+
+
 def _refs(value: str) -> tuple[int, ...]:
+    """Record numbers a header line points at, unless it points at files (then numbers are dates)."""
+    if _file_refs(value):
+        return ()
     return tuple(int(n) for n in _ADR_REF.findall(value))
 
 
@@ -129,13 +141,24 @@ def parse_record(path: Path) -> Record:
     sections: dict[str, list[tuple[int, str]]] = {}
     role = "other"
     status_heading = False
+    in_fence = False
 
     for index in range(start, len(lines)):
         line_no, line = index + 1, lines[index]
         stripped = line.strip()
+        # Code is not prose: a '# comment' or 'Status:' inside a fence is neither a heading nor a header.
+        if stripped.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         if stripped.startswith("# ") and not title:
+            body = stripped[1:].strip()
+            if _DATE_PREFIX.match(body):
+                title = body
+                continue
             title = re.sub(r"^(?:\[?\s*ADR[-\s]?\d+\s*\]?[:.\s-]*|\d+\s*[.:-]\s*)", "",
-                           stripped[1:].strip(), flags=re.IGNORECASE).strip()
+                           body, flags=re.IGNORECASE).strip()
             match = _TITLE_NUMBER.match(stripped)
             if match:
                 number = int(match.group(1) or match.group(2))
@@ -161,10 +184,11 @@ def parse_record(path: Path) -> Record:
         sections.setdefault(role, []).append((line_no, stripped))
 
     status = _status_word(status_value) if status_value else None
-    superseded_by = None
+    superseded_by, superseded_by_file = None, None
     if status == "Superseded" and status_value:
-        refs = _refs(status_value)
+        refs, files = _refs(status_value), _file_refs(status_value)
         superseded_by = refs[0] if refs else None
+        superseded_by_file = files[0] if files else None
     if number is None:
         number = _number_from_filename(path)
     return Record(
@@ -175,6 +199,8 @@ def parse_record(path: Path) -> Record:
         superseded_by=superseded_by,
         supersedes=_refs(supersedes_value) if supersedes_value else (),
         sections=sections,
+        superseded_by_file=superseded_by_file,
+        supersedes_files=_file_refs(supersedes_value) if supersedes_value else (),
     )
 
 

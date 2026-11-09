@@ -6,7 +6,7 @@ preference, and a name missing from the repo may be code not written yet.
 
 Usage:
     check_record.py RECORD [--repo DIR] [--adr-dir DIR] [--intended NAME ...]
-                    [--against DRAFT [--confirmed NAME ...]] [--sources NOTES ...] [--json]
+                    [--against DRAFT | --baseline [REF]] [--confirmed NAME ...] [--sources NOTES ...] [--json]
 
 --against compares the final record with the draft the author approved: anything that vanished,
 any claim word that changed, any figure added, and any name added without the author confirming it.
@@ -49,10 +49,16 @@ class Finding:
     message: str
 
 
+def _normalise_name(span: str) -> str:
+    """Drop the decorations people add to a name: a call `f()`, a line `a.py:12` or `a.py#L12`."""
+    span = re.sub(r"\(.*\)$", "", span.strip())
+    return re.sub(r"(?:[:#]L?\d+(?:-L?\d+)?)$", "", span)
+
+
 def looks_like_name(span: str) -> bool:
-    """Is this code span a path or an identifier the code could carry, not a value or a flag?"""
-    span = span.strip()
-    if not span or span[0] in "-$" or span[0].isdigit() or " " in span:
+    """Is this code span a path or an identifier the code could carry, not a value, flag or URL?"""
+    span = _normalise_name(span)
+    if not span or span[0] in "-$/~" or span[0].isdigit() or " " in span or "://" in span:
         return False
     if "/" in span or "::" in span or "_" in span:
         return True
@@ -76,8 +82,25 @@ def _candidate_files(repo: Path) -> list[Path]:
         return files
 
 
+def _readable_texts(repo: Path, exclude: Path):
+    exclude = exclude.resolve()
+    for path in _candidate_files(repo):
+        try:
+            if path.resolve().is_relative_to(exclude) or path.stat().st_size > MAX_FILE_BYTES:
+                continue
+            yield path.read_bytes().decode("utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+
+
+def _word(name: str) -> re.Pattern:
+    return re.compile(r"(?<![\w])" + re.escape(name) + r"(?![\w])")
+
+
 def name_exists(name: str, repo: Path, exclude: Path) -> bool:
-    """A name exists if it is a path in the repo, or a whole word in a readable file outside the ADRs."""
+    """A name exists if it is a path in the repo, or a whole word in a readable file outside the ADRs.
+    `Class.method` also counts when both parts appear as words in the same file."""
+    name = _normalise_name(name)
     if "*" in name:
         if any(repo.glob(name)):
             return True
@@ -87,22 +110,21 @@ def name_exists(name: str, repo: Path, exclude: Path) -> bool:
         as_path = repo / name.replace(".", "/")
         if as_path.with_suffix(".py").exists() or as_path.is_dir():
             return True
-    pattern = re.compile(r"(?<![\w])" + re.escape(name) + r"(?![\w])")
-    exclude = exclude.resolve()
-    for path in _candidate_files(repo):
-        try:
-            if path.resolve().is_relative_to(exclude) or path.stat().st_size > MAX_FILE_BYTES:
-                continue
-            text = path.read_bytes().decode("utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        if pattern.search(text):
+    whole = _word(name)
+    parts = [_word(p) for p in name.split(".")] if re.fullmatch(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+", name) else []
+    for text in _readable_texts(repo, exclude):
+        if whole.search(text) or (parts and all(p.search(text) for p in parts)):
             return True
     return False
 
 
-def _binding_lines(rec: Record) -> list[tuple[int, str]]:
+def _decision_lines(rec: Record) -> list[tuple[int, str]]:
     return [pair for role in BINDING_ROLES for pair in rec.sections.get(role, [])]
+
+
+def _binding_lines(rec: Record) -> list[tuple[int, str]]:
+    """The sentences that decide something. A one-paragraph record has no sections, so all of it counts."""
+    return _decision_lines(rec) or rec.sections.get("other", [])
 
 
 def _check_hedges(rec: Record) -> list[Finding]:
@@ -135,7 +157,7 @@ def _check_status_and_shape(rec: Record) -> list[Finding]:
         found.append(Finding("no-status", None,
                              "The record has no status. Readers cannot tell whether it is proposed, "
                              "accepted or replaced."))
-    if not _binding_lines(rec):
+    if not _decision_lines(rec):
         found.append(Finding("no-decision", None,
                              "No Decision section found. That is fine for a one-paragraph record; "
                              "otherwise, which part states what was decided?"))
@@ -164,23 +186,33 @@ def _check_numbering(rec: Record, others: list[Record]) -> list[Finding]:
 
 
 def _check_supersede(rec: Record, others: list[Record]) -> list[Finding]:
+    """Supersede links must agree in both records. Links may name a record by number or by file."""
     by_number = {o.number: o for o in others if o.number is not None}
+    by_file = {o.path.name: o for o in others}
+    me = rec.number if rec.number is not None else rec.path.name
     found = []
-    for n in rec.supersedes:
-        old = by_number.get(n)
+
+    def replaced_by_me(old: Record) -> bool:
+        return old.status == "Superseded" and (
+            (rec.number is not None and old.superseded_by == rec.number)
+            or old.superseded_by_file == rec.path.name)
+
+    targets = [(n, by_number.get(n)) for n in rec.supersedes] + [(f, by_file.get(f)) for f in rec.supersedes_files]
+    for ref, old in targets:
         if old is None:
-            found.append(Finding("supersede-link", None, f"It replaces record {n}, which does not exist."))
-        elif old.status != "Superseded" or old.superseded_by != rec.number:
+            found.append(Finding("supersede-link", None, f"It replaces record {ref}, which does not exist."))
+        elif not replaced_by_me(old):
             found.append(Finding("supersede-link", None,
-                                 f"It replaces record {n}, but record {n} does not yet say it was replaced "
-                                 f"by record {rec.number}. Change both in the same commit."))
+                                 f"It replaces record {ref}, but record {ref} does not yet say it was replaced "
+                                 f"by record {me}. Change both in the same commit."))
     if rec.status == "Superseded":
-        if rec.superseded_by is None:
+        successor = rec.superseded_by if rec.superseded_by is not None else rec.superseded_by_file
+        if successor is None:
             found.append(Finding("supersede-link", None,
                                  "The record says it was replaced but not by which record."))
-        elif rec.superseded_by not in by_number:
+        elif successor not in by_number and successor not in by_file:
             found.append(Finding("supersede-link", None,
-                                 f"The record says record {rec.superseded_by} replaced it, but that record "
+                                 f"The record says record {successor} replaced it, but that record "
                                  "does not exist."))
     return found
 
@@ -223,8 +255,21 @@ _SMALL_NUMBERS = ["zero", "one", "two", "three", "four", "five", "six", "seven",
 # "one" is left out on purpose: "one service", "one-off" are not figures anyone measured.
 _NUMBER_WORDS = {w: str(i) for i, w in enumerate(_SMALL_NUMBERS) if i >= 2}
 _NUMBER_WORDS.update({"twenty": "20", "thirty": "30", "hundred": "100", "thousand": "1000", "dozen": "12"})
+# A number keeps the word after it only when that word is a unit; "40 of them" and "about 40 services"
+# are the same figure. Synonyms normalise, so "2 hours" matches "2h" and "30 seconds" matches "30s".
+_UNITS = {
+    "%": "%", "percent": "%", "\u20ac": "eur", "eur": "eur", "$": "usd", "usd": "usd",
+    "ms": "ms", "msec": "ms", "millisecond": "ms", "milliseconds": "ms",
+    "s": "s", "sec": "s", "secs": "s", "second": "s", "seconds": "s",
+    "min": "min", "mins": "min", "minute": "min", "minutes": "min",
+    "h": "h", "hr": "h", "hrs": "h", "hour": "h", "hours": "h",
+    "d": "d", "day": "d", "days": "d", "week": "w", "weeks": "w",
+    "month": "mo", "months": "mo", "year": "y", "years": "y",
+    "k": "k", "kb": "kb", "mb": "mb", "gb": "gb", "tb": "tb", "rps": "rps", "qps": "qps", "x": "x",
+}
+_UNIT_PATTERN = "|".join(sorted((re.escape(u) for u in _UNITS), key=len, reverse=True))
 _FIGURE = re.compile(
-    r"(?<![\w.-])(\d+(?:[.,]\d+)?)(\s?(?:%|[A-Za-z\u20ac$]+))?"
+    r"(?<![\w.-])(\d+(?:[.,]\d+)?)(?:\s?(" + _UNIT_PATTERN + r")(?![A-Za-z]))?"
     r"|\b(" + "|".join(_NUMBER_WORDS) + r")\s+([a-z]+)",
     re.IGNORECASE,
 )
@@ -252,11 +297,10 @@ def _figures(text: str) -> dict[str, str]:
     found = {}
     for m in _FIGURE.finditer(_figure_text(text)):
         if m.group(1):
-            value, unit = m.group(1).replace(",", "."), (m.group(2) or "").strip().lower()
+            value, unit = m.group(1).replace(",", "."), _UNITS.get((m.group(2) or "").lower(), "")
         else:
-            value, unit = _NUMBER_WORDS[m.group(3).lower()], m.group(4).lower()
-        key = value + unit if (len(unit) <= 2 or unit in "%\u20ac$") else f"{value} {unit}"
-        found.setdefault(key, m.group(0).lower())
+            value, unit = _NUMBER_WORDS[m.group(3).lower()], ""
+        found.setdefault(value + unit, m.group(0).lower())
     return found
 
 
@@ -333,6 +377,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"cannot read {args.record}", file=sys.stderr)
         return 2
     findings = check(args.record, args.repo, args.adr_dir or args.record.parent, frozenset(args.intended))
+    missing = [p for p in args.sources if not p.is_file()]
+    if missing:
+        print(f"cannot read {missing[0]}", file=sys.stderr)
+        return 2
+    author_words = "\n".join(_read_text(p) for p in args.sources)
+    # A confirmed name is one the author gave. With notes to check against, a name that is not in
+    # them stays unconfirmed, so --confirmed cannot be used to silence a finding.
+    confirmed = frozenset(n for n in args.confirmed
+                          if not args.sources or n.lower() in author_words.lower())
     baseline = None
     if args.baseline:
         baseline = committed_text(args.record, args.baseline)
@@ -340,15 +393,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{args.record} is not tracked at {args.baseline}; for a new record use --against "
                   "with the approved draft", file=sys.stderr)
             return 2
-        findings += compare(baseline, _read_text(args.record), frozenset(args.confirmed),
-                            label="the committed record")
+        findings += compare(baseline, _read_text(args.record), confirmed, label="the committed record")
     if args.sources:
-        missing = [p for p in args.sources if not p.is_file()]
-        if missing:
-            print(f"cannot read {missing[0]}", file=sys.stderr)
-            return 2
-        notes = "\n".join([*(_read_text(p) for p in args.sources), baseline or ""])
-        findings += unsourced_figures(_read_text(args.record), notes)
+        findings += unsourced_figures(_read_text(args.record), "\n".join([author_words, baseline or ""]))
     if args.against:
         if not args.against.is_file():
             print(f"cannot read {args.against}", file=sys.stderr)
@@ -358,8 +405,8 @@ def main(argv: list[str] | None = None) -> int:
                   "would prove nothing. Save the approved draft before writing the record.", file=sys.stderr)
             return 2
         if _read_text(args.against) == _read_text(args.record):
-            print("The record is identical to the approved draft; no revision was made.")
-        findings += compare(_read_text(args.against), _read_text(args.record), frozenset(args.confirmed))
+            print("The record is identical to the approved draft; no revision was made.", file=sys.stderr)
+        findings += compare(_read_text(args.against), _read_text(args.record), confirmed)
     if args.json:
         print(json.dumps([asdict(f) for f in findings], indent=2))
     else:
