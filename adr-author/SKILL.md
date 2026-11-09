@@ -1,7 +1,7 @@
 ---
 name: adr-author
 description: >-
-  Write or amend an architecture decision record (ADR) that a team will want to read and that names exactly what it decides: the modules, functions, paths or settings, and what must or must never happen. Asks whether the decision deserves a record, interviews briefly, follows the repo's existing ADR format and numbering, shows the draft before writing, and self-checks it (hedged decisions, names missing from the code, status and supersede links). Also amends or supersedes a record when the code turned out to be right. Use for "write an ADR", "record this decision", "supersede ADR 4", "our ADR no longer matches the code". Does not judge code against records, and does not make the decision. General prose and docs are clear-and-human.
+  Write or amend an architecture decision record (ADR) that a team will want to read and that names exactly what it decides: the modules, functions, paths or settings, and what must or must never happen. Asks whether the decision deserves a record, interviews briefly, follows the repo's existing ADR format and numbering, shows the draft before writing, and self-checks it (hedged decisions, names missing from the code, status and supersede links). Also amends or supersedes a record when the code turned out to be right. Use for "write an ADR", "record this decision", "document the architecture decision we made", "turn this into a decision record", "supersede ADR 4", "our ADR no longer matches the code", or a one-off exception to an existing ADR. Does not judge code against records, and does not make the decision. General prose and docs are clear-and-human.
 ---
 
 # adr-author
@@ -61,8 +61,8 @@ Context is not part of the decision. A sentence with no confirmed name stays as 
 decision about code that does not exist yet keeps its intended names and says they are planned.
 
 The decision goes in Decision and Consequences; the reasons go in Context; rejected alternatives go
-in Considered Options and never bind. `references/writing-guide.md` has the full guidance and a
-worked example.
+in Considered Options and never bind. `references/writing-guide.md` has the full guidance, and
+`references/example-adr.md` is one complete record to imitate, with a best-practice checklist.
 
 ## Draft, show, then write
 

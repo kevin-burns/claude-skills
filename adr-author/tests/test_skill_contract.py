@@ -34,3 +34,13 @@ def test_no_placeholders_in_a_written_record():
 def test_confirmed_names_belong_in_the_decision():
     # W1 put a confirmed name only in Context.
     assert "in Decision or Consequences" in SKILL
+
+
+def test_complete_example_record_is_shipped_and_linked():
+    # Asked for 2026-11-09: one finished record to imitate, not just fragments.
+    example = Path(__file__).resolve().parents[1] / "references" / "example-adr.md"
+    assert "references/example-adr.md" in SKILL
+    text = example.read_text(encoding="utf-8")
+    for part in ("## Context", "## Decision", "## Consequences", "## Considered Options", "Status:"):
+        assert part in text, part
+    assert "NEEDED" not in text
