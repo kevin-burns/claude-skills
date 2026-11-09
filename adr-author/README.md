@@ -28,8 +28,30 @@ record it writes can also be enforced by a separate checker such as adrcheck, if
 
 ## Install
 
-Nothing to install beyond the agent and git. The script needs Python 3.12 or later; `uv run` or
-`python3` both work.
+**As part of the collection**, all the skills in one plugin:
+
+```bash
+claude plugin marketplace add kevin-burns/claude-skills
+claude plugin install claude-skills@kevin-burns
+```
+
+**By hand**, if you would rather not use a marketplace: copy the `adr-author/` directory into
+`~/.claude/skills/`. Everything the skill needs is inside it.
+
+### Check it actually loaded
+
+```bash
+claude plugin details claude-skills@kevin-burns
+```
+
+`adr-author` should be listed under the skills in the component inventory. `claude --safe-mode`
+disables plugin-provided skills, so it will not appear in a safe-mode session; that is not a broken
+install.
+
+### Prerequisite
+
+Nothing beyond the agent and git. `scripts/check_record.py` is standard library only and needs
+Python 3.12 or later; `uv run` or `python3` both work. It uses no model and no network.
 
 ## Tests and evals
 

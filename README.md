@@ -100,7 +100,7 @@ instead.
 - **It copies.** A plugin install is a snapshot in the harness's cache, not a live link.
   Editing this repo afterwards changes nothing until you update.
 - **It costs context.** Every skill's description loads in every session so the model can
-  decide when to reach for one — about **5.0k tokens always-on** for the full set, before any
+  decide when to reach for one — about **5.2k tokens always-on** for the full set, before any
   skill fires. `claude plugin details claude-skills` prints the per-skill breakdown. If you
   want two or three of these, symlink those instead.
 
