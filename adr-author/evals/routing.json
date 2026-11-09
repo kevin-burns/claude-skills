@@ -1,0 +1,28 @@
+{
+  "_comment": "Routing prompts for adr-author. should_not holds near misses: requests that sound like ADR work but belong to another skill, or to no skill at all.",
+  "should_trigger": [
+    "Write an ADR for our decision to move session storage from cookies to Redis.",
+    "We've agreed billing only talks to the ledger through its API. Can you record that decision in docs/adr?",
+    "ADR 4 says we never call payments synchronously, but the code does now and that's fine. Supersede it.",
+    "Our architecture decision record about the event bus no longer matches the code. The code is right. Fix the record.",
+    "Record this architecture decision: all public endpoints go through the gateway in api/gateway.py.",
+    "Create a MADR for choosing Postgres full-text search over Elasticsearch, it's already decided.",
+    "Can you turn this decision into a proper decision record: services must not share database schemas.",
+    "Amend ADR 7: the rule about caching only applies to read endpoints, not writes.",
+    "Add a decision record explaining why we deliberately use raw SQL instead of an ORM in reports/.",
+    "Document the architecture decision we made yesterday to split notifications into its own service.",
+    "The backfill_invoice_ids job in billing/invoice.py reads ledger.db directly. It is a one-off migration that will be deleted next month; ADR 3 is still right. Handle it."
+  ],
+  "should_not": [
+    "Does this README section sound like an AI wrote it? Tighten it up.",
+    "Should we use Kafka or SQS for the order events? Give me the trade-offs.",
+    "Grill me on my plan to split the monolith before I commit to it.",
+    "Convene a panel to review our build-vs-buy decision for the search service.",
+    "Review this diff for bugs before I merge it.",
+    "Implement the outbox pattern in events/outbox.py with tests.",
+    "Is this runbook easy to follow? Where do readers get lost?",
+    "Write the commit message for the staged changes.",
+    "Explain what an architecture decision record is and when teams use them.",
+    "Check whether our code still follows the decisions in docs/adr and list violations."
+  ]
+}

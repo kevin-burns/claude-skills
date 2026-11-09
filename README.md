@@ -2,7 +2,7 @@
 
 ![claude-skills banner](images/banner.webp)
 
-Twenty-nine [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
+Thirty [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
 some bundle scripts, evals or reference files. A **subagent** is a different thing: a separate
 assistant, with its own tools and model, that the main session hands a self-contained job to
@@ -33,8 +33,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 29 skills + 9 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 29 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 30 skills + 9 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 30 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -67,7 +67,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than twenty-nine.
+rather than thirty.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
@@ -212,6 +212,7 @@ Structuring a decision that has more moving parts than fit in your head.
 
 | Skill | What it does | Wraps |
 |---|---|---|
+| [adr-author](./adr-author) | Write or amend an architecture decision record that names exactly what it decides — the modules, functions, paths or settings, and what must or must never happen — in the repo's own ADR format, then **self-check it with no model**: hedged decisions, names missing from the code, status, numbering and one-sided supersede links. Proposes names and uses only the ones you confirm; records are for people first, so it never rewrites a sentence into tool-speak. Supersedes or amends a record when the code turned out to be right | — |
 | [frontier-rounds](./frontier-rounds) | Interview you in breadth-first rounds until a design is settled — the whole frontier per round with a recommended answer on every question, rather than one question at a time. Produces decisions, not deliverables | — |
 | [travel-planning](./travel-planning) | Turn a trip into a paced day-by-day itinerary + a reconciled budget (Markdown); grounds cost estimates in typical/seasonal prices (labeled, sourced) — no booking, no live fares | — |
 | [business-plan](./business-plan) | Build a realistic business plan (full plan + one-pager + investor summary) where every number is researched-and-cited, user-supplied, or computed from your assumptions — never invented; ends with an honest go/no-go/reshape verdict | — |
@@ -272,6 +273,7 @@ Several agents ship a deterministic behavioral eval under `agents/<name>/evals/`
 
 - **c7search** — the `c7search` binary (`go install github.com/kevin-burns/c7search@latest`). A `CONTEXT7_API_KEY` is optional.
 - **clear-and-human** — **nothing** for the writing itself; the skill is prose all the way down. Two optional scripts add measurement: `scripts/register_report.py` reports where a draft sits on the person and stiffness axes (each feature printed with the paper behind it, no score and no verdict), and `scripts/fidelity_check.py` diffs a draft against its rewrite and flags any number, quote, URL or code span that appeared, vanished or changed — a number present only in the rewrite is the shape of a fabricated statistic — plus the ranking, scope, comparison and requirement words the rewrite dropped, which is how an edit deletes a claim while looking like it deleted only style. Both are standard library only: `uv run` or `python3`.
+- **adr-author** — **nothing to install** beyond the agent and git. `scripts/check_record.py` is standard library only (Python 3.12+), so `uv run` or `python3` both work; it uses no model and no network. Works without any ADR checker; one can enforce its records later if a team wants that.
 - **frontier-rounds** — **nothing.** Prose all the way down. Two optional integrations, both degrading cleanly if absent: it reads the `nano` files from `software-design-rules` when a question turns on a design decision, and it can dispatch a sub-agent for read-only environment lookups.
 - **job-feeds** — **nothing.** Standard library only, so `python3` works as a runner alongside `uv`. Verified running on Python 3.9 as recently as 2026-08-13, though CI now tests 3.12 and 3.13 only, so treat older interpreters as working-but-unwatched. No API keys, no accounts, no authentication — every source is a public feed. macOS, Linux, or WSL.
 - **markdown-converter** — `uv` (uses `uvx markitdown`, no install needed).

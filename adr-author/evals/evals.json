@@ -1,0 +1,103 @@
+{
+  "skill_name": "adr-author",
+  "_comment": "One-shot cases: each prompt carries the author's answers. Run from inside the named fixture repo (evals/build_fixtures.py). Every case also expects: no invented rationale, no git add/commit/push run, no tool vocabulary in any record written, and every figure in a written record (number, date, percentage, duration, count, amount) appears in the prompt or the fixture repository, except the record's own Date line and record numbers.",
+  "evals": [
+    {
+      "id": "W1",
+      "fixture": "nygard",
+      "prompt": "Write an ADR: we should prefer async communication between services. Context: orders and billing kept failing together when billing was slow. It's hard to reverse, it surprises people who expect a direct call, and we weighed direct HTTP calls against events. Names to use, which I confirm: Outbox, events/outbox.py, services/billing/api.py. Approve the draft as you show it, and approve the final diff too.",
+      "expected_output": "A record 0003 in docs/adr in the existing Nygard style, status Proposed, that names the confirmed modules in Decision/Consequences and raises the 'should prefer' hedge as a question instead of silently hardening it into 'must'.",
+      "expectations": [
+        "Writes docs/adr/0003-*.md (the next number), in the same header and heading style as 0001 and 0002",
+        "Status is Proposed",
+        "Decision or Consequences names Outbox, events/outbox.py and services/billing/api.py, and only names the author confirmed",
+        "The hedge ('should prefer') is raised with the author as a question, or kept as the author's preference; it is not silently turned into 'must'",
+        "The reason (orders and billing failing together) is in Context, not in Decision",
+        "check_record.py run on the written file reports no name-not-found, no-status or supersede-link finding",
+        "The skill runs check_record.py on the written file and shows its findings"
+      ]
+    },
+    {
+      "id": "W2",
+      "fixture": "nygard",
+      "prompt": "Record this decision as-is, it's already been agreed by the team: the orders service writes order rows only through place_order in services/orders/api.py, and nothing under services/billing/ writes order rows. It's hard to reverse, newcomers keep adding direct writes, and we chose it over shared table access. Approve the draft and the final diff.",
+      "expected_output": "A record kept close to the author's own words, with no forced edits.",
+      "expectations": [
+        "Writes docs/adr/0003-*.md with status Proposed (or Accepted only if the skill asks and the prompt is read as team-accepted; either is fine if stated)",
+        "Decision keeps the author's wording: place_order, services/orders/api.py and services/billing/ appear, and 'only' and 'nothing' are not softened",
+        "No name is added that the author did not give",
+        "Does not ask 'record as-is?' again, since the author already said so"
+      ]
+    },
+    {
+      "id": "W3",
+      "fixture": "madr",
+      "prompt": "Write an ADR: we cache search results in the database instead of adding Redis. Context: one more service is more than the team can run. It's hard to reverse, it surprises people who expect Redis, and we weighed Redis against a table. Confirmed names: search, app/search.py. Approve the draft and the final diff.",
+      "expected_output": "A MADR-shaped record that continues the existing numbering and front matter.",
+      "expectations": [
+        "Writes docs/decisions/0003-*.md (not docs/adr/)",
+        "Uses MADR shape: YAML front matter with status and date, 'Context and Problem Statement', 'Considered Options', 'Decision Outcome'",
+        "Front matter status is proposed",
+        "Considered Options lists Redis and the table; the rejected option is not written as a rule"
+      ]
+    },
+    {
+      "id": "W4",
+      "fixture": "two-schemes",
+      "prompt": "Write an ADR: cache keys include the tenant id. It's hard to reverse, it surprises people, and we weighed per-tenant caches against shared keys. Confirmed name: Cache.",
+      "expected_output": "The skill notices the two filename schemes (0001-*.md and ADR-002-*.md), reports the conflict and asks which to follow, and writes nothing in this turn.",
+      "expectations": [
+        "Reports that the directory mixes two filename styles and names both",
+        "Asks the author which style to follow",
+        "Writes no new file in docs/adr in this turn"
+      ]
+    },
+    {
+      "id": "W5",
+      "fixture": "nygard",
+      "prompt": "Write an ADR: we turned on the ruff rule that forbids print statements.",
+      "expected_output": "The when-to-write gate stops it: a lint rule is easy to reverse and not surprising.",
+      "expectations": [
+        "Says the decision does not need a record and names at least one failing criterion (easy to reverse, not surprising, or no real trade-off)",
+        "Offers to write it anyway if the author insists, or leaves that door open",
+        "Writes no file"
+      ]
+    },
+    {
+      "id": "W6",
+      "fixture": "nygard",
+      "prompt": "Write an ADR for our message bus. Should we use Kafka or SQS?",
+      "expected_output": "There is no decision yet, so there is nothing to record.",
+      "expectations": [
+        "Says no decision has been made yet, so there is nothing to record",
+        "Does not pick Kafka or SQS on the user's behalf",
+        "Writes no file"
+      ]
+    },
+    {
+      "id": "A1",
+      "fixture": "overtaken",
+      "prompt": "ADR 3 says billing never imports ledger.db, but billing/invoice.py does, for the invoice id backfill, and that's now how we want it: billing may read ledger rows through ledger.db for batch jobs, while request handlers still go through Ledger. The old decision is narrower than written. Approve the draft and the final diff.",
+      "expected_output": "An amendment to record 3 (or a superseding record with both statuses consistent), keeping history, self-check clean.",
+      "expectations": [
+        "Treats it as 'narrower than written' and amends record 3, or supersedes it with a new record 4 whose Supersedes line and record 3's 'Superseded by' line agree",
+        "Keeps the history: an Amended note with the date, or the old record left intact apart from its status",
+        "The new wording names ledger.db, Ledger and billing/invoice.py or billing/, and keeps 'request handlers' going through Ledger",
+        "check_record.py on every touched record reports no supersede-link finding",
+        "Does not delete record 3"
+      ]
+    },
+    {
+      "id": "A2",
+      "fixture": "overtaken",
+      "prompt": "The backfill_invoice_ids job in billing/invoice.py reads ledger.db directly. It is a one-off migration that will be deleted next month; ADR 3 is still right. Record the exception.",
+      "expected_output": "An exception recorded the team's way, or proposed and asked; record 3's decision untouched.",
+      "expectations": [
+        "Treats it as a one-off exception, not a change to the decision",
+        "Looks at how the repo records exceptions; finding none, proposes a short dated note with the reason and asks before adding it, or suggests a commit message line carrying the reason",
+        "Record 3's Decision and Consequences sentences are unchanged",
+        "Every exception it records or proposes carries the reason (one-off migration, to be deleted)"
+      ]
+    }
+  ]
+}

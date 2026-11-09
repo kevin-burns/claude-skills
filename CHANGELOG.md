@@ -11,6 +11,25 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-11-09
+
+### Added — `adr-author`, write and amend architecture decision records
+
+For recording a decision a team has already made, precisely enough that a reviewer, a newcomer or a
+tool can tell later whether the code still follows it. Reach for it with "write an ADR", "record
+this decision", "supersede ADR 4" or "our ADR no longer matches the code". It asks whether the
+decision deserves a record at all, interviews briefly, follows the repo's own ADR format and
+numbering, proposes the code names each decision is about and uses only the ones you confirm, and
+shows the draft before writing. `scripts/check_record.py` then self-checks the record with no model
+and no network (hedged decisions, names missing from the code, status, numbering, one-sided
+supersede links) and compares the final file with the approved draft.
+
+**What it won't do:** judge code against records, make the decision for you, rewrite a sentence
+into tool-speak (records are for people first), invent a rationale, or commit. It needs no ADR
+checker; one can enforce its records later.
+
+---
+
 ## 2026-11-04
 
 ### Added — `python-drill`, a Python refresher and interview drill coach

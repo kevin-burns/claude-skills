@@ -66,3 +66,6 @@ docs/superpowers/
 
 # claude plugin eval run output: transcripts and reports, local paths inside. Summaries go in evals/README.md.
 evals/results/
+
+# adr-author eval run output (transcripts, records, grades)
+adr-author/evals/runs/
