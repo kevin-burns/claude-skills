@@ -23,7 +23,7 @@ TEXT_SUFFIXES = {".md", ".py", ".json", ".txt", ".toml", ".yaml", ".yml", ".sh"}
 PERSONAL = [
     re.compile(r"/Users/"),
     re.compile(r"/home/\w+"),
-    re.compile(r"~/"),
+    re.compile(r"~/(?!\.claude/|\.agents/)"),  # generic install paths are fine; anything else is a home path
     re.compile(r"[\w.+-]+@(?!example\.invalid\b)[\w-]+\.[\w.]+"),
 ]
 # Words that belong to a checker's internals, not to a record a person reads.
