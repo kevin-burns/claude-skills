@@ -6,10 +6,12 @@ preference, and a name missing from the repo may be code not written yet.
 
 Usage:
     check_record.py RECORD [--repo DIR] [--adr-dir DIR] [--intended NAME ...]
-                    [--against DRAFT [--confirmed NAME ...]] [--json]
+                    [--against DRAFT [--confirmed NAME ...]] [--sources NOTES ...] [--json]
 
 --against compares the final record with the draft the author approved: anything that vanished,
-any claim word that changed, and any name added without the author confirming it.
+any claim word that changed, any figure added, and any name added without the author confirming it.
+--sources checks that every figure in the record (a number, date, percentage, duration, count or
+amount) appears in the author's own words.
 
 Exit codes: 0 nothing found, 1 findings, 2 usage error or unreadable record.
 """
@@ -216,6 +218,57 @@ def _claim_counts(text: str) -> Counter[str]:
     return +counts
 
 
+_SMALL_NUMBERS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+                  "eleven", "twelve"]
+# "one" is left out on purpose: "one service", "one-off" are not figures anyone measured.
+_NUMBER_WORDS = {w: str(i) for i, w in enumerate(_SMALL_NUMBERS) if i >= 2}
+_NUMBER_WORDS.update({"twenty": "20", "thirty": "30", "hundred": "100", "thousand": "1000", "dozen": "12"})
+_FIGURE = re.compile(
+    r"(?<![\w.-])(\d+(?:[.,]\d+)?)(\s?(?:%|[A-Za-z\u20ac$]+))?"
+    r"|\b(" + "|".join(_NUMBER_WORDS) + r")\s+([a-z]+)",
+    re.IGNORECASE,
+)
+_EXEMPT_LINE = re.compile(r"^\W*(date|status|supersedes|superseded|deciders)\b", re.IGNORECASE)
+_RECORD_REF = re.compile(r"\b(?:ADR[-\s]?|records?\s+)\d+\b", re.IGNORECASE)
+_EDIT_DATE = re.compile(r"^\W*(amended|exception)\b[^:]*?\d{4}-\d{2}-\d{2}", re.IGNORECASE)
+
+
+def _figure_text(text: str) -> str:
+    """The prose that can carry factual figures: no title, header lines, record refs or list numbers."""
+    kept = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("#") or _EXEMPT_LINE.match(stripped) or stripped == "---":
+            continue
+        stripped = re.sub(r"^\d+[.)]\s", "", stripped)
+        stripped = re.sub(r"\d{4}-\d{2}-\d{2}", "", stripped) if _EDIT_DATE.match(stripped) else stripped
+        stripped = _CODE_SPAN.sub(lambda m: "" if looks_like_name(m.group(1)) else m.group(1), stripped)
+        kept.append(_RECORD_REF.sub("", stripped))
+    return "\n".join(kept)
+
+
+def _figures(text: str) -> dict[str, str]:
+    """Normalised figure -> how it was written. 'three outages' and '3 outages' normalise alike."""
+    found = {}
+    for m in _FIGURE.finditer(_figure_text(text)):
+        if m.group(1):
+            value, unit = m.group(1).replace(",", "."), (m.group(2) or "").strip().lower()
+        else:
+            value, unit = _NUMBER_WORDS[m.group(3).lower()], m.group(4).lower()
+        key = value + unit if (len(unit) <= 2 or unit in "%\u20ac$") else f"{value} {unit}"
+        found.setdefault(key, m.group(0).lower())
+    return found
+
+
+def unsourced_figures(record_text: str, sources: str) -> list[Finding]:
+    """Figures in the record that the author's own words never state."""
+    known = set(_figures(sources))
+    return [Finding("unsourced-figure", None,
+                    f"'{shown}' reads as a fact, but it is not in what the author said. "
+                    "Where does it come from? Cite it, or leave it out.")
+            for key, shown in sorted(_figures(record_text).items(), key=lambda kv: kv[1]) if key not in known]
+
+
 def _read_text(path: Path) -> str:
     return path.read_bytes().decode("utf-8", errors="replace").replace("\r\n", "\n")
 
@@ -237,6 +290,11 @@ def compare(draft: str, final: str, confirmed: frozenset[str] = frozenset()) -> 
         found.append(Finding("claim-word-changed", None,
                              f"Words that set how strong the decision is changed ({changes}). "
                              "Was that intended?"))
+    draft_figures = set(_figures(draft))
+    for key, shown in sorted(_figures(final).items(), key=lambda kv: kv[1]):
+        if key not in draft_figures:
+            found.append(Finding("new-figure", None,
+                                 f"'{shown}' was added after the draft was approved. Where does it come from?"))
     for span in sorted(final_spans - draft_spans - confirmed):
         found.append(Finding("unconfirmed-name", None,
                              f"'{span}' was added after the draft was approved and was not confirmed."))
@@ -251,12 +309,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--intended", nargs="*", default=[], help="names of code that does not exist yet")
     parser.add_argument("--against", type=Path, help="the draft the author approved")
     parser.add_argument("--confirmed", nargs="*", default=[], help="names the author confirmed")
+    parser.add_argument("--sources", nargs="*", type=Path, default=[],
+                        help="the author's own words (interview notes); every figure must appear in them")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     if not args.record.is_file():
         print(f"cannot read {args.record}", file=sys.stderr)
         return 2
     findings = check(args.record, args.repo, args.adr_dir or args.record.parent, frozenset(args.intended))
+    if args.sources:
+        missing = [p for p in args.sources if not p.is_file()]
+        if missing:
+            print(f"cannot read {missing[0]}", file=sys.stderr)
+            return 2
+        notes = "\n".join(_read_text(p) for p in args.sources)
+        findings += unsourced_figures(_read_text(args.record), notes)
     if args.against:
         if not args.against.is_file():
             print(f"cannot read {args.against}", file=sys.stderr)
