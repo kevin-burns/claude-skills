@@ -5,7 +5,11 @@ Every finding is a question for the author, not an automatic fix: a hedge may be
 preference, and a name missing from the repo may be code not written yet.
 
 Usage:
-    check_record.py RECORD [--repo DIR] [--adr-dir DIR] [--intended NAME ...] [--json]
+    check_record.py RECORD [--repo DIR] [--adr-dir DIR] [--intended NAME ...]
+                    [--against DRAFT [--confirmed NAME ...]] [--json]
+
+--against compares the final record with the draft the author approved: anything that vanished,
+any claim word that changed, and any name added without the author confirming it.
 
 Exit codes: 0 nothing found, 1 findings, 2 usage error or unreadable record.
 """
@@ -17,6 +21,7 @@ import json
 import re
 import subprocess
 import sys
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -31,6 +36,8 @@ HEDGES = ("should", "prefer", "ideally", "where practical", "where possible", "t
           "recommended")
 DECISION_PHRASES = ("we will", "we decided", "must not", "never")
 _CODE_SPAN = re.compile(r"`([^`\n]+)`")
+_NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?[A-Za-z%]*")
+CLAIM_WORDS = ("must not", "must", "should", "never", "always", "only", "all", "none", "every")
 
 
 @dataclass(frozen=True)
@@ -195,18 +202,62 @@ def check(record_path: Path, repo: Path, adr_dir: Path, intended: frozenset[str]
     ]
 
 
+def _claim_counts(text: str) -> Counter[str]:
+    low = text.lower()
+    counts: Counter[str] = Counter()
+    for word in CLAIM_WORDS:
+        pattern = re.compile(r"\b" + re.escape(word) + r"\b")
+        counts[word] = len(pattern.findall(low))
+        low = pattern.sub(" ", low)
+    return +counts
+
+
+def _read_text(path: Path) -> str:
+    return path.read_bytes().decode("utf-8", errors="replace").replace("\r\n", "\n")
+
+
+def compare(draft: str, final: str, confirmed: frozenset[str] = frozenset()) -> list[Finding]:
+    """What changed between the approved draft and the final record, beyond confirmed names."""
+    found = []
+    draft_spans, final_spans = set(_CODE_SPAN.findall(draft)), set(_CODE_SPAN.findall(final))
+    final_numbers = set(_NUMBER.findall(final))
+    vanished = sorted(draft_spans - final_spans) + sorted(
+        n for n in set(_NUMBER.findall(draft)) - final_numbers if not any(n in s for s in final_spans)
+    )
+    for item in dict.fromkeys(vanished):
+        found.append(Finding("vanished", None,
+                             f"'{item}' was in the approved draft and is gone from the final record."))
+    before, after = _claim_counts(draft), _claim_counts(final)
+    if before != after:
+        changes = ", ".join(f"'{w}' {before[w]} -> {after[w]}" for w in CLAIM_WORDS if before[w] != after[w])
+        found.append(Finding("claim-word-changed", None,
+                             f"Words that set how strong the decision is changed ({changes}). "
+                             "Was that intended?"))
+    for span in sorted(final_spans - draft_spans - confirmed):
+        found.append(Finding("unconfirmed-name", None,
+                             f"'{span}' was added after the draft was approved and was not confirmed."))
+    return found
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Self-check an architecture decision record.")
     parser.add_argument("record", type=Path)
     parser.add_argument("--repo", type=Path, default=Path("."))
     parser.add_argument("--adr-dir", type=Path)
     parser.add_argument("--intended", nargs="*", default=[], help="names of code that does not exist yet")
+    parser.add_argument("--against", type=Path, help="the draft the author approved")
+    parser.add_argument("--confirmed", nargs="*", default=[], help="names the author confirmed")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     if not args.record.is_file():
         print(f"cannot read {args.record}", file=sys.stderr)
         return 2
     findings = check(args.record, args.repo, args.adr_dir or args.record.parent, frozenset(args.intended))
+    if args.against:
+        if not args.against.is_file():
+            print(f"cannot read {args.against}", file=sys.stderr)
+            return 2
+        findings += compare(_read_text(args.against), _read_text(args.record), frozenset(args.confirmed))
     if args.json:
         print(json.dumps([asdict(f) for f in findings], indent=2))
     else:
