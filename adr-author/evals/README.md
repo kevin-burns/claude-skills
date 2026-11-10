@@ -38,6 +38,7 @@ expectation, which was added after the first run.
 | r1 | first build | 54/57 | n/a | 36/57 | n/a |
 | r2 | sources rule, approval, no placeholders, draft saved first | 55/57 | 63/65 | 34/57 | 41/65 |
 | r4 | committed-record comparison, scratch dirs, draft shown, A2 prompt reworded | 57/57 | 65/65 | 36/57 | 43/65 |
+| r5 (2026-11-10, commit 45a8097) | final-review fixes (fences, name forms, dated links, headingless records, units, finder), ask for the harm, draft before the write | 56/57 | 64/65 | 36/57 | 42/65 |
 
 Where the baseline lost points: it wrote a record for an undecided question (W6) and for a lint rule
 (W5), picked one of two filename schemes without asking (W4), set status to Accepted unasked, and
@@ -52,8 +53,22 @@ description change; route-07 and route-10 went from 1/3 to 10/10 after the descr
 phrasings. Route-11 ("... ADR 3 is still right. Handle it.") fired 0/10: a request that vague does
 not reach the skill. Naming the exception ("Record the exception.") does.
 
-Known limits found by the evals and not fixed by an eval rerun since: a final review on
-2026-11-09 found parsing and name-lookup defects (code fences, `f()` and `a.py:12` forms, dated
-supersede links, headingless records, figure units, the script finder under symlinked installs);
-they are fixed test-first in the commit that adds this section, but the behaviour cases have not
-been rerun on that commit.
+What r5 showed that the totals hide (graded with evidence in that run's `grades.json`):
+
+- **The draft is still not shown before the write when the prompt approves it in advance.** In W1,
+  W2, W3 and A1 the agent wrote the draft and copied it onto the record in one command, with no draft
+  in any reply first; W1 then said the record was "identical to the draft shown above". No
+  expectation tests this yet, so it costs no points. In r4, W1 and W2 at least showed the draft in
+  the final reply.
+- **The harm question is asked only when the skill stops to interview.** W4 and W6 asked what breaks
+  without the decision; W2, whose prompt approves the draft in advance, wrote the record without the
+  harm and raised the gap afterwards. The cold reader still fails W2 on reason. It did not invent a
+  harm.
+- **W3 lost a point for rationale nobody gave** ("Redis is the usual tool for that"), which the
+  self-check cannot see because it contains no figure or name.
+- **A1 still passed a name the author never gave to `--confirmed`** (`backfill_invoice_ids`); the
+  script flagged it and the agent asked.
+
+Cold reader, r5 with the skill: W1, W3, A1 pass; W2 fails on reason.
+
+Routing was not rerun in r5; the figures above are from r4.
