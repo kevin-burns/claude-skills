@@ -2,7 +2,7 @@
 
 ![claude-skills banner](images/banner.webp)
 
-Thirty-one [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
+Thirty-two [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
 some bundle scripts, evals or reference files. A **subagent** is a different thing: a separate
 assistant, with its own tools and model, that the main session hands a self-contained job to
@@ -33,8 +33,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 31 skills + 9 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 31 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 32 skills + 9 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 32 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -67,7 +67,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than thirty-one.
+rather than thirty-two.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
@@ -100,7 +100,7 @@ instead.
 - **It copies.** A plugin install is a snapshot in the harness's cache, not a live link.
   Editing this repo afterwards changes nothing until you update.
 - **It costs context.** Every skill's description loads in every session so the model can
-  decide when to reach for one — about **5.4k tokens always-on** for the full set, before any
+  decide when to reach for one — about **5.6k tokens always-on** for the full set, before any
   skill fires. `claude plugin details claude-skills` prints the per-skill breakdown. If you
   want two or three of these, symlink those instead.
 
@@ -108,7 +108,7 @@ instead.
 
 Three of these skills also live in a repo of their own, published from here on every merge.
 The reason is audience: someone looking for a Ghost publishing tool or a Terragrunt reference
-is not going to find it inside one person's collection of thirty-one skills, and the competing
+is not going to find it inside one person's collection of thirty-two skills, and the competing
 tools for both are standalone. Each mirror is a working plugin in its own right.
 
 | skill | repo | who it is for |
@@ -215,6 +215,7 @@ Structuring a decision that has more moving parts than fit in your head.
 | [adr-author](./adr-author) | Write or amend an architecture decision record in the repo's own format that names exactly what it decides — the modules, functions or paths, and what must never happen — then **self-check it with no model**: hedged decisions, names missing from the code, figures nobody gave, broken supersede links. Uses only names you confirm, and supersedes a record when the code turned out to be right | — |
 | [frontier-rounds](./frontier-rounds) | Interview you in breadth-first rounds until a design is settled — the whole frontier per round with a recommended answer on every question, rather than one question at a time. Produces decisions, not deliverables | — |
 | [spec-ready](./spec-ready) | Check that a plan is **ready to spec** from your own words, not the agent's summary: a script reads your turns from the session transcript and an independent verifier must confirm each required item (goal, who it is for, non-goals, anti-goal, success check, verification, boundaries), quoting your words. What is missing comes back as one round of questions; then it writes the PRD (why) and the spec (how), every line citing your turn | — |
+| [spec-to-tickets](./spec-to-tickets) | Turn a spec into a breakdown worth building from: rewrite any breakdown (or make a minimal one) into `tickets.md`, propose **MoSCoW** priorities from the PRD for you to confirm, then **check it with no model**: every slice vertical, a walking skeleton first, every Must traced to the PRD, a Could held back in every timebox (DSDM's 60% guidance). Tickets go to beads, GitHub or Linear only when you ask | — |
 | [travel-planning](./travel-planning) | Turn a trip into a paced day-by-day itinerary + a reconciled budget (Markdown); grounds cost estimates in typical/seasonal prices (labeled, sourced) — no booking, no live fares | — |
 | [business-plan](./business-plan) | Build a realistic business plan (full plan + one-pager + investor summary) where every number is researched-and-cited, user-supplied, or computed from your assumptions — never invented; ends with an honest go/no-go/reshape verdict | — |
 
@@ -296,6 +297,7 @@ Several agents ship a deterministic behavioral eval under `agents/<name>/evals/`
 - **social-image-prep** — `sips` (macOS), ImageMagick, or `uv` (for the Pillow fallback). Uses whichever is present.
 - **source-snapshot** — Python 3 (stdlib only). Uses whichever extractor is present: `markitdown` (via `uv`, the reliable fallback for docs/tables), and optionally Defuddle for prose articles (it strips page chrome). The producer auto-resolves the Defuddle runner — an installed `defuddle` binary, else `pnpm dlx` / `bunx` / `npx defuddle` (the `defuddle` package; `defuddle-cli` is deprecated/merged into it) — never pinning `@latest`, so caches are reused. Install once with `pnpm add -g defuddle` to avoid per-run fetches, or set `SNAPSHOT_DEFUDDLE_CMD` for a custom path. Degrades gracefully when one is missing.
 - **spec-ready** — **nothing to install**: Python 3.12+ standard library (`uv run` or `python3`). With the `claude` CLI on `PATH` it verifies each item with a headless Haiku call (no tools, no saved session; about 0.15 US cents per call when measured on 2026-11-11); without it, the agent dispatches a subagent. A local Ollama model can be added as a second opinion through two environment variables, and an opt-in hook can block spec writes until the gate passes.
+- **spec-to-tickets** — **nothing to install**: Python 3.12+ standard library (`uv run` or `python3`), no model, no network. Installed beside spec-ready (as in this collection), it checks your overrides against your own words in the session transcript; without it they are recorded as attested.
 - **terraform-registry** — Python 3 (stdlib only). `search`/`inspect-module` need only network access; `inspect-resource`/`refresh-schema` additionally need the `terraform` CLI.
 - **terragrunt-skill** — works as static review with no tooling; the bundled `scripts/validate.sh` uses `terragrunt` (1.x), plus optional `tflint` and `trivy` if present. `scripts/detect_custom_resources.py` runs on Python 3.
 - **transcribe-summarize** — `ffmpeg` and `ffprobe` on PATH (`brew install ffmpeg`, `winget install Gyan.FFmpeg`, `sudo apt install ffmpeg`). Everything else is standard library. Each backend brings its own dependency and only when you pick it, so installing the skill does not drag in every engine: `'mlx-whisper>=0.4.2'` (Apple Silicon, the default there), `'faster-whisper>=1.2'` (the default everywhere else), `'parakeet-mlx'` (opt-in). The network backends — Groq, OpenAI and ElevenLabs Scribe — need **no package at all** (stdlib HTTPS) and read their key from `GROQ_API_KEY` / `OPENAI_API_KEY` / `ELEVENLABS_API_KEY`, never from a flag. They are never selected automatically and state the provider, size, duration and cost before sending. Optional: a Chrome, Chromium or Edge binary for the notes PDF — without one you get the HTML and a plain message, not a failure.

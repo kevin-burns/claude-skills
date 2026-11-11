@@ -70,3 +70,4 @@ evals/results/
 # adr-author eval run output (transcripts, records, grades)
 adr-author/evals/runs/
 spec-ready/evals/runs/
+spec-to-tickets/evals/runs/

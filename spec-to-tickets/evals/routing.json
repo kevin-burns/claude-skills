@@ -1,0 +1,23 @@
+{
+ "_comment": "Routing cases for spec-to-tickets, generated into the root evals/ by make_routing_cases.py.",
+ "should_trigger": [
+  "Break the spec into tickets we can build from.",
+  "prd-to-tickets for docs/specs/app.",
+  "Prioritise these issues with MoSCoW.",
+  "What do we build first from this spec?",
+  "Slice this spec into vertical increments, one week each.",
+  "Turn this backlog into a breakdown we can actually build from, walking skeleton first.",
+  "Check this ticket breakdown: is anything horizontal?",
+  "Which of these tickets are Must Haves for the first timebox?"
+ ],
+ "should_not": [
+  "Write the spec for this feature.",
+  "Is this plan ready to spec?",
+  "Write the implementation plan for slice T1.",
+  "Create a Linear ticket for this bug.",
+  "Brainstorm features for a dictation app.",
+  "Review this PR for bugs.",
+  "Record this decision as an ADR.",
+  "What is the status of my GitHub issues?"
+ ]
+}
