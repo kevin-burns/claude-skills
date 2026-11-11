@@ -47,6 +47,7 @@
     "./social-image-prep",
     "./source-snapshot",
     "./spec-ready",
+    "./spec-to-tickets",
     "./terraform-registry",
     "./terragrunt-skill",
     "./transcribe-summarize",
