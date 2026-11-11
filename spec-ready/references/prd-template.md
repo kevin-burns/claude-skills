@@ -6,7 +6,8 @@ Verifier: independent
 Copy both header values from readiness.json (`mode` and `verification`). Every line in the
 sections below cites the person's turn it came from as `[turn:<id>]`, using the
 turn ids in readiness.json. Write the person's decision in plain words; do not add reasons they did
-not give. If a number has no source, leave it out.
+not give. A number the person gave outside the gated items (say, in their last message) cites that
+turn; a number with no source at all is left out.
 
 ## Problem
 
@@ -31,6 +32,10 @@ not give. If a number has no source, leave it out.
 ## Success check
 
 <How the person will know it worked.> [turn:<id>]
+
+## Risks
+
+- <A risk the person named.> [turn:<id>]
 
 ## Open questions
 

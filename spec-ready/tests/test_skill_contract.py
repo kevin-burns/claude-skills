@@ -76,7 +76,8 @@ def test_credit():
 def test_templates_sections():
     prd = (SKILL / "references" / "prd-template.md").read_text(encoding="utf-8")
     spec = (SKILL / "references" / "spec-template.md").read_text(encoding="utf-8")
-    for section in ("Problem", "Who it is for", "Goal", "Non-goals", "Anti-goal", "Success check", "Assumptions"):
+    for section in ("Problem", "Who it is for", "Goal", "Non-goals", "Anti-goal", "Success check", "Risks",
+                    "Assumptions"):
         assert f"## {section}" in prd, section
     assert "Readiness: verified" in prd
     for section in ("Solution", "User stories", "Implementation decisions", "Verification strategy and test seams",

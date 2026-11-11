@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 SPEC_SOURCED_SECTIONS = {"user stories", "out of scope"}
-DECISION_SECTIONS = {"problem", "who it is for", "goal", "non-goals", "anti-goal", "success check"}
+DECISION_SECTIONS = {"problem", "who it is for", "goal", "non-goals", "anti-goal", "success check", "risks"}
 CITATION = re.compile(r"\[turn:([^\]\s]+)\]")
 
 
@@ -53,13 +53,17 @@ def check_prd(text: str, readiness: dict) -> list[str]:
         findings.append(f"Verifier header says {verifier.group(1)} but readiness.json says "
                         f"{readiness.get('verification')}")
     settled = {r["turn"] for r in readiness.get("items", []) if r.get("status") == "settled" and r.get("turn")}
+    person = set(readiness.get("person_turns", []))
     for section, number, line in _sections(text):
         if line.startswith(("Readiness:", "Verifier:")):
             continue
         cited = CITATION.findall(line)
+        # Decision lines cite settled turns; anything else may cite any of the person's turns.
+        allowed = settled if section in DECISION_SECTIONS else settled | person
         for turn in cited:
-            if turn not in settled:
-                findings.append(f"line {number}: cites turn {turn}, which is not a settled turn")
+            if turn not in allowed:
+                kind = "a settled turn" if section in DECISION_SECTIONS else "one of the person's turns"
+                findings.append(f"line {number}: cites turn {turn}, which is not {kind}")
         if section == "assumptions":
             if not re.sub(r"^[-*]\s*", "", line).startswith("Assumption:"):
                 findings.append(f"line {number}: assumptions must start with 'Assumption:'")

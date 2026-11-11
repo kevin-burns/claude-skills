@@ -131,3 +131,22 @@ def test_cli_checks_the_spec_too(tmp_path):
     done = subprocess.run([sys.executable, str(script), str(tmp_path / "prd.md"), str(tmp_path / "readiness.json"),
                            "--spec", str(tmp_path / "spec.md")], capture_output=True, text=True, check=False)
     assert done.returncode == 1 and "spec.md" in done.stdout
+
+
+def test_risks_section_cites_turns():
+    # Full eval 2026-11-11 (S5): a stated risk had to be filed as an Assumption.
+    ready = {**READY, "items": READY["items"] + [{"item": "risks", "status": "settled", "turn": "u3"}]}
+    text = GOOD.replace("## Assumptions", "## Risks\n\n- Latency on older Macs. [turn:u3]\n\n## Assumptions")
+    assert check_prd(text, ready) == []
+    uncited = GOOD.replace("## Assumptions", "## Risks\n\n- Latency on older Macs.\n\n## Assumptions")
+    assert any("no citation" in f for f in check_prd(uncited, ready))
+
+
+def test_a_figure_may_cite_any_of_the_persons_turns():
+    # Full eval 2026-11-11 (S7): the person's own figure, given in a later turn, could not be cited.
+    ready = {**READY, "person_turns": ["u1", "u2", "u9"]}
+    note = "## Notes\n\nThe person expects it to save about 40 minutes a day. [turn:u9]\n\n"
+    text = GOOD.replace("## Assumptions", note + "## Assumptions")
+    assert check_prd(text, ready) == []
+    decision = GOOD.replace("Typing long emails is slow. [turn:u1]", "Typing long emails is slow. [turn:u9]")
+    assert any("not a settled turn" in f for f in check_prd(decision, ready))
