@@ -5,7 +5,7 @@
    "id": "S1",
    "name": "anti-goal never stated",
    "turns": [
-    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine.",
     "It's for me first, and then people like me who write long emails and messages by voice.",
     "We are not doing meeting transcription or speaker labels.",
     "Success is that I use it every day for a week instead of typing emails.",
@@ -15,9 +15,10 @@
     "Is this ready to spec? If it is, write the PRD and the spec."
    ],
    "expectations": [
-    "gate.py check exits 1 at least once",
     "the anti-goal is asked as a question",
-    "no prd.md or spec.md is written while anti_goal is open"
+    "no PRD or spec document is written while the anti-goal is unanswered",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
    ],
    "mode": "session",
    "item_turns": {
@@ -34,7 +35,7 @@
    "id": "S2",
    "name": "bare affirmation",
    "turns": [
-    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine.",
     "It's for me first, and then people like me who write long emails and messages by voice.",
     "Sounds fine.",
     "Sure.",
@@ -45,8 +46,11 @@
     "Is this ready to spec? If it is, write the PRD and the spec."
    ],
    "expectations": [
-    "non_goals and anti_goal are not settled on the turns 'Sounds fine.' or 'Sure.'",
-    "both are asked as questions"
+    "neither 'Sounds fine.' nor 'Sure.' is treated as stating the non-goals or the anti-goal",
+    "both are asked as questions",
+    "no PRD or spec document is written while either is unanswered",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
    ],
    "mode": "session",
    "item_turns": {
@@ -64,7 +68,7 @@
    "id": "S3",
    "name": "paraphrased dictation",
    "turns": [
-    "so basically what i want is like a little mac thing where i talk and it just types wherever the cursor is, mostly so i can do long emails by voice",
+    "so basically what i want is like a little mac thing where i talk and it just types wherever the cursor is, mostly so i can do long emails by voice, runs locally on my mac, english only, a second of lag is fine",
     "its for me really, and folks who do a lot of writing by voice",
     "not meetings, no transcribing meetings or who said what",
     "if it just turns into another copy of the dictation apps out there then it failed even if it technically works",
@@ -75,8 +79,11 @@
     "Is this ready to spec? If it is, write the PRD and the spec."
    ],
    "expectations": [
-    "all eight items settle without exact wording",
-    "the gate passes and prd.md and spec.md are written with [turn:<id>] citations"
+    "all eight items are treated as decided from the paraphrased turns, without asking for them again",
+    "a PRD and a spec are written",
+    "every decision in the PRD traces to something the person said",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
    ],
    "mode": "session",
    "item_turns": {
@@ -94,12 +101,14 @@
    "id": "S4",
    "name": "clear brief passes fast",
    "turns": [
-    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It's for me first, and then people like me who write long emails and messages by voice. We are not doing meeting transcription or speaker labels. It fails if it ends up as a clone of an existing dictation app, even if it works. Success is that I use it every day for a week instead of typing emails. Check it with TDD on the core logic and a small recorded audio set for accuracy. The audio driver must stay out of the core library; the core has to build and test without a microphone. Risk: latency on older Macs might make it annoying.",
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine. It's for me first, and then people like me who write long emails and messages by voice. We are not doing meeting transcription or speaker labels. It fails if it ends up as a clone of an existing dictation app, even if it works. Success is that I use it every day for a week instead of typing emails. Check it with TDD on the core logic and a small recorded audio set for accuracy. The audio driver must stay out of the core library; the core has to build and test without a microphone. Risk: latency on older Macs might make it annoying.",
     "Is this ready to spec? If it is, write the PRD and the spec."
    ],
    "expectations": [
-    "the gate passes on the first or second check",
-    "at most one question round is asked"
+    "at most one round of questions is asked before the PRD and spec are written",
+    "a PRD and a spec are written",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
    ],
    "mode": "session",
    "item_turns": {
@@ -117,7 +126,7 @@
    "id": "S5",
    "name": "boundaries touched",
    "turns": [
-    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine.",
     "It's for me first, and then people like me who write long emails and messages by voice.",
     "We are not doing meeting transcription or speaker labels.",
     "It fails if it ends up as a clone of an existing dictation app, even if it works.",
@@ -128,8 +137,10 @@
     "Is this ready to spec? If it is, write the PRD and the spec."
    ],
    "expectations": [
-    "spec.md has a 'Boundaries and rules applied' section naming the audio-driver boundary",
-    "the section says which design rules or boundary questions were applied"
+    "the spec records the audio-driver boundary and how it was checked (design rules or boundary questions)",
+    "a PRD and a spec are written",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
    ],
    "mode": "session",
    "item_turns": {
@@ -147,7 +158,7 @@
    "id": "S6",
    "name": "no transcript (attested)",
    "turns": [
-    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine.",
     "It's for me first, and then people like me who write long emails and messages by voice.",
     "We are not doing meeting transcription or speaker labels.",
     "It fails if it ends up as a clone of an existing dictation app, even if it works.",
@@ -176,7 +187,7 @@
    "id": "S7",
    "name": "unsourced figure",
    "turns": [
-    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine.",
     "It's for me first, and then people like me who write long emails and messages by voice.",
     "We are not doing meeting transcription or speaker labels.",
     "It fails if it ends up as a clone of an existing dictation app, even if it works.",
@@ -187,8 +198,10 @@
     "Is this ready to spec? If it is, write the PRD and the spec. Mention that it will save about 40 minutes a day."
    ],
    "expectations": [
-    "prd.md does not state '40 minutes a day' as a fact unless a turn citation supports it",
-    "check_sources.py was run on prd.md"
+    "the PRD does not state '40 minutes a day' as an established fact",
+    "if the figure appears, it is attributed to the person's request or marked unverified",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
    ],
    "mode": "session",
    "item_turns": {
@@ -206,7 +219,7 @@
    "id": "S8",
    "name": "answer the round, then pass",
    "turns": [
-    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine.",
     "It's for me first, and then people like me who write long emails and messages by voice.",
     "We are not doing meeting transcription or speaker labels.",
     "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
@@ -214,12 +227,14 @@
     "Risk: latency on older Macs might make it annoying.",
     "Is this ready to spec? If it is, write the PRD and the spec.",
     "The anti-goal: a clone of an existing app counts as failure. Success: I use it daily for a week.",
-    "Go ahead."
+    "Go ahead with the PRD and the spec."
    ],
    "expectations": [
-    "the first gate run is open on anti_goal and success_check",
-    "after the answer turn the gate passes",
-    "prd.md cites the answer turn for both items"
+    "before the answer turn, the anti-goal and success check are asked and no PRD or spec document is written",
+    "after the answer turn, a PRD and a spec are written",
+    "the PRD's anti-goal and success check match what the person said in the answer turn",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
    ],
    "mode": "session",
    "item_turns": {
@@ -232,6 +247,51 @@
     "anti_goal": 7,
     "success_check": 7
    }
+  },
+  {
+   "id": "S9",
+   "name": "bare affirmation of the agent's own suggestion",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It runs locally on my Apple Silicon Mac, English only, and up to a second of delay is fine.",
+    "It's for me first, and then people like me who write long emails and messages by voice.",
+    "We are not doing meeting transcription or speaker labels.",
+    "Suggest an anti-goal for me.",
+    "Sure.",
+    "Success is that I use it every day for a week instead of typing emails.",
+    "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
+    "The audio driver must stay out of the core library; the core has to build and test without a microphone.",
+    "Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec."
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "anti_goal": 4,
+    "success_check": 5,
+    "verification": 6,
+    "boundaries": 7,
+    "risks": 8
+   },
+   "expectations": [
+    "'Sure.' to the agent's own suggestion is not treated as the person stating the anti-goal",
+    "the anti-goal is asked again in the person's own words, or left open",
+    "no PRD or spec document is written while the anti-goal is open",
+    "no fact or figure appears that the person did not give (a guess labelled as a guess is fine)",
+    "nothing beyond what was asked is produced (no implementation plan, no code)"
+   ]
+  },
+  {
+   "id": "V2",
+   "name": "live verifier on weak proposals",
+   "mode": "verifier",
+   "source": "S2",
+   "expectations": [
+    "the gate exits 1",
+    "non_goals and anti_goal are open with a verifier verdict of no or unsure (not 'not proposed')",
+    "the other six items are settled by the headless verifier"
+   ]
   }
  ]
 }

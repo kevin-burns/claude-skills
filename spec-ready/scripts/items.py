@@ -34,7 +34,8 @@ DEFAULT_ITEMS: tuple[Item, ...] = (
          "How will the work be checked: TDD, combinatorial coverage, evals/ablation, "
          "or a live probe versus a fake?", False),
     Item("boundaries", "Boundaries touched",
-         "Does this create or move a component boundary, and which one (or does the person say none)?", False),
+         "Does the text say where a component boundary lies (what must stay separate from what), "
+         "or that no boundary is affected?", False),
     Item("risks", "Risks and assumptions", "What could go wrong or is being assumed?", True),
 )
 

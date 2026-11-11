@@ -14,10 +14,13 @@ from transcripts import load_user_turns
 EVALS = json.loads((HERE / "evals" / "evals.json").read_text(encoding="utf-8"))["evals"]
 
 
+SCENARIOS = [e for e in EVALS if "turns" in e]
+
+
 def test_every_scenario_builds_and_loads(tmp_path):
     built = build(tmp_path)
-    assert sorted(built) == sorted(e["id"] for e in EVALS) == [f"S{n}" for n in range(1, 9)]
-    for case in EVALS:
+    assert sorted(built) == sorted(e["id"] for e in SCENARIOS) == [f"S{n}" for n in range(1, 10)]
+    for case in SCENARIOS:
         turns = load_user_turns(built[case["id"]] / "transcript.jsonl", "claude-code")
         assert [t.text for t in turns] == case["turns"]
         assert (built[case["id"]] / "repo" / ".git").is_dir()
@@ -46,4 +49,33 @@ def test_proposals_cite_the_affirmation_turns_in_s2(tmp_path):
 
 def test_expectations_and_modes():
     for case in EVALS:
-        assert case["expectations"] and case["mode"] in ("session", "gate-only")
+        assert case["expectations"] and case["mode"] in ("session", "gate-only", "verifier")
+
+
+def test_expectations_are_arm_neutral():
+    # Eval 2026-11-11: expectations naming the skill's own files or scripts could not grade the
+    # other arms fairly. Session expectations describe what happened, not how spec-ready does it.
+    for case in (e for e in EVALS if e["mode"] == "session"):
+        for text in case["expectations"]:
+            for word in ("gate.py", "readiness.json", "[turn:", "check_sources", "prd.md", "spec.md"):
+                assert word not in text, (case["id"], text)
+        assert any("nothing beyond what was asked" in t for t in case["expectations"]), case["id"]
+
+
+def test_s9_invites_a_bare_affirmation_for_the_anti_goal():
+    s9 = next(e for e in EVALS if e["id"] == "S9")
+    assert "Sure." in s9["turns"] and s9["item_turns"]["anti_goal"] == s9["turns"].index("Sure.")
+
+
+def test_verifier_case_reuses_a_scenario_with_weak_proposals():
+    v = next(e for e in EVALS if e["mode"] == "verifier")
+    source = next(e for e in EVALS if e["id"] == v["source"])
+    weak = {k for k, i in source["item_turns"].items() if source["turns"][i] in ("Sounds fine.", "Sure.")}
+    assert weak == {"non_goals", "anti_goal"}
+
+
+def test_scenarios_answer_the_usual_clarifying_questions():
+    # Eval 2026-11-11: the scripted person never answered "local or cloud, which Mac, what latency".
+    for case in (e for e in EVALS if e["mode"] == "session"):
+        joined = " ".join(case["turns"]).lower()
+        assert "locally" in joined and "second" in joined, case["id"]

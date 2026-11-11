@@ -18,6 +18,7 @@ Run it from the repository root. Exit codes for check: 0 ready; 1 items open or 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -157,6 +158,11 @@ def _verification(verifiers: list[Verifier], attested: bool) -> str:
     return "independent"
 
 
+def transcript_id(path: Path | None) -> str | None:
+    """A fingerprint of the transcript's location: enough to notice a different file, no local path."""
+    return hashlib.sha256(str(path).encode("utf-8")).hexdigest()[:16] if path else None
+
+
 def _load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -208,9 +214,11 @@ def _check(args) -> int:
     target = out / READINESS
     previous = _load_json(target) if target.is_file() else None
     doc = run_gate(_load_json(Path(args.proposals)), items, turns, verifiers, previous, harness)
-    doc["transcript"] = str(path) if path else None
+    # No local paths in readiness.json: it is copied beside the PRD and may be committed.
+    doc["transcript_id"] = transcript_id(path)
+    doc["person_turns"] = list(turns) if turns else []
     doc["verification"] = _verification(verifiers, turns is None)
-    doc["environment"] = {"claude_cli": shutil.which("claude"), "path": os.environ.get("PATH", "")}
+    doc["environment"] = {"claude_cli_found": shutil.which("claude") is not None}
     _write(target, doc)
     print(json.dumps({"pass": doc["pass"], "mode": doc["mode"], "verification": doc["verification"],
                       "questions": questions(doc, items)}, indent=2))
@@ -246,7 +254,7 @@ def _override(args) -> int:
     if doc.get("mode") != "verified":
         return _fail("overrides need a verified run; this one is attested")
     _, path, turns = _session()
-    if turns is None or str(path) != doc.get("transcript"):
+    if turns is None or transcript_id(path) != doc.get("transcript_id"):
         return _fail("cannot read the transcript this readiness.json was checked against")
     turn = turns.get(args.turn)
     quote = normalise(args.quote)

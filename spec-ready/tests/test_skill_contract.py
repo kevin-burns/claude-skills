@@ -76,7 +76,8 @@ def test_credit():
 def test_templates_sections():
     prd = (SKILL / "references" / "prd-template.md").read_text(encoding="utf-8")
     spec = (SKILL / "references" / "spec-template.md").read_text(encoding="utf-8")
-    for section in ("Problem", "Who it is for", "Goal", "Non-goals", "Anti-goal", "Success check", "Assumptions"):
+    for section in ("Problem", "Who it is for", "Goal", "Non-goals", "Anti-goal", "Success check", "Risks",
+                    "Assumptions"):
         assert f"## {section}" in prd, section
     assert "Readiness: verified" in prd
     for section in ("Solution", "User stories", "Implementation decisions", "Verification strategy and test seams",
@@ -94,3 +95,19 @@ def test_instructions_match_the_reviewed_cli():
     assert "--answers-from subagent" in TEXT and "--answers-from session-model" in TEXT
     assert "timeout" in TEXT and "Verifier:" in TEXT
     assert "appending a turn" in README and "--resume" in README
+
+
+def test_open_questions_and_spec_sources_are_described():
+    assert "--spec <dir>/spec.md" in TEXT
+    prd = (SKILL / "references" / "prd-template.md").read_text(encoding="utf-8")
+    spec = (SKILL / "references" / "spec-template.md").read_text(encoding="utf-8")
+    assert "## Open questions" in prd and "Open question:" in prd
+    assert "Proposed:" in spec and "[turn:<id>]" in spec
+
+
+def test_output_location_rule():
+    # Kevin 2026-11-11 (option a): when the person has asked for the PRD and spec and the location is
+    # unambiguous, write there and report it; ask only when it is genuinely ambiguous.
+    assert "write there and say where" in TEXT
+    assert "Ask only when the location is ambiguous" in TEXT
+    assert "The person confirms the path" not in TEXT

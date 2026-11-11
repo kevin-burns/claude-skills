@@ -29,8 +29,8 @@ decides.
 Scripts live in this skill's `scripts/` directory; run them with `uv run` or `python3`, always
 from the repository root (the gate finds the session transcript and `.spec-ready/items.json` from
 there), and give the Bash call a timeout of at least 180000 ms: verifier calls run in parallel but
-each may take up to a minute. Work in a scratch directory `$D` (`mktemp -d`) until the output
-location is confirmed.
+each may take up to a minute. Keep proposals and the gate's files in a scratch directory `$D`
+(`mktemp -d`) until you write.
 
 1. **Propose rows.** `gate.py turns` lists the person's turns with their ids. For each required
    item, find the turn that states it and write `$D/proposals.json`: a list of
@@ -68,11 +68,14 @@ location is confirmed.
    otherwise ask the questions in `references/boundary-questions.md`. Record which rules were
    applied or knowingly broken in the spec.
 7. **Write.** Find where this repository keeps specs (`docs/specs/`, `docs/superpowers/specs/`,
-   `docs/prd/`, an existing pattern); otherwise propose `docs/specs/<date>-<slug>/`. The person
-   confirms the path. Copy `readiness.json` there, then write `prd.md` from
+   `docs/prd/`, an existing pattern). If the person has asked for the PRD and spec and there is one
+   such place, or none (then use `docs/specs/<date>-<slug>/`), write there and say where. Ask only when the location is ambiguous, for example two conventions or a path the person named
+   that does not exist. Copy `readiness.json` there, then write `prd.md` from
    `references/prd-template.md` (its `Readiness:` and `Verifier:` header lines copy `mode` and
    `verification` from readiness.json) and `spec.md` from `references/spec-template.md`. Run
-   `check_sources.py <dir>/prd.md <dir>/readiness.json` and fix every finding.
+   `check_sources.py <dir>/prd.md <dir>/readiness.json --spec <dir>/spec.md` and fix every
+   finding. A question nobody has answered goes under Open questions in the PRD, never under
+   Assumptions; a user story or out-of-scope line nobody stated starts `Proposed:`.
 
 Never write prd.md or spec.md while gate.py exits non-zero, except after exit 2 when the person
 explicitly agrees to continue unverified.
