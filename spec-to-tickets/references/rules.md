@@ -9,6 +9,7 @@
 | mix | an increment's Must effort is over 60% | DSDM's guidance for confidence in the Musts (see dsdm.md) |
 | contingency | an increment has no Could | the Coulds are what gets dropped when the timebox runs short |
 | acceptance | no criteria, or a criterion that names nothing it proves | the trace runs PRD → slice → test |
+| specifics | a criterion adds a figure ("five-minute", "95%") or a capitalised name ("TextEdit") the PRD and spec do not contain, and does not start `Proposed:` | a testable criterion often needs a number nobody chose; marking it makes it the person's choice, not a silent invention. New scope in plain lowercase words ("starts at login") has no surface form a script can see, so the person's review still matters |
 | blocks | an unknown blocker, or a cycle | a cycle means nothing can start |
 | size | an `L` with no note | a slice is one context window, one pull request, and demoable on its own |
 

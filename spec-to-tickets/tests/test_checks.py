@@ -1,4 +1,4 @@
-"""The eight checks: each fails what it should, passes what it should, and drops what the person accepted."""
+"""The checks: each fails what it should, passes what it should, and drops what the person accepted."""
 
 import sys
 from pathlib import Path
