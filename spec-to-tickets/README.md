@@ -3,6 +3,10 @@
 Prioritises and checks a breakdown of a spec before anyone builds from it. See `SKILL.md` for how
 the agent uses it; this file is for the person installing it.
 
+It borrows MoSCoW prioritisation and timeboxing from DSDM. It is not an implementation of DSDM
+and covers none of its roles, phases or governance; for the framework itself, read the DSDM Agile
+Project Framework handbook.
+
 ## What it needs
 
 Nothing beyond the agent: the scripts are Python 3.12+ standard library (`uv run` or `python3`).
