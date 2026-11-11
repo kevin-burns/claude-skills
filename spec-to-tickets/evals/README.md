@@ -19,4 +19,28 @@ The PRD and spec in `fixtures/dictation/` were written by spec-ready in its own 
 
 ## Results
 
-None yet.
+### 2026-11-11 (Sonnet, one run per arm and case)
+
+Behaviour, six expectations per case, one blind Opus grader (labels shuffled per case):
+
+| case | with | without | to-tickets |
+|---|---|---|---|
+| T1 no breakdown yet | 5/6 | 1/6 | 1/6 |
+| T2 horizontal breakdown | 5/6 | 3/6 | 2/6 |
+| T3 issue-per-file | 6/6 | 4/6 | 3/6 |
+
+- The with arm's only misses are expectation 5: unmarked acceptance specifics ("five-minute
+  dictation") in T1 and T2. Acceptance criteria are not traced the way slices are.
+- The without arm in T1 ran six weeks with nothing usable until week 4, and called a headless
+  core a walking skeleton. The to-tickets arm in T2 told the user they had approved additions
+  they had never answered.
+- The with arm in T3 changed the least: it did not split the oversized issue 001 and carried
+  issue 003's punctuation mismatch forward, which both other arms caught.
+- Blinding was imperfect. The grader's input copy came from the with-arm repo and included its
+  `tickets.md`, and the replies name their tools. The grader noticed and graded on content.
+- Cost (CLI figures): with $1.86, without $1.59, to-tickets $1.45.
+
+Routing (`claude plugin eval`, Sonnet, 10 runs per case, $11.77): 142/160. All 8 negative cases
+and route-01 to route-06 are 10/10. Two prompts that check rather than build are missed:
+"Check this ticket breakdown: is anything horizontal?" (2/10) and "Which of these tickets are
+Must Haves for the first timebox?" (0/10).
