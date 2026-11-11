@@ -19,7 +19,20 @@ the breakdown first with Matt Pocock's `to-tickets` (github.com/mattpocock/skill
 
 - Sizes are S, M, L. The 60% rule is computed on them, so it is as good as the sizes.
 - The vertical check reads the layers a slice declares; it cannot see whether the code touches them.
+  The layers in the front matter are taken from the spec by the agent, so check them against the
+  spec's implementation decisions: an eval run once collapsed four named adapters into one.
+- An acceptance criterion that adds a figure ("five-minute", "95%") or a capitalised name
+  ("TextEdit") the PRD and spec do not contain must start `Proposed:`. New scope written in plain
+  lowercase words ("starts at login") has no form a script can see; that is left to your review.
 - A Must's quote is checked to be at least four words from the PRD's goal, success check or
   anti-goal; whether that sentence really justifies the slice is for the person to judge.
 - Overrides are checked against the person's turn when a transcript is readable; a hand-edited
   override in tickets.md is still possible, and `check` lists every override it applies.
+
+## Evals
+
+`evals/README.md` has the cases, the method and the results. On 2026-11-11, graded blind by a fresh
+Opus grader against six expectations per case: with spec-to-tickets 16/18, without 8/18, Matt
+Pocock's `to-tickets` 6/18. The with arm's two misses were unmarked figures in acceptance criteria;
+after the `specifics` check, a rerun of those two cases scored 6/6 each. Routing: 142/160, with two
+check-only prompts not yet routed.

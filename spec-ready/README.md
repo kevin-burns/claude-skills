@@ -57,3 +57,10 @@ What the gate cannot stop, stated plainly:
   Ollama model.
 - **Calibration.** No verifier has been calibrated on planning conversations yet. Overrides are
   recorded in readiness.json so that it can be.
+
+## Evals
+
+`evals/README.md` has the scenarios, the method and the results. On 2026-11-11, one run per case
+and arm, graded by fresh Opus graders: full run with spec-ready 34/36, without 20/36; after fixes, a
+rerun of the affected cases scored 14/14 with, 10/14 without, and 9/14 for Matt Pocock's `to-spec`
+called by name. Routing: 180/180.
