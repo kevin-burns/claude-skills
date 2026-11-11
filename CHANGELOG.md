@@ -13,6 +13,24 @@ Dates are the date the work landed on `main`.
 
 ## 2026-11-11
 
+### Added — `spec-to-tickets`, prioritise and check a breakdown before building from it
+
+For the step after a spec: "break the spec into tickets", "prd-to-tickets", "what do we build
+first". It rewrites whatever breakdown exists (issue files, a tickets document, a beads list) into
+one `tickets.md`, or makes a minimal one itself, proposes MoSCoW priorities from the PRD for you to
+confirm in one round, and then a script checks it with no model: every slice cuts through the
+layers it needs, the first increment is a walking skeleton, every Must traces to the PRD (your turn
+or a quoted sentence), each increment holds Coulds back as contingency and stays at or under 60%
+Must effort (DSDM's guidance), every acceptance criterion names what it proves, and the blocking
+graph has no cycles. An override needs your own words, checked against your turn in the session
+transcript through spec-ready.
+
+**What it won't do:** generate an elaborate breakdown itself (use Matt Pocock's `to-tickets` or Cole
+Medin's `piv-slice-epic` first, then run this); write implementation plans up front (each slice is
+planned just in time with writing-plans); create tickets unless you ask (beads, GitHub or Linear);
+estimate in hours or points (S, M, L only); or add Scrum ceremony. DSDM is paraphrased with section
+references, never copied.
+
 ### Added — `spec-ready`, check a plan is ready to spec, then write the PRD and spec
 
 For the moment between talking a plan through and writing it up. Reach for it with "is this ready
