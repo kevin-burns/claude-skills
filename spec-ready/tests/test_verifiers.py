@@ -81,11 +81,20 @@ def test_headless_command_and_flags():
 
     def runner(argv, **kwargs):
         seen["argv"], seen["input"], seen["timeout"] = argv, kwargs.get("input"), kwargs.get("timeout")
+        seen["cwd"] = kwargs.get("cwd")
+        if seen["cwd"]:
+            seen["empty"] = not any(Path(seen["cwd"]).iterdir())
         return FakeCompleted(envelope('{"answer": "yes", "p": 0.9, "span": "a clone of someone"}'))
 
     v = HeadlessClaude(runner=runner).verify(ANTI, TURN)
-    assert seen["argv"] == ["claude", "-p", "--model", "haiku", "--tools", "", "--no-session-persistence",
-                            "--output-format", "json"]
+    argv = seen["argv"]
+    assert argv[:9] == ["claude", "-p", "--model", "haiku", "--tools", "", "--no-session-persistence",
+                        "--output-format", "json"]
+    # Review finding 9: the verifier must not load the repo's CLAUDE.md, project hooks, MCP or skills.
+    for flag in ("--strict-mcp-config", "--disable-slash-commands", "--setting-sources", "--system-prompt"):
+        assert flag in argv, flag
+    assert argv[argv.index("--setting-sources") + 1] == "user"
+    assert seen["cwd"] and seen["empty"]
     assert TURN in seen["input"] and seen["timeout"] == 60.0
     assert (v.answer, v.verifier) == ("yes", "headless-claude")
 
@@ -161,3 +170,43 @@ def test_combine_disagreement_is_unsure():
     assert combine([yes, Verdict("yes", 0.6, "s", "b")]).p == 0.6
     assert combine([no, Verdict("unsure", None, "", "c")]).answer == "no"
     assert combine([]).answer == "unsure"
+
+
+def test_infrastructure_failures_are_flagged_and_dropped_by_combine():
+    # Review finding 2: a down Ollama host must not veto the headless verifier's answer.
+    def down(request, timeout):
+        raise urllib.error.URLError("connection refused")
+
+    failed = OllamaVerifier("tev1", "http://h:1", opener=down).verify(ANTI, TURN)
+    assert failed.error
+    yes = Verdict("yes", 0.9, "a clone", "headless-claude")
+    assert combine([yes, failed]).answer == "yes"
+    both_failed = combine([failed, failed])
+    assert both_failed.answer == "unsure" and both_failed.error and "unavailable" in both_failed.reason
+
+
+def test_ollama_host_without_scheme_or_port():
+    # Review finding 3: OLLAMA_HOST is often "127.0.0.1:11434" or a bare host name.
+    seen = []
+
+    def opener(request, timeout):
+        seen.append(request.full_url)
+        return io.BytesIO(json.dumps({"response": '{"answer": "no", "p": 0.5, "span": ""}'}).encode())
+
+    for host, url in (("127.0.0.1:11434", "http://127.0.0.1:11434/api/generate"),
+                      ("localhost", "http://localhost:11434/api/generate"),
+                      ("https://models.example.invalid", "https://models.example.invalid/api/generate")):
+        OllamaVerifier("tev1", host, opener=opener).verify(ANTI, TURN)
+        assert seen[-1] == url
+
+
+def test_probe_reports_an_unusable_verifier():
+    # Review finding 11: a broken login must be detectable so the subagent path can open.
+    def auth_error(argv, **kw):
+        return FakeCompleted(envelope("Invalid API key", is_error=True))
+
+    def ok(argv, **kw):
+        return FakeCompleted(envelope('{"answer": "no", "p": 0.9, "span": ""}'))
+
+    assert HeadlessClaude(runner=auth_error).probe() is not None
+    assert HeadlessClaude(runner=ok).probe() is None

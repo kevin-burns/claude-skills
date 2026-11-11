@@ -7,15 +7,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from check_sources import check_prd
 
-READY = {"mode": "verified", "items": [
+READY = {"mode": "verified", "verification": "independent", "items": [
     {"item": "goal", "status": "settled", "turn": "u1"},
     {"item": "anti_goal", "status": "settled", "turn": "u2"},
     {"item": "risks", "status": "guessed", "turn": None},
 ]}
 
 
-def prd(body: str, mode: str = "verified") -> str:
-    return f"# Dictation\n\nReadiness: {mode}\n\n{body}"
+def prd(body: str, mode: str = "verified", verifier: str = "independent") -> str:
+    return f"# Dictation\n\nReadiness: {mode}\nVerifier: {verifier}\n\n{body}"
 
 
 GOOD = prd("""## Problem
@@ -68,3 +68,12 @@ def test_assumptions_need_prefix():
 def test_mode_header_must_match():
     assert any("Readiness" in f for f in check_prd(GOOD.replace("Readiness: verified", "Readiness: attested"), READY))
     assert any("Readiness" in f for f in check_prd(GOOD.replace("Readiness: verified\n", ""), READY))
+
+
+def test_verifier_header_must_match():
+    # Review finding 7: a self-assessed check must say so in the PRD.
+    assert check_prd(GOOD, READY) == []
+    self_assessed = {**READY, "verification": "self-assessed"}
+    assert any("Verifier" in f for f in check_prd(GOOD, self_assessed))
+    assert check_prd(GOOD.replace("Verifier: independent", "Verifier: self-assessed"), self_assessed) == []
+    assert any("Verifier" in f for f in check_prd(GOOD.replace("Verifier: independent\n", ""), READY))

@@ -4,7 +4,8 @@
     check_sources.py PRD.md READINESS.json      exit 0 clean, 1 findings (printed one per line)
 
 Rules:
-- the header line `Readiness: verified|attested` matches readiness.json's mode;
+- the header lines `Readiness: verified|attested` and
+  `Verifier: independent|agent-relayed|self-assessed|none` match readiness.json;
 - in the decision sections every non-empty line cites `[turn:<id>]`, and every cited id is a
   settled turn in readiness.json;
 - `## Assumptions` lines start with `Assumption:` (a bullet marker before it is fine);
@@ -39,9 +40,15 @@ def check_prd(text: str, readiness: dict) -> list[str]:
         findings.append("missing header line 'Readiness: verified|attested'")
     elif header.group(1) != readiness.get("mode"):
         findings.append(f"Readiness header says {header.group(1)} but readiness.json says {readiness.get('mode')}")
+    verifier = re.search(r"^Verifier:\s*([\w-]+)\s*$", text, re.MULTILINE)
+    if not verifier:
+        findings.append("missing header line 'Verifier: independent|agent-relayed|self-assessed|none'")
+    elif verifier.group(1) != readiness.get("verification"):
+        findings.append(f"Verifier header says {verifier.group(1)} but readiness.json says "
+                        f"{readiness.get('verification')}")
     settled = {r["turn"] for r in readiness.get("items", []) if r.get("status") == "settled" and r.get("turn")}
     for section, number, line in _sections(text):
-        if line.startswith("Readiness:"):
+        if line.startswith(("Readiness:", "Verifier:")):
             continue
         cited = CITATION.findall(line)
         for turn in cited:

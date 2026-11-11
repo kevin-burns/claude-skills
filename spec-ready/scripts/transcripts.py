@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import unicodedata
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ _EXCLUDED_FLAGS = ("isCompactSummary", "isSidechain", "isVisibleInTranscriptOnly
 _HARNESS_PREFIXES = (
     "<task-notification>", "<command-name>", "<command-message>", "<command-args>",
     "<local-command-stdout>", "<local-command-stderr>", "<local-command-caveat>",
+    "<bash-input>", "<bash-stdout>", "<bash-stderr>",  # `!cmd` mode: output may be a file the agent wrote
     "[Request interrupted",
 )
 
@@ -107,6 +109,11 @@ def load_user_turns(path: Path, harness: Harness) -> list[Turn]:
     raise ValueError(f"unknown harness: {harness}")
 
 
+def project_slug(cwd: Path) -> str:
+    """Claude Code's project directory name: every character outside [A-Za-z0-9-] becomes '-'."""
+    return re.sub(r"[^A-Za-z0-9-]", "-", str(cwd))
+
+
 def _codex_cwd(path: Path) -> str | None:
     for _, record in _records(path):
         if record.get("type") == "session_meta":
@@ -119,12 +126,13 @@ def find_transcript(env: Mapping[str, str], home: Path, cwd: Path) -> tuple[Harn
     session = env.get("CLAUDE_CODE_SESSION_ID")
     if session:
         projects = home / ".claude" / "projects"
-        exact = projects / str(cwd).replace("/", "-") / f"{session}.jsonl"
-        if exact.is_file():
-            return "claude-code", exact
         matches = sorted(projects.glob(f"*/{session}.jsonl"))
-        if matches:
+        exact = projects / project_slug(cwd) / f"{session}.jsonl"
+        if exact.is_file() and matches == [exact]:
+            return "claude-code", exact
+        if len(matches) == 1:
             return "claude-code", matches[0]
+        return None  # ambiguous: a copy elsewhere could be planted, so read neither
     sessions = home / ".codex" / "sessions"
     if sessions.is_dir():
         candidates = sorted(sessions.rglob("rollout-*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)

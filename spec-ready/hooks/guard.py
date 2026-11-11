@@ -14,7 +14,8 @@ from pathlib import Path
 
 GUARDED_TOOLS = {"Write", "Edit", "MultiEdit"}
 GUARDED_NAMES = {"prd.md", "spec.md"}
-MESSAGE = "spec-ready: the readiness gate has not passed for this directory; run gate.py check"
+MESSAGE = ("spec-ready: the readiness gate has not passed for this directory (or, without a transcript, "
+           "the person has not agreed to continue unverified); run gate.py check")
 
 
 def decide(event: dict) -> tuple[int, str]:
@@ -25,10 +26,14 @@ def decide(event: dict) -> tuple[int, str]:
         return 0, ""
     readiness = Path(file_path).parent / "readiness.json"
     try:
-        passed = json.loads(readiness.read_text(encoding="utf-8")).get("pass") is True
-    except (OSError, json.JSONDecodeError, AttributeError):
-        passed = False
-    return (0, "") if passed else (2, MESSAGE)
+        doc = json.loads(readiness.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return 2, MESSAGE
+    if not isinstance(doc, dict):
+        return 2, MESSAGE
+    verified = doc.get("mode") == "verified" and doc.get("pass") is True
+    accepted = doc.get("mode") == "attested" and bool(doc.get("attested_ack"))
+    return (0, "") if verified or accepted else (2, MESSAGE)
 
 
 def main() -> int:

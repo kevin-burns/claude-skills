@@ -53,8 +53,9 @@ while read -r id mode; do
       session="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('session_id',''))" "$d/turn-$n.json" 2>/dev/null)"
       n=$((n + 1))
     done
-    slug="$(cd "$repo" && pwd -P | tr '/' '-')"
-    cp "$HOME/.claude/projects/$slug/$session.jsonl" "$d/session.jsonl" 2>/dev/null || echo "session file not found" >>"$d/stderr.txt"
+    # Claude Code maps every non-alphanumeric path character to '-', so find the file by session id.
+    found="$(find "$HOME/.claude/projects" -maxdepth 2 -name "$session.jsonl" 2>/dev/null | head -1)"
+    if [ -n "$session" ] && [ -n "$found" ]; then cp "$found" "$d/session.jsonl"; else echo "session file not found" >>"$d/stderr.txt"; fi
     (cd "$repo" && git status --porcelain | grep -v '^?? .claude/' >"$d/git-status.txt"
      find . -name prd.md -o -name spec.md -o -name readiness.json | grep -v '^./.claude/' >"$d/written.txt")
     echo "$id $arm done"

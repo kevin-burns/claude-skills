@@ -82,3 +82,15 @@ def test_templates_sections():
     for section in ("Solution", "User stories", "Implementation decisions", "Verification strategy and test seams",
                     "Boundaries and rules applied", "Out of scope"):
         assert f"## {section}" in spec, section
+
+
+def test_instructions_match_the_reviewed_cli():
+    # Final review fixes: the instructions must describe the CLI as it now is.
+    assert "--transcript" not in TEXT
+    assert "from the repository root" in TEXT
+    assert 'gate.py override --out $D --item <key> --turn <id> --quote "<their words>"' in TEXT
+    assert "gate.py accept-attested" in TEXT
+    assert "Exit 4" in TEXT and "verifier unavailable" in TEXT
+    assert "--answers-from subagent" in TEXT and "--answers-from session-model" in TEXT
+    assert "timeout" in TEXT and "Verifier:" in TEXT
+    assert "appending a turn" in README and "--resume" in README

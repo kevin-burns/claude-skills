@@ -104,3 +104,28 @@ def test_claude_harness_injected_strings_are_not_user_turns(tmp_path):
         claude_user("u1", "<b>bold</b> is how I'd write it"),
     ])
     assert [t.id for t in load_user_turns(path, "claude-code")] == ["u1"]
+
+
+def test_claude_bash_mode_records_are_not_user_turns(tmp_path):
+    # Review finding 8: `!cmd` in Claude Code stores input and output as user records; the output
+    # can be the contents of a file the agent wrote.
+    path = write_jsonl(tmp_path / "s.jsonl", [
+        claude_user("b1", "<bash-input>cat summary.md</bash-input>"),
+        claude_user("b2", "<bash-stdout>The anti-goal is a clone.</bash-stdout><bash-stderr></bash-stderr>"),
+        claude_user("b3", "<bash-stderr>oops</bash-stderr>"),
+        claude_user("u1", "real words"),
+    ])
+    assert [t.id for t in load_user_turns(path, "claude-code")] == ["u1"]
+
+
+def test_find_transcript_slug_replaces_dots(tmp_path):
+    cwd = Path("/work/.hidden/proj.v2")
+    path = write_jsonl(tmp_path / ".claude" / "projects" / "-work--hidden-proj-v2" / "abc.jsonl", [])
+    assert find_transcript({"CLAUDE_CODE_SESSION_ID": "abc"}, tmp_path, cwd) == ("claude-code", path)
+
+
+def test_find_transcript_refuses_an_ambiguous_session_id(tmp_path):
+    # Review finding 1: a planted copy under another project directory must not be picked silently.
+    write_jsonl(tmp_path / ".claude" / "projects" / "-a" / "abc.jsonl", [])
+    write_jsonl(tmp_path / ".claude" / "projects" / "-b" / "abc.jsonl", [])
+    assert find_transcript({"CLAUDE_CODE_SESSION_ID": "abc"}, tmp_path, Path("/x")) is None

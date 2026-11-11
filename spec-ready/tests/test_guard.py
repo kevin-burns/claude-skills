@@ -16,9 +16,10 @@ def event(path: Path, tool: str = "Write") -> dict:
     return {"hook_event_name": "PreToolUse", "tool_name": tool, "tool_input": {"file_path": str(path)}}
 
 
-def readiness(directory: Path, passed: bool) -> None:
+def readiness(directory: Path, passed: bool, mode: str = "verified", **extra) -> None:
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / "readiness.json").write_text(json.dumps({"pass": passed}), encoding="utf-8")
+    doc = {"pass": passed, "mode": mode, **extra}
+    (directory / "readiness.json").write_text(json.dumps(doc), encoding="utf-8")
 
 
 def test_blocks_spec_without_readiness(tmp_path):
@@ -46,3 +47,17 @@ def test_malformed_input_allowed():
                           check=False)
     assert done.returncode == 0 and "spec-ready guard" in done.stderr
     assert decide({"tool_name": "Write"})[0] == 0
+
+
+def test_attested_needs_the_persons_acknowledgement(tmp_path):
+    # Review finding 4: attested never passes on its own.
+    readiness(tmp_path / "a", True, mode="attested")
+    assert decide(event(tmp_path / "a" / "prd.md"))[0] == 2
+    readiness(tmp_path / "b", False, mode="attested", attested_ack="go ahead unverified")
+    assert decide(event(tmp_path / "b" / "prd.md"))[0] == 0
+
+
+def test_pass_without_verified_mode_is_blocked(tmp_path):
+    (tmp_path / "c").mkdir()
+    (tmp_path / "c" / "readiness.json").write_text(json.dumps({"pass": True}), encoding="utf-8")
+    assert decide(event(tmp_path / "c" / "spec.md"))[0] == 2

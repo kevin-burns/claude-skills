@@ -1,8 +1,10 @@
 # <Title: what this builds, in a few words>
 
 Readiness: verified
+Verifier: independent
 
-Every line in the sections below cites the person's turn it came from as `[turn:<id>]`, using the
+Copy both header values from readiness.json (`mode` and `verification`). Every line in the
+sections below cites the person's turn it came from as `[turn:<id>]`, using the
 turn ids in readiness.json. Write the person's decision in plain words; do not add reasons they did
 not give. If a number has no source, leave it out.
 

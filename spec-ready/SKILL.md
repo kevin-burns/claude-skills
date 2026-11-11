@@ -26,22 +26,26 @@ decides.
 
 ## Steps
 
-Scripts live in this skill's `scripts/` directory; run them with `uv run` or `python3`. Work in a
-scratch directory `$D` (`mktemp -d`) until the output location is confirmed.
+Scripts live in this skill's `scripts/` directory; run them with `uv run` or `python3`, always
+from the repository root (the gate finds the session transcript and `.spec-ready/items.json` from
+there), and give the Bash call a timeout of at least 180000 ms: verifier calls run in parallel but
+each may take up to a minute. Work in a scratch directory `$D` (`mktemp -d`) until the output
+location is confirmed.
 
-1. **Propose rows.** For each required item, find the person's turn that states it. Write
-   `$D/proposals.json`: a list of `{"item", "turn", "status": "settled" | "guessed", "statement"}`.
-   `turn` is the id of the person's message as listed by `gate.py turns`; `statement` is your
-   one-line paraphrase, used as the recommendation if the item is asked.
-   Only `risks` may be `guessed`.
+1. **Propose rows.** `gate.py turns` lists the person's turns with their ids. For each required
+   item, find the turn that states it and write `$D/proposals.json`: a list of
+   `{"item", "turn", "status": "settled" | "guessed", "statement"}`. `statement` is your one-line
+   paraphrase, used as the recommendation if the item is asked. Only `risks` may be `guessed`.
 2. **Gate.** `gate.py check --proposals $D/proposals.json --out $D`. It finds the transcript
    itself, calls the verifiers it chooses, writes `$D/readiness.json` and prints the open questions.
-   Exit 0 ready, 1 items open, 2 no transcript.
-3. **If the gate printed "no verifier available"**: for each item, dispatch a fresh subagent and
-   paste the output of `gate.py brief` verbatim as its whole prompt
-   (`gate.py brief --item <key> --turn <id>`); collect
-   its JSON replies into `$D/answers.json` keyed by item; re-run step 2 with
-   `--answers $D/answers.json --answers-from subagent`. You never answer a brief yourself while a subagent tool exists; only without one, use `--answers-from session-model` and tell the person the check was self-assessed.
+   Exit 0 ready, 1 items open, 2 no transcript, 4 no verifier could run.
+3. **Exit 4, or "no verifier available".** On exit 4 the gate printed "verifier unavailable" and
+   why (a broken login, for example): tell the person, since they may want to fix it. Otherwise,
+   for each item dispatch a fresh subagent and paste the output of `gate.py brief` verbatim as its
+   whole prompt (`gate.py brief --item <key> --turn <id>`); collect its JSON replies into
+   `$D/answers.json` keyed by item, and re-run step 2 with
+   `--answers $D/answers.json --answers-from subagent`. You never answer a brief yourself while a subagent tool exists; only without one, use `--answers-from session-model`, and the PRD will
+   say the check was self-assessed.
 4. **Ask.** When items are open, ask them all in one round, least-certain first, in the order the
    gate printed, each with your recommendation:
 
@@ -52,11 +56,13 @@ scratch directory `$D` (`mktemp -d`) until the output location is confirmed.
    ```
 
    The person's answers are new turns. Update `proposals.json` to cite them and go to step 2.
-   **Run gate.py override only when the person says so**, quoting their words in `--reason`; an
-   override is their call that a verifier got it wrong, and it is recorded as a calibration label.
+   **Run gate.py override only when the person says so**: when they tell you a verifier got an item
+   wrong, run `gate.py override --out $D --item <key> --turn <id> --quote "<their words>"`, where
+   the turn is the one in which they said so and the quote is copied from it. The gate checks the
+   quote is in that turn and records the override as a calibration label.
 5. **Exit 2 (attested).** Tell the person no transcript could be read, so their decisions cannot be
-   checked against their own words. Continue only if the person explicitly agrees to continue
-   unverified.
+   checked against their own words, and nothing is settled. Continue only if the person explicitly agrees to continue unverified; then run
+   `gate.py accept-attested --out $D --reason "<their words>"`.
 6. **Boundaries.** If the boundaries item names a boundary (not "none"), check the implementation
    decisions against the matching file of the `software-design-rules` skill when it is installed;
    otherwise ask the questions in `references/boundary-questions.md`. Record which rules were
@@ -64,7 +70,8 @@ scratch directory `$D` (`mktemp -d`) until the output location is confirmed.
 7. **Write.** Find where this repository keeps specs (`docs/specs/`, `docs/superpowers/specs/`,
    `docs/prd/`, an existing pattern); otherwise propose `docs/specs/<date>-<slug>/`. The person
    confirms the path. Copy `readiness.json` there, then write `prd.md` from
-   `references/prd-template.md` and `spec.md` from `references/spec-template.md`. Run
+   `references/prd-template.md` (its `Readiness:` and `Verifier:` header lines copy `mode` and
+   `verification` from readiness.json) and `spec.md` from `references/spec-template.md`. Run
    `check_sources.py <dir>/prd.md <dir>/readiness.json` and fix every finding.
 
 Never write prd.md or spec.md while gate.py exits non-zero, except after exit 2 when the person

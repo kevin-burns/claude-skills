@@ -42,11 +42,18 @@ gate. The skill never installs it. To opt in, add to your Claude Code settings:
 
 ## Limits
 
-- The transcript is a file the agent could edit. The gate records a hash of each cited turn and
-  fails if it changes, which makes tampering a deliberate act; it does not make it impossible.
-- Codex: transcripts are read from `~/.codex/sessions/`. `codex exec --help` (checked 2026-11-11)
-  offers `--ephemeral` and a read-only sandbox but no way to turn tools off, so the gate does not
-  call it as a verifier; Codex sessions use the subagent or session-model path, or a local Ollama
-  model.
-- Calibration: no verifier has been calibrated on planning conversations yet. Your overrides are
-  recorded in `readiness.json` so that it can be.
+What the gate cannot stop, stated plainly:
+
+- **Editing the transcript.** It is a file the agent could edit. The gate records a hash of each
+  cited turn and fails if it changes, which makes changing a turn a deliberate act. Not detected:
+  appending a turn (for example through `claude -p --resume <session> "<text>"`), or writing a
+  whole copy, which shows up only in the transcript path recorded in readiness.json.
+- **Editing readiness.json.** A hand-edited verdict is not re-checked by the guard.
+- **The guard's reach.** It watches the Write and Edit tools on files named `prd.md` and `spec.md`;
+  a write through Bash or under another name is not seen.
+- **Codex.** Transcripts are read from `~/.codex/sessions/`. `codex exec --help` (checked
+  2026-11-11) offers `--ephemeral` and a read-only sandbox but no way to turn tools off, so the gate
+  does not call it as a verifier; Codex sessions use the subagent or session-model path, or a local
+  Ollama model.
+- **Calibration.** No verifier has been calibrated on planning conversations yet. Overrides are
+  recorded in readiness.json so that it can be.
