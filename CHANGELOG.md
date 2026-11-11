@@ -11,6 +11,25 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-11-11
+
+### Added — `spec-ready`, check a plan is ready to spec, then write the PRD and spec
+
+For the moment between talking a plan through and writing it up. Reach for it with "is this ready
+to spec", "write the PRD", "turn this into a spec" or "are we done planning". The agent proposes
+which of your turns states each required item (goal, who it is for, non-goals, anti-goal, success
+check, verification strategy, boundaries touched, risks); a script reads your turns from the
+session transcript and has a verifier it calls itself (headless Haiku by default, a local Ollama
+model as an optional second opinion) confirm each one, quoting your words. Anything missing comes
+back as one round of questions, least-certain first; then it writes `prd.md` (why) and `spec.md`
+(how), every decision line citing your turn, and refuses a figure nobody gave.
+
+**What it won't do:** write a PRD or spec while the gate fails; treat its own summary as evidence;
+pretend to be verified when it cannot read a transcript (it says "attested" instead); interview
+from scratch (that is frontier-rounds or brainstorming); write the implementation plan (that is
+writing-plans); or create tickets unless you ask. The guard hook that blocks spec writes is opt-in
+and never installed by the skill. Template sections adapt Matt Pocock's `to-spec` (MIT).
+
 ## 2026-11-09
 
 ### Added — `adr-author`, write and amend architecture decision records
