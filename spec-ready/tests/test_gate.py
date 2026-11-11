@@ -200,9 +200,13 @@ def test_cli_exit_codes_and_readiness_file(tmp_path):
     assert done.returncode == 0, done.stdout + done.stderr
     doc = readiness_doc(tmp_path)
     assert doc["pass"] and doc["verifiers"] == ["subagent"] and doc["verification"] == "agent-relayed"
-    # Review finding 1/6: where the evidence and the verifier came from is on record.
-    assert doc["transcript"].endswith(f"{SESSION}.jsonl") and doc["harness"] == "claude-code"
-    assert doc["environment"] == {"claude_cli": None, "path": "/nonexistent"}
+    # Review finding 1/6: where the evidence and the verifier came from is on record, as a
+    # fingerprint, never as a local path: readiness.json is copied beside the PRD and committed.
+    assert doc["harness"] == "claude-code" and len(doc["transcript_id"]) == 16
+    assert doc["environment"] == {"claude_cli_found": False}
+    assert doc["person_turns"] == [f"u-{k}" for k in TEXT]
+    text = (tmp_path / "out" / "readiness.json").read_text()
+    assert str(tmp_path) not in text and "/Users/" not in text and "/home/" not in text
 
 
 def test_cli_has_no_transcript_flag(tmp_path):
