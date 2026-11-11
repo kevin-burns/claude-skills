@@ -53,7 +53,7 @@ def _proposals(case: dict) -> list[dict]:
 def build(out: Path) -> dict[str, Path]:
     cases = json.loads(EVALS.read_text(encoding="utf-8"))["evals"]
     built = {}
-    for case in cases:
+    for case in (c for c in cases if "turns" in c):
         root = out / case["id"]
         _repo(root / "repo")
         (root / "transcript.jsonl").write_text("".join(json.dumps(r) + "\n" for r in _transcript(case)),

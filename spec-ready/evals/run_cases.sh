@@ -4,7 +4,9 @@
 #     --resume per turn), in three arms: with spec-ready as a project skill, without it (the user's
 #     own configuration, e.g. superpowers), and with Matt Pocock's to-spec as a project skill.
 #     The session transcript and every written file are kept for grading.
-#   gate-only cases: run gate.py directly on the fixture transcript (S6 runs with no transcript).
+#   gate-only cases: run gate.py with no readable transcript (S6).
+#   verifier cases: run gate.py with the real headless verifier on a scenario's ideal proposals,
+#     which cite weak turns on purpose (V2 uses S2's "Sounds fine." / "Sure.").
 # Usage: run_cases.sh OUT_DIR [MODEL] [CASES] [ARMS]
 #   MODEL defaults to sonnet; CASES and ARMS are space-separated filters ("S4", "with to-spec").
 set -u
@@ -22,6 +24,22 @@ nth_turn() { python3 -c "import json,sys;print(json.loads(sys.argv[1])[int(sys.a
 python3 -c "import json;[print(e['id'],e['mode']) for e in json.load(open('$EVALS'))['evals']]" |
 while read -r id mode; do
   if [ -n "$CASES" ] && [[ " $CASES " != *" $id "* ]]; then continue; fi
+  if [ "$mode" = verifier ]; then
+    # The real verifier needs the real login, so the gate runs with the real HOME. The fixture
+    # transcript is placed where the gate looks for sessions, under a unique id, and removed after.
+    source_id="$(field "$id" source)"
+    d="$OUT/$id-verifier"; rm -rf "$d"; mkdir -p "$d"
+    python3 "$SKILL_DIR/evals/build_fixtures.py" "$d/fx" >/dev/null
+    sid="spec-ready-eval-$(uuidgen | tr '[:upper:]' '[:lower:]')"
+    planted="$HOME/.claude/projects/-$sid"
+    mkdir -p "$planted" && cp "$d/fx/$source_id/transcript.jsonl" "$planted/$sid.jsonl"
+    (cd "$d/fx/$source_id/repo" && CLAUDE_CODE_SESSION_ID="$sid" python3 "$SKILL_DIR/scripts/gate.py" check \
+       --proposals "$d/fx/$source_id/proposals.json" --out "$d/out" >"$d/gate-stdout.json" 2>"$d/gate-stderr.txt"
+     echo "$?" >"$d/exit-code.txt")
+    rm -rf "$planted"
+    echo "$id verifier done"
+    continue
+  fi
   if [ "$mode" = gate-only ]; then
     d="$OUT/$id-gate"; rm -rf "$d"; mkdir -p "$d/home"
     python3 "$SKILL_DIR/evals/build_fixtures.py" "$d/fx" >/dev/null
