@@ -227,7 +227,7 @@
     "Risk: latency on older Macs might make it annoying.",
     "Is this ready to spec? If it is, write the PRD and the spec.",
     "The anti-goal: a clone of an existing app counts as failure. Success: I use it daily for a week.",
-    "Go ahead."
+    "Go ahead with the PRD and the spec."
    ],
    "expectations": [
     "before the answer turn, the anti-goal and success check are asked and no PRD or spec document is written",

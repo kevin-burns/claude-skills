@@ -67,6 +67,8 @@ while read -r id mode; do
     n=0
     while [ "$n" -lt "$count" ]; do
       text="$(nth_turn "$turns" "$n")"
+      # Matt Pocock's to-spec sets disable-model-invocation, so that arm must call it by name.
+      if [ "$arm" = to-spec ] && [ "$n" -eq $((count - 1)) ]; then text="/to-spec $text"; fi
       resume=()
       [ -n "$session" ] && resume=(--resume "$session")
       (cd "$repo" && TMPDIR="$d/tmp" claude -p "$text" ${resume[@]+"${resume[@]}"} --model "$MODEL" --output-format json \
@@ -78,6 +80,18 @@ while read -r id mode; do
     # Claude Code maps every non-alphanumeric path character to '-', so find the file by session id.
     found="$(find "$HOME/.claude/projects" -maxdepth 2 -name "$session.jsonl" 2>/dev/null | head -1)"
     if [ -n "$session" ] && [ -n "$found" ]; then cp "$found" "$d/session.jsonl"; else echo "session file not found" >>"$d/stderr.txt"; fi
+    # Keep the agent's scratch directories (mktemp -d under the system temp dir) with the run.
+    python3 - "$d/session.jsonl" "$d/scratch" <<'PY' 2>/dev/null
+import json, re, shutil, sys
+from pathlib import Path
+seen = set()
+for line in open(sys.argv[1], encoding="utf-8"):
+    for m in re.finditer(r"(/[^\s\"']*?/tmp\.[A-Za-z0-9]+)/(?:readiness|proposals)\.json", line):
+        seen.add(m.group(1))
+for n, src in enumerate(sorted(seen)):
+    if Path(src).is_dir():
+        shutil.copytree(src, Path(sys.argv[2]) / f"{n}", dirs_exist_ok=True)
+PY
     (cd "$repo" && git status --porcelain | grep -v '^?? .claude/' >"$d/git-status.txt"
      find . -path ./.git -prune -o -path ./.claude -prune -o -type f -newer README.md -print >"$d/written.txt")
     echo "$id $arm done"
