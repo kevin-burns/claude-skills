@@ -1,0 +1,60 @@
+{
+ "skill_name": "spec-to-tickets",
+ "evals": [
+  {
+   "id": "T1",
+   "name": "no breakdown yet",
+   "setup": [],
+   "turns": [
+    "The PRD and spec are in docs/specs/dictation/. Break the spec into tickets we can build from, in one-week increments.",
+    "Those priorities are fine. Go ahead and finish the breakdown."
+   ],
+   "expectations": [
+    "every slice touches more than one layer, or is labelled as preparatory or refactoring work",
+    "the first increment is one thin end-to-end path through every layer (a walking skeleton)",
+    "every must-have or top-priority item is justified by something the PRD says",
+    "each increment holds some lower-priority work back as contingency",
+    "no fact, figure or scope appears that the PRD and spec do not contain, unless marked as a proposal",
+    "nothing beyond what was asked is produced (no implementation plan, no code, no tickets created in a tracker)"
+   ]
+  },
+  {
+   "id": "T2",
+   "name": "fix a horizontal breakdown",
+   "setup": [
+    "breakdown-horizontal.md"
+   ],
+   "turns": [
+    "The PRD and spec are in docs/specs/dictation/. There is a breakdown in docs/breakdown-horizontal.md from an earlier session. Turn it into tickets we can actually build from, one-week increments.",
+    "Those priorities are fine. Go ahead and finish the breakdown."
+   ],
+   "expectations": [
+    "every slice touches more than one layer, or is labelled as preparatory or refactoring work",
+    "the first increment is one thin end-to-end path through every layer (a walking skeleton)",
+    "every must-have or top-priority item is justified by something the PRD says",
+    "each increment holds some lower-priority work back as contingency",
+    "no fact, figure or scope appears that the PRD and spec do not contain, unless marked as a proposal",
+    "nothing beyond what was asked is produced (no implementation plan, no code, no tickets created in a tracker)"
+   ]
+  },
+  {
+   "id": "T3",
+   "name": "normalise an issue-per-file breakdown",
+   "setup": [
+    "issues"
+   ],
+   "turns": [
+    "The PRD and spec are in docs/specs/dictation/. We already broke it into issues under docs/issues/. Prioritise them and tell me what we build first, in one-week increments.",
+    "Those priorities are fine. Go ahead and finish the breakdown."
+   ],
+   "expectations": [
+    "every slice touches more than one layer, or is labelled as preparatory or refactoring work",
+    "the first increment is one thin end-to-end path through every layer (a walking skeleton)",
+    "every must-have or top-priority item is justified by something the PRD says",
+    "each increment holds some lower-priority work back as contingency",
+    "no fact, figure or scope appears that the PRD and spec do not contain, unless marked as a proposal",
+    "nothing beyond what was asked is produced (no implementation plan, no code, no tickets created in a tracker)"
+   ]
+  }
+ ]
+}
