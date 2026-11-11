@@ -22,6 +22,34 @@ Results are reported per arm and per case, never pooled.
 
 ## Results
 
+### 2026-11-11, full run, fixes, then a rerun with Matt Pocock's to-spec invoked
+
+**Full run** (all scenarios, 3 arms, 48.67 USD, graded by two fresh Opus graders): with
+spec-ready 34/36, without 20/36. The to-spec arm never ran to-spec (its front matter sets
+`disable-model-invocation`), so its rows were a second baseline and are not reported. Findings
+fixed test-first before the rerun: readiness.json held the full PATH and a home-directory path
+(now a fingerprint, no local paths); no Risks section; a figure from a later turn could not be
+cited; the boundaries item flipped between yes and unsure on identical text (reworded); and the
+output-path rule was applied three ways (now: write to the one obvious location and say where,
+ask only when ambiguous).
+
+**Rerun** (S3, S7, S8 in three arms, plus S1, S2, S9 in the to-spec arm, `/to-spec` called by
+name; 28.39 USD; one fresh Opus grader, n = 1 per case and arm):
+
+| arm | S3, S7, S8 | all six cases |
+|---|---|---|
+| with spec-ready | 14/14 | 14/14 here; S1, S2, S9 passed in the full run |
+| without | 10/14 | |
+| Matt Pocock's to-spec | 9/14 | 17/28 |
+
+Where to-spec lost: it has no gate, so "Sure." became a decided anti-goal (S9) and a written
+design (S2); it called S1 ready with the anti-goal open; it wrote a first-person problem statement
+with a motive the person never gave (S8); and its tracker and test-seam prerequisites meant
+"write the PRD and the spec" produced nothing in S1, S3, S7 and S9, so several of its passes are
+vacuous. Where it did as well or better: it was candid about gaps and wrote fuller specs (35 user
+stories in S8). With spec-ready, S3 and S7 now write into the repository without a path question,
+and no written file contains a local path.
+
 ### 2026-11-11, routing (`claude plugin eval`, Sonnet, 10 runs per case, commit 3e1145f)
 
 180/180: every should-fire case fired 10/10, and every near miss stayed silent 10/10, including
