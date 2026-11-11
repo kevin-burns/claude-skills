@@ -2,7 +2,7 @@
 
 ![claude-skills banner](images/banner.webp)
 
-Thirty [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
+Thirty-one [Agent Skills](https://agentskills.io) and nine subagents I build and maintain,
 kept public so they can be versioned and shared. A skill is a directory with a `SKILL.md`;
 some bundle scripts, evals or reference files. A **subagent** is a different thing: a separate
 assistant, with its own tools and model, that the main session hands a self-contained job to
@@ -33,8 +33,8 @@ Three ways in. Pick by whether you want **all of them or one**, and **a snapshot
 
 | | you get | updates |
 |---|---|---|
-| **Claude Code plugin** | all 30 skills + 9 subagents | `/plugin marketplace update`, deliberate |
-| **Codex plugin** | all 30 skills | `codex plugin marketplace update`, deliberate |
+| **Claude Code plugin** | all 31 skills + 9 subagents | `/plugin marketplace update`, deliberate |
+| **Codex plugin** | all 31 skills | `codex plugin marketplace update`, deliberate |
 | **Symlink** | whichever you pick | instant — it is a live link to this repo |
 
 ### Claude Code — the whole set
@@ -67,7 +67,7 @@ ln -s "$(pwd)/agents/fact-verifier.md" ~/.claude/agents/fact-verifier.md
 
 Symlinking keeps this repo the single source of truth — edits here are picked up immediately.
 Take this path if you're editing the skills as well as using them, or if you want two of them
-rather than thirty.
+rather than thirty-one.
 
 [OpenCode](https://opencode.ai/docs/skills/) needs no separate step: it already scans
 `~/.claude/skills/` and `~/.agents/skills/`, so a symlink made for either of the others is
@@ -100,7 +100,7 @@ instead.
 - **It copies.** A plugin install is a snapshot in the harness's cache, not a live link.
   Editing this repo afterwards changes nothing until you update.
 - **It costs context.** Every skill's description loads in every session so the model can
-  decide when to reach for one — about **5.2k tokens always-on** for the full set, before any
+  decide when to reach for one — about **5.4k tokens always-on** for the full set, before any
   skill fires. `claude plugin details claude-skills` prints the per-skill breakdown. If you
   want two or three of these, symlink those instead.
 
@@ -108,7 +108,7 @@ instead.
 
 Three of these skills also live in a repo of their own, published from here on every merge.
 The reason is audience: someone looking for a Ghost publishing tool or a Terragrunt reference
-is not going to find it inside one person's collection of thirty skills, and the competing
+is not going to find it inside one person's collection of thirty-one skills, and the competing
 tools for both are standalone. Each mirror is a working plugin in its own right.
 
 | skill | repo | who it is for |

@@ -44,7 +44,9 @@ gate. The skill never installs it. To opt in, add to your Claude Code settings:
 
 - The transcript is a file the agent could edit. The gate records a hash of each cited turn and
   fails if it changes, which makes tampering a deliberate act; it does not make it impossible.
-- Codex: transcripts are read from `~/.codex/sessions/`; whether `codex exec` can run a verifier
-  without tools has not been checked, so Codex sessions use the subagent or session-model path.
+- Codex: transcripts are read from `~/.codex/sessions/`. `codex exec --help` (checked 2026-11-11)
+  offers `--ephemeral` and a read-only sandbox but no way to turn tools off, so the gate does not
+  call it as a verifier; Codex sessions use the subagent or session-model path, or a local Ollama
+  model.
 - Calibration: no verifier has been calibrated on planning conversations yet. Your overrides are
   recorded in `readiness.json` so that it can be.
