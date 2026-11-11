@@ -7,6 +7,7 @@ rule, re-checks turn hashes from the previous run, and writes readiness.json.
 
     gate.py check --proposals P.json --out DIR [--transcript T --harness H]
                   [--answers A.json --answers-from subagent|session-model] [--repo .]
+    gate.py turns [--transcript T --harness H]        list the person's turns with their ids
     gate.py brief --item KEY --turn ID [--transcript T --harness H]
     gate.py override --out DIR --item KEY --answer yes|no --reason TEXT
 
@@ -176,6 +177,15 @@ def _brief(args) -> int:
     return 0
 
 
+def _list_turns(args) -> int:
+    harness, turns = _turns(args)
+    if turns is None:
+        print("spec-ready: no readable transcript", file=sys.stderr)
+        return 2
+    print(json.dumps([{"id": t.id, "text": t.text} for t in turns.values()], indent=2, ensure_ascii=False))
+    return 0
+
+
 def _override(args) -> int:
     path = Path(args.out) / READINESS
     doc = _load_json(path)
@@ -195,7 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--repo", default=".")
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("check", "brief"):
+    for name in ("check", "brief", "turns"):
         p = sub.add_parser(name)
         p.add_argument("--repo", default=".")
         p.add_argument("--transcript")
@@ -215,7 +225,8 @@ def main(argv: list[str] | None = None) -> int:
     override.add_argument("--answer", choices=["yes", "no"], required=True)
     override.add_argument("--reason", required=True)
     args = parser.parse_args(argv)
-    return {"check": _check, "brief": _brief, "override": _override}[args.command](args)
+    commands = {"check": _check, "brief": _brief, "turns": _list_turns, "override": _override}
+    return commands[args.command](args)
 
 
 if __name__ == "__main__":

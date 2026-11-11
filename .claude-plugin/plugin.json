@@ -46,6 +46,7 @@
     "./report-builder",
     "./social-image-prep",
     "./source-snapshot",
+    "./spec-ready",
     "./terraform-registry",
     "./terragrunt-skill",
     "./transcribe-summarize",

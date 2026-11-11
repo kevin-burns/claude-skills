@@ -195,3 +195,15 @@ def test_cli_brief_uses_transcript_text_verbatim(tmp_path):
     done = run("brief", "--item", "anti_goal", "--turn", "u-anti_goal", "--transcript", str(t), "--harness",
                "claude-code")
     assert done.returncode == 0 and TEXT["anti_goal"] in done.stdout
+
+
+def test_cli_turns_lists_only_the_persons_turns_with_ids(tmp_path):
+    t = transcript(tmp_path)
+    with t.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"type": "assistant", "uuid": "a1",
+                                 "message": {"role": "assistant", "content": [{"type": "text", "text": "hi"}]}}) + "\n")
+    done = run("turns", "--transcript", str(t), "--harness", "claude-code")
+    assert done.returncode == 0
+    listed = json.loads(done.stdout)
+    assert [x["id"] for x in listed] == [f"u-{k}" for k in TEXT]
+    assert listed[3]["text"] == TEXT["anti_goal"]
