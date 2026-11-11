@@ -1,0 +1,23 @@
+{
+ "_comment": "Routing cases for spec-ready, generated into the root evals/ by make_routing_cases.py.",
+ "should_trigger": [
+  "We've talked this through. Is it ready to spec yet?",
+  "Turn what we just discussed into a PRD and a spec.",
+  "Write the PRD for this before we plan the build.",
+  "Are we done planning, or is something still undecided?",
+  "Check whether this plan is ready to be written up as a spec.",
+  "Before writing-plans, make sure the requirements are actually settled and write the spec.",
+  "Draft the product requirements doc from this conversation, but only from what I actually said.",
+  "Is anything missing from this plan before we write the spec?"
+ ],
+ "should_not": [
+  "Grill me on this design until it's settled.",
+  "Write the implementation plan for the approved spec in docs/specs.",
+  "Record the decision to use Postgres as an ADR.",
+  "Brainstorm some ideas for a dictation app.",
+  "Review this PR for bugs.",
+  "Summarise this meeting transcript.",
+  "What's the status of my Linear tickets?",
+  "Write a README for this repo."
+ ]
+}

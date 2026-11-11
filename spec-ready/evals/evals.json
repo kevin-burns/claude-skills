@@ -1,0 +1,237 @@
+{
+ "skill_name": "spec-ready",
+ "evals": [
+  {
+   "id": "S1",
+   "name": "anti-goal never stated",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "It's for me first, and then people like me who write long emails and messages by voice.",
+    "We are not doing meeting transcription or speaker labels.",
+    "Success is that I use it every day for a week instead of typing emails.",
+    "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
+    "The audio driver must stay out of the core library; the core has to build and test without a microphone.",
+    "Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec."
+   ],
+   "expectations": [
+    "gate.py check exits 1 at least once",
+    "the anti-goal is asked as a question",
+    "no prd.md or spec.md is written while anti_goal is open"
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "success_check": 3,
+    "verification": 4,
+    "boundaries": 5,
+    "risks": 6
+   }
+  },
+  {
+   "id": "S2",
+   "name": "bare affirmation",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "It's for me first, and then people like me who write long emails and messages by voice.",
+    "Sounds fine.",
+    "Sure.",
+    "Success is that I use it every day for a week instead of typing emails.",
+    "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
+    "The audio driver must stay out of the core library; the core has to build and test without a microphone.",
+    "Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec."
+   ],
+   "expectations": [
+    "non_goals and anti_goal are not settled on the turns 'Sounds fine.' or 'Sure.'",
+    "both are asked as questions"
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "anti_goal": 3,
+    "success_check": 4,
+    "verification": 5,
+    "boundaries": 6,
+    "risks": 7
+   }
+  },
+  {
+   "id": "S3",
+   "name": "paraphrased dictation",
+   "turns": [
+    "so basically what i want is like a little mac thing where i talk and it just types wherever the cursor is, mostly so i can do long emails by voice",
+    "its for me really, and folks who do a lot of writing by voice",
+    "not meetings, no transcribing meetings or who said what",
+    "if it just turns into another copy of the dictation apps out there then it failed even if it technically works",
+    "i'd call it a win if i actually use it daily for a week instead of typing",
+    "tdd for the core bits and a handful of recorded clips to check accuracy",
+    "keep the mic driver out of the core so the core builds and tests without a mic",
+    "older macs might be laggy, thats a worry",
+    "Is this ready to spec? If it is, write the PRD and the spec."
+   ],
+   "expectations": [
+    "all eight items settle without exact wording",
+    "the gate passes and prd.md and spec.md are written with [turn:<id>] citations"
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "anti_goal": 3,
+    "success_check": 4,
+    "verification": 5,
+    "boundaries": 6,
+    "risks": 7
+   }
+  },
+  {
+   "id": "S4",
+   "name": "clear brief passes fast",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice. It's for me first, and then people like me who write long emails and messages by voice. We are not doing meeting transcription or speaker labels. It fails if it ends up as a clone of an existing dictation app, even if it works. Success is that I use it every day for a week instead of typing emails. Check it with TDD on the core logic and a small recorded audio set for accuracy. The audio driver must stay out of the core library; the core has to build and test without a microphone. Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec."
+   ],
+   "expectations": [
+    "the gate passes on the first or second check",
+    "at most one question round is asked"
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 0,
+    "non_goals": 0,
+    "anti_goal": 0,
+    "success_check": 0,
+    "verification": 0,
+    "boundaries": 0,
+    "risks": 0
+   }
+  },
+  {
+   "id": "S5",
+   "name": "boundaries touched",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "It's for me first, and then people like me who write long emails and messages by voice.",
+    "We are not doing meeting transcription or speaker labels.",
+    "It fails if it ends up as a clone of an existing dictation app, even if it works.",
+    "Success is that I use it every day for a week instead of typing emails.",
+    "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
+    "The audio driver must stay out of the core library; the core has to build and test without a microphone.",
+    "Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec."
+   ],
+   "expectations": [
+    "spec.md has a 'Boundaries and rules applied' section naming the audio-driver boundary",
+    "the section says which design rules or boundary questions were applied"
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "anti_goal": 3,
+    "success_check": 4,
+    "verification": 5,
+    "boundaries": 6,
+    "risks": 7
+   }
+  },
+  {
+   "id": "S6",
+   "name": "no transcript (attested)",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "It's for me first, and then people like me who write long emails and messages by voice.",
+    "We are not doing meeting transcription or speaker labels.",
+    "It fails if it ends up as a clone of an existing dictation app, even if it works.",
+    "Success is that I use it every day for a week instead of typing emails.",
+    "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
+    "The audio driver must stay out of the core library; the core has to build and test without a microphone.",
+    "Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec."
+   ],
+   "expectations": [
+    "gate.py check without a readable transcript exits 2 and readiness.json says mode attested"
+   ],
+   "mode": "gate-only",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "anti_goal": 3,
+    "success_check": 4,
+    "verification": 5,
+    "boundaries": 6,
+    "risks": 7
+   }
+  },
+  {
+   "id": "S7",
+   "name": "unsourced figure",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "It's for me first, and then people like me who write long emails and messages by voice.",
+    "We are not doing meeting transcription or speaker labels.",
+    "It fails if it ends up as a clone of an existing dictation app, even if it works.",
+    "Success is that I use it every day for a week instead of typing emails.",
+    "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
+    "The audio driver must stay out of the core library; the core has to build and test without a microphone.",
+    "Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec. Mention that it will save about 40 minutes a day."
+   ],
+   "expectations": [
+    "prd.md does not state '40 minutes a day' as a fact unless a turn citation supports it",
+    "check_sources.py was run on prd.md"
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "anti_goal": 3,
+    "success_check": 4,
+    "verification": 5,
+    "boundaries": 6,
+    "risks": 7
+   }
+  },
+  {
+   "id": "S8",
+   "name": "answer the round, then pass",
+   "turns": [
+    "I want a small Mac app that takes dictation and types the text wherever my cursor is, so I can write long emails by voice.",
+    "It's for me first, and then people like me who write long emails and messages by voice.",
+    "We are not doing meeting transcription or speaker labels.",
+    "Check it with TDD on the core logic and a small recorded audio set for accuracy.",
+    "The audio driver must stay out of the core library; the core has to build and test without a microphone.",
+    "Risk: latency on older Macs might make it annoying.",
+    "Is this ready to spec? If it is, write the PRD and the spec.",
+    "The anti-goal: a clone of an existing app counts as failure. Success: I use it daily for a week.",
+    "Go ahead."
+   ],
+   "expectations": [
+    "the first gate run is open on anti_goal and success_check",
+    "after the answer turn the gate passes",
+    "prd.md cites the answer turn for both items"
+   ],
+   "mode": "session",
+   "item_turns": {
+    "goal": 0,
+    "audience": 1,
+    "non_goals": 2,
+    "verification": 3,
+    "boundaries": 4,
+    "risks": 5,
+    "anti_goal": 7,
+    "success_check": 7
+   }
+  }
+ ]
+}
