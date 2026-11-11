@@ -52,3 +52,11 @@ def test_core_items_cannot_be_removed(tmp_path):
 
 def test_no_file_means_defaults(tmp_path):
     assert load_items(tmp_path) == DEFAULT_ITEMS
+
+
+def test_boundaries_definition_asks_one_question():
+    # Full eval 2026-11-11: the two-part wording flipped yes/unsure on identical text; the one-part
+    # wording scored yes 6/6 at p 0.97 live, "none" 3/3 yes, an unrelated turn 3/3 no.
+    item = next(i for i in DEFAULT_ITEMS if i.key == "boundaries")
+    assert item.definition == ("Does the text say where a component boundary lies (what must stay separate from what), "
+                               "or that no boundary is affected?")
