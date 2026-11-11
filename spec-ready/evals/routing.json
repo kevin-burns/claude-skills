@@ -18,6 +18,8 @@
   "Review this PR for bugs.",
   "Summarise this meeting transcript.",
   "What's the status of my Linear tickets?",
-  "Write a README for this repo."
+  "Write a README for this repo.",
+  "Here's my plan: a small Mac app that types dictation wherever my cursor is, for long emails, runs locally. What do you think?",
+  "We're building a dictation app; the audio driver must stay out of the core library and we'll test the core with TDD. Let's keep talking it through."
  ]
 }
