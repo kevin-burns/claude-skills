@@ -103,3 +103,11 @@ def test_open_questions_and_spec_sources_are_described():
     spec = (SKILL / "references" / "spec-template.md").read_text(encoding="utf-8")
     assert "## Open questions" in prd and "Open question:" in prd
     assert "Proposed:" in spec and "[turn:<id>]" in spec
+
+
+def test_output_location_rule():
+    # Kevin 2026-11-11 (option a): when the person has asked for the PRD and spec and the location is
+    # unambiguous, write there and report it; ask only when it is genuinely ambiguous.
+    assert "write there and say where" in TEXT
+    assert "Ask only when the location is ambiguous" in TEXT
+    assert "The person confirms the path" not in TEXT
