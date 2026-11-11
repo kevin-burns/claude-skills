@@ -5,10 +5,13 @@
 #     own configuration, e.g. superpowers), and with Matt Pocock's to-spec as a project skill.
 #     The session transcript and every written file are kept for grading.
 #   gate-only cases: run gate.py directly on the fixture transcript (S6 runs with no transcript).
-# Usage: run_cases.sh OUT_DIR [MODEL]     (MODEL defaults to sonnet)
+# Usage: run_cases.sh OUT_DIR [MODEL] [CASES] [ARMS]
+#   MODEL defaults to sonnet; CASES and ARMS are space-separated filters ("S4", "with to-spec").
 set -u
 OUT="$(mkdir -p "$1" && cd "$1" && pwd)"
 MODEL="${2:-sonnet}"
+CASES="${3:-}"
+ARMS="${4:-with without to-spec}"
 SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 EVALS="$SKILL_DIR/evals/evals.json"
 TO_SPEC_URL="repos/mattpocock/skills/contents/skills/engineering/to-spec/SKILL.md"
@@ -18,6 +21,7 @@ nth_turn() { python3 -c "import json,sys;print(json.loads(sys.argv[1])[int(sys.a
 
 python3 -c "import json;[print(e['id'],e['mode']) for e in json.load(open('$EVALS'))['evals']]" |
 while read -r id mode; do
+  if [ -n "$CASES" ] && [[ " $CASES " != *" $id "* ]]; then continue; fi
   if [ "$mode" = gate-only ]; then
     d="$OUT/$id-gate"; rm -rf "$d"; mkdir -p "$d/home"
     python3 "$SKILL_DIR/evals/build_fixtures.py" "$d/fx" >/dev/null
@@ -29,7 +33,7 @@ while read -r id mode; do
   fi
   turns="$(field "$id" turns)"
   count="$(python3 -c "import json,sys;print(len(json.loads(sys.argv[1])))" "$turns")"
-  for arm in with without to-spec; do
+  for arm in $ARMS; do
     d="$OUT/$id-$arm"; rm -rf "$d"; mkdir -p "$d/tmp"
     python3 "$SKILL_DIR/evals/build_fixtures.py" "$d/fx" >/dev/null
     repo="$d/fx/$id/repo"
@@ -47,7 +51,7 @@ while read -r id mode; do
       text="$(nth_turn "$turns" "$n")"
       resume=()
       [ -n "$session" ] && resume=(--resume "$session")
-      (cd "$repo" && TMPDIR="$d/tmp" claude -p "$text" "${resume[@]}" --model "$MODEL" --output-format json \
+      (cd "$repo" && TMPDIR="$d/tmp" claude -p "$text" ${resume[@]+"${resume[@]}"} --model "$MODEL" --output-format json \
          --allowedTools "Read,Write,Edit,Glob,Grep,Bash,Skill,Agent" --permission-mode acceptEdits \
          </dev/null >"$d/turn-$n.json" 2>>"$d/stderr.txt")
       session="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('session_id',''))" "$d/turn-$n.json" 2>/dev/null)"
