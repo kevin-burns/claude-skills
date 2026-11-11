@@ -31,7 +31,7 @@ from tickets_md import SIZE_POINTS, Tickets, parse
 
 MUST_SHARE_LIMIT = 0.60
 MIN_QUOTE_WORDS = 4
-RULES = ("vertical", "skeleton", "trace", "scope", "mix", "contingency", "acceptance", "blocks", "size")
+RULES = ("vertical", "skeleton", "trace", "scope", "mix", "contingency", "acceptance", "specifics", "blocks", "size")
 MUST_SECTIONS = ("goal", "success check", "anti-goal")          # what a Must may trace to
 NEVER_SECTIONS = ("non-goals", "out of scope", "assumptions", "open questions", "risks")
 NEVER_PREFIXES = ("assumption:", "open question:", "proposed:")
@@ -199,6 +199,86 @@ def check_acceptance(t: Tickets) -> list[Finding]:
     return findings
 
 
+_NUMBER_WORDS = {w: float(i) for i, w in enumerate((
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+    "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"))}
+_NUMBER_WORDS.update({"thirty": 30.0, "forty": 40.0, "fifty": 50.0, "sixty": 60.0, "seventy": 70.0, "eighty": 80.0,
+                      "ninety": 90.0, "hundred": 100.0, "thousand": 1000.0, "dozen": 12.0})
+_UNITS = {"ms": "millisecond", "millisecond": "millisecond", "milliseconds": "millisecond",
+          "s": "second", "sec": "second", "secs": "second", "second": "second", "seconds": "second",
+          "min": "minute", "mins": "minute", "minute": "minute", "minutes": "minute",
+          "h": "hour", "hr": "hour", "hrs": "hour", "hour": "hour", "hours": "hour",
+          "day": "day", "days": "day", "week": "week", "weeks": "week", "month": "month", "months": "month",
+          "year": "year", "years": "year", "%": "percent", "percent": "percent", "per cent": "percent"}
+_ID_WORDS = ("story", "stories", "increment", "slice", "issue", "ticket", "step", "turn", "#", "t", "u", "line")
+_TOKEN = re.compile(r"\d+(?:[.,]\d+)?|%|#|[a-z]+")
+_NAME = re.compile(r"(?<![\w'])[A-Z][A-Za-z]*[a-z][A-Za-z]*|(?<![\w'])[A-Z]{2,}(?![\w'])")
+_NAME_STOP = {"i", "prd", "spec", "must", "should", "could", "won", "proposed", "ok"}
+
+
+def figures(text: str) -> set[tuple[float, str]]:
+    """Every figure in the text as (value, unit), so "five-minute", "5 min" and "5 minutes" are one figure.
+    Ids ("T1", "user story 2", "increment 3") are not figures; "one" counts only before a unit."""
+    words = _TOKEN.findall(normalise(text).lower().replace("-", " "))
+    out = set()
+    for i, w in enumerate(words):
+        nxt = words[i + 1] if i + 1 < len(words) else ""
+        unit = _UNITS.get(nxt, "")
+        prev = words[i - 1] if i else ""
+        if w[0].isdigit():
+            if prev in _ID_WORDS:
+                continue
+            out.add((float(w.replace(",", ".")), unit))
+        elif w == "half" and nxt in ("a", "an") and i + 2 < len(words) and words[i + 2] in _UNITS:
+            out.add((0.5, _UNITS[words[i + 2]]))
+        elif w in ("a", "an") and unit and prev != "half":
+            out.add((1.0, unit))
+        elif w in _NUMBER_WORDS and (w != "one" or unit) and prev not in _ID_WORDS:
+            out.add((_NUMBER_WORDS[w], unit))
+    return out
+
+
+def names(text: str) -> set[str]:
+    """Capitalised names (TextEdit, Mail, PDF) that do not start a sentence, lower-cased."""
+    text = normalise(text)
+    out = set()
+    for m in _NAME.finditer(text):
+        before = text[:m.start()].rstrip(" \"'(")
+        if not before or before[-1] in ".!?:;":
+            continue
+        if m.group().lower() not in _NAME_STOP:
+            out.add(m.group().lower())
+    return out
+
+
+def _proposed(text: str) -> bool:
+    return text.strip().lower().startswith("proposed:")
+
+
+def check_specifics(t: Tickets, prd_text: str, spec_text: str = "") -> list[Finding]:
+    """A criterion may not add a figure or a name the PRD and spec do not contain, unless it says Proposed:."""
+    source = prd_text + "\n" + spec_text
+    have = figures(source)
+    values = {v for v, _ in have}
+    vocabulary = set(re.findall(r"[a-z0-9]+", normalise(source).lower()))
+    findings = []
+    for s in t.slices():
+        added: list[str] = []
+        for c in s.acceptance:
+            if _proposed(c.text):
+                continue
+            for v, u in sorted(figures(c.text)):
+                if not ((v, u) in have or (v, "") in have or (not u and v in values)):
+                    added.append(f"{v:g} {u}".strip())
+            added += [m for m in re.findall(r"[A-Za-z]+", c.text) if m.lower() in names(c.text)
+                      and m.lower() not in vocabulary and m not in added]
+        if added:
+            findings.append(Finding("specifics", s.id, f"{s.id}'s acceptance criteria add {', '.join(added)}, not in "
+                                    "the PRD or spec: cite where it comes from, or start the criterion 'Proposed:' "
+                                    "so the person confirms it"))
+    return findings
+
+
 def check_blocks(t: Tickets) -> list[Finding]:
     graph: dict[str, list[str]] = {}
     for s in t.slices():
@@ -236,7 +316,8 @@ def check_size(t: Tickets) -> list[Finding]:
 
 def all_findings(t: Tickets, prd_text: str, readiness: dict | None, spec_text: str = "") -> list[Finding]:
     return (check_vertical(t) + check_skeleton(t) + check_trace(t, prd_text, readiness)
-            + check_scope(t, prd_text, spec_text, readiness) + check_mix(t) + check_acceptance(t) + check_blocks(t)
+            + check_scope(t, prd_text, spec_text, readiness) + check_mix(t) + check_acceptance(t)
+            + check_specifics(t, prd_text, spec_text) + check_blocks(t)
             + check_size(t))
 
 
@@ -316,6 +397,9 @@ def _check(args) -> int:
     for s in tickets.slices():
         if s.traces.strip().startswith("Proposed:"):
             print(f"{'proposed':<11} {s.id:<13} {s.traces.strip()}")
+        for c in s.acceptance:
+            if _proposed(c.text):
+                print(f"{'proposed':<11} {s.id:<13} criterion: {c.text.strip()}")
     if findings:
         return 1
     if any(o["mode"] == "attested" for o in overrides):

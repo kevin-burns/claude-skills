@@ -39,7 +39,7 @@ Scripts are in this skill's `scripts/` directory; run them with `uv run` or `pyt
    into increments of the timebox (one week unless the person names another), increment 1 a walking skeleton. The person confirms or changes them; you edit `tickets.md`.
 5. **Check.** Run `check_tickets.py check <dir>/tickets.md` and fix what you can. It exits 0 when
    clean, 1 on findings, and exits 2 when it is clean only because of attested overrides. It also
-   lists every override it applied and every `Proposed:` slice, so the person can see them. A Must cannot be `Proposed:`: it traces to the PRD's goal, success check or anti-goal. What only the
+   lists every override it applied and every `Proposed:` slice, so the person can see them. A Must cannot be `Proposed:`: it traces to the PRD's goal, success check or anti-goal. An acceptance criterion that needs a figure or a name the PRD and spec do not give (a length, a threshold, an app) starts `Proposed:` too, and you show it in the confirm round. What only the
    person can decide (more than 60% Must in an increment, no Could, a Must with no trace), ask.
    Run check_tickets.py accept only when the person says so:
    `check_tickets.py accept --tickets <dir>/tickets.md --rule <rule> [--slice <id or increment-N>] --turn <id> --quote "<their words>"`,
@@ -54,7 +54,7 @@ Scripts are in this skill's `scripts/` directory; run them with `uv run` or `pyt
 
 ## What the checks are
 
-`references/rules.md` lists the eight checks and why each exists; `references/worked-example.md`
+`references/rules.md` lists the checks and why each exists; `references/worked-example.md`
 shows a breakdown that passes them; `references/dsdm.md` holds the DSDM points behind MoSCoW,
 the 60% guidance and timeboxes.
 

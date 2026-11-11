@@ -40,6 +40,23 @@ Behaviour, six expectations per case, one blind Opus grader (labels shuffled per
   `tickets.md`, and the replies name their tools. The grader noticed and graded on content.
 - Cost (CLI figures): with $1.86, without $1.59, to-tickets $1.45.
 
+### 2026-11-11 rerun after the `specifics` check (T1, T2; with arm only)
+
+The first run's only with-arm misses were unmarked specifics in acceptance criteria, and the skill's
+own worked example modelled one ("a recorded five-minute email"). Commit c75cd3b added the
+`specifics` check and marked the example `Proposed:`. Rerun graded blind against the first run's
+without and to-tickets outputs, inputs rebuilt from fixtures (no leaked files):
+
+| case | with | without | to-tickets |
+|---|---|---|---|
+| T1 | 6/6 (was 5/6) | 1/6 | 1/6 |
+| T2 | 6/6 (was 5/6) | 3/6 | 2/6 |
+
+The unchanged arms scored the same as in the first grading. Both with-arm runs marked their figures
+`Proposed:` ("the pass threshold is agreed with the user, since none is given"). Open: in T1 the with
+arm wrote "the spec names no finer split" and declared only core and adapters as layers, although
+the spec names four adapters. The agent chooses the layers that `vertical` checks against.
+
 Routing (`claude plugin eval`, Sonnet, 10 runs per case, $11.77): 142/160. All 8 negative cases
 and route-01 to route-06 are 10/10. Two prompts that check rather than build are missed:
 "Check this ticket breakdown: is anything horizontal?" (2/10) and "Which of these tickets are

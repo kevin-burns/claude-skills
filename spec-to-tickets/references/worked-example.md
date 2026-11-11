@@ -75,7 +75,7 @@ accepted:
 - blocked by: [T1]
 - note: one model swap behind the existing interface, one pull request
 - acceptance:
-  - A recorded five-minute email transcribes with no more errors than the agreed clip set allows (proves: the success check)
+  - Proposed: a recorded five-minute email transcribes with no more errors than the agreed clip set allows (proves: the success check)
 
 ### T5 — Punctuation by voice
 - moscow: Could
@@ -90,4 +90,5 @@ accepted:
 
 `check_tickets.py check` reports nothing: T0 is horizontal but labelled a prefactor, T1 is the walking
 skeleton, both Musts quote the PRD, the Coulds are marked `Proposed:`, increment 2's 4-of-5 Must
-share is accepted, and T4's size note says why an L is still one pull request.
+share is accepted, and T4's size note says why an L is still one pull request. T4's criterion needs a
+length the PRD never gave, so it starts `Proposed:` and `check` lists it for the person to confirm.

@@ -28,4 +28,4 @@ skeleton. Each slice is a `### <ID> — <title>` heading followed by:
 | `blocked by` | slice ids, `[T1, T2]` |
 | `parallel` | `yes` or `no`: advice only, `yes` when it touches no files another open slice touches |
 | `note` | required for `L`: why it is still one context window and one pull request |
-| `acceptance` | a list; each item ends `(proves: <user story, success check or goal>)` |
+| `acceptance` | a list; each item ends `(proves: <user story, success check or goal>)`; an item that adds a figure or name the PRD and spec do not give starts `Proposed:` |
