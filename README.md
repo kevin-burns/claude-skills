@@ -210,6 +210,24 @@ Turning something you heard or found into something you can search later.
 
 Structuring a decision that has more moving parts than fit in your head.
 
+Four of these chain from a conversation to a build order, and each works alone:
+
+1. **[frontier-rounds](./frontier-rounds)** talks the design through until nothing is left open.
+2. **[spec-ready](./spec-ready)** checks that the plan really is settled *in your own words*, then
+   writes the PRD and the spec.
+3. **[spec-to-tickets](./spec-to-tickets)** turns the spec into vertical slices with MoSCoW
+   priorities in one-week timeboxes. Every Must traces back to what you said the product is for,
+   and every timebox keeps something to drop. That is DSDM's MoSCoW and timeboxing applied to
+   agent-built software, where producing everything is easy and deciding what not to build now is
+   the hard part.
+4. **[adr-author](./adr-author)** records any decision worth keeping on its own.
+
+Each slice is then planned just in time, when work on it starts. Throughout the chain, a script
+checks what you said against what was written; the agent's word for it is never taken. On
+2026-11-11, each skill was compared with the same model running without it. spec-ready passed
+34/36 expectations against 20/36 without it, and spec-to-tickets 16/18 against 8/18, both graded by
+fresh reviewers. Details are in each skill's `evals/README.md`.
+
 | Skill | What it does | Wraps |
 |---|---|---|
 | [adr-author](./adr-author) | Write or amend an architecture decision record in the repo's own format that names exactly what it decides — the modules, functions or paths, and what must never happen — then **self-check it with no model**: hedged decisions, names missing from the code, figures nobody gave, broken supersede links. Uses only names you confirm, and supersedes a record when the code turned out to be right | — |
