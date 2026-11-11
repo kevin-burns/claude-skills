@@ -22,8 +22,9 @@ confirm in one round, and then a script checks it with no model: every slice cut
 layers it needs, the first increment is a walking skeleton, every Must traces to the PRD (your turn
 or a quoted sentence), each increment holds Coulds back as contingency and stays at or under 60%
 Must effort (DSDM's guidance), every acceptance criterion names what it proves, and the blocking
-graph has no cycles. An override needs your own words, checked against your turn in the session
-transcript through spec-ready.
+graph has no cycles. An override is recorded only against a current finding, with your own words;
+through spec-ready they are checked against your turn when recorded and on every check. Without a
+readable transcript the override is marked attested and the check exits 2 until you have seen it.
 
 **What it won't do:** generate an elaborate breakdown itself (use Matt Pocock's `to-tickets` or Cole
 Medin's `piv-slice-epic` first, then run this); write implementation plans up front (each slice is

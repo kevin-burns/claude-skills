@@ -72,3 +72,12 @@ def test_worked_example_passes_the_checks():
     assert problems == []
     assert run_checks(tickets, prd, None) == []
     assert tickets.accepted and any(s.kind == "prefactor" for s in tickets.slices())
+
+
+def test_docs_match_the_reviewed_checks():
+    # Final review 2026-11-11: the docs promised checked overrides that the code did not enforce.
+    assert "exits 2" in TEXT and "attested" in TEXT and "tell the person" in TEXT
+    assert "increment-N" in TEXT and "A Must cannot be `Proposed:`" in TEXT
+    rules = (SKILL / "references" / "rules.md").read_text(encoding="utf-8")
+    assert "contingency" in rules and "attested" in rules and "four words" in rules
+    assert "goal, success check or anti-goal" in rules

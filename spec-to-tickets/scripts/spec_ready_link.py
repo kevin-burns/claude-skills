@@ -7,7 +7,7 @@ or a symlinked skills directory. When it is not there, callers fall back and say
 
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -28,6 +28,11 @@ def load_transcripts():
     scripts = find_spec_ready()
     if scripts is None:
         return None
-    if str(scripts) not in sys.path:
-        sys.path.append(str(scripts))
-    return importlib.import_module("transcripts")
+    # Load by file path under a private name, so no other module called "transcripts" can shadow it.
+    spec = importlib.util.spec_from_file_location("spec_ready_transcripts", scripts / "transcripts.py")
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module  # dataclasses look their module up here while the class is built
+    spec.loader.exec_module(module)
+    return module

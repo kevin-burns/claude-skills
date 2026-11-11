@@ -9,7 +9,7 @@
     {
       "item": "goal",
       "status": "settled",
-      "turn": "9e7d5408-08d0-46a9-83d2-fe0b013cccaf",
+      "turn": "u1",
       "turn_hash": "77fd1090d8a52a7adf41f938d054c4a488bdb61c3fbf6c688c177d72f88b3026",
       "statement": "A local Mac app that takes dictation and types the text at the cursor so long emails can be written by voice.",
       "verdict": {
@@ -26,7 +26,7 @@
     {
       "item": "audience",
       "status": "settled",
-      "turn": "9bc67cff-8cc7-4a12-b221-80450c45a53f",
+      "turn": "u2",
       "turn_hash": "bae0317f932c853fafe4199a150c0b28713c3d86e73cf9084848c878e1beab96",
       "statement": "The user first, then people who write long emails and messages by voice.",
       "verdict": {
@@ -43,7 +43,7 @@
     {
       "item": "non_goals",
       "status": "settled",
-      "turn": "55b4132b-e2f5-4f00-ad6f-a5236da4610b",
+      "turn": "u3",
       "turn_hash": "ece91c90decf045e26903d69fc8067704ade75b79478512cb583430b3a1f25b5",
       "statement": "No meeting transcription and no speaker labels.",
       "verdict": {
@@ -60,7 +60,7 @@
     {
       "item": "anti_goal",
       "status": "settled",
-      "turn": "cc9de5ef-13f9-4238-b749-dc7cfaf52655",
+      "turn": "u4",
       "turn_hash": "b55e2bd2cb067ba609f930c75a0d3161db827baa4ad54a76de8d9a591a635772",
       "statement": "A clone of an existing app counts as failure.",
       "verdict": {
@@ -77,7 +77,7 @@
     {
       "item": "success_check",
       "status": "settled",
-      "turn": "cc9de5ef-13f9-4238-b749-dc7cfaf52655",
+      "turn": "u4",
       "turn_hash": "b55e2bd2cb067ba609f930c75a0d3161db827baa4ad54a76de8d9a591a635772",
       "statement": "The user uses it daily for a week.",
       "verdict": {
@@ -94,7 +94,7 @@
     {
       "item": "verification",
       "status": "settled",
-      "turn": "7751e608-fb71-43ee-b762-64fff36e07ca",
+      "turn": "u7",
       "turn_hash": "5c63ca820db749b7a24abec4e7f8dcc0df2657ef7ca9002c229ca0e68e5051a8",
       "statement": "TDD on the core logic plus a small recorded audio set for accuracy.",
       "verdict": {
@@ -111,7 +111,7 @@
     {
       "item": "boundaries",
       "status": "settled",
-      "turn": "d1c3345b-55db-454c-a5c8-b9333b18b291",
+      "turn": "u6",
       "turn_hash": "88a9fc0d09a4ada4f9b5c6a33a3f5fdf38b80cd65f6e713106e4d7c014141320",
       "statement": "The audio driver stays out of the core library; the core builds and tests without a microphone.",
       "verdict": {
@@ -128,7 +128,7 @@
     {
       "item": "risks",
       "status": "settled",
-      "turn": "79b9184c-4ad8-4071-9f59-88a4728be105",
+      "turn": "u5",
       "turn_hash": "aa009b7cfe431e0142af03dfea1932413a6d55e33565c6a8deca0642d54b65ff",
       "statement": "Latency on older Macs might make it annoying.",
       "verdict": {
@@ -143,16 +143,16 @@
       "reason": ""
     }
   ],
-  "transcript_id": "f4b3a525fa7e29f1",
+  "transcript_id": "fixture",
   "person_turns": [
-    "9e7d5408-08d0-46a9-83d2-fe0b013cccaf",
-    "9bc67cff-8cc7-4a12-b221-80450c45a53f",
-    "55b4132b-e2f5-4f00-ad6f-a5236da4610b",
-    "7751e608-fb71-43ee-b762-64fff36e07ca",
-    "d1c3345b-55db-454c-a5c8-b9333b18b291",
-    "79b9184c-4ad8-4071-9f59-88a4728be105",
-    "c1dad50c-eb39-48f6-8bea-768dfbd784dd",
-    "cc9de5ef-13f9-4238-b749-dc7cfaf52655"
+    "u1",
+    "u2",
+    "u3",
+    "u7",
+    "u6",
+    "u5",
+    "u8",
+    "u4"
   ],
   "verification": "independent",
   "environment": {

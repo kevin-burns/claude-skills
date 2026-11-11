@@ -5,32 +5,32 @@ Verifier: independent
 
 ## Problem
 
-The user wants to write long emails by voice, with the dictated text typed wherever the cursor is. [turn:9e7d5408-08d0-46a9-83d2-fe0b013cccaf]
+The user wants to write long emails by voice, with the dictated text typed wherever the cursor is. [turn:u1]
 
 ## Who it is for
 
-The user first, and then people like them who write long emails and messages by voice. [turn:9bc67cff-8cc7-4a12-b221-80450c45a53f]
+The user first, and then people like them who write long emails and messages by voice. [turn:u2]
 
 ## Goal
 
-A small Mac app that takes dictation and types the text wherever the cursor is, so the user can write long emails by voice. It runs locally on an Apple Silicon Mac, handles English only, and a delay of up to a second is acceptable. [turn:9e7d5408-08d0-46a9-83d2-fe0b013cccaf]
+A small Mac app that takes dictation and types the text wherever the cursor is, so the user can write long emails by voice. It runs locally on an Apple Silicon Mac, handles English only, and a delay of up to a second is acceptable. [turn:u1]
 
 ## Non-goals
 
-- No meeting transcription. [turn:55b4132b-e2f5-4f00-ad6f-a5236da4610b]
-- No speaker labels. [turn:55b4132b-e2f5-4f00-ad6f-a5236da4610b]
+- No meeting transcription. [turn:u3]
+- No speaker labels. [turn:u3]
 
 ## Anti-goal
 
-A clone of an existing app counts as a failure. [turn:cc9de5ef-13f9-4238-b749-dc7cfaf52655]
+A clone of an existing app counts as a failure. [turn:u4]
 
 ## Success check
 
-The user uses it daily for a week. [turn:cc9de5ef-13f9-4238-b749-dc7cfaf52655]
+The user uses it daily for a week. [turn:u4]
 
 ## Risks
 
-- Latency on older Macs might make it annoying. [turn:79b9184c-4ad8-4071-9f59-88a4728be105]
+- Latency on older Macs might make it annoying. [turn:u5]
 
 ## Open questions
 

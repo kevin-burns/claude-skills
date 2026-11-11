@@ -28,7 +28,7 @@ spec: spec.md
 timebox: 1 week
 layers: [audio, core, ui]
 accepted:
-  - {"rule": "mix", "slice": null, "turn": "c41f", "quote": "accuracy is the whole point of week two", "mode": "verified"}
+  - {"rule": "mix", "slice": "increment-2", "turn": "c41f", "quote": "accuracy is the whole point of week two", "mode": "verified"}
 ---
 
 ## Increment 1 — walking skeleton

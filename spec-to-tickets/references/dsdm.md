@@ -3,7 +3,7 @@
 Paraphrased from *The DSDM Agile Project Framework* handbook (DSDM Consortium, now the Agile
 Business Consortium; agilebusiness.org). Section numbers refer to that handbook. The method is free to
 use; the handbook's text is copyright with all rights reserved, so the wording here is ours and nothing
-is quoted. Read the handbook for the full method. Intended as `spec-to-tickets/references/dsdm.md`.
+is quoted. Read the handbook for the full method.
 
 ## Why DSDM and not just "agile"
 

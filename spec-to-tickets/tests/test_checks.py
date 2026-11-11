@@ -21,7 +21,7 @@ from check_tickets import (
 from tickets_md import Criterion, Increment, Slice, Tickets
 
 PRD = "## Goal\n\nDictation that types where the cursor is, so I can write long emails by voice.\n"
-READY = {"items": [{"item": "goal", "status": "settled", "turn": "u1"}]}
+READY = {"mode": "verified", "items": [{"item": "goal", "status": "settled", "turn": "u1"}]}
 OK = (Criterion("types at the cursor", "user story 1"),)
 LAYERS = ["audio", "core", "ui"]
 
@@ -88,8 +88,8 @@ def test_normalise_matches_spec_ready_when_present():
 
 
 def test_scope():
-    assert rules(check_scope(tickets([sl("T1", moscow="Could", traces="")]))) == [("scope", "T1")]
-    assert check_scope(tickets([sl("T1", moscow="Could", traces="Proposed: polish")])) == []
+    assert rules(check_scope(tickets([sl("T1", moscow="Could", traces="")]), PRD)) == [("scope", "T1")]
+    assert check_scope(tickets([sl("T1", moscow="Could", traces="Proposed: polish")]), PRD) == []
 
 
 def test_mix_boundary_at_sixty_percent():
@@ -99,7 +99,7 @@ def test_mix_boundary_at_sixty_percent():
     assert check_mix(ok) == []
     over = tickets([sl("T1", size="M"), sl("T2", size="M"), sl("T3", moscow="Should", size="S"),
                     sl("T4", moscow="Could", size="S")])
-    assert rules(check_mix(over)) == [("mix", None)]
+    assert rules(check_mix(over)) == [("mix", "increment-1")]
 
 
 def test_mix_needs_a_could():
@@ -135,5 +135,6 @@ def test_size():
 
 def test_accepted_overrides_drop_matching_findings():
     over = tickets([sl("T1", size="L", note="x"), sl("T2", moscow="Could", size="S")],
-                   accepted=[{"rule": "mix", "slice": None, "turn": "u7", "quote": "fine", "mode": "verified"}])
+                   accepted=[{"rule": "mix", "slice": "increment-1", "turn": "u7", "quote": "fine",
+                              "mode": "verified"}])
     assert [f.rule for f in run_checks(over, PRD, READY)] == []

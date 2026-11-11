@@ -105,6 +105,9 @@ def _front(lines: list[str], problems: list[str]) -> tuple[dict[str, object], tu
             continue
         current = key
         listed = _list(value)
+        if key == "layers" and listed is None:
+            problems.append(f"line {number}: front matter layers must be a [bracketed, list]")
+            listed = []
         front[key] = listed if listed is not None else value
     problems.append("line 1: front matter is not closed with ---")
     return front, tuple(accepted), len(lines)
@@ -199,4 +202,22 @@ def parse(text: str) -> tuple[Tickets, list[str]]:
         in_acceptance = False
         problems.append(f"line {number}: unexpected line in slice {raw['id']}: {line.strip()[:60]}")
     close_increment()
-    return Tickets(front, tuple(increments), accepted), problems
+    tickets = Tickets(front, tuple(increments), accepted)
+    problems.extend(_consistency(tickets))
+    return tickets, problems
+
+
+def _consistency(tickets: Tickets) -> list[str]:
+    """Ids are unique, and a slice names each layer once and only layers the front matter declares."""
+    problems = []
+    declared = set(tickets.front.get("layers") or [])
+    seen: set[str] = set()
+    for s in tickets.slices():
+        if s.id in seen:
+            problems.append(f"line {s.line}: duplicate slice id {s.id}")
+        seen.add(s.id)
+        if len(set(s.layers)) != len(s.layers):
+            problems.append(f"line {s.line}: slice {s.id} has a duplicate layer")
+        for layer in sorted(set(s.layers) - declared) if declared else ():
+            problems.append(f"line {s.line}: slice {s.id} uses undeclared layer {layer!r}")
+    return problems

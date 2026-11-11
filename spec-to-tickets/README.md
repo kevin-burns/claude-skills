@@ -19,4 +19,7 @@ the breakdown first with Matt Pocock's `to-tickets` (github.com/mattpocock/skill
 
 - Sizes are S, M, L. The 60% rule is computed on them, so it is as good as the sizes.
 - The vertical check reads the layers a slice declares; it cannot see whether the code touches them.
-- An accepted `mix` override without `--slice` applies to every increment.
+- A Must's quote is checked to be at least four words from the PRD's goal, success check or
+  anti-goal; whether that sentence really justifies the slice is for the person to judge.
+- Overrides are checked against the person's turn when a transcript is readable; a hand-edited
+  override in tickets.md is still possible, and `check` lists every override it applies.

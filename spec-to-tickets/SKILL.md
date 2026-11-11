@@ -37,10 +37,15 @@ Scripts are in this skill's `scripts/` directory; run them with `uv run` or `pyt
    original breakdown stays untouched and is named in `source:`.
 4. **Propose and confirm, in one round.** For every slice show its MoSCoW, size and trace, grouped
    into increments of the timebox (one week unless the person names another), increment 1 a walking skeleton. The person confirms or changes them; you edit `tickets.md`.
-5. **Check.** Run `check_tickets.py check <dir>/tickets.md` and fix what you can. What only the person
-   can decide (more than 60% Must in an increment, a Must with no trace), ask. Run check_tickets.py accept only when the person says so:
-   `check_tickets.py accept --tickets <dir>/tickets.md --rule <rule> [--slice <id>] --turn <id> --quote "<their words>"`,
-   where the turn is the one in which they decided and the quote is copied from it.
+5. **Check.** Run `check_tickets.py check <dir>/tickets.md` and fix what you can. It exits 0 when
+   clean, 1 on findings, and exits 2 when it is clean only because of attested overrides. It also
+   lists every override it applied and every `Proposed:` slice, so the person can see them. A Must cannot be `Proposed:`: it traces to the PRD's goal, success check or anti-goal. What only the
+   person can decide (more than 60% Must in an increment, no Could, a Must with no trace), ask.
+   Run check_tickets.py accept only when the person says so:
+   `check_tickets.py accept --tickets <dir>/tickets.md --rule <rule> [--slice <id or increment-N>] --turn <id> --quote "<their words>"`,
+   where the turn is the one in which they decided and the quote is copied from it. For `mix` and
+   `contingency` the slice is the increment, written `increment-N`. If accept says "recorded as
+   attested" (no transcript could be read), tell the person: their words were not checked.
 6. **Hand over.** Name the slices whose blockers are done as ready. Each gets its plan from
    `superpowers:writing-plans` just in time, when work on it starts: a slice that depends on another
    is planned after that one is built. Create tickets only when the person asks, in what they use:

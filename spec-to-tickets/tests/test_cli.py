@@ -93,7 +93,8 @@ def session(tmp_path: Path, turns: dict[str, str]) -> dict:
 
 
 def accept(d, *extra, env, cwd):
-    return run("accept", "--tickets", str(d / "tickets.md"), "--rule", "mix", *extra, env=env, cwd=cwd)
+    return run("accept", "--tickets", str(d / "tickets.md"), "--rule", "mix", "--slice", "increment-1", *extra,
+               env=env, cwd=cwd)
 
 
 def test_accept_verified_with_a_real_turn(tmp_path):
@@ -102,8 +103,9 @@ def test_accept_verified_with_a_real_turn(tmp_path):
     done = accept(d, "--turn", "u7", "--quote", "fine for week one", env=env, cwd=tmp_path / "repo")
     assert done.returncode == 0, done.stderr
     tickets, problems = parse((d / "tickets.md").read_text())
-    assert problems == [] and tickets.accepted[0]["mode"] == "verified" and tickets.accepted[0]["slice"] is None
-    assert run("check", str(d / "tickets.md")).returncode == 0
+    entry = tickets.accepted[0]
+    assert problems == [] and entry["mode"] == "verified" and entry["slice"] == "increment-1"
+    assert run("check", str(d / "tickets.md"), env=env, cwd=tmp_path / "repo").returncode == 0
 
 
 def test_accept_refuses_a_quote_not_in_the_turn(tmp_path):
@@ -116,7 +118,8 @@ def test_accept_refuses_a_quote_not_in_the_turn(tmp_path):
 
 def test_accept_without_spec_ready_is_attested(tmp_path):
     d = spec_dir(tmp_path)
-    code, message = check_tickets.accept_override(d / "tickets.md", "mix", None, "u7", "fine", transcripts=None,
+    code, message = check_tickets.accept_override(d / "tickets.md", "mix", "increment-1", "u7", "fine",
+                                                  transcripts=None,
                                                   env={}, home=tmp_path, cwd=tmp_path)
     assert code == 0 and "attested" in message
     assert parse((d / "tickets.md").read_text())[0].accepted[0]["mode"] == "attested"
