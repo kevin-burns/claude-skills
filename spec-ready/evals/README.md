@@ -22,6 +22,15 @@ Results are reported per arm and per case, never pooled.
 
 ## Results
 
+### 2026-11-11, routing (`claude plugin eval`, Sonnet, 10 runs per case, commit 3e1145f)
+
+180/180: every should-fire case fired 10/10, and every near miss stayed silent 10/10, including
+two that describe a plan without asking for a spec. Cost 13.27 USD as the tool reports it. Caveat:
+the eval sandbox loads this plugin only, so routing against a full personal skill set is not
+measured here; the early firing seen in the core runs (S2 turn 5, S4 turn 0) happened mid-
+conversation with spec-ready installed as a project skill, a context single-prompt cases do not
+reproduce.
+
 ### 2026-11-11, core cases (S1, S2, S8), commit c92bbbe + runner fix 4423f08
 
 Claude Code with Sonnet as the session model, one run per case and arm, about 12.74 USD
