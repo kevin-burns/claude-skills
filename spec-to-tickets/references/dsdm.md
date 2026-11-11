@@ -62,9 +62,24 @@ for now; only what the team will work on in that timebox gets a Must, Should or 
 The numbers are DSDM's guidance for a typical project, not a law; what matters is visible flexibility in
 what must be delivered.
 
+## When the Musts will not fit (Ch. 17.2, statement 5)
+
+DSDM's questionnaire for judging whether a project suits the method asks whether the requirements can
+be prioritised so that scope, not the date, gives way. When the top-level list looks like nearly all
+Musts, the handbook offers two moves, in this order:
+
+- **Look below the top level.** A requirement that is a Must as a whole often breaks into parts where
+  only some are Musts. Its own example, paraphrased: in a diary feature, making and cancelling an
+  entry are Musts, while changing one is not, because cancelling and re-making it is a workaround.
+- **Only then, contingency in time.** Add one or more contingency timeboxes at the end. Commit to the
+  date that includes them, but plan to an earlier target date that does not. When the target is at
+  risk, the least important work moves into the contingency timebox instead of being dropped. This
+  works only while everyone treats the earlier date as the real one; otherwise the contingency is
+  spent early and carelessly.
+
 ## Timeboxes (Ch. 13)
 
-- Every timebox starts with a kick-off and ends with a close-out. Between them, DSDM offers a structured
+- A kick-off opens every timebox and a close-out finishes it. Between them, DSDM offers a structured
   style (investigation, about 10-20% of the timebox, to confirm deliverables, acceptance criteria and
   measures of success; then refinement; then consolidation, each ending in a review) or a free-format
   style. (13.2-13.3)

@@ -13,6 +13,12 @@
 | blocks | an unknown blocker, or a cycle | a cycle means nothing can start |
 | size | an `L` with no note | a slice is one context window, one pull request, and demoable on its own |
 
+When `mix` or `contingency` fails, an override is the last move, not the first. First split the
+heaviest Must into its parts and give the parts their own priority: often only part of it is a Must.
+If the scope still cannot flex, propose a contingency increment at the end, planned with nothing in it,
+and plan to the date before it; the person then decides whether to accept the mix, and that decision is
+recorded with `accept` like any other. (DSDM handbook, ch. 17.2, statement 5; see dsdm.md.)
+
 Horizontal work that has to be horizontal (a prefactor that makes the next slice easy, or a wide
 change done as expand, migrate, contract) is labelled with its `kind` and exempt from `vertical`.
 
