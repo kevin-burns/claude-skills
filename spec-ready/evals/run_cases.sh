@@ -61,7 +61,7 @@ while read -r id mode; do
     found="$(find "$HOME/.claude/projects" -maxdepth 2 -name "$session.jsonl" 2>/dev/null | head -1)"
     if [ -n "$session" ] && [ -n "$found" ]; then cp "$found" "$d/session.jsonl"; else echo "session file not found" >>"$d/stderr.txt"; fi
     (cd "$repo" && git status --porcelain | grep -v '^?? .claude/' >"$d/git-status.txt"
-     find . -name prd.md -o -name spec.md -o -name readiness.json | grep -v '^./.claude/' >"$d/written.txt")
+     find . -path ./.git -prune -o -path ./.claude -prune -o -type f -newer README.md -print >"$d/written.txt")
     echo "$id $arm done"
   done
 done
