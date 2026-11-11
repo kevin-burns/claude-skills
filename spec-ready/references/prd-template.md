@@ -32,6 +32,10 @@ not give. If a number has no source, leave it out.
 
 <How the person will know it worked.> [turn:<id>]
 
+## Open questions
+
+- Open question: <something still undecided that does not block this spec>
+
 ## Assumptions
 
 - Assumption: <a guess nobody has confirmed, stated as a guess>

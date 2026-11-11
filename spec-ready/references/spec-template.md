@@ -8,7 +8,9 @@ The how. The PRD beside this file holds the why; do not repeat it here.
 
 ## User stories
 
-1. As a <kind of user>, I want <capability>, so that <benefit>.
+Each story cites the person's turn it comes from; one the person never stated starts `Proposed:`.
+
+1. As a <kind of user>, I want <capability>, so that <benefit>. [turn:<id>]
 
 ## Implementation decisions
 
@@ -27,4 +29,5 @@ reason. "None" if the person said no boundary is touched.>
 
 ## Out of scope
 
-- <What this spec does not cover.>
+- <What this spec does not cover.> [turn:<id>]
+- Proposed: <a limit the person has not stated, offered for them to confirm>

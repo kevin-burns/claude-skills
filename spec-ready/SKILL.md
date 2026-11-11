@@ -72,7 +72,9 @@ location is confirmed.
    confirms the path. Copy `readiness.json` there, then write `prd.md` from
    `references/prd-template.md` (its `Readiness:` and `Verifier:` header lines copy `mode` and
    `verification` from readiness.json) and `spec.md` from `references/spec-template.md`. Run
-   `check_sources.py <dir>/prd.md <dir>/readiness.json` and fix every finding.
+   `check_sources.py <dir>/prd.md <dir>/readiness.json --spec <dir>/spec.md` and fix every
+   finding. A question nobody has answered goes under Open questions in the PRD, never under
+   Assumptions; a user story or out-of-scope line nobody stated starts `Proposed:`.
 
 Never write prd.md or spec.md while gate.py exits non-zero, except after exit 2 when the person
 explicitly agrees to continue unverified.

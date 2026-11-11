@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
 """Check a PRD written by spec-ready: decisions cite the person's turns, figures have sources.
 
-    check_sources.py PRD.md READINESS.json      exit 0 clean, 1 findings (printed one per line)
+    check_sources.py PRD.md READINESS.json [--spec SPEC.md]
+                                                exit 0 clean, 1 findings (printed one per line)
 
 Rules:
 - the header lines `Readiness: verified|attested` and
   `Verifier: independent|agent-relayed|self-assessed|none` match readiness.json;
 - in the decision sections every non-empty line cites `[turn:<id>]`, and every cited id is a
   settled turn in readiness.json;
-- `## Assumptions` lines start with `Assumption:` (a bullet marker before it is fine);
-- outside Assumptions, a line containing a digit and no citation is an unsourced figure.
+- `## Assumptions` lines start with `Assumption:` and `## Open questions` lines with
+  `Open question:` (a bullet marker before either is fine);
+- outside Assumptions, a line containing a digit and no citation is an unsourced figure;
+- in spec.md, each user story and each out-of-scope line cites a settled turn or starts
+  `Proposed:` (implementation decisions are the design, and need neither).
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
 from pathlib import Path
 
+SPEC_SOURCED_SECTIONS = {"user stories", "out of scope"}
 DECISION_SECTIONS = {"problem", "who it is for", "goal", "non-goals", "anti-goal", "success check"}
 CITATION = re.compile(r"\[turn:([^\]\s]+)\]")
 
@@ -58,6 +64,10 @@ def check_prd(text: str, readiness: dict) -> list[str]:
             if not re.sub(r"^[-*]\s*", "", line).startswith("Assumption:"):
                 findings.append(f"line {number}: assumptions must start with 'Assumption:'")
             continue
+        if section == "open questions":
+            if not re.sub(r"^[-*]\s*", "", line).startswith("Open question:"):
+                findings.append(f"line {number}: open questions must start with 'Open question:'")
+            continue
         if section in DECISION_SECTIONS and not cited:
             findings.append(f"line {number}: decision line has no citation: {line[:80]}")
         elif not cited and re.search(r"\d", line):
@@ -65,13 +75,33 @@ def check_prd(text: str, readiness: dict) -> list[str]:
     return findings
 
 
+def check_spec(text: str, readiness: dict) -> list[str]:
+    findings = []
+    settled = {r["turn"] for r in readiness.get("items", []) if r.get("status") == "settled" and r.get("turn")}
+    for section, number, line in _sections(text):
+        if section not in SPEC_SOURCED_SECTIONS:
+            continue
+        body = re.sub(r"^([-*]|\d+\.)\s*", "", line)
+        cited = CITATION.findall(line)
+        for turn in cited:
+            if turn not in settled:
+                findings.append(f"spec.md line {number}: cites turn {turn}, which is not a settled turn")
+        if not cited and not body.startswith("Proposed:"):
+            what = "user story" if section == "user stories" else "out of scope line"
+            findings.append(f"spec.md line {number}: {what} neither cites a turn nor starts 'Proposed:': {line[:70]}")
+    return findings
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = argv if argv is not None else sys.argv[1:]
-    if len(args) != 2:
-        print(__doc__.strip().splitlines()[2].strip(), file=sys.stderr)
-        return 1
-    readiness = json.loads(Path(args[1]).read_text(encoding="utf-8"))
-    findings = check_prd(Path(args[0]).read_text(encoding="utf-8"), readiness)
+    parser = argparse.ArgumentParser(description="Check a spec-ready PRD (and spec) for sources.")
+    parser.add_argument("prd")
+    parser.add_argument("readiness")
+    parser.add_argument("--spec")
+    args = parser.parse_args(argv)
+    readiness = json.loads(Path(args.readiness).read_text(encoding="utf-8"))
+    findings = check_prd(Path(args.prd).read_text(encoding="utf-8"), readiness)
+    if args.spec:
+        findings += check_spec(Path(args.spec).read_text(encoding="utf-8"), readiness)
     for finding in findings:
         print(finding)
     return 1 if findings else 0

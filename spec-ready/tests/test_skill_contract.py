@@ -94,3 +94,11 @@ def test_instructions_match_the_reviewed_cli():
     assert "--answers-from subagent" in TEXT and "--answers-from session-model" in TEXT
     assert "timeout" in TEXT and "Verifier:" in TEXT
     assert "appending a turn" in README and "--resume" in README
+
+
+def test_open_questions_and_spec_sources_are_described():
+    assert "--spec <dir>/spec.md" in TEXT
+    prd = (SKILL / "references" / "prd-template.md").read_text(encoding="utf-8")
+    spec = (SKILL / "references" / "spec-template.md").read_text(encoding="utf-8")
+    assert "## Open questions" in prd and "Open question:" in prd
+    assert "Proposed:" in spec and "[turn:<id>]" in spec

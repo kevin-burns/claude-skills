@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from check_sources import check_prd
+from check_sources import check_prd, check_spec
 
 READY = {"mode": "verified", "verification": "independent", "items": [
     {"item": "goal", "status": "settled", "turn": "u1"},
@@ -77,3 +77,57 @@ def test_verifier_header_must_match():
     assert any("Verifier" in f for f in check_prd(GOOD, self_assessed))
     assert check_prd(GOOD.replace("Verifier: independent", "Verifier: self-assessed"), self_assessed) == []
     assert any("Verifier" in f for f in check_prd(GOOD.replace("Verifier: independent\n", ""), READY))
+
+
+def test_open_questions_section_is_allowed():
+    # Eval 2026-11-11 (S8): an open question was forced into an "Assumption:" line.
+    question = "## Open questions\n\n- Open question: what makes it different from existing apps?\n\n"
+    text = GOOD.replace("## Assumptions", question + "## Assumptions")
+    assert check_prd(text, READY) == []
+    bad = GOOD.replace("## Assumptions", "## Open questions\n\n- what makes it different?\n\n## Assumptions")
+    assert any("Open question:" in f for f in check_prd(bad, READY))
+
+
+SPEC = """# Dictation — spec
+
+## Solution
+
+A menu-bar app that types dictated text at the cursor.
+
+## User stories
+
+1. As a person who writes long emails by voice, I want text typed where my cursor is, \
+so that I can stay in my mail app. [turn:u1]
+
+## Implementation decisions
+
+- The audio driver sits behind an interface outside the core library.
+
+## Out of scope
+
+- Meeting transcription. [turn:u2]
+"""
+
+
+def test_spec_stories_and_scope_cite_or_are_marked_proposed():
+    # Eval 2026-11-11 (S8): the spec added a user story and an out-of-scope line nobody stated.
+    assert check_spec(SPEC, READY) == []
+    invented = SPEC.replace("- Meeting transcription. [turn:u2]", "- Anything beyond dictating text.")
+    assert any("Out of scope" in f or "out of scope" in f for f in check_spec(invented, READY))
+    proposed = SPEC.replace("- Meeting transcription. [turn:u2]", "- Proposed: anything beyond dictating text.")
+    assert check_spec(proposed, READY) == []
+    story = SPEC.replace("so that I can stay in my mail app. [turn:u1]", "so that I can stay in my mail app.")
+    assert any("user stor" in f for f in check_spec(story, READY))
+
+
+def test_cli_checks_the_spec_too(tmp_path):
+    import json
+    import subprocess
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "check_sources.py"
+    (tmp_path / "prd.md").write_text(GOOD, encoding="utf-8")
+    (tmp_path / "spec.md").write_text(SPEC.replace(" [turn:u2]", ""), encoding="utf-8")
+    (tmp_path / "readiness.json").write_text(json.dumps(READY), encoding="utf-8")
+    done = subprocess.run([sys.executable, str(script), str(tmp_path / "prd.md"), str(tmp_path / "readiness.json"),
+                           "--spec", str(tmp_path / "spec.md")], capture_output=True, text=True, check=False)
+    assert done.returncode == 1 and "spec.md" in done.stdout
