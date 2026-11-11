@@ -4,16 +4,29 @@ DSDM's MoSCoW mix per increment, acceptance criteria, the blocking graph, and sl
 
 The checks are deterministic: no model, no network. Overrides are the person's, recorded in the
 file's front matter (see the accept command).
+
+    check_tickets.py check TICKETS.md
+    check_tickets.py accept --tickets TICKETS.md --rule RULE [--slice ID] --turn ID --quote "<their words>"
+
+Run accept only on the person's word: the quote must appear in that turn of theirs (checked through
+spec-ready's transcript reader); without spec-ready the override is recorded as attested.
+Exit codes: 0 clean or recorded, 1 findings or a usage problem.
 """
 
 from __future__ import annotations
 
+import argparse
+import json
+import os
 import re
+import sys
 import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 from spec_ready_link import load_transcripts
-from tickets_md import SIZE_POINTS, Tickets
+from tickets_md import SIZE_POINTS, Tickets, parse
 
 MUST_SHARE_LIMIT = 0.60
 _TURN = re.compile(r"^\[turn:([^\]\s]+)\]$")
@@ -149,3 +162,90 @@ def run_checks(t: Tickets, prd_text: str, readiness: dict | None) -> list[Findin
                 + check_mix(t) + check_acceptance(t) + check_blocks(t) + check_size(t))
     accepted = {(a.get("rule"), a.get("slice")) for a in t.accepted}
     return [f for f in findings if (f.rule, f.slice) not in accepted]
+
+
+def _read_inputs(tickets_path: Path) -> tuple[Tickets, list[str], str, dict | None]:
+    tickets, problems = parse(tickets_path.read_text(encoding="utf-8"))
+    prd_ref = str(tickets.front.get("prd") or "")
+    prd_path = (tickets_path.parent / prd_ref).resolve() if prd_ref else None
+    if prd_path is None or not prd_path.is_file():
+        prd_path = tickets_path.parent / "prd.md"
+    prd_text = prd_path.read_text(encoding="utf-8") if prd_path.is_file() else ""
+    if not prd_text:
+        problems.append("line 1: no PRD found (front matter 'prd:' or prd.md beside tickets.md)")
+    readiness_path = prd_path.parent / "readiness.json"
+    readiness = json.loads(readiness_path.read_text(encoding="utf-8")) if readiness_path.is_file() else None
+    return tickets, problems, prd_text, readiness
+
+
+def _check(args) -> int:
+    tickets, problems, prd_text, readiness = _read_inputs(Path(args.tickets))
+    findings = [Finding("format", None, p) for p in problems] + run_checks(tickets, prd_text, readiness)
+    for f in findings:
+        print(f"{f.rule:<10} {f.slice or '-':<6} {f.message}")
+    if not findings:
+        print("clean: every check passed")
+    return 1 if findings else 0
+
+
+def _record(tickets_path: Path, entry: dict) -> None:
+    lines = tickets_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        lines = ["---\n", "---\n", "\n", *lines]
+    close = next(i for i, line in enumerate(lines[1:], start=1) if line.strip() == "---")
+    header = next((i for i in range(1, close) if lines[i].split(":", 1)[0].strip() == "accepted"), None)
+    item = "  - " + json.dumps(entry, ensure_ascii=False) + "\n"
+    if header is None:
+        lines[close:close] = ["accepted:\n", item]
+    else:
+        end = header + 1
+        while end < close and lines[end].startswith((" ", "\t")):
+            end += 1
+        lines[end:end] = [item]
+    tickets_path.write_text("".join(lines), encoding="utf-8")
+
+
+def accept_override(tickets_path: Path, rule: str, slice_id: str | None, turn: str, quote: str, transcripts,
+                    env: Mapping[str, str], home: Path, cwd: Path) -> tuple[int, str]:
+    entry = {"rule": rule, "slice": slice_id, "turn": turn, "quote": quote}
+    if transcripts is None:
+        _record(tickets_path, {**entry, "mode": "attested"})
+        return 0, "recorded as attested: spec-ready is not installed beside this skill, so the quote was not checked"
+    found = transcripts.find_transcript(env, home, cwd)
+    if found is None:
+        _record(tickets_path, {**entry, "mode": "attested"})
+        return 0, "recorded as attested: no readable session transcript, so the quote was not checked"
+    turns = {t.id: t for t in transcripts.load_user_turns(found[1], found[0])}
+    if turn not in turns:
+        return 1, f"turn {turn} is not one of the person's turns"
+    if not normalise(quote) or normalise(quote) not in normalise(turns[turn].text):
+        return 1, "the quote is not in that turn; quote the person's own words"
+    _record(tickets_path, {**entry, "mode": "verified"})
+    return 0, "recorded as verified"
+
+
+def _accept(args) -> int:
+    code, message = accept_override(Path(args.tickets), args.rule, args.slice, args.turn, args.quote,
+                                    _transcripts, os.environ, Path.home(), Path.cwd())
+    print(f"spec-to-tickets: {message}", file=sys.stderr if code else sys.stdout)
+    return code
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Check a tickets.md breakdown.")
+    sub = parser.add_subparsers(dest="command", required=True)
+    check = sub.add_parser("check")
+    check.add_argument("tickets")
+    acc = sub.add_parser("accept")
+    acc.add_argument("--tickets", required=True)
+    acc.add_argument("--rule", required=True, choices=["vertical", "skeleton", "trace", "scope", "mix", "acceptance",
+                                                       "blocks", "size"])
+    acc.add_argument("--slice")
+    acc.add_argument("--turn", required=True)
+    acc.add_argument("--quote", required=True)
+    args = parser.parse_args(argv)
+    return {"check": _check, "accept": _accept}[args.command](args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
