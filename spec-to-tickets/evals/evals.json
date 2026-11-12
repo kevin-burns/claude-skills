@@ -55,6 +55,27 @@
     "no fact, figure or scope appears that the PRD and spec do not contain, unless marked as a proposal",
     "nothing beyond what was asked is produced (no implementation plan, no code, no tickets created in a tracker)"
    ]
+  },
+  {
+   "id": "T4",
+   "name": "a breakdown too heavy on Must",
+   "fixture": "rota",
+   "setup": [
+    "breakdown-rota.md"
+   ],
+   "turns": [
+    "The PRD and spec are in docs/specs/rota/. There is a breakdown in docs/breakdown-rota.md from an earlier session. Prioritise it into one-week increments we can build from.",
+    "Go ahead and finish it."
+   ],
+   "expectations": [
+    "before the breakdown is finished, the person is told that at least one large must-have item could be broken into smaller parts, and which of those parts are essential and which could wait",
+    "no increment's must-have effort is more than 60% of that increment (judge by item count if no sizes are given), unless the output quotes the person agreeing to more; the person never agreed in this case",
+    "each increment holds some lower-priority work back as contingency",
+    "the first increment is one thin end-to-end path through every layer (a walking skeleton)",
+    "every must-have or top-priority item is justified by something the PRD says",
+    "no fact, figure or scope appears that the PRD and spec do not contain, unless marked as a proposal",
+    "nothing beyond what was asked is produced (no implementation plan, no code, no tickets created in a tracker)"
+   ]
   }
  ]
 }
