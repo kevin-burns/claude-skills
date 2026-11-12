@@ -110,6 +110,21 @@ typing, hotkey) instead of "adapters", and marked `layers_from` as `Proposed:` b
 lists the adapters only as a proposal; it then asked the person to confirm the open proposals, as in
 the regression run.
 
+### 2026-11-12, routing after two description edits (Sonnet, 10 runs per case)
+
+Baseline 142/160: "Check this ticket breakdown: is anything horizontal?" 2/10, "Which of these tickets
+are Must Haves for the first timebox?" 0/10. Two new held-out prompts were added that no description
+echoes, then two more after edit 1.
+
+| | horizontal? | Must Haves? | held-outs (4) | negatives (8) | 18 original cases |
+|---|---|---|---|---|---|
+| edit 1: "checking a breakdown that already exists: whether its slices are horizontal, which items are Must Haves for a timebox..." | 10/10 | 10/10 | 0/10, 0/10 (only 2 existed then) | 79/80 ("Write the spec" fired once) | 158/180 |
+| edit 2: "reviewing a backlog, story list or ticket set ... layer by layer instead of end to end, what ... could be cut" | 7/10 | 1/10 | 0, 2, 0, 0 /10 | 80/80 | 150/180 |
+
+Kept edit 1. Neither edit generalises: review-style prompts with no breakdown in front of the model
+are answered directly, not routed. Edit 1 routes the two phrasings it names; the held-outs stay as a
+documented gap. spec-ready's own cases stayed 89/90 and 90/90 at 5 runs (no pull from the edits).
+
 Routing (`claude plugin eval`, Sonnet, 10 runs per case, $11.77): 142/160. All 8 negative cases
 and route-01 to route-06 are 10/10. Two prompts that check rather than build are missed:
 "Check this ticket breakdown: is anything horizontal?" (2/10) and "Which of these tickets are
