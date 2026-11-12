@@ -77,6 +77,21 @@ in the with arm, outside the score:
   drop-out (half the PRD goal) moved to increment 2 while increment 1 held reminders and export.
   Only the without arm named swap's workaround (drop out, then someone else signs up).
 
+### 2026-11-12, T4 rerun after the fixes in 5b6fd06 (with arm; graded against the same without and to-tickets outputs)
+
+| case | with | without | to-tickets |
+|---|---|---|---|
+| T4 | 7/7 (was 7/7, now under a stricter bar) | 3/7 | 3/7 |
+
+This time the grader also failed any increment kept under 60% only by an unconfirmed proposal, and
+any contingency made of one. All three earlier problems are fixed. The export stayed `Proposed:` and
+counted toward neither. The reply said the go-ahead had not answered its questions and recorded
+nothing. A shift-creation slice was added. Swap was demoted because dropping out and signing up
+again does the same job. Still open: increment 1 holds swap (a Could) while drop-out and the day view
+(Musts) wait for increment 2. It looks chosen to meet the 60% cap, not for value; the to-tickets arm
+sequenced this best. A first rerun into the same directory was contaminated by a killed run's child
+process and is not counted.
+
 Routing (`claude plugin eval`, Sonnet, 10 runs per case, $11.77): 142/160. All 8 negative cases
 and route-01 to route-06 are 10/10. Two prompts that check rather than build are missed:
 "Check this ticket breakdown: is anything horizontal?" (2/10) and "Which of these tickets are
