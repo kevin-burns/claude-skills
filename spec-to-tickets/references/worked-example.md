@@ -1,6 +1,6 @@
 # Worked example: a dictation app
 
-The PRD (only the lines the slices trace to):
+The PRD and spec (only the lines the slices trace to):
 
 ```text
 ## Goal
@@ -14,11 +14,15 @@ Success is that I use it every day for a week instead of typing emails.
 ## Boundaries touched
 
 The audio driver must stay out of the core library; the core has to build and test without a microphone.
+
+## User stories (spec)
+
+2. As the user, I want a menu-bar light that is on while it listens, so I know when it hears me.
+4. As the user, I want spoken punctuation words to become punctuation.
 ```
 
-The breakdown after spec-to-tickets. Increment 1 is the walking skeleton: one Must through every
-layer, a prefactor that makes it possible, and a Could to drop if the week runs short. Increment 2
-goes over 60% Must, and the person accepted that in their own words, recorded in the front matter.
+After spec-to-tickets: increment 1 is the walking skeleton (one Must through every layer, a prefactor,
+and a Could to drop); increment 2 is over 60% Must, accepted in the person's words in the front matter.
 
 ```markdown
 ---
@@ -59,7 +63,7 @@ accepted:
 - size: S
 - layers: [core, ui]
 - kind: slice
-- traces: Proposed: a menu-bar indicator while dictation is on
+- traces: "a menu-bar light that is on while it listens"
 - blocked by: [T1]
 - acceptance:
   - The indicator is on exactly while audio is captured (proves: user story 2)
@@ -82,13 +86,15 @@ accepted:
 - size: S
 - layers: [core, ui]
 - kind: slice
-- traces: Proposed: saying "comma" and "full stop"
+- traces: "spoken punctuation words to become punctuation"
 - blocked by: [T4]
 - acceptance:
   - Saying "full stop" ends the sentence (proves: user story 4)
 ```
 
 `check_tickets.py check` reports nothing: T0 is horizontal but labelled a prefactor, T1 is the walking
-skeleton, both Musts quote the PRD, the Coulds are marked `Proposed:`, increment 2's 4-of-5 Must
+skeleton, both Musts quote the PRD, the Coulds quote the spec's user stories, increment 2's 4-of-5 Must
 share is accepted, and T4's size note says why an L is still one pull request. T4's criterion needs a
-length the PRD never gave, so it starts `Proposed:` and `check` lists it for the person to confirm.
+length the PRD never gave, so it starts `Proposed:` and `check` lists it for the person to confirm. A
+Could that was the agent's own idea (`Proposed:`) would not count toward the share or contingency
+until the person agreed; its `traces` would then cite their turn, `[turn:<id>]`.

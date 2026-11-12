@@ -42,7 +42,7 @@ def rules(findings):
 
 
 GOOD = tickets([sl("T1", size="S"), sl("T2", moscow="Should", size="S"), sl("T3", moscow="Could", size="S",
-                                                                           traces="Proposed: nice to have")])
+                                                                           traces="[turn:u1]")])
 
 
 def test_good_breakdown_is_clean():

@@ -42,7 +42,7 @@ layers: [audio, core, ui]
 - size: S
 - layers: [core, ui]
 - kind: slice
-- traces: Proposed: a way to start dictation
+- traces: "Dictation that types where the cursor is"
 - blocked by: [T1]
 - acceptance:
   - Pressing the hotkey starts dictation (proves: user story 2)

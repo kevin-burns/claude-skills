@@ -170,6 +170,15 @@ def write_spec(tmp_path, accepted_lines=(), body_slices=None):
 - traces: Proposed: a polish item
 - acceptance:
   - y (proves: user story 2)
+
+### T3 — Three
+- moscow: Could
+- size: S
+- layers: [core, ui]
+- kind: slice
+- traces: "I use it every day for a week instead of typing"
+- acceptance:
+  - z (proves: the success check)
 """
     (d / "tickets.md").write_text(front + "---\n" + body, encoding="utf-8")
     return d / "tickets.md"

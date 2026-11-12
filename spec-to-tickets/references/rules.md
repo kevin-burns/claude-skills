@@ -6,12 +6,17 @@
 | skeleton | increment 1 has no Must through every declared layer | the first increment proves the architecture end to end before anything is deepened |
 | trace | a Must cites nothing or `Proposed:`; cites a turn that is not the settled goal, success check or anti-goal in a verified readiness.json; or quotes fewer than four words, or words not in the PRD's goal, success check or anti-goal | a Must is a Must because the PRD's goal, success check or anti-goal needs it |
 | scope | a Should or Could traces to nothing, to a turn that is not the person's, or to words in neither the PRD nor the spec, and is not `Proposed:` | no invented scope: the person sees every addition and confirms it |
-| mix | an increment's Must effort is over 60% | DSDM's guidance for confidence in the Musts (see dsdm.md) |
-| contingency | an increment has no Could | the Coulds are what gets dropped when the timebox runs short |
+| mix | an increment's Must effort is over 60%, not counting unconfirmed `Proposed:` slices | DSDM's guidance for confidence in the Musts (see dsdm.md) |
+| contingency | an increment has no Could that the PRD, spec or person asked for (a `Proposed:` Could does not count) | the Coulds are what gets dropped when the timebox runs short; dropping an invented one protects nothing (found by eval T4, where a proposed export kept an increment at 57%) |
 | acceptance | no criteria, or a criterion that names nothing it proves | the trace runs PRD → slice → test |
 | specifics | a criterion adds a figure ("five-minute", "95%") or a capitalised name ("TextEdit") the PRD and spec do not contain, and does not start `Proposed:` | a testable criterion often needs a number nobody chose; marking it makes it the person's choice, not a silent invention. New scope in plain lowercase words ("starts at login") has no surface form a script can see, so the person's review still matters |
 | blocks | an unknown blocker, or a cycle | a cycle means nothing can start |
 | size | an `L` with no note | a slice is one context window, one pull request, and demoable on its own |
+
+`check` also prints `split?` advice, which never changes the exit code: every L Must, and the heaviest
+Must of an increment over 60%. Take each to the person as a question (which parts are essential, which
+could wait), in the spirit of story decomposition: from the goal down to the smallest parts that still
+deliver something, each traced back to the goal (Agile Extension to the BABOK Guide, s. 7.18).
 
 When `mix` or `contingency` fails, an override is the last move, not the first. First split the
 heaviest Must into its parts and give the parts their own priority: often only part of it is a Must.

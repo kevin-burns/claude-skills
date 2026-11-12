@@ -174,19 +174,44 @@ def check_scope(t: Tickets, prd_text: str = "", spec_text: str = "", readiness: 
 def check_mix(t: Tickets) -> list[Finding]:
     findings = []
     for inc in t.increments:
-        live = [s for s in inc.slices if s.moscow in ("Must", "Should", "Could") and s.size in SIZE_POINTS]
+        # A proposal nobody has confirmed is not work anyone asked for: it can neither dilute the Must
+        # share nor be the contingency that protects the date.
+        planned = [s for s in inc.slices if s.moscow in ("Must", "Should", "Could") and s.size in SIZE_POINTS]
+        live = [s for s in planned if not _proposed(s.traces)]
+        left_out = len(planned) - len(live)
+        plural = "s" if left_out > 1 else ""
+        note = f" (not counting {left_out} unconfirmed Proposed: slice{plural})" if left_out else ""
         total = sum(SIZE_POINTS[s.size] for s in live)
-        if total == 0:
+        if not planned:
             continue
         key = f"increment-{inc.number}"
         must = sum(SIZE_POINTS[s.size] for s in live if s.moscow == "Must")
-        if must / total > MUST_SHARE_LIMIT:
+        if total and must / total > MUST_SHARE_LIMIT:
             findings.append(Finding("mix", key, f"increment {inc.number}: Must effort is {must}/{total} "
-                                    f"({must / total:.0%}), over DSDM's 60%"))
+                                    f"({must / total:.0%}), over DSDM's 60%{note}"))
         if not any(s.moscow == "Could" for s in live):
-            findings.append(Finding("contingency", key, f"increment {inc.number} has no Could: nothing to drop if "
-                                    "the timebox runs short"))
+            findings.append(Finding("contingency", key, f"increment {inc.number} has no Could the PRD, spec or "
+                                    f"person asked for: nothing real to drop if the timebox runs short{note}"))
     return findings
+
+
+def split_candidates(t: Tickets) -> list[tuple[str, str]]:
+    """Musts worth offering to the person to split: every L, and the heaviest Must of an increment over
+    the limit. Advice only; it never changes the exit code."""
+    out: dict[str, str] = {}
+    for s in t.slices():
+        if s.moscow == "Must" and s.size == "L":
+            out[s.id] = "a large Must: ask whether only part of it is essential and the rest could wait"
+    for inc in t.increments:
+        live = [s for s in inc.slices if s.moscow in ("Must", "Should", "Could") and s.size in SIZE_POINTS
+                and not _proposed(s.traces)]
+        musts = [s for s in live if s.moscow == "Must"]
+        total = sum(SIZE_POINTS[s.size] for s in live)
+        if musts and total and sum(SIZE_POINTS[s.size] for s in musts) / total > MUST_SHARE_LIMIT:
+            heaviest = max(musts, key=lambda s: SIZE_POINTS[s.size])
+            out.setdefault(heaviest.id, f"the heaviest Must in increment {inc.number}, which is over 60%: splitting "
+                                        "it may bring the increment under")
+    return list(out.items())
 
 
 def check_acceptance(t: Tickets) -> list[Finding]:
@@ -387,6 +412,11 @@ def _check(args) -> int:
                             "person's turn; not applied")
         else:
             overrides.append(entry)
+    if turns is not None:
+        # A proposal the person confirmed cites their turn; with no readiness.json, the transcript is the
+        # only record of which turns are theirs.
+        readiness = {**(readiness or {}),
+                     "person_turns": sorted(set((readiness or {}).get("person_turns", [])) | set(turns))}
     findings = [Finding("format", None, p) for p in problems]
     findings += run_checks(tickets, prd_text, readiness, spec_text, accepted=overrides)
     for f in findings:
@@ -400,6 +430,8 @@ def _check(args) -> int:
         for c in s.acceptance:
             if _proposed(c.text):
                 print(f"{'proposed':<11} {s.id:<13} criterion: {c.text.strip()}")
+    for sid, advice in split_candidates(tickets):
+        print(f"{'split?':<11} {sid:<13} {advice}")
     if findings:
         return 1
     if any(o["mode"] == "attested" for o in overrides):

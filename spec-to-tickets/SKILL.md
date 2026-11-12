@@ -36,10 +36,20 @@ Scripts are in this skill's `scripts/` directory; run them with `uv run` or `pyt
    Take the layers from the spec's implementation decisions (ask once if it names none). The
    original breakdown stays untouched and is named in `source:`.
 4. **Propose and confirm, in one round.** For every slice show its MoSCoW, size and trace, grouped
-   into increments of the timebox (one week unless the person names another), increment 1 a walking skeleton. The person confirms or changes them; you edit `tickets.md`.
+   into increments of the timebox (one week unless the person names another), increment 1 a walking
+   skeleton. Before proposing, check the breakdown covers what the stories need to work at all (the
+   thing people act on has to be created somewhere), and that each half of the PRD's goal has a Must
+   early. For every large Must, tell the person it could be broken down: name the parts, say which are
+   essential and which could wait, and why (a part with a workaround, such as swapping a shift by
+   dropping out and signing up again, can usually wait). The person confirms or changes the round;
+   you edit `tickets.md`. A reply that does not answer what you asked ("go ahead") is not a
+   confirmation: keep the open items open and `Proposed:`, say which, and never write that the person
+   agreed. When the person does agree to a proposal, its `traces` cites their turn, `[turn:<id>]`.
 5. **Check.** Run `check_tickets.py check <dir>/tickets.md` and fix what you can. It exits 0 when
    clean, 1 on findings, and exits 2 when it is clean only because of attested overrides. It also
-   lists every override it applied and every `Proposed:` slice, so the person can see them. A Must cannot be `Proposed:`: it traces to the PRD's goal, success check or anti-goal. An acceptance criterion that needs a figure or a name the PRD and spec do not give (a length, a threshold, an app) starts `Proposed:` too, and you show it in the confirm round. Before asking about an
+   lists every override it applied, every `Proposed:` slice, and `split?` advice on heavy Musts, so the
+   person can see them. A `Proposed:` slice counts toward neither the 60% share nor contingency until
+   the person confirms it; do not add one to make the numbers work. A Must cannot be `Proposed:`: it traces to the PRD's goal, success check or anti-goal. An acceptance criterion that needs a figure or a name the PRD and spec do not give (a length, a threshold, an app) starts `Proposed:` too, and you show it in the confirm round. Before asking about an
    increment over 60% Must, split its heaviest Must into its parts and prioritise the parts, since often
    only part is a Must; if scope still cannot flex, offer an empty contingency increment at the end
    with the plan aimed at the date before it (`references/rules.md`). What only the

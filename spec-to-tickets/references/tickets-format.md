@@ -24,7 +24,7 @@ skeleton. Each slice is a `### <ID> — <title>` heading followed by:
 | `size` | `S` (1), `M` (2), `L` (4) |
 | `layers` | the layers it touches, `[a, b]` |
 | `kind` | `slice`, or `prefactor`, `expand`, `migrate`, `contract` for horizontal work that is meant to be horizontal |
-| `traces` | `[turn:<id>]` (a settled turn in spec-ready's readiness.json), a quoted PRD sentence, or `Proposed: <why>` |
+| `traces` | `[turn:<id>]` (a settled turn in spec-ready's readiness.json), a quoted PRD or spec sentence, `[turn:<id>]` for a proposal the person confirmed in that turn, or `Proposed: <why>` until they do |
 | `blocked by` | slice ids, `[T1, T2]` |
 | `parallel` | `yes` or `no`: advice only, `yes` when it touches no files another open slice touches |
 | `note` | required for `L`: why it is still one context window and one pull request |
