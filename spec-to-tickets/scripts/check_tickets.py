@@ -31,7 +31,8 @@ from tickets_md import SIZE_POINTS, Tickets, parse
 
 MUST_SHARE_LIMIT = 0.60
 MIN_QUOTE_WORDS = 4
-RULES = ("vertical", "skeleton", "trace", "scope", "mix", "contingency", "acceptance", "specifics", "blocks", "size")
+RULES = ("layers", "vertical", "skeleton", "trace", "scope", "mix", "contingency", "acceptance", "specifics", "blocks",
+         "size")
 MUST_SECTIONS = ("goal", "success check", "anti-goal")          # what a Must may trace to
 NEVER_SECTIONS = ("non-goals", "out of scope", "assumptions", "open questions", "risks")
 NEVER_PREFIXES = ("assumption:", "open question:", "proposed:")
@@ -98,6 +99,35 @@ def _quote(traces: str) -> str:
 
 def _enough(quote: str) -> bool:
     return len(quote.split()) >= MIN_QUOTE_WORDS
+
+
+def _stem(word: str) -> str:
+    return word[:-1] if len(word) > 3 and word.endswith("s") else word
+
+
+def check_layers(t: Tickets, prd_text: str, spec_text: str = "") -> list[Finding]:
+    """The layers every slice is checked against come from the spec in its own words (a quoted
+    sentence naming each one) or are marked Proposed: for the person to confirm."""
+    declared = [str(layer) for layer in (t.front.get("layers") or [])]
+    if not declared:
+        return []
+    source = str(t.front.get("layers_from") or "").strip()
+    if not source:
+        return [Finding("layers", None, "say where the layers come from: layers_from: a quoted sentence of the "
+                        "spec or PRD that names them, or 'Proposed: <why>' for the person to confirm")]
+    if _proposed(source):
+        return []
+    quote = _quote(source)
+    if not _enough(quote) or quote not in _any_text(prd_text, spec_text):
+        return [Finding("layers", None, "layers_from quotes text that is not in the spec or PRD (proposals in the "
+                        "spec do not count); quote the sentence that names the layers, or mark it 'Proposed:'")]
+    words = {_stem(w) for w in re.findall(r"[a-z0-9]+", quote.lower())}
+    missing = [layer for layer in declared
+               if not all(_stem(w) in words for w in re.findall(r"[a-z0-9]+", layer.lower()))]
+    if missing:
+        return [Finding("layers", None, f"layers {', '.join(missing)} are not named in the layers_from quote: use the "
+                        "spec's own names for its components, as specific as it gives them")]
+    return []
 
 
 def check_vertical(t: Tickets) -> list[Finding]:
@@ -340,7 +370,8 @@ def check_size(t: Tickets) -> list[Finding]:
 
 
 def all_findings(t: Tickets, prd_text: str, readiness: dict | None, spec_text: str = "") -> list[Finding]:
-    return (check_vertical(t) + check_skeleton(t) + check_trace(t, prd_text, readiness)
+    return (check_layers(t, prd_text, spec_text) + check_vertical(t) + check_skeleton(t)
+            + check_trace(t, prd_text, readiness)
             + check_scope(t, prd_text, spec_text, readiness) + check_mix(t) + check_acceptance(t)
             + check_specifics(t, prd_text, spec_text) + check_blocks(t)
             + check_size(t))
@@ -424,6 +455,8 @@ def _check(args) -> int:
     for o in overrides:
         rechecked = "" if o["mode"] == "attested" or turns is not None else " (not re-checked: no transcript)"
         print(f"{'override':<11} {o['rule']} {o.get('slice') or '-'} {o['mode']}{rechecked}: \"{o['quote']}\"")
+    if _proposed(str(tickets.front.get("layers_from") or "")):
+        print(f"{'proposed':<11} {'layers_from':<13} {tickets.front['layers_from']}")
     for s in tickets.slices():
         if s.traces.strip().startswith("Proposed:"):
             print(f"{'proposed':<11} {s.id:<13} {s.traces.strip()}")

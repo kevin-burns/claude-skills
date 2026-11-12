@@ -15,8 +15,9 @@ Success is that I use it every day for a week instead of typing emails.
 
 The audio driver must stay out of the core library; the core has to build and test without a microphone.
 
-## User stories (spec)
+## Spec: user stories and implementation decisions
 
+Three layers: audio capture, the core library, and the ui that types at the cursor.
 2. As the user, I want a menu-bar light that is on while it listens, so I know when it hears me.
 4. As the user, I want spoken punctuation words to become punctuation.
 ```
@@ -31,6 +32,7 @@ prd: prd.md
 spec: spec.md
 timebox: 1 week
 layers: [audio, core, ui]
+layers_from: "Three layers: audio capture, the core library, and the ui that types at the cursor"
 accepted:
   - {"rule": "mix", "slice": "increment-2", "turn": "c41f", "quote": "accuracy is the whole point of week two", "mode": "verified"}
 ---
@@ -43,7 +45,6 @@ accepted:
 - layers: [audio]
 - kind: prefactor
 - traces: "the core has to build and test without a microphone"
-- blocked by: []
 - acceptance:
   - The core's tests run with a fake audio source (proves: the boundary)
 
@@ -92,9 +93,8 @@ accepted:
   - Saying "full stop" ends the sentence (proves: user story 4)
 ```
 
-`check_tickets.py check` reports nothing: T0 is horizontal but labelled a prefactor, T1 is the walking
-skeleton, both Musts quote the PRD, the Coulds quote the spec's user stories, increment 2's 4-of-5 Must
-share is accepted, and T4's size note says why an L is still one pull request. T4's criterion needs a
-length the PRD never gave, so it starts `Proposed:` and `check` lists it for the person to confirm. A
-Could that was the agent's own idea (`Proposed:`) would not count toward the share or contingency
-until the person agreed; its `traces` would then cite their turn, `[turn:<id>]`.
+`check_tickets.py check` reports nothing: the layers quote the spec, T0 is a labelled prefactor, T1
+is the walking skeleton, both Musts quote the PRD, the Coulds quote user stories, increment 2's Must
+share is accepted, and T4's note says why an L is one pull request. T4's criterion needs a length the
+PRD never gave, so it is `Proposed:`. A `Proposed:` Could would count toward neither the share nor
+contingency until the person agreed; its `traces` would then cite their turn, `[turn:<id>]`.

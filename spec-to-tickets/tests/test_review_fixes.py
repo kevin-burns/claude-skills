@@ -147,7 +147,7 @@ def write_spec(tmp_path, accepted_lines=(), body_slices=None):
     d.mkdir(parents=True, exist_ok=True)
     (d / "prd.md").write_text(PRD, encoding="utf-8")
     (d / "readiness.json").write_text(json.dumps(READY), encoding="utf-8")
-    front = "---\nprd: prd.md\nlayers: [audio, core, ui]\n"
+    front = "---\nprd: prd.md\nlayers: [audio, core, ui]\nlayers_from: Proposed: test fixture\n"
     if accepted_lines:
         front += "accepted:\n" + "".join(f"  - {line}\n" for line in accepted_lines)
     body = body_slices or """

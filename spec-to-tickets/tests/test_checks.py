@@ -34,7 +34,7 @@ def sl(id_, moscow="Must", size="M", layers=("audio", "core", "ui"), kind="slice
 
 def tickets(*increments, accepted=()):
     incs = tuple(Increment(n, f"inc {n}", tuple(s)) for n, s in enumerate(increments, start=1))
-    return Tickets({"layers": LAYERS}, incs, tuple(accepted))
+    return Tickets({"layers": LAYERS, "layers_from": "Proposed: test"}, incs, tuple(accepted))
 
 
 def rules(findings):

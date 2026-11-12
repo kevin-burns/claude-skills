@@ -66,6 +66,7 @@ def test_no_split_advice_for_a_balanced_plan_of_small_musts():
 TICKETS = """---
 prd: prd.md
 layers: [a, b]
+layers_from: Proposed: test fixture
 ---
 
 ## Increment 1 — skeleton

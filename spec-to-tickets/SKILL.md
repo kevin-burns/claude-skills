@@ -33,13 +33,18 @@ Scripts are in this skill's `scripts/` directory; run them with `uv run` or `pyt
 2. **Breakdown.** Ask where the existing breakdown is (issue files, a tickets document, a beads list).
    If there is none, make one vertical slice per user story, then merge or split to size.
 3. **Rewrite** it into `tickets.md` beside the spec, in the format in `references/tickets-format.md`.
-   Take the layers from the spec's implementation decisions (ask once if it names none). The
-   original breakdown stays untouched and is named in `source:`.
+   Take the layers from the spec's implementation decisions, using its own names and its most
+   specific split (each adapter it names, not "adapters"), and put the sentence that names them in
+   `layers_from:`. If the spec names none, or names them only as a proposal, write
+   `layers_from: Proposed: <why>` and ask once. The original breakdown stays untouched and is named
+   in `source:`.
 4. **Propose and confirm, in one round.** For every slice show its MoSCoW, size and trace, grouped
    into increments of the timebox (one week unless the person names another), increment 1 a walking
    skeleton. Before proposing, check the breakdown covers what the stories need to work at all (the
    thing people act on has to be created somewhere), and that each half of the PRD's goal has a Must
-   early. For every large Must, tell the person it could be broken down: name the parts, say which are
+   early. Order increments by value, then fit the share: never put a Could in an earlier increment
+   than a Must it is the workaround for, or than a Must the PRD's goal names, just to keep an
+   increment under 60%. If ordering by value cannot keep it under, say so and ask. For every large Must, tell the person it could be broken down: name the parts, say which are
    essential and which could wait, and why (a part with a workaround, such as swapping a shift by
    dropping out and signing up again, can usually wait). The person confirms or changes the round;
    you edit `tickets.md`. A reply that does not answer what you asked ("go ahead") is not a

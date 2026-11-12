@@ -11,6 +11,7 @@ hand; `check_tickets.py` reports anything it cannot read, with the line number.
 | `prd`, `spec` | paths relative to this file |
 | `timebox` | the length of one increment; `1 week` unless the person says otherwise |
 | `layers` | the layers the spec's implementation decisions name, e.g. `[storage, core, api, ui]` |
+| `layers_from` | the spec or PRD sentence that names those layers, quoted, every layer appearing in it; or `Proposed: <why>` when the spec names none or only proposes them |
 | `accepted` | overrides the person gave, one JSON object per line, written by `check_tickets.py accept` |
 
 ## Increments and slices

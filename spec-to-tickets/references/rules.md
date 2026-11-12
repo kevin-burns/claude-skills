@@ -2,6 +2,7 @@
 
 | check | fails when | why |
 |---|---|---|
+| layers | the front matter's `layers` have no `layers_from`, it quotes text in neither the spec nor the PRD (a spec line marked as a proposal does not count), or a declared layer is not named in the quote | every vertical check runs against these layers, so the agent must not choose them unseen: an eval run once collapsed four named adapters into "adapters" |
 | vertical | a `slice` touches one layer | feedback arrives only when the last layer exists; a thin slice through every layer gets it early |
 | skeleton | increment 1 has no Must through every declared layer | the first increment proves the architecture end to end before anything is deepened |
 | trace | a Must cites nothing or `Proposed:`; cites a turn that is not the settled goal, success check or anti-goal in a verified readiness.json; or quotes fewer than four words, or words not in the PRD's goal, success check or anti-goal | a Must is a Must because the PRD's goal, success check or anti-goal needs it |
@@ -17,6 +18,11 @@
 Must of an increment over 60%. Take each to the person as a question (which parts are essential, which
 could wait), in the spirit of story decomposition: from the goal down to the smallest parts that still
 deliver something, each traced back to the goal (Agile Extension to the BABOK Guide, s. 7.18).
+
+Order by value first, then fit the share. Moving a Could ahead of the Must it is a workaround for, or
+ahead of a Must the goal names, keeps an increment under 60% on paper and delays what matters (eval
+T4: swap in week 1, drop-out in week 2). No script can see value order; the agent says when value
+order and the 60% guidance conflict, and asks.
 
 When `mix` or `contingency` fails, an override is the last move, not the first. First split the
 heaviest Must into its parts and give the parts their own priority: often only part of it is a Must.
