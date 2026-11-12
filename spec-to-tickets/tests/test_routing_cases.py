@@ -8,9 +8,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evals"))
 from make_routing_cases import write_cases
 
 
-def test_eighteen_cases_with_graders(tmp_path):
+def test_twenty_cases_with_graders(tmp_path):
     cases = write_cases(tmp_path)
-    assert len(cases) == 18
-    assert sum(c.name.startswith("spec-to-tickets-route-") for c in cases) == 8
+    assert len(cases) == 20
+    assert sum(c.name.startswith("spec-to-tickets-route-") for c in cases) == 12
     silent = (tmp_path / "spec-to-tickets-not-01" / "graders" / "fired.md").read_text()
     assert "max: 0" in silent and "spec-to-tickets" in silent

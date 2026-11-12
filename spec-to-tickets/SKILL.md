@@ -2,7 +2,7 @@
 name: spec-to-tickets
 license: MIT
 description: >-
-  Turn a spec into a breakdown worth building from: prioritise and check an existing breakdown (or make a minimal one) so every slice is vertical, the first increment is a walking skeleton, every Must traces to the PRD, and each timebox keeps DSDM's MoSCoW contingency. A script checks the result; tickets go to beads, GitHub or Linear only when asked. Use for "break the spec into tickets", "prd-to-tickets", "prioritise these issues", "MoSCoW this backlog", "what do we build first", "slice this into vertical increments", and for checking a breakdown that already exists: whether its slices are horizontal, which items are Must Haves for a timebox, whether each timebox keeps contingency. Not for writing the PRD or spec (spec-ready) or a slice's implementation plan (writing-plans).
+  Turn a spec into a breakdown worth building from: prioritise and check an existing breakdown (or make a minimal one) so every slice is vertical, the first increment is a walking skeleton, every Must traces to the PRD, and each timebox keeps DSDM's MoSCoW contingency. A script checks the result; tickets go to beads, GitHub or Linear only when asked. Use for "break the spec into tickets", "prd-to-tickets", "prioritise these issues", "MoSCoW this backlog", "what do we build first", "slice this into vertical increments"; also for reviewing a backlog, story list or ticket set that already exists: whether it is built layer by layer instead of end to end, what belongs in the first timebox and what could be cut. Not for writing the PRD or spec (spec-ready) or a slice's implementation plan (writing-plans).
 ---
 
 # spec-to-tickets

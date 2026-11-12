@@ -10,7 +10,9 @@
   "Check this ticket breakdown: is anything horizontal?",
   "Which of these tickets are Must Haves for the first timebox?",
   "Are these stories sliced by layer or end to end?",
-  "Go through our backlog and tell me what is really essential for the first two weeks."
+  "Go through our backlog and tell me what is really essential for the first two weeks.",
+  "Here are our Q1 epics. If we only had half the time, which would you cut?",
+  "Our sprint plan has all the database work in week one and the UI in week three. Is that a problem?"
  ],
  "should_not": [
   "Write the spec for this feature.",
