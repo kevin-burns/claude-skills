@@ -8,7 +8,9 @@
   "Slice this spec into vertical increments, one week each.",
   "Turn this backlog into a breakdown we can actually build from, walking skeleton first.",
   "Check this ticket breakdown: is anything horizontal?",
-  "Which of these tickets are Must Haves for the first timebox?"
+  "Which of these tickets are Must Haves for the first timebox?",
+  "Are these stories sliced by layer or end to end?",
+  "Go through our backlog and tell me what is really essential for the first two weeks."
  ],
  "should_not": [
   "Write the spec for this feature.",

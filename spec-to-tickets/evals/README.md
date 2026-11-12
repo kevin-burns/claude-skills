@@ -101,6 +101,15 @@ person to confirm stories 2 and 3; "those priorities are fine" did not answer th
 an override, claimed agreement or added a Could to make the numbers pass. The cost in use: one more
 question round when the scope really is unconfirmed.
 
+### 2026-11-12, T1 and T4 after e1f51ce (layers from the spec; order by value)
+
+With arm only, read directly (no blind grader). T4 quoted the spec's own layer sentence and used its
+four names; every Must, including drop-out, now sits in week 1, with swap and the week view as week 1's
+Coulds; `check` clean. T1 declared the five specific layers (core, microphone, speech model, cursor
+typing, hotkey) instead of "adapters", and marked `layers_from` as `Proposed:` because the dictation spec
+lists the adapters only as a proposal; it then asked the person to confirm the open proposals, as in
+the regression run.
+
 Routing (`claude plugin eval`, Sonnet, 10 runs per case, $11.77): 142/160. All 8 negative cases
 and route-01 to route-06 are 10/10. Two prompts that check rather than build are missed:
 "Check this ticket breakdown: is anything horizontal?" (2/10) and "Which of these tickets are
