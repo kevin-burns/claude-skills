@@ -92,6 +92,15 @@ again does the same job. Still open: increment 1 holds swap (a Could) while drop
 sequenced this best. A first rerun into the same directory was contaminated by a killed run's child
 process and is not counted.
 
+### 2026-11-12, T1-T3 regression after 5b6fd06 (with arm only)
+
+Under the new rule, all three earlier clean with-arm outputs fail `check`: they used `Proposed:`
+Coulds as contingency, and in this fixture the spec's own user stories 2 and 3 are unconfirmed
+proposals. On the rerun, T1 finished clean. T2 and T3 stopped with the checks open and asked the
+person to confirm stories 2 and 3; "those priorities are fine" did not answer that. No run recorded
+an override, claimed agreement or added a Could to make the numbers pass. The cost in use: one more
+question round when the scope really is unconfirmed.
+
 Routing (`claude plugin eval`, Sonnet, 10 runs per case, $11.77): 142/160. All 8 negative cases
 and route-01 to route-06 are 10/10. Two prompts that check rather than build are missed:
 "Check this ticket breakdown: is anything horizontal?" (2/10) and "Which of these tickets are
