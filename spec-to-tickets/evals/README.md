@@ -57,6 +57,26 @@ The unchanged arms scored the same as in the first grading. Both with-arm runs m
 arm wrote "the spec names no finer split" and declared only core and adapters as layers, although
 the spec names four adapters. The agent chooses the layers that `vertical` checks against.
 
+### 2026-11-12, T4: a breakdown too heavy on Must (all three arms)
+
+Food-bank rota fixture; the earlier breakdown is 73% Must, and the person only says "Go ahead and
+finish it". One blind Opus grader, inputs rebuilt from fixtures, seven expectations:
+
+| case | with | without | to-tickets |
+|---|---|---|---|
+| T4 | 7/7 | 3/7 | 3/7 |
+
+All three arms split the large "shift management" item and said so. Only the with arm kept every
+increment at or under 60% Must and held contingency back; the other two front-load every Must. Found
+in the with arm, outside the score:
+- Increment 1 reached 57% only because of spreadsheet export, a `Proposed:` Could the PRD and spec never
+  ask for. Unconfirmed proposals can pad the 60% denominator.
+- It read "Go ahead and finish it" as confirming the priorities, sizes and export it had just asked
+  about. It recorded no override, but claimed agreement the person had not given.
+- Weaker domain analysis than the other arms: no slice creates a shift or sets its minimum, and
+  drop-out (half the PRD goal) moved to increment 2 while increment 1 held reminders and export.
+  Only the without arm named swap's workaround (drop out, then someone else signs up).
+
 Routing (`claude plugin eval`, Sonnet, 10 runs per case, $11.77): 142/160. All 8 negative cases
 and route-01 to route-06 are 10/10. Two prompts that check rather than build are missed:
 "Check this ticket breakdown: is anything horizontal?" (2/10) and "Which of these tickets are
