@@ -11,6 +11,16 @@ Dates are the date the work landed on `main`.
 
 ---
 
+## 2026-11-14
+
+### Fixed — `spec-to-tickets` reads PRD headings in singular or plural
+
+Before this fix, a PRD headed `## Anti-goals`, `## Goals` or `## Success checks` wasn't read as that
+section, so a Must that quoted it failed the trace check. It now passes, as it should. The same applies to
+the sections a Must may never trace to: `## Assumption`, `## Open question` and `## Risk` are now
+recognised in the singular as well as the plural. The fix is in heading matching only; what each
+section allows is unchanged.
+
 ## 2026-11-11
 
 ### Added — `spec-to-tickets`, prioritise and check a breakdown before building from it

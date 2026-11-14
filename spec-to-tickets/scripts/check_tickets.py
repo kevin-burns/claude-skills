@@ -33,8 +33,10 @@ MUST_SHARE_LIMIT = 0.60
 MIN_QUOTE_WORDS = 4
 RULES = ("layers", "vertical", "skeleton", "trace", "scope", "mix", "contingency", "acceptance", "specifics", "blocks",
          "size")
+# Headings are compared in singular form, so "Anti-goals" and "Anti-goal" are one section
+# (claude-skills-knvc: a plural heading silently fell out of what a Must may trace to).
 MUST_SECTIONS = ("goal", "success check", "anti-goal")          # what a Must may trace to
-NEVER_SECTIONS = ("non-goals", "out of scope", "assumptions", "open questions", "risks")
+NEVER_SECTIONS = ("non-goal", "out of scope", "assumption", "open question", "risk")
 NEVER_PREFIXES = ("assumption:", "open question:", "proposed:")
 MUST_ITEMS = ("goal", "success_check", "anti_goal")
 _TURN = re.compile(r"^\[turn:([^\]\s]+)\]$")
@@ -62,12 +64,18 @@ class Finding:
     message: str
 
 
+def _heading_key(heading: str) -> str:
+    """Lower-case heading with a plural last word made singular: 'Anti-goals' -> 'anti-goal'."""
+    key = heading.strip().lower()
+    return key[:-1] if key.endswith("s") and not key.endswith("ss") else key
+
+
 def _sections(text: str) -> list[tuple[str, str]]:
     """(lower-case heading, line) for every non-heading line; citations removed."""
     out, current = [], ""
     for line in text.splitlines():
         if line.startswith("## "):
-            current = line[3:].strip().lower()
+            current = _heading_key(line[3:])
         elif line.strip() and not line.startswith("#"):
             out.append((current, _CITATION.sub("", line)))
     return out
