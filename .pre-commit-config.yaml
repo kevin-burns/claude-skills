@@ -215,6 +215,19 @@ repos:
       # on main. Added 2026-09-24, the day a new urlopen passed every hook above and
       # turned CI red. Runs when a Python file is staged; it scans all tracked Python,
       # not only the staged files, because the baseline is repo-wide. About 3 seconds.
+      # 2026-09-05: screening rules that triangulated a person reached this PUBLIC repo;
+      # gitleaks and every hook here passed them, because they look for credentials and
+      # not for facts about someone. The term list is private data, so it lives outside
+      # the repo (~/.config/claude-skills/private-terms.txt) and a missing list fails
+      # closed. Only added lines are checked; a hit names the file and line, never the
+      # term. Audit claude-skills-6oz4.
+      - id: private-terms
+        name: no private terms in a public repo
+        entry: python3 .github/scripts/private_terms.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       # Kevin, 2026-09-24: "Don't introduce exclusions in code smells." An inline
       # noqa on a urlopen hid a finding bandit still raised, and CI went red. This
       # checks only the lines a commit ADDS, so the suppressions already in the tree
