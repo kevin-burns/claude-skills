@@ -49,6 +49,13 @@ status=0
 ran=0
 while IFS= read -r d; do
   [ -n "$d" ] && [ -d "$d" ] || continue
+  if [ "$d" = ".github" ]; then
+    # ci.yml names this suite on its own ("Mirror builder tests"): pytest, run from
+    # the repo root. It is not a skill's unittest suite.
+    ran=$((ran + 1)); echo "pre-push gate: .github/scripts/tests (pytest)"
+    uv run --quiet --with pytest python -m pytest .github/scripts/tests -q -p no:cacheprovider || status=1
+    continue
+  fi
   if [ -d "$d/scripts/tests" ]; then
     ran=$((ran + 1)); echo "pre-push gate: $d/scripts/tests (unittest)"
     ( cd "$d/scripts" && uv run --quiet python -m unittest discover -s tests -q ) || status=1
