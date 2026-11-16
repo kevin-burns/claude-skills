@@ -215,6 +215,18 @@ repos:
       # on main. Added 2026-09-24, the day a new urlopen passed every hook above and
       # turned CI red. Runs when a Python file is staged; it scans all tracked Python,
       # not only the staged files, because the baseline is repo-wide. About 3 seconds.
+      # Kevin, 2026-09-24: "Don't introduce exclusions in code smells." An inline
+      # noqa on a urlopen hid a finding bandit still raised, and CI went red. This
+      # checks only the lines a commit ADDS, so the suppressions already in the tree
+      # don't block unrelated work. Python comments are read as tokens, so a string
+      # that merely contains "# noqa" is not a suppression. Audit claude-skills-6oz4.
+      - id: no-new-suppressions
+        name: no new noqa / nosec / ignore config
+        entry: python3 .github/scripts/no_new_suppressions.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: bandit
         name: bandit (baselined, same script as CI)
         entry: bash .github/scripts/run_bandit.sh
