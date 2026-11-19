@@ -143,8 +143,43 @@ const REVIEW = {
 const SUITE = {
   type: 'object',
   required: ['passed'],
-  properties: { passed: { type: 'boolean' }, command: { type: 'string' }, output_tail: { type: 'string' } },
+  properties: {
+    passed: { type: 'boolean' },
+    // 'test' = the suite ran and something failed; 'infrastructure' = it could not run or was cut
+    // off (missing tool, timeout, out of memory, network). Only 'test' is a verdict on the code.
+    failure_class: { type: 'string' },
+    command: { type: 'string' },
+    output_tail: { type: 'string' },
+  },
 }
+
+// Infrastructure failures are not verdicts on the code. agent() returns null when a subagent dies
+// on a terminal API error (a usage limit, an outage) or is skipped. Retry once WITHOUT spending a
+// fix round; if it still fails, hand back as an infrastructure stop so nobody reads it as "the code
+// failed review". (Anthropic, "Quantifying infrastructure noise in agentic coding evals", 2026-02-05.)
+const infra = []
+async function attempt(prompt, opts) {
+  for (let i = 0; i < 2; i++) {
+    let r = null
+    try {
+      r = await agent(prompt, opts)
+    } catch (e) {
+      infra.push(`${opts.label}: ${String(e).slice(0, 200)}`)
+      continue
+    }
+    if (r != null) return r
+    infra.push(`${opts.label}: no result (subagent died or was skipped)`)
+  }
+  return null
+}
+const infraStop = (stage, extra) => ({
+  ok: false,
+  stage,
+  failure_class: 'infrastructure',
+  note: `infrastructure failure at ${stage}, retried once and not counted as a fix round — rerun; this is not a verdict on the code`,
+  infrastructure: infra,
+  ...extra,
+})
 
 // 1) PLAN — decompose the story into a testable spec (no code yet).
 phase('Plan')
@@ -256,13 +291,15 @@ if (runCoherence) {
   phase('Coherence')
   let crounds = 0
   while (crounds < 2) {
-    coherence = await agent(
+    coherence = await attempt(
       `Check the STRUCTURAL fit of the implementation on ${where} against the plan, the spec it ` +
         `cites, and the verified facts — NOT line-level correctness (that's the reviewer's job). ` +
         `Read the diff: git diff ${build.base_ref || base}...${build.branch}. Apply your five checks ` +
         `(spec-to-code + plan-to-commit traceability, inverse-pair round-trip fidelity WITHOUT ` +
         `normalization tricks, cross-implementation parity, contract/docstring fidelity). Return ` +
-        `verdict (pass|fail), findings, and loop_back_target.\n\n` +
+        `verdict (pass|fail|unknown — unknown only if an input was missing or unreadable), findings, ` +
+        `and loop_back_target. Judge the diff and the facts given, never the builder's own account ` +
+        `of its tests or files.\n\n` +
         `PATTERN-MIRROR CHECK — for each pattern below, confirm the code applied it to EVERY case in ` +
         `applies_to, not just the one the story named. A pattern present on the exception but absent ` +
         `on a parallel case (e.g. RLS+GRANT on one new table but not its siblings) is a coherence ` +
@@ -274,14 +311,16 @@ if (runCoherence) {
         `${JSON.stringify(plan?.out_of_scope ?? [], null, 2)}`,
       { agentType: 'coherence-checker', label: `coherence:r${crounds + 1}`, phase: 'Coherence', schema: COHERENCE },
     )
-    if (coherence?.verdict !== 'fail') break
-    const cfix = await agent(
+    if (!coherence) return infraStop('coherence', { branch: build.branch, plan, build })
+    if (coherence.verdict !== 'fail') break // pass, or unknown (a missing input the builder cannot fix)
+    const cfix = await attempt(
       `On ${where}, fix ONLY these structural coherence mismatches, test-first, commit on the branch ` +
         `(no merge/push). For an inverse-pair failure the round-trip test must assert EXACT identity ` +
         `— no .rstrip()/.lower()/sorted()/set() normalization that hides the delta:\n` +
         `${JSON.stringify(coherence.findings ?? [], null, 2)}`,
       { agentType: 'code-builder', label: `coherence-fix:r${crounds + 1}`, phase: 'Coherence', schema: BUILD },
     )
+    if (!cfix) return infraStop('coherence-fix', { branch: build.branch, plan, build, coherence })
     if (cfix?.commits?.length) build.commits = [...(build.commits ?? []), ...cfix.commits]
     crounds++
   }
@@ -292,20 +331,24 @@ phase('Review')
 let review = null
 let rounds = 0
 while (rounds < 2) {
-  review = await agent(
+  review = await attempt(
     `Review the change on ${where}. Read the diff: git diff ${build.base_ref || base}...${build.branch}. ` +
-      `Return findings (severity + location + suggested_fix) and a verdict. Advisory, not a gate.\n` +
+      `Return findings (severity + location + suggested_fix) and a verdict. Advisory, not a gate. ` +
+      `Judge the diff and any tests you run yourself, never the builder's own account; verdict ` +
+      `unknown only if the diff or an input was missing or unreadable.\n` +
       `Out of scope (deliberately deferred — do NOT blocking-flag these):\n` +
       `${JSON.stringify(plan?.out_of_scope ?? [], null, 2)}`,
     { agentType: 'code-reviewer', label: `review:r${rounds + 1}`, phase: 'Review', schema: REVIEW },
   )
+  if (!review) return infraStop('review', { branch: build.branch, plan, build, coherence })
   const blockers = (review?.findings ?? []).filter((f) => f.severity === 'blocking')
-  if (review?.verdict === 'ship' || blockers.length === 0) break
-  const fix = await agent(
+  if (review?.verdict === 'ship' || review?.verdict === 'unknown' || blockers.length === 0) break
+  const fix = await attempt(
     `On ${where}, address ONLY these blocking review findings, test-first, and commit on the branch ` +
       `(no merge/push):\n${JSON.stringify(blockers, null, 2)}`,
     { agentType: 'code-builder', label: `fix:r${rounds + 1}`, phase: 'Review', schema: BUILD },
   )
+  if (!fix) return infraStop('review-fix', { branch: build.branch, plan, build, review })
   if (fix?.commits?.length) build.commits = [...(build.commits ?? []), ...fix.commits]
   rounds++
 }
@@ -315,15 +358,25 @@ phase('Full-suite gate')
 let suite = null
 const suiteCmd = build.tests?.full_suite_command
 if (suiteCmd) {
-  suite = await agent(
+  suite = await attempt(
     `Run the full test suite ONCE on ${where} and report the outcome verbatim. Do NOT change code — ` +
-      `just run and report pass/fail.\nCommand: ${suiteCmd}`,
+      `just run and report pass/fail. If it failed, set failure_class: "test" when tests ran and ` +
+      `failed, "infrastructure" when the suite could not run or was cut off (missing tool, timeout, ` +
+      `out of memory, network).\nCommand: ${suiteCmd}`,
     { agentType: 'code-builder', label: 'full-suite', phase: 'Full-suite gate', schema: SUITE },
   )
 }
 
 // 5) HAND BACK — the main agent decides merge/push/PR. The fleet never does.
-const suiteState = suite ? (suite.passed ? 'green' : 'RED') : 'not-run'
+const suiteState = !suiteCmd
+  ? 'not-run'
+  : !suite
+    ? 'INFRA'
+    : suite.passed
+      ? 'green'
+      : suite.failure_class === 'infrastructure'
+        ? 'INFRA'
+        : 'RED'
 return {
   ok: true,
   story,
@@ -343,13 +396,22 @@ return {
     `Inspect ${where}`,
     suiteState === 'RED'
       ? 'Full suite RED — do NOT merge until green'
+      : suiteState === 'INFRA'
+        ? 'Full suite could not run (infrastructure, not a test verdict) — rerun it before merge'
       : suiteState === 'not-run'
         ? `Full suite not run — run it before merge${suiteCmd ? `: ${suiteCmd}` : ''}`
         : 'Full suite green',
     runCoherence && coherence?.verdict === 'fail'
       ? 'Coherence still FAILING — structural mismatch unresolved after fix loop; weigh before merge'
-      : 'Coherence OK',
-    review?.verdict === 'needs-rework' ? 'Review still wants rework — weigh findings' : 'Review OK',
+      : runCoherence && coherence?.verdict === 'unknown'
+        ? 'Coherence could not check (missing or unreadable input) — see its notes; not a pass'
+        : 'Coherence OK',
+    review?.verdict === 'needs-rework'
+      ? 'Review still wants rework — weigh findings'
+      : review?.verdict === 'unknown'
+        ? 'Review could not run (missing or unreadable input) — see its notes; not a pass'
+        : 'Review OK',
+    ...(infra.length ? [`Infrastructure retries during the run: ${infra.length} (see infrastructure)`] : []),
     'You (main agent) decide: merge / push / open PR — the fleet never does this.',
   ],
   open_questions: build.open_questions ?? '',

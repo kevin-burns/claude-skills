@@ -34,7 +34,9 @@ def grade(eval_path: str, out_path: str) -> int:
                                  for f in bug_findings),
         "category-sane": any((f.get("category") or "").lower() in ("correctness", "edge-case")
                              for f in bug_findings),
-        "verdict-not-ship": verdict != "ship",
+        # "unknown" means the reviewer could not review; on a readable fixture with a planted bug that is
+        # a miss, not a pass, so only an explicit not-ship verdict counts.
+        "verdict-not-ship": verdict in ("ship-with-fixes", "needs-rework"),
         "no-false-blocking-on-control": not any(
             (f.get("severity") or "").lower() == "blocking" and line_of(f.get("location")) in control
             for f in findings),
