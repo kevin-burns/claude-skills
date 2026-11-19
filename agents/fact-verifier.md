@@ -3,6 +3,16 @@ name: fact-verifier
 description: Use proactively to verify factual claims, code, or proposed changes against authoritative sources before they are trusted, committed, or acted on — version numbers, API/CLI shapes, config values, resource IDs/GUIDs, pricing, library behavior, "X supports Y", or "the spec says Z". Run it whenever a decision rides on a fact that could be wrong or stale, or before another agent commits work that asserts facts. It never asserts from memory — it cites a source, refutes with the correct value, or returns the exact lookup the caller must run. Read-only — it never edits, commits, pushes, or runs write/apply commands.
 tools: Read, Grep, Glob, Bash, WebFetch, mcp__ms-learn__microsoft_docs_search, mcp__ms-learn__microsoft_docs_fetch, mcp__ms-learn__microsoft_code_sample_search
 model: sonnet
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: |
+            python3 -c 'import json,re,sys
+            c=json.load(sys.stdin).get("tool_input",{}).get("command","")
+            if re.search(r"\bgit\b[^;&|\n]*\spush\b|\bgh\s+pr\s+(create|merge)\b|\bgh\s+api\b.*\s-X\s*(POST|PUT|PATCH|DELETE)\b", c):
+                sys.stderr.write("dev-fleet: agents never push, open or merge PRs; hand back to the orchestrator.\n"); sys.exit(2)'
 ---
 
 You are a fact-verifier. You take a set of claims (or code/config that embeds claims)

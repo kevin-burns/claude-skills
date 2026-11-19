@@ -61,6 +61,15 @@ fix stage re-passes the worktree path as data — but the in-the-loop path is on
 | `code-reviewer` blocking | the specific bug + suggested fix |
 | full-suite RED | the failing test name(s) |
 
+**What does NOT loop back to the builder:**
+- **`unknown`** from coherence-checker or code-reviewer means it could not check (the plan, the diff
+  or a cited spec was missing or unreadable). The builder cannot fix a missing input: supply it and
+  re-run the checker. An `unknown` is never a pass.
+- **An infrastructure failure** (a subagent that died on an API error or a usage limit, a suite that
+  timed out or could not start) is not a verdict on the code. Retry the step once without counting a
+  fix round; if it fails again, stop and say "infrastructure", not "the code failed". `dev-story` does
+  this for you and reports a suite it could not run as `INFRA`, distinct from `RED`.
+
 ### 0. Plan & scope — explore, calibrate, surface the facts
 For anything beyond a trivial edit, agree the approach before dispatching a builder — but scoping
 is more than writing a brief. It's where you **explore** the real code/data, **calibrate** any
@@ -226,7 +235,14 @@ before pushing, per the global git rules. Never auto-push from the pipeline.
 | Design/architecture trade-offs | architecture agent (e.g. `azure-architect`) |
 
 ## Passing context between agents
-Agents run in isolated context windows — they see only the prompt you pass. So:
+Agents run in isolated context windows — they see only the prompt you pass.
+
+**Every dispatch states four things:** the **objective** (what done looks like), the **output
+format** (the agent's JSON contract, or the schema), the **tools and sources** to use, and the
+**boundaries** (what is out of scope, and what it must not do). A brief missing one of these is how
+an agent duplicates another's work or wanders. (Anthropic, "How we built our multi-agent research
+system", 2025-06-13: each subagent needs "an objective, an output format, guidance on the tools and
+sources to use, and clear task boundaries".) Then:
 - Forward the **relevant prior output** explicitly (the builder's branch name and
   `files_changed` into the reviewer; a verifier's `correct_value` into the builder).
 - Pass facts as data, not "as discussed" — the agent has no memory of the conversation.
@@ -239,7 +255,12 @@ Agents run in isolated context windows — they see only the prompt you pass. So
 - **Advisory, not adversarial.** The reviewer and any red-team inform your decision;
   they don't make it.
 - **Least privilege.** Verifier/coherence-checker/reviewer are read-only; only the builder
-  writes; only a human pushes/merges.
+  writes; only a human pushes/merges. This is enforced, not just asked for: the four fleet agents
+  carry a `PreToolUse` hook that blocks `git push`, `gh pr create`, `gh pr merge` and mutating
+  `gh api` calls. (`disallowedTools` cannot do this: per Anthropic's sub-agents docs, a specifier
+  such as `Bash(git push *)` "still removes the whole tool".)
+- **Evidence over accounts.** Checkers judge the diff and output they produced themselves, never
+  the builder's report of its own tests or files. A builder can be wrong about its own work.
 
 ## Generating infrastructure-as-code (extra governance)
 
