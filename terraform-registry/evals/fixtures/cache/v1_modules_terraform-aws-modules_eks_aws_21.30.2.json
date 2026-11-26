@@ -1,0 +1,104 @@
+{
+  "source_url": "https://registry.terraform.io/v1/modules/terraform-aws-modules/eks/aws/21.30.2",
+  "retrieved_at": "2026-11-26T00:00:00Z",
+  "_note": "TRIMMED from the live payload (2 root inputs/outputs, 2 submodules with 2 inputs each); versioned path, so immutable",
+  "body": {
+    "id": "terraform-aws-modules/eks/aws/21.30.2",
+    "source": "https://github.com/terraform-aws-modules/terraform-aws-eks",
+    "namespace": "terraform-aws-modules",
+    "name": "eks",
+    "provider": "aws",
+    "version": "21.30.2",
+    "description": "Terraform module to create Amazon Elastic Kubernetes (EKS) resources 🇺🇦",
+    "deprecation": null,
+    "versions": [],
+    "root": {
+      "inputs": [
+        {
+          "name": "include_oidc_root_ca_thumbprint",
+          "type": "bool",
+          "required": false,
+          "default": "true",
+          "description": "Determines whether to include the root CA thumbprint in the OpenID Connect (OIDC) identity provider's server certificate(s)"
+        },
+        {
+          "name": "iam_role_description",
+          "type": "string",
+          "required": false,
+          "default": "null",
+          "description": "Description of the role"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cluster_control_plane_scaling_tier",
+          "description": "The EKS Provisioned Control Plane scaling tier for the cluster"
+        },
+        {
+          "name": "cluster_endpoint",
+          "description": "Endpoint for your Kubernetes API server"
+        }
+      ]
+    },
+    "submodules": [
+      {
+        "path": "modules/eks-managed-node-group",
+        "inputs": [
+          {
+            "name": "launch_template_description",
+            "type": "string",
+            "required": false,
+            "default": "null",
+            "description": "Description of the launch template"
+          },
+          {
+            "name": "enable_monitoring",
+            "type": "bool",
+            "required": false,
+            "default": "false",
+            "description": "Enables/disables detailed monitoring"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "node_group_arn",
+            "description": "Amazon Resource Name (ARN) of the EKS Node Group"
+          },
+          {
+            "name": "iam_role_arn",
+            "description": "The Amazon Resource Name (ARN) specifying the IAM role"
+          }
+        ]
+      },
+      {
+        "path": "modules/karpenter",
+        "inputs": [
+          {
+            "name": "node_iam_role_name",
+            "type": "string",
+            "required": false,
+            "default": "null",
+            "description": "Name to use on IAM role created"
+          },
+          {
+            "name": "node_iam_role_description",
+            "type": "string",
+            "required": false,
+            "default": "null",
+            "description": "Description of the role"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "queue_url",
+            "description": "The URL for the created Amazon SQS queue"
+          },
+          {
+            "name": "node_access_entry_arn",
+            "description": "Amazon Resource Name (ARN) of the node Access Entry"
+          }
+        ]
+      }
+    ]
+  }
+}

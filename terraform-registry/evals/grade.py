@@ -5,6 +5,7 @@ Usage: uv run python grade.py            # run from the evals/ directory
 Exit 0 if all cases pass, 1 otherwise.
 """
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -20,10 +21,11 @@ CLI = HERE.parent / "registry_helper.py"
 CACHE = HERE / "fixtures" / "cache"
 
 
-def run(argv):
+def run(argv, env=None):
     proc = subprocess.run(
         ["python3", str(CLI), "--cache-dir", str(CACHE), *argv],
-        capture_output=True, text=True, check=False)
+        capture_output=True, text=True, check=False,
+        env={**os.environ, **(env or {})})
     try:
         payload = json.loads(proc.stdout) if proc.stdout.strip() else {}
     except json.JSONDecodeError:
@@ -32,7 +34,7 @@ def run(argv):
 
 
 def check_case(case) -> list:
-    rc, out = run(case["argv"])
+    rc, out = run(case["argv"], case.get("env"))
     e = case["expect"]
     data = out.get("data") or {}
     prov = out.get("provenance") or {}
@@ -69,6 +71,25 @@ def check_case(case) -> list:
     if "error_code" in e:
         c.append((f"error.code=={e['error_code']}",
                   (out.get("error") or {}).get("code") == e["error_code"]))
+    warns = " | ".join(out.get("warnings") or [])
+    if "warnings_contain" in e:
+        c.append((f"warnings ~{e['warnings_contain']}", e["warnings_contain"] in warns))
+    if "warnings_not_contain" in e:
+        c.append((f"warnings !~{e['warnings_not_contain']}", e["warnings_not_contain"] not in warns))
+    if "data_equals" in e:
+        for k, v in e["data_equals"].items():
+            c.append((f"data.{k}=={v}", data.get(k) == v))
+    names = {i.get("name") for i in data.get("inputs", [])}
+    if "inputs_names_include" in e:
+        c.append((f"inputs include {e['inputs_names_include']}", set(e["inputs_names_include"]) <= names))
+    if "inputs_names_exclude" in e:
+        c.append((f"inputs exclude {e['inputs_names_exclude']}", not (set(e["inputs_names_exclude"]) & names)))
+    if "submodules_include" in e:
+        c.append((f"submodules include {e['submodules_include']}",
+                  set(e["submodules_include"]) <= set(data.get("submodules") or [])))
+    if "error_contains" in e:
+        c.append((f"error ~{e['error_contains']}",
+                  e["error_contains"] in ((out.get("error") or {}).get("message") or "")))
     return c
 
 

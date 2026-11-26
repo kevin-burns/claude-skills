@@ -22,8 +22,11 @@ the part you keep. That is the point of the skill: a module's full input list ca
 hundreds of entries, and you usually want four of them.
 
 Every fetch is cached as a provenance-stamped snapshot (`~/.cache/terraform-registry` by
-default), so repeat calls are offline and token-free. `--offline` refuses to touch the
-network at all; `--refresh` bypasses the cache.
+default), so repeat calls are offline and token-free. A pinned version is cached for good; a
+moving path (search, or an unversioned module, i.e. "latest") is re-fetched after
+`--max-age-hours` (default 24) and carries a cache-age warning when served from cache.
+`--offline` refuses to touch the network at all; `--refresh` bypasses the cache.
+Submodules use Terraform's `//` syntax (`.../eks/aws/21.30.2//modules/karpenter`).
 
 ### Two data planes, and the difference matters
 
