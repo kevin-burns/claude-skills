@@ -57,8 +57,13 @@ def _now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _cache_key(path: str, params: dict) -> str:
+def _cache_key(path: str, params: dict, host: str = DEFAULT_HOST) -> str:
+    """File name for a payload. A non-default host gets its own prefix, so a private
+    registry is never answered from the public registry's entry for the same path; the
+    default host keeps the bare name, so existing caches and fixtures stay valid."""
     slug = re.sub(r"[^A-Za-z0-9._-]", "-", path.strip("/").replace("/", "_"))
+    if host != DEFAULT_HOST:
+        slug = re.sub(r"[^A-Za-z0-9._-]", "-", host) + "__" + slug
     if params:
         q = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
         slug += "__" + re.sub(r"[^A-Za-z0-9._=&-]", "-", q)
@@ -82,7 +87,7 @@ def api_get(path: str, params: dict, *, host: str, cache_dir: Path,
     the payload is re-fetched, except --offline, which serves it and reports its age.
     """
     cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / _cache_key(path, params)
+    cache_file = cache_dir / _cache_key(path, params, host)
     url = f"https://{host}/{path.lstrip('/')}"
     if params:
         url += "?" + urllib.parse.urlencode(params)

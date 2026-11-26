@@ -36,15 +36,17 @@
     },
     {
       "id": "stale-latest-refetches",
-      "argv": ["--host", "127.0.0.1:9", "--format", "json", "inspect-module", "terraform-google-modules/network/google"],
+      "env": {"https_proxy": "http://127.0.0.1:9", "HTTPS_PROXY": "http://127.0.0.1:9", "no_proxy": "", "NO_PROXY": ""},
+      "argv": ["--format", "json", "inspect-module", "terraform-google-modules/network/google"],
       "expect": {"exit": 3, "ok": false, "error_code": 3},
-      "note": "wihl #1. Unversioned path cached 2026-06-11 is older than the 24h TTL, so the CLI must go to the network (an unreachable host here) instead of serving a stale 'latest'."
+      "note": "wihl #1. Unversioned path cached 2026-06-11 is older than the 24h TTL, so the CLI must go to the network (a dead proxy here, same host so the cache key matches) instead of serving a stale 'latest'."
     },
     {
       "id": "versioned-stays-cached",
-      "argv": ["--host", "127.0.0.1:9", "--format", "json", "inspect-module", "terraform-aws-modules/eks/aws/21.30.2"],
+      "env": {"https_proxy": "http://127.0.0.1:9", "HTTPS_PROXY": "http://127.0.0.1:9", "no_proxy": "", "NO_PROXY": ""},
+      "argv": ["--max-age-hours", "0", "--format", "json", "inspect-module", "terraform-aws-modules/eks/aws/21.30.2"],
       "expect": {"exit": 0, "ok": true, "cached": true, "warnings_not_contain": "cache age"},
-      "note": "wihl #1 negative control. A versioned path is immutable: served from cache whatever its age, never refetched."
+      "note": "wihl #1 negative control. A versioned path is immutable: served from cache even with --max-age-hours 0, never refetched (a dead proxy makes any fetch fail)."
     },
     {
       "id": "offline-stale-warns",
@@ -86,6 +88,12 @@
       "argv": ["--offline", "--format", "json", "inspect-module", "terraform-aws-modules/eks/aws/21.30.2"],
       "expect": {"exit": 0, "ok": true, "warnings_not_contain": "deprecated"},
       "note": "wihl #4 negative control: deprecation null -> no warning."
+    },
+    {
+      "id": "cache-key-includes-host",
+      "argv": ["--host", "registry.example.invalid", "--offline", "--format", "json", "inspect-module", "terraform-google-modules/network/google"],
+      "expect": {"exit": 1, "ok": false, "error_code": 1},
+      "note": "A private registry must not be answered from the public registry's cache entry for the same path. The fixture is cached for the default host only, so another host is an offline miss."
     }
   ]
 }

@@ -5,6 +5,7 @@ Usage: uv run python grade.py            # run from the evals/ directory
 Exit 0 if all cases pass, 1 otherwise.
 """
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -20,10 +21,11 @@ CLI = HERE.parent / "registry_helper.py"
 CACHE = HERE / "fixtures" / "cache"
 
 
-def run(argv):
+def run(argv, env=None):
     proc = subprocess.run(
         ["python3", str(CLI), "--cache-dir", str(CACHE), *argv],
-        capture_output=True, text=True, check=False)
+        capture_output=True, text=True, check=False,
+        env={**os.environ, **(env or {})})
     try:
         payload = json.loads(proc.stdout) if proc.stdout.strip() else {}
     except json.JSONDecodeError:
@@ -32,7 +34,7 @@ def run(argv):
 
 
 def check_case(case) -> list:
-    rc, out = run(case["argv"])
+    rc, out = run(case["argv"], case.get("env"))
     e = case["expect"]
     data = out.get("data") or {}
     prov = out.get("provenance") or {}
