@@ -64,9 +64,11 @@ tfreg search vpc --provider aws --limit 5
 tfreg search network --provider google
 tfreg search keyvault --provider azurerm
 
-# Inspect a module: namespace/name/provider[/version]. Project + filter to stay small.
+# Inspect a module: namespace/name/provider[/version][//modules/x]. Project + filter to stay small.
 tfreg inspect-module terraform-aws-modules/vpc/aws --fields inputs --filter name~cidr
 tfreg inspect-module Azure/avm-res-keyvault-vault/azurerm --fields meta,outputs
+# A submodule, in Terraform's own // syntax; `--fields meta` lists the submodule paths.
+tfreg inspect-module 'terraform-aws-modules/eks/aws/21.30.2//modules/karpenter' --fields inputs
 
 # Resource attributes (needs a cached schema first):
 tfreg refresh-schema --provider google --namespace hashicorp
@@ -83,7 +85,15 @@ tfreg inspect-resource google_storage_bucket --filter name~location
 Every fetch is written to an on-disk snapshot cache (`--cache-dir`, default
 `~/.cache/terraform-registry`) and re-read on the next call.
 
-- `--offline` — use the cache only; never touch the network. Errors if a payload isn't cached.
+- **Pinned versions never expire; moving paths do.** An unversioned module ("latest") or a
+  search is re-fetched once its cached copy is older than `--max-age-hours` (default 24).
+  Served from cache, it carries a `cache age` warning. This matters for AVM 0.x modules,
+  which rename inputs on patch releases.
+- `.../latest` is not a registry version (the API 404s on it). The CLI treats it as the
+  unversioned path and says so in `warnings`.
+- A non-null `deprecation` in the registry payload becomes a `module is deprecated` warning.
+- `--offline` — use the cache only; never touch the network. Errors if a payload isn't
+  cached; serves an expired moving path with its age in the warning.
 - `--refresh` — bypass the cache and re-fetch (then re-cache).
 - Pin behavior by inspecting a specific version (`.../aws/5.8.1`) and committing the cached
   payload — that snapshot becomes a stable, citable fact. See the `source-snapshot` skill.
@@ -95,7 +105,7 @@ Every fetch is written to an on-disk snapshot cache (`--cache-dir`, default
 ```json
 { "ok": true, "command": "...", "data": {...},
   "provenance": { "source_url": "...", "source_kind": "registry_module_api|terraform_provider_schema",
-                  "retrieved_at": "...", "cached": true },
+                  "retrieved_at": "...", "cached": true, "age_hours": 3.2, "moving": true },
   "warnings": [], "error": null }
 ```
 
